@@ -23,6 +23,13 @@ _PHONE_RE = re.compile(
 _URL_RE = re.compile(r"https?://[^\s)|,\]]+|www\.[^\s)|,\]]+", re.I)
 _LINKEDIN_RE = re.compile(r"(?:https?://)?(?:www\.)?linkedin\.com/[^\s)|,\]]+", re.I)
 _GITHUB_RE = re.compile(r"(?:https?://)?(?:www\.)?github\.com/[^\s)|,\]]+", re.I)
+# Hosting patterns that semantically mean "personal portfolio site" even when
+# the resume does not label the link explicitly.
+_PORTFOLIO_HOST_RE = re.compile(
+    r"(?:github\.io|gitlab\.io|vercel\.app|netlify\.app|pages\.dev|notion\.site|"
+    r"framer\.(?:website|app)|wixsite\.com|webflow\.io|herokuapp\.com)",
+    re.I,
+)
 _MONTH = (
     r"(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|"
     r"jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)"
@@ -491,15 +498,22 @@ def build_profile_draft(
                 "selected": True,
             }
         )
-    for line in [full_blob, *link_lines]:
-        for match in _URL_RE.findall(line):
+    for line in [*full_blob.splitlines(), *link_lines]:
+        for url_match in _URL_RE.finditer(line):
+            match = url_match.group(0)
+            # "Label — URL" / "Label URL" prefixes carry the semantic name the
+            # resume displayed for the hyperlink (e.g. "Portfolio https://…").
+            prefix = line[: url_match.start()].strip(" \t—–-:·|")
+            label = prefix if 3 <= len(prefix) <= 40 and not _URL_RE.search(prefix) else None
             lower = match.lower()
             if "linkedin.com" in lower:
-                add_link("linkedin", match, "LinkedIn")
+                add_link("linkedin", match, label or "LinkedIn")
             elif "github.com" in lower:
-                add_link("github", match, "GitHub")
+                add_link("github", match, label or "GitHub")
+            elif (label and "portfolio" in label.casefold()) or _PORTFOLIO_HOST_RE.search(lower):
+                add_link("portfolio", match, label)
             else:
-                add_link("website", match, None)
+                add_link("website", match, label)
     years = _estimate_years(experiences, text)
     career_level = _infer_career_level(years, text)
     profile = {

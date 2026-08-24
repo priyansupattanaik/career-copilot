@@ -138,3 +138,39 @@ def test_name_is_recovered_from_combined_or_unclassified_resume_header() -> None
     assert draft["profile"]["full_name"] == "Priyansu Pattanaik"
     assert draft["profile"]["phone"]
     assert any(skill["name"].casefold() == "python" for skill in draft["skills"])
+
+
+def test_merge_prefers_agent_semantics_for_an_evidenced_embedded_link() -> None:
+    url = "https://priyansu.example.dev"
+    base = build_profile_draft(f"Portfolio\n{url}", {})
+    ai = {
+        "profile": {},
+        "skills": [],
+        "experiences": [],
+        "education": [],
+        "projects": [],
+        "certifications": [],
+        "languages": [],
+        "links": [
+            {
+                "link_type": "portfolio",
+                "url": url,
+                "label": "Portfolio",
+                "source": "resume_ai",
+                "selected": True,
+            }
+        ],
+        "meta": {"warnings": [], "method": "ai", "ai_used": True},
+    }
+
+    merged = merge_profile_drafts(base, ai, plain_text=f"Portfolio\n{url}")
+
+    assert merged["links"] == [
+        {
+            "link_type": "portfolio",
+            "url": url,
+            "label": "Portfolio",
+            "source": "resume_ai",
+            "selected": True,
+        }
+    ]

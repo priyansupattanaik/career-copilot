@@ -1,7 +1,10 @@
 <!-- prettier-ignore -->
 <div align="center">
 
-<img src="./frontend/public/icon.svg" alt="Career Copilot" height="72" />
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./frontend/public/brand/career-copilot-dark.png" />
+  <img src="./frontend/public/brand/career-copilot-light.png" alt="Career Copilot" height="72" />
+</picture>
 
 # Career Copilot
 

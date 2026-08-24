@@ -455,6 +455,7 @@ function ResumeLibrary() {
           </Button>
         </Card>
       ) : null}
+      <div id="resume-library" className="resume-library-list">
       {resumes.map((resume) => (
           <Card className="stack" key={resume.id}>
             <div className="row">
@@ -495,6 +496,7 @@ function ResumeLibrary() {
             </div>
           </Card>
       ))}
+      </div>
 
       {preview && pdfUrl ? (
         <div

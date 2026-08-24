@@ -72,6 +72,9 @@ languages (array of objects)
 links (array of objects)
   - url must appear on the resume
   - link_type: linkedin | github | portfolio | website | other
+  - Lines under an "Embedded links" heading contain hyperlink targets recovered from the document file.
+  - Classify LinkedIn and GitHub by host. Use portfolio when the visible label or surrounding text says Portfolio.
+  - Keep each distinct URL as its own object; never merge several URLs into one field.
 
 warnings (array of strings)
   - Note ambiguities (e.g. "years of experience inferred from dates")

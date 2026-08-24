@@ -29,9 +29,9 @@ test.describe("Landing page audit acceptance", () => {
     await page.goto("/", { waitUntil: "networkidle" });
 
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
-      /Navigate your career with evidence/i
+      /Show up\s*ready/i
     );
-    await expect(page.getByText(/Illustrative global roles/i).first()).toBeVisible();
+    await expect(page.getByText(/practice room/i).first()).toBeVisible();
     await expect(page.getByText(/verified job locations/i)).toHaveCount(0);
 
     const theme = await page.evaluate(() => ({
@@ -43,24 +43,22 @@ test.describe("Landing page audit acceptance", () => {
     expect(theme.colorScheme).toBe("light");
     expect(theme.background.toLowerCase()).toContain("f5faff");
 
+    const lightLogo = page.locator(".home-brand .brand-mark").first();
+    await expect(lightLogo.locator(".brand-mark-image-light")).toBeVisible();
+    await expect(lightLogo.locator(".brand-mark-image-dark")).toBeHidden();
+    await expect(lightLogo.locator(".brand-mark-image-light")).toHaveAttribute(
+      "src",
+      "/brand/career-copilot-light.png",
+    );
+
     const fonts = await page.evaluate(() => getComputedStyle(document.body).fontFamily);
     expect(fonts).not.toMatch(/Satoshi/i);
 
-    await page.locator("#journey").scrollIntoViewIfNeeded();
-    await expect(page.locator("[data-journey-card]")).toHaveCount(6);
+    await page.locator("#system").scrollIntoViewIfNeeded();
+    await expect(page.locator(".home-feature-grid article")).toHaveCount(3);
 
-    const globePresent = await page.evaluate(() => {
-      return Boolean(
-        document.querySelector(".light-globe") ||
-          document.querySelector("canvas") ||
-          document.querySelector(".globe-fallback-container") ||
-          document.querySelector(".globe-loading")
-      );
-    });
-    expect(globePresent).toBe(true);
-
-    await expect(page.getByRole("link", { name: /Start Your Career Journey/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /See how it works/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Get started/i }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /See the practice room/i })).toBeVisible();
 
     const serious = consoleErrors.filter(
       (e) => !/favicon/i.test(e) && !/Download the React DevTools/i.test(e)
@@ -83,6 +81,105 @@ test.describe("Landing page audit acceptance", () => {
 
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
+  });
+
+  test("dark mode keeps the new landing sections readable", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("career-copilot-theme", "dark"));
+    await page.goto("/", { waitUntil: "networkidle" });
+
+    await expect(page.locator(".home-page")).toBeVisible();
+    await expect(page.locator(".home-practice-copy h2")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Confidence is/i })).toBeVisible();
+
+    const contrast = await page.evaluate(() => {
+      const root = document.documentElement;
+      const practiceHeading = document.querySelector(".home-practice-copy h2");
+      const systemHeading = document.querySelector(".home-section-head h2");
+      return {
+        theme: root.getAttribute("data-theme"),
+        pageBackground: getComputedStyle(document.querySelector(".home-page")!).backgroundColor,
+        practiceColor: getComputedStyle(practiceHeading!).color,
+        systemColor: getComputedStyle(systemHeading!).color,
+      };
+    });
+
+    expect(contrast.theme).toBe("dark");
+    expect(contrast.pageBackground).toBe("rgb(0, 0, 0)");
+    expect(contrast.practiceColor).not.toBe("rgb(0, 0, 0)");
+    expect(contrast.systemColor).not.toBe("rgb(0, 0, 0)");
+
+    const darkLogo = page.locator(".home-brand .brand-mark").first();
+    await expect(darkLogo.locator(".brand-mark-image-dark")).toBeVisible();
+    await expect(darkLogo.locator(".brand-mark-image-light")).toBeHidden();
+    await expect(darkLogo.locator(".brand-mark-image-dark")).toHaveAttribute(
+      "src",
+      "/brand/career-copilot-dark.png",
+    );
+  });
+
+  test("key landing copy meets readable contrast in both themes", async ({ page }) => {
+    const selectors = [
+      ".home-hero-lede",
+      ".home-practice-copy > p:not(.home-kicker)",
+      ".home-profile .home-sheet-main p",
+      ".home-profile .home-sheet-items small",
+      ".home-footer",
+    ];
+
+    for (const theme of ["light", "dark"] as const) {
+      await page.addInitScript((value) => {
+        localStorage.setItem("career-copilot-theme", value);
+      }, theme);
+      await page.goto("/", { waitUntil: "networkidle" });
+
+      const results = await page.evaluate((requestedSelectors) => {
+        const parse = (value: string) => {
+          const match = value.match(/rgba?\(([^)]+)\)/);
+          if (!match) return null;
+          const channels = match[1].split(",").map((channel) => Number.parseFloat(channel.trim()));
+          return channels.length >= 3 ? channels.slice(0, 3) : null;
+        };
+        const luminance = (rgb: number[]) => {
+          const channels = rgb.map((channel) => channel / 255).map((channel) =>
+            channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
+          );
+          return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+        };
+        const contrast = (foreground: number[], background: number[]) => {
+          const foregroundLuminance = luminance(foreground);
+          const backgroundLuminance = luminance(background);
+          return (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
+            (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
+        };
+        const backgroundFor = (element: Element) => {
+          let current: Element | null = element;
+          while (current) {
+            const backgroundValue = getComputedStyle(current).backgroundColor;
+            const background = parse(backgroundValue);
+            if (background && backgroundValue !== "rgba(0, 0, 0, 0)") return background;
+            current = current.parentElement;
+          }
+          return [255, 255, 255];
+        };
+
+        return requestedSelectors.map((selector) => {
+          const element = document.querySelector(selector);
+          if (!element) return { selector, visible: false, ratio: 0 };
+          const style = getComputedStyle(element);
+          const foreground = parse(style.color);
+          return {
+            selector,
+            visible: Boolean(element.getBoundingClientRect().width && element.getBoundingClientRect().height),
+            ratio: foreground ? contrast(foreground, backgroundFor(element)) : 0,
+          };
+        });
+      }, selectors);
+
+      for (const result of results) {
+        expect(result.visible, `${theme} ${result.selector} is not visible`).toBe(true);
+        expect(result.ratio, `${theme} ${result.selector} contrast`).toBeGreaterThanOrEqual(4.5);
+      }
+    }
   });
 
   for (const vp of viewports) {
@@ -108,7 +205,7 @@ test.describe("Landing page audit acceptance", () => {
       }, zoom);
 
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-      await expect(page.getByRole("link", { name: /Start Your Career Journey/i })).toBeVisible();
+      await expect(page.getByRole("link", { name: /Get started/i }).first()).toBeVisible();
 
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth

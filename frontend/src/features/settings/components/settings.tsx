@@ -641,10 +641,12 @@ export function ProfileSettings() {
   const [recordBusy, setRecordBusy] = useState(false);
   const [resumes, setResumes] = useState<ResumeListItem[]>([]);
   const [selectedVersionId, setSelectedVersionId] = useState("");
+  const [resumeTitle, setResumeTitle] = useState("");
+  const [renamingResumeId, setRenamingResumeId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
   const [fillBusy, setFillBusy] = useState(false);
   const [fillEmptyOnly, setFillEmptyOnly] = useState(true);
   const [draft, setDraft] = useState<ProfileDraft | null>(null);
-  const [draftDisclaimer, setDraftDisclaimer] = useState("");
   const [avatarBusy, setAvatarBusy] = useState(false);
   const AVATAR_MAX_BYTES = 3 * 1024 * 1024;
 
@@ -694,22 +696,14 @@ export function ProfileSettings() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([
-      apiRequest<{ profile: ProfileRecord; preferences: ProfileRecord }>("/profile"),
-      apiRequest<ProfileRecord[]>("/profile/skills"),
-      apiRequest<ProfileRecord[]>("/profile/experiences"),
-      apiRequest<ProfileRecord[]>("/profile/education"),
-      apiRequest<ProfileRecord[]>("/profile/links"),
-      apiRequest<ResumeListItem[]>("/resumes").catch(() => [] as ResumeListItem[]),
-    ])
-      .then(([profilePayload, skillRows, experienceRows, educationRows, linkRows, resumeRows]) => {
+    void (async () => {
+      try {
+        // The profile record controls the first paint. Secondary collections
+        // must not keep the whole editor blank when one of them is slow.
+        const profilePayload = await apiRequest<{ profile: ProfileRecord; preferences: ProfileRecord }>("/profile");
         if (!active) return;
-        applyLoaded(profilePayload, skillRows, experienceRows, educationRows, linkRows);
-        setResumes(resumeRows || []);
-        const preferred =
-          resumeRows?.find((r) => r.is_active && r.latest_version?.id) ||
-          resumeRows?.find((r) => r.latest_version?.id);
-        setSelectedVersionId(preferred?.latest_version?.id || "");
+        applyLoaded(profilePayload, [], [], [], []);
+        setLoading(false);
         const profile = profilePayload?.profile || {};
         const details = profile.profile_completion_details as
           | { missing?: Array<{ key: string; label: string; points?: number }> }
@@ -719,13 +713,30 @@ export function ProfileSettings() {
           profile_completion_details: details || null,
           profile_missing: extractMissing(details, null),
         });
-      })
-      .catch((e: Error) => {
-        if (active) setError(e.message);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+
+        const [skillRows, experienceRows, educationRows, linkRows, resumeRows] = await Promise.all([
+          apiRequest<ProfileRecord[]>("/profile/skills").catch(() => [] as ProfileRecord[]),
+          apiRequest<ProfileRecord[]>("/profile/experiences").catch(() => [] as ProfileRecord[]),
+          apiRequest<ProfileRecord[]>("/profile/education").catch(() => [] as ProfileRecord[]),
+          apiRequest<ProfileRecord[]>("/profile/links").catch(() => [] as ProfileRecord[]),
+          apiRequest<ResumeListItem[]>("/resumes").catch(() => [] as ResumeListItem[]),
+        ]);
+        if (!active) return;
+        setSkills(skillRows || []);
+        setExperiences(experienceRows || []);
+        setEducation(educationRows || []);
+        setLinks(linkRows || []);
+        setResumes(resumeRows || []);
+        const preferred =
+          resumeRows?.find((r) => r.is_active && r.latest_version?.id) ||
+          resumeRows?.find((r) => r.latest_version?.id);
+        setSelectedVersionId(preferred?.latest_version?.id || "");
+      } catch (e) {
+        if (!active) return;
+        setError((e as Error).message);
+        setLoading(false);
+      }
+    })();
     return () => {
       active = false;
     };
@@ -739,7 +750,6 @@ export function ProfileSettings() {
       const body = selectedVersionId ? { resume_version_id: selectedVersionId } : {};
       const result = await apiRequest<{
         draft: ProfileDraft;
-        disclaimer?: string;
         counts?: Record<string, number>;
         ai_used?: boolean;
         method?: string;
@@ -748,7 +758,6 @@ export function ProfileSettings() {
         body: JSON.stringify(body),
       });
       setDraft(result.draft);
-      setDraftDisclaimer(result.disclaimer || "");
       const countText = result.counts
         ? Object.entries(result.counts)
             .filter(([, n]) => n > 0)
@@ -798,9 +807,9 @@ export function ProfileSettings() {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      if (resumeTitle.trim()) formData.append("title", resumeTitle.trim());
       const result = await apiRequest<{
         draft: ProfileDraft;
-        disclaimer?: string;
         counts?: Record<string, number>;
         ai_used?: boolean;
         resume?: {
@@ -813,17 +822,34 @@ export function ProfileSettings() {
         };
       }>("/profile/from-resume/preview-upload", { method: "POST", body: formData });
       setDraft(result.draft);
-      setDraftDisclaimer(result.disclaimer || "");
       const storedVersionId = result.resume?.id || "";
       if (storedVersionId) {
         await refreshResumes(storedVersionId);
       }
-      const storedTitle = result.resume?.title || result.resume?.original_filename || file.name;
-      setMessage(
-        storedVersionId
-          ? `Resume “${storedTitle}” saved to your library and draft ready. Review and apply only what is true for you. You can reuse this resume for analysis and mock interview without uploading again.`
-          : "Draft ready from your resume. Review and apply only what is true for you.",
-      );
+      setResumeTitle("");
+      await applyResumeDraft(result.draft);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setFillBusy(false);
+    }
+  }
+
+  async function renameResume(resumeId: string) {
+    const title = renameValue.trim();
+    if (!title) return;
+    setFillBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      await apiRequest(`/resumes/${resumeId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ title }),
+      });
+      await refreshResumes();
+      setRenamingResumeId(null);
+      setRenameValue("");
+      setMessage("Resume name updated.");
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -841,8 +867,8 @@ export function ProfileSettings() {
     });
   }
 
-  async function applyResumeDraft() {
-    if (!draft) return;
+  async function applyResumeDraft(candidateDraft: ProfileDraft | null = draft) {
+    if (!candidateDraft) return;
     setFillBusy(true);
     setError("");
     setMessage("");
@@ -857,14 +883,14 @@ export function ProfileSettings() {
         method: "POST",
         body: JSON.stringify({
           fill_empty_only: fillEmptyOnly,
-          profile: draft.profile?.selected === false ? {} : draft.profile || {},
-          skills: pick(draft.skills),
-          experiences: pick(draft.experiences),
-          education: pick(draft.education),
-          projects: pick(draft.projects),
-          certifications: pick(draft.certifications),
-          languages: pick(draft.languages),
-          links: pick(draft.links),
+          profile: candidateDraft.profile?.selected === false ? {} : candidateDraft.profile || {},
+          skills: pick(candidateDraft.skills),
+          experiences: pick(candidateDraft.experiences),
+          education: pick(candidateDraft.education),
+          projects: pick(candidateDraft.projects),
+          certifications: pick(candidateDraft.certifications),
+          languages: pick(candidateDraft.languages),
+          links: pick(candidateDraft.links),
         }),
       });
       await loadAll();
@@ -1312,16 +1338,62 @@ export function ProfileSettings() {
   return (
     <Frame
       title="Candidate profile"
-      description="All edits are saved to your private account. Limited-choice fields use menus so values stay consistent."
+      description="Keep your experience, strengths, and goals ready for every interview."
     >
       {loading ? (
         <Card>
           <p>Loading profile…</p>
         </Card>
-      ) : (
-        <div className="stack">
-          {!profileComplete ? (
-            <Card className="stack">
+        ) : (
+          <div className="profile-page-body">
+            <section className="profile-overview" aria-labelledby="profile-overview-title">
+              <div className="profile-overview-avatar" aria-hidden={!form.avatar_url}>
+                {form.avatar_url ? (
+                  <img src={form.avatar_url} alt="" width={88} height={88} />
+                ) : (
+                  <span>
+                    {(form.full_name || "U")
+                      .split(" ")
+                      .map((part: string) => part[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="profile-overview-copy">
+                <p className="eyebrow">Candidate profile</p>
+                <h2 id="profile-overview-title">{form.full_name || "Your profile"}</h2>
+                <p>{form.headline || "Add a headline to tell employers what you do."}</p>
+                <div className="profile-overview-facts">
+                  {form.location ? <span>{form.location}</span> : null}
+                  {form.current_role ? <span>{form.current_role}</span> : null}
+                  {form.years_experience !== null && form.years_experience !== undefined ? (
+                    <span>{form.years_experience} years experience</span>
+                  ) : null}
+                </div>
+              </div>
+              <div className="profile-overview-score">
+                <strong>{completion}%</strong>
+                <span>profile complete</span>
+                <div className="profile-overview-score-bar" aria-hidden="true">
+                  <span style={{ width: `${completion}%` }} />
+                </div>
+              </div>
+            </section>
+
+            <nav className="profile-section-nav" aria-label="Profile sections">
+              <span>Jump to</span>
+              <a href="#profile-details">Details</a>
+              <a href="#profile-experience">Experience</a>
+              <a href="#profile-education">Education</a>
+              <a href="#profile-preferences">Preferences</a>
+              <a href="#profile-skills">Skills</a>
+              <a href="#profile-links">Links</a>
+            </nav>
+
+            {!profileComplete ? (
+              <Card className="stack profile-card profile-completion-card">
               <Progress value={completion} label="Profile completion" />
               {missingFromDetails.length > 0 ? (
                 <div className="stack" style={{ gap: 6 }}>
@@ -1339,69 +1411,127 @@ export function ProfileSettings() {
             </Card>
           ) : null}
 
-          <Card className="stack panel-blue">
-            <h2 style={{ margin: 0 }}>Fill profile from resume</h2>
-            <p className="muted" style={{ margin: 0, fontSize: "var(--text-sm)" }}>
-              Upload a resume or pick one already saved. Uploads are stored in your resume library so Resume
-              Analysis and Mock Interview can reuse them — no need to upload again. You always review the
-              profile draft before anything is applied.
-            </p>
-            <div className="grid-2">
-              <label className="field-label">
-                Saved resume
-                <Select
-                  value={selectedVersionId}
-                  onChange={(e: any) => setSelectedVersionId(e.target.value)}
-                >
-                  <option value="">
-                    {resumes.some((r) => r.latest_version?.id)
-                      ? "Active / latest resume with text"
-                      : "No saved resume yet — upload below"}
-                  </option>
-                  {resumes.map((resume) =>
-                    resume.latest_version?.id ? (
-                      <option key={resume.latest_version.id} value={resume.latest_version.id}>
-                        {resume.title}
-                        {resume.is_active ? " (active)" : ""}
-                        {resume.latest_version.original_filename
-                          ? ` · ${resume.latest_version.original_filename}`
-                          : ""}
-                        {resume.latest_version.extraction_status
-                          ? ` · ${resume.latest_version.extraction_status}`
-                          : ""}
-                      </option>
-                    ) : null,
-                  )}
-                </Select>
-              </label>
-              <label className="field-label">
-                Or upload PDF / DOCX (saved to library)
-                <span className="file-picker">
-                  <span className="file-picker-ui" aria-hidden="true">Choose file</span>
-                  <span className="file-picker-name" aria-hidden="true">No file selected</span>
+          <Card className="profile-resume-studio profile-card">
+            <div className="profile-resume-studio-head">
+              <div>
+                <p className="eyebrow">Resume workspace</p>
+                <h2 style={{ margin: 0 }}>Shape the profile around your real work.</h2>
+                <p className="muted" style={{ margin: "8px 0 0", maxWidth: 640 }}>
+                  Keep named versions of your resume here. Select the source you want to use, preview the profile draft,
+                  and review every change before it is applied.
+                </p>
+              </div>
+              <div className="profile-resume-studio-count">
+                <strong>{resumes.length}</strong>
+                <span>saved resume{resumes.length === 1 ? "" : "s"}</span>
+              </div>
+            </div>
+            <div className="profile-resume-studio-grid">
+              <section className="profile-resume-library" aria-labelledby="saved-resumes-title">
+                <div className="profile-resume-section-head">
+                  <div>
+                    <p className="eyebrow" id="saved-resumes-title">Your library</p>
+                    <p className="muted" style={{ margin: 0 }}>Choose the resume that best fits this profile.</p>
+                  </div>
+                  <span className="profile-resume-count">{resumes.filter((resume) => resume.latest_version?.id).length} ready</span>
+                </div>
+                {resumes.some((resume) => resume.latest_version?.id) ? (
+                  <div className="profile-resume-list" role="listbox" aria-label="Saved resumes">
+                    {resumes.map((resume) => resume.latest_version?.id ? (
+                      <div
+                        className={`profile-resume-row ${selectedVersionId === resume.latest_version.id ? "is-selected" : ""}`}
+                        key={resume.id}
+                        role="option"
+                        aria-selected={selectedVersionId === resume.latest_version.id}
+                      >
+                        <button
+                          type="button"
+                          className="profile-resume-select"
+                          onClick={() => setSelectedVersionId(resume.latest_version?.id || "")}
+                        >
+                          <span className="profile-resume-file-icon" aria-hidden="true">PDF</span>
+                          <span className="profile-resume-row-copy">
+                            <strong>{resume.title}</strong>
+                            <small>{resume.latest_version.original_filename || "Stored resume"} · {resume.latest_version.extraction_status || "ready"}</small>
+                          </span>
+                          {resume.is_active ? <span className="profile-resume-active">Active</span> : null}
+                        </button>
+                        <button
+                          type="button"
+                          className="profile-resume-rename"
+                          onClick={() => { setRenamingResumeId(resume.id); setRenameValue(resume.title); }}
+                        >
+                          Rename
+                        </button>
+                        {renamingResumeId === resume.id ? (
+                          <form
+                            className="profile-resume-rename-form"
+                            onSubmit={(event) => { event.preventDefault(); void renameResume(resume.id); }}
+                          >
+                            <Input
+                              aria-label={`New name for ${resume.title}`}
+                              value={renameValue}
+                              maxLength={200}
+                              onChange={(event) => setRenameValue(event.target.value)}
+                              autoFocus
+                            />
+                            <Button type="submit" disabled={fillBusy || !renameValue.trim()}>Save name</Button>
+                            <Button type="button" variant="secondary" onClick={() => setRenamingResumeId(null)}>Cancel</Button>
+                          </form>
+                        ) : null}
+                      </div>
+                    ) : null)}
+                  </div>
+                ) : (
+                  <div className="profile-resume-empty">
+                    <strong>No saved resumes yet.</strong>
+                    <span>Upload one on the right and give it a name you will recognize later.</span>
+                  </div>
+                )}
+              </section>
+              <section className="profile-resume-upload" aria-labelledby="upload-resume-title">
+                <p className="eyebrow" id="upload-resume-title">Add a source</p>
+                <h3>Upload a new resume</h3>
+                <p className="muted">Name it by role, company, or version before it enters your private library.</p>
+                <label className="field-label">
+                  Resume name
+                  <Input
+                    value={resumeTitle}
+                    maxLength={200}
+                    placeholder="e.g. Backend roles · August 2026"
+                    onChange={(event) => setResumeTitle(event.target.value)}
+                  />
+                </label>
+                <label className="profile-resume-upload-control">
+                  <span className="profile-resume-upload-button">Choose PDF or DOCX</span>
+                  <span className="profile-resume-upload-hint">Saved privately and available across the workspace</span>
                   <Input
                     className="file-picker-input"
                     type="file"
                     aria-label="Upload PDF or DOCX"
                     accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     disabled={fillBusy}
-                    onChange={(e: any) => {
-                      const file = e.target.files?.[0] || null;
+                    onChange={(event: any) => {
+                      const file = event.target.files?.[0] || null;
                       void previewFromUpload(file);
-                      e.target.value = "";
+                      event.target.value = "";
                     }}
                   />
-                </span>
-              </label>
+                </label>
+              </section>
             </div>
-            <label className="row" style={{ justifyContent: "flex-start", gap: 8 }}>
-              <input
-                type="checkbox"
-                checked={fillEmptyOnly}
-                onChange={(e: any) => setFillEmptyOnly(e.target.checked)}
-              />
-              <span>Only fill empty profile fields (recommended)</span>
-            </label>
+            <div className="profile-resume-actions">
+              <label className="row" style={{ justifyContent: "flex-start", gap: 8 }}>
+                <input type="checkbox" checked={fillEmptyOnly} onChange={(e: any) => setFillEmptyOnly(e.target.checked)} />
+                <span>Only fill empty profile fields (recommended)</span>
+              </label>
+              <Select value={selectedVersionId} onChange={(e: any) => setSelectedVersionId(e.target.value)} aria-label="Selected resume version">
+                <option value="">Choose a saved resume</option>
+                {resumes.map((resume) => resume.latest_version?.id ? (
+                  <option key={resume.latest_version.id} value={resume.latest_version.id}>{resume.title}</option>
+                ) : null)}
+              </Select>
+            </div>
             <div className="cluster">
               <Button type="button" disabled={fillBusy} onClick={() => void previewFromStoredResume()}>
                 {fillBusy ? "Working…" : "Preview from saved resume"}
@@ -1417,14 +1547,6 @@ export function ProfileSettings() {
                 </>
               ) : null}
             </div>
-            {draftDisclaimer ? <p className="muted" style={{ margin: 0, fontSize: "var(--text-sm)" }}>{draftDisclaimer}</p> : null}
-            {draft?.meta?.warnings?.length ? (
-              <ul style={{ margin: 0, paddingLeft: 18 }}>
-                {draft.meta.warnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
-                ))}
-              </ul>
-            ) : null}
             {draft ? (
               <div className="stack" style={{ gap: 12 }}>
                 <div className="suggestion stack" style={{ gap: 6 }}>
@@ -1510,7 +1632,7 @@ export function ProfileSettings() {
           </Card>
 
           {(message || error) && (
-            <Card className="stack">
+            <Card className="stack profile-feedback-card">
               {error ? (
                 <p role="alert" className="field-error" style={{ margin: 0 }}>
                   {error}
@@ -1524,7 +1646,7 @@ export function ProfileSettings() {
             </Card>
           )}
 
-          <Card className="stack">
+          <Card id="profile-identity" className="stack profile-card profile-identity-card">
             <h2 style={{ margin: 0 }}>Profile picture</h2>
             <p className="muted" style={{ margin: 0, fontSize: "var(--text-sm)" }}>
               JPEG, PNG, or WebP · maximum 3 MB. Stored privately in your account.
@@ -1587,7 +1709,7 @@ export function ProfileSettings() {
             </div>
           </Card>
 
-          <Card className="stack">
+          <Card id="profile-details" className="stack profile-card profile-details-card">
             <h2 style={{ margin: 0 }}>Basic details</h2>
             <div className="grid-2">
               <label className="field-label">
@@ -1665,7 +1787,7 @@ export function ProfileSettings() {
             </Button>
           </Card>
 
-          <Card className="stack">
+          <Card id="profile-preferences" className="stack profile-card profile-preferences-card">
             <h2 style={{ margin: 0 }}>Career preferences</h2>
             <p>These preferences are saved to your account. Use each dropdown to add options; remove tags with ×.</p>
             <div className="grid-2">
@@ -1762,7 +1884,7 @@ export function ProfileSettings() {
             </Button>
           </Card>
 
-          <Card className="stack">
+          <Card id="profile-skills" className="stack profile-card profile-skills-card">
             <h2 style={{ margin: 0 }}>
               Skills
               <RequiredMark />
@@ -1823,7 +1945,7 @@ export function ProfileSettings() {
             </div>
           </Card>
 
-          <Card className="stack">
+          <Card id="profile-experience" className="stack profile-card profile-experience-card">
             <h2 style={{ margin: 0 }}>
               Work experience
               <RequiredMark />
@@ -1946,7 +2068,7 @@ export function ProfileSettings() {
             )}
           </Card>
 
-          <Card className="stack">
+          <Card id="profile-education" className="stack profile-card profile-education-card">
             <h2 style={{ margin: 0 }}>
               Education
               <RequiredMark />
@@ -2020,7 +2142,7 @@ export function ProfileSettings() {
             )}
           </Card>
 
-          <Card className="stack">
+          <Card id="profile-links" className="stack profile-card profile-links-card">
             <h2 style={{ margin: 0 }}>
               Professional links
               <RequiredMark />
@@ -2095,20 +2217,6 @@ export function ProfileSettings() {
             )}
           </Card>
 
-          {(message || error) && (
-            <Card>
-              {message && (
-                <p role="status" style={{ margin: 0 }}>
-                  {message}
-                </p>
-              )}
-              {error && (
-                <p role="alert" className="field-error" style={{ margin: 0 }}>
-                  {error}
-                </p>
-              )}
-            </Card>
-          )}
         </div>
       )}
     </Frame>

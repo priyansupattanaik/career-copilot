@@ -100,8 +100,8 @@ def main() -> None:
     print("learning_items", len(items), "algo", learn.get("algorithm_version"))
     if items:
         resources = items[0].get("learning_resources") or []
-        url = (resources[0] or {}).get("url") if resources else None
-        print("learning_resource_ok", bool(url and "youtube.com" in url))
+        urls = [(r or {}).get("url") for r in resources]
+        print("learning_resource_ok", any(u and "youtube.com" in u for u in urls))
 
     sess = req(
         "POST",

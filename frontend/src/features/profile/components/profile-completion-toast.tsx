@@ -1,5 +1,6 @@
 
 import { Link } from "@/shared/ui/router-link";
+import { usePathname } from "@/shared/router";
 import { useMemo, useSyncExternalStore } from "react";
 import { X } from "lucide-react";
 import {
@@ -32,6 +33,7 @@ function subscribeDismissed(listener: () => void): () => void {
 }
 
 export function ProfileCompletionToast({ completion, missing }: Props) {
+  const pathname = usePathname();
   const dismissedPercent = useSyncExternalStore(
     subscribeDismissed,
     readDismissedPercent,
@@ -50,7 +52,9 @@ export function ProfileCompletionToast({ completion, missing }: Props) {
     window.dispatchEvent(new Event(DISMISS_EVENT));
   }
 
-  if (!open || percent >= 100 || safeMissing.length === 0) return null;
+  // The profile editor already exposes completion inline. Keeping this global
+  // toast off that route prevents it from covering controls the user is editing.
+  if (pathname === "/settings/profile" || !open || percent >= 100 || safeMissing.length === 0) return null;
 
   const shown = safeMissing.slice(0, 6);
   const extra = safeMissing.length - shown.length;

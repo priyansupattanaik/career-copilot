@@ -57,7 +57,7 @@ class Settings(BaseSettings):
     groq_temperature: float = Field(default=0.4, ge=0, le=1)
     groq_resume_parser_enabled: bool = True
     groq_resume_parser_model: str = "llama-3.3-70b-versatile"
-    groq_resume_parser_fallback_model: str = "llama-3.3-70b-versatile"
+    groq_resume_parser_fallback_model: str = "openai/gpt-oss-120b"
     groq_resume_parser_timeout_seconds: float = Field(default=60.0, gt=0, le=180)
     groq_resume_parser_max_retries: int = Field(default=2, ge=0, le=5)
     groq_resume_parser_max_input_tokens: int = Field(default=110000, ge=1000, le=200000)

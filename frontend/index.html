@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f5faff" />
+    <meta name="theme-color" content="#f5f1e8" />
     <meta
       name="description"
       content="Career Copilot — private resume analysis, mock interviews, and job matching in one workspace."
@@ -13,7 +13,7 @@
       property="og:description"
       content="Analyze resumes with evidence, practice interviews, and track career progress in one private workspace."
     />
-    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/brand/career-copilot-light.png" type="image/png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -24,10 +24,8 @@
       (() => {
         try {
           const stored = localStorage.getItem("career-copilot-theme");
-          const preference = stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
-          const resolved = preference === "system"
-            ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-            : preference;
+          const preference = stored === "dark" ? "dark" : "light";
+          const resolved = preference;
           document.documentElement.dataset.theme = resolved;
           document.documentElement.style.colorScheme = resolved;
         } catch {

@@ -10,25 +10,30 @@ import { createClient } from "@/features/auth/api/client";
 import { safeRedirectPath } from "@/features/auth/safe-path";
 import { Button, Input } from "@/shared/ui/primitives";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
+import { BrandMark } from "@/components/ui/brand-mark";
+import { CareerIcon } from "@/components/ui/career-icons";
+import { AuroraBackground } from "@/components/ui/aurora-background";
 
 function Shell({ children, title, description }: { children: React.ReactNode; title: string; description: string }) {
   return (
     <main id="main-content" className="auth-shell atlas-auth-shell">
       <aside className="auth-aside atlas-auth-aside" aria-label="Product overview">
-        <Link className="brand atlas-auth-brand" href="/">
-          Career Copilot
-        </Link>
-        <div className="auth-aside-copy">
-          <p className="eyebrow">Private career workspace</p>
-          <h1>{title}</h1>
-          <p>{description}</p>
-          <ul className="auth-aside-points">
-            <li>Review every score against evidence you control</li>
-            <li>Practice interviews with a live transcript</li>
-            <li>See roles matched to your confirmed profile</li>
-          </ul>
-        </div>
-        <p className="auth-aside-foot">Private by default · you review before reuse</p>
+        <AuroraBackground className="auth-aurora">
+          <Link className="brand atlas-auth-brand" href="/">
+            <BrandMark />
+            <span>Career Copilot</span>
+          </Link>
+          <div className="auth-aside-copy">
+            <p className="eyebrow">Private career workspace</p>
+            <h1>{title}</h1>
+            <p>{description}</p>
+            <ul className="auth-aside-points">
+              <li><CareerIcon name="evidence" size={17} /> <span>Review every score against evidence you control</span></li>
+              <li><CareerIcon name="interview" size={17} /> <span>Practice interviews with a live transcript</span></li>
+              <li><CareerIcon name="opportunities" size={17} /> <span>See roles matched to your confirmed profile</span></li>
+            </ul>
+          </div>
+        </AuroraBackground>
       </aside>
       <section className="auth-main atlas-auth-main">
         <div className="auth-main-inner">
@@ -51,6 +56,15 @@ function authErrorMessage(message: string) {
   }
   if (normalized.includes("invalid login credentials") || normalized.includes("email or password is incorrect")) {
     return "The email or password is incorrect. If you just created the account, verify your email first.";
+  }
+  if (normalized.includes("over_email_send_rate_limit") || normalized.includes("rate limit")) {
+    return "Too many verification emails were requested for this address. Wait about an hour, then use the resend button.";
+  }
+  if (normalized.includes("already registered") || normalized.includes("already exists")) {
+    return "An account with this email already exists. Sign in instead.";
+  }
+  if (normalized.includes("email_address_invalid")) {
+    return "That email address was rejected by the authentication provider. Check the spelling or use a different address.";
   }
   return message;
 }
@@ -210,6 +224,7 @@ export function SignInScreen() {
 }
 
 export function SignUpScreen() {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -235,6 +250,12 @@ export function SignUpScreen() {
         },
       });
       if (result.error) return setError(authErrorMessage(result.error.message));
+      if (result.data.session?.access_token) {
+        // The account is active immediately (email confirmations disabled, or
+        // a legacy app account): skip the inbox screen and go straight in.
+        navigate("/onboarding");
+        return;
+      }
       setSent(true);
     } catch {
       setError("Could not reach authentication. Check your connection and try again.");
@@ -279,7 +300,11 @@ export function SignUpScreen() {
           <Button type="button" variant="secondary" disabled={busy} onClick={resendVerification}>
             {busy ? "Requesting email…" : "Resend verification email"}
           </Button>
-          <p className="muted">If it does not arrive, check spam or promotions folders, then try resending the verification email.</p>
+          <p className="muted">
+            Delivery is handled by the authentication provider and can take a few minutes. Check spam
+            and promotions folders too; if nothing arrives after resending, the project&apos;s SMTP
+            settings may need attention.
+          </p>
         </div>
       ) : (
         <form className="auth-card panel stack atlas-auth-card" onSubmit={submit}>

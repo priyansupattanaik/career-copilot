@@ -1,4 +1,3 @@
-import { dynamic } from "@/shared/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   RefreshCw,
@@ -19,11 +18,6 @@ import { Badge, Button, Card, EmptyState, PageHeader } from "@/shared/ui/primiti
 
 export type { Job, Recommendation } from "./job-types";
 
-const CareerGlobe = dynamic(() => import("@/features/jobs/components/career-globe"), {
-  ssr: false,
-  loading: () => <div className="globe-loading">Loading Earth map...</div>,
-});
-
 type PipelineFilter = "all" | "saved" | "applied" | "rejected";
 
 type ResumeSummary = {
@@ -34,24 +28,6 @@ type ResumeSummary = {
     extraction_status?: string | null;
   } | null;
 };
-
-function hasCoordinates(job: Job): boolean {
-  return (
-    typeof job.latitude === "number" &&
-    Number.isFinite(job.latitude) &&
-    typeof job.longitude === "number" &&
-    Number.isFinite(job.longitude)
-  );
-}
-
-function locationPinRank(id: string): number {
-  let hash = 2166136261;
-  for (let index = 0; index < id.length; index += 1) {
-    hash ^= id.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
 
 function normalizeStatus(status: string | undefined | null): SavedJobStatus {
   const value = (status || "saved").toLowerCase() as SavedJobStatus;
@@ -167,7 +143,10 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
           // flow relied on the backend to discover this state, which produced
           // a confusing 409 when the user had just confirmed a resume in the
           // Resume Analysis page and this page still held stale state.
-          const resumes = await apiRequest<ResumeSummary[]>("/resumes");
+          const [resumes, savedRows] = await Promise.all([
+            apiRequest<ResumeSummary[]>("/resumes"),
+            apiRequest<SavedJobRow[]>("/saved-jobs"),
+          ]);
           const activeResume = (Array.isArray(resumes) ? resumes : []).find((row) => row.is_active);
           const confirmedVersion = activeResume?.latest_version;
           if (!confirmedVersion?.id || confirmedVersion.extraction_status !== "confirmed") {
@@ -175,13 +154,10 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
           }
           body.resume_version_id = confirmedVersion.id;
 
-          const [result, savedRows] = await Promise.all([
-            apiRequest<{ recommendations: Recommendation[] }>("/job-recommendations/generate", {
-              method: "POST",
-              body: JSON.stringify(body),
-            }),
-            apiRequest<SavedJobRow[]>("/saved-jobs"),
-          ]);
+          const result = await apiRequest<{ recommendations: Recommendation[] }>("/job-recommendations/generate", {
+            method: "POST",
+            body: JSON.stringify(body),
+          });
           const newRecs = result.recommendations || [];
           const newJobs = newRecs.map((row) => row.job);
           if (sequence !== requestSequence.current) return;
@@ -345,29 +321,6 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
     });
   }, [jobs, savedOnly, pipelineFilter, statusByJobId]);
 
-  const globeJobs = useMemo(
-    () =>
-      visibleJobs
-        .filter(hasCoordinates)
-        .sort((a, b) => locationPinRank(a.id) - locationPinRank(b.id))
-        .slice(0, 12)
-        .map((job) => ({
-          id: job.id,
-          title: job.title,
-          company: job.company,
-          location: job.location,
-          work_mode: job.work_mode,
-          description: job.description,
-          requirements: job.requirements,
-          application_url: job.application_url,
-          salary_min: job.salary_min,
-          salary_max: job.salary_max,
-          latitude: job.latitude as number,
-          longitude: job.longitude as number,
-        })),
-    [visibleJobs],
-  );
-
   const selected = visibleJobs.find((job) => job.id === selectedJob) || jobs.find((j) => j.id === selectedJob) || null;
   const selectedRec = recommendations.find((row) => row.job.id === selectedJob);
   const selectedStatus = selected ? statusByJobId[selected.id] : undefined;
@@ -477,14 +430,6 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
         <div className="feature-alert" role="alert">
           <p className="field-error">{error}</p>
         </div>
-      ) : null}
-
-      {globeJobs.length > 0 ? (
-        <Card className="jobs-globe-card">
-          <div className="jobs-globe">
-            <CareerGlobe jobs={globeJobs} />
-          </div>
-        </Card>
       ) : null}
 
       {isLoading ? (

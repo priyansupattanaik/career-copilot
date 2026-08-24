@@ -91,8 +91,38 @@ def collect_user_storage_paths(client, user: CurrentUser) -> dict[str, list[str]
     return buckets
 
 
+def delete_supabase_auth_user(settings: Settings, supabase_uid: str) -> bool:
+    """Delete the Supabase Auth identity so nothing about the account survives.
+
+    Returns True when the user was deleted (or was already gone). Raises
+    RuntimeError on any other failure so the caller can stop the destructive
+    local purge while the provider identity still exists.
+    """
+    import httpx
+
+    base_url = settings.resolved_supabase_url
+    key = settings.supabase_server_key
+    if not base_url or not key:
+        raise RuntimeError("Supabase admin credentials are not configured.")
+    url = f"{base_url}/auth/v1/admin/users/{supabase_uid}"
+    response = httpx.delete(
+        url,
+        headers={"Authorization": f"Bearer {key}", "apikey": key},
+        timeout=30,
+    )
+    if response.status_code in (200, 204, 404):
+        # 404 means the identity was already removed; nothing left to purge.
+        return True
+    logger.error(
+        "account_delete_supabase_auth_failed uid=%s status=%s body=%s",
+        supabase_uid,
+        response.status_code,
+        response.text[:200],
+    )
+    raise RuntimeError(f"Supabase auth deletion failed with status {response.status_code}.")
+
+
 def delete_user_owned_records(client, user: CurrentUser) -> dict[str, int]:
-    """Delete all known user-owned rows. Returns counts per table. Raises on hard failure."""
     uid = str(user.id)
     deleted: dict[str, int] = {}
     for table, column in USER_OWNED_TABLES:

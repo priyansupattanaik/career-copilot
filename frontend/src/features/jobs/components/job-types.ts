@@ -7,8 +7,6 @@ export type Job = {
   description?: string | null;
   requirements?: string[];
   application_url?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
   published_at?: string | null;
   salary_min?: number | null;
   salary_max?: number | null;

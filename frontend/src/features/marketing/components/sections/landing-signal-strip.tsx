@@ -23,7 +23,7 @@ const DEFAULT_SIGNALS: SignalItem[] = [
 ];
 
 export function LandingSignalStrip({ jobs, signals }: { jobs?: SignalItem[]; signals?: SignalItem[] }) {
-  const itemsList = jobs || signals || DEFAULT_SIGNALS;
+  const itemsList = jobs ?? signals ?? DEFAULT_SIGNALS;
   const headingId = useId();
   const { isMotionPaused } = useMotion();
 

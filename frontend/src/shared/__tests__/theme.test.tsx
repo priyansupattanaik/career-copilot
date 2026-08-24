@@ -25,20 +25,20 @@ describe("theme preferences", () => {
     expect(document.documentElement.style.colorScheme).toBe("dark");
   });
 
-  it("defaults to system preference when storage is empty", () => {
+  it("defaults to light preference when storage is empty", () => {
     applyThemeToDocument();
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
   });
 
-  it("provides a system preference without storage", () => {
+  it("provides an explicit light preference without storage", () => {
     render(
       <ThemeProvider>
         <ThemeProbe />
       </ThemeProvider>,
     );
-    expect(screen.getByTestId("theme").textContent).toBe("system");
+    expect(screen.getByTestId("theme").textContent).toBe("light");
     expect(screen.getByTestId("resolved").textContent).toBe("light");
-    expect(readStoredTheme()).toBe("system");
+    expect(readStoredTheme()).toBe("light");
     expect(resolveTheme()).toBe("light");
   });
 });

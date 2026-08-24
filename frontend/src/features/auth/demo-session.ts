@@ -203,8 +203,8 @@ function initialState(): DemoState {
     reports: seeded.reports,
     savedJobs: [],
     jobs: [
-      { id: "demo-job-1", title: "Software Engineer", company: "Northstar Labs", location: "Bengaluru", work_mode: "hybrid", description: "Build dependable product experiences with a small engineering team.", is_active: true, latitude: 12.9716, longitude: 77.5946 },
-      { id: "demo-job-2", title: "Backend Engineer", company: "Atlas Systems", location: "Hyderabad", work_mode: "remote", description: "Design APIs and data workflows for a growing platform.", is_active: true, latitude: 17.385, longitude: 78.4867 },
+      { id: "demo-job-1", title: "Software Engineer", company: "Northstar Labs", location: "Bengaluru", work_mode: "hybrid", description: "Build dependable product experiences with a small engineering team.", is_active: true },
+      { id: "demo-job-2", title: "Backend Engineer", company: "Atlas Systems", location: "Hyderabad", work_mode: "remote", description: "Design APIs and data workflows for a growing platform.", is_active: true },
     ],
     learningPaths: [
       {
@@ -580,7 +580,7 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
   const parts = parsePath(path);
   const body = jsonBody(init);
 
-  if (path === "/me/bootstrap") return bootstrap() as T;
+  if (parts[0] === "me" && parts[1] === "bootstrap") return bootstrap() as T;
   if (path === "/profile" && method === "GET") return profileResponse() as T;
   if (path === "/profile" && method === "PATCH") {
     state.profile = { ...state.profile, ...body };
@@ -654,7 +654,7 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
         certifications: [],
         languages: [],
         links: state.links.map((row) => ({ ...row, selected: true })),
-        meta: { method: "demo", warnings: [] },
+        meta: { method: "demo", warnings: ["Technical extraction warning that must stay hidden."] },
       },
       counts: { skills: state.skills.length, experiences: state.experiences.length },
       resume: {
@@ -670,12 +670,13 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
   if (path === "/profile/from-resume/preview-upload" && method === "POST") {
     const form = init.body instanceof FormData ? init.body : null;
     const file = form?.get("file") as File | null;
+    const requestedTitle = String(form?.get("title") || "").trim();
     const resumeId = id("demo-resume");
     const versionId = id("demo-version");
     const resume = {
       id: resumeId,
       user_id: DEMO_USER_ID,
-      title: file?.name ? `${file.name} (profile)` : "Profile resume",
+      title: requestedTitle.slice(0, 200) || (file?.name ? `${file.name} (profile)` : "Profile resume"),
       is_active: state.resumes.length === 0,
       created_at: now(),
     };
@@ -724,7 +725,7 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
         certifications: [],
         languages: [],
         links: [],
-        meta: { method: "demo", warnings: [] },
+        meta: { method: "demo", warnings: ["Technical extraction warning that must stay hidden."] },
       },
       counts: { skills: 2, experiences: 1 },
       resume: {
@@ -755,9 +756,10 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
   if (parts[0] === "resumes" && parts.length === 1 && method === "POST") {
     const form = init.body instanceof FormData ? init.body : null;
     const file = form?.get("file") as File | null;
+    const requestedTitle = String(form?.get("title") || "").trim();
     const resumeId = id("demo-resume");
     const versionId = id("demo-version");
-    const resume = { id: resumeId, user_id: DEMO_USER_ID, title: file?.name ? `${file.name} demo` : "Demo resume", is_active: state.resumes.length === 0, created_at: now() };
+    const resume = { id: resumeId, user_id: DEMO_USER_ID, title: requestedTitle.slice(0, 200) || (file?.name ? `${file.name} demo` : "Demo resume"), is_active: state.resumes.length === 0, created_at: now() };
     const version = { id: versionId, resume_id: resumeId, user_id: DEMO_USER_ID, version_number: 1, source_type: "uploaded", original_filename: file?.name || "demo-resume.pdf", mime_type: file?.type || "application/pdf", extraction_status: "review_required", created_at: now(), structured_content: { sections: { summary: ["Software engineer with experience building web products."], skills: ["TypeScript", "Python"], experience: ["Software Engineer  -  Demo Company"] } } };
     state.resumes.unshift(resume);
     state.resumeVersions.unshift(version);
@@ -772,6 +774,14 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
       .slice()
       .sort((a, b) => Number(b.version_number || 0) - Number(a.version_number || 0));
     return { ...resume, versions } as T;
+  }
+  if (parts[0] === "resumes" && parts.length === 2 && method === "PATCH") {
+    const resume = state.resumes.find((item) => item.id === parts[1]);
+    const title = String(body.title || "").trim();
+    if (!resume) throw new Error("Resume not found.");
+    if (!title) throw new Error("Resume name is required.");
+    resume.title = title.slice(0, 200);
+    return resume as T;
   }
   if (parts[0] === "resumes" && parts.length === 2 && method === "DELETE") {
     state.resumes = state.resumes.filter((resume) => resume.id !== parts[1]);

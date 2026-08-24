@@ -265,6 +265,7 @@ async def authenticated_file(
 
 @router.get("/me/bootstrap")
 def bootstrap(
+    scope: str = Query(default="full", pattern="^(full|shell)$"),
     user: CurrentUser = Depends(get_current_user), settings: Settings = Depends(get_settings)
 ) -> dict[str, Any]:
     client = client_for(settings, user)
@@ -273,7 +274,13 @@ def bootstrap(
     uid = str(user.id)
 
     def _read_profile():
-        return client.table("profiles").select("*").eq("id", uid).limit(1).execute()
+        return (
+            client.table("profiles")
+            .select("id,full_name,avatar_url,avatar_path,profile_completion,profile_completion_details")
+            .eq("id", uid)
+            .limit(1)
+            .execute()
+        )
 
     def _read_active_resume():
         return (
@@ -311,7 +318,21 @@ def bootstrap(
         return sum(1 for row in active if str(row.get("id")) in resume_ids)
 
     def _read_latest_jd():
-        # Do not server-order by created_at: legacy JD rows may omit the field and vanish.
+        latest = (
+            client.table("job_descriptions")
+            .select("id,title,company,role_title,created_at")
+            .eq("user_id", uid)
+            # Keep ordering client-side: this user-scoped query must also work
+            # before the optional Firestore composite index is provisioned.
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+            .data
+            or []
+        )
+        if latest:
+            return latest
+        # Legacy rows may omit created_at; retain the old correctness fallback.
         rows = (
             client.table("job_descriptions")
             .select("id,title,company,role_title,created_at")
@@ -323,6 +344,20 @@ def bootstrap(
         return sort_rows_by_recency(rows, desc=True)[:1]
 
     def _read_latest_analysis():
+        latest = (
+            client.table("ats_analyses")
+            .select("id,overall_score,status,created_at,started_at,completed_at")
+            .eq("user_id", uid)
+            .eq("status", "completed")
+            # Keep ordering client-side for the same index-independent path.
+            .order("completed_at", desc=True)
+            .limit(1)
+            .execute()
+            .data
+            or []
+        )
+        if latest:
+            return latest
         rows = (
             client.table("ats_analyses")
             .select("id,overall_score,status,created_at,started_at,completed_at")
@@ -333,6 +368,28 @@ def bootstrap(
             or []
         )
         return sort_rows_by_recency(rows, desc=True, preferred="completed_at")[:1]
+
+    if scope == "shell":
+        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="bootstrap-shell") as executor:
+            profile_future = executor.submit(_read_profile)
+            active_resume_future = executor.submit(_read_active_resume)
+            profile = (profile_future.result().data or [{}])[0]
+            active_resume = active_resume_future.result().data or []
+        return {
+            "profile": attach_avatar_url(profile, client, settings),
+            "active_resume": active_resume[0] if active_resume else None,
+            "workspace": {
+                "profile_completion": max(0, min(100, int(profile.get("profile_completion") or 0))),
+                "profile_completion_details": profile.get("profile_completion_details") or {},
+                "profile_missing": [
+                    item
+                    for item in ((profile.get("profile_completion_details") or {}).get("missing") or [])
+                    if isinstance(item, dict) and item.get("key") and item.get("label")
+                    and str(item.get("key")) != "resume"
+                ],
+                "has_active_resume": bool(active_resume),
+            },
+        }
 
     with ThreadPoolExecutor(max_workers=8, thread_name_prefix="bootstrap") as executor:
         futures = {
@@ -1232,6 +1289,7 @@ async def preview_profile_from_resume(
 @router.post("/profile/from-resume/preview-upload")
 async def preview_profile_from_resume_upload(
     file: UploadFile = File(...),
+    title: str | None = Form(default=None),
     user: CurrentUser = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
 ):
@@ -1246,7 +1304,7 @@ async def preview_profile_from_resume_upload(
         file.filename or "resume.pdf", file.content_type, raw, settings.document_max_bytes
     )
     client = client_for(settings, user)
-    resume, version = await _store_uploaded_resume(client, settings, user, file, raw)
+    resume, version = await _store_uploaded_resume(client, settings, user, file, raw, title=title)
     write_activity(client, user, "resume_uploaded", "Resume uploaded for profile fill", "resume", str(resume["id"]))
     plain_text = version.get("plain_text") or ""
     if not str(plain_text).strip():
@@ -2876,8 +2934,9 @@ async def start_interview(
     settings: Settings = Depends(get_settings),
 ):
     """
-    Start a session and generate practice questions via Groq (dedicated task).
-    NVIDIA is not used here and is never a fallback for this path.
+    Start a session and generate practice questions via the preferred LLM
+    failover chain (LLM_PROVIDER first, then the other configured provider).
+    Falls back to no questions (retryable 503) when all providers fail.
     """
     client = client_for(settings, user)
     session = owned_row(client, "interview_sessions", session_id, user)
@@ -4100,12 +4159,13 @@ def delete_account(
     user_client = client_for(settings, user)
     storage_paths = collect_user_storage_paths(user_client, user)
 
-    # Capture Firebase UID before we delete the users document.
+    # Capture provider identities before we delete the users document.
     firebase_uid = ""
+    supabase_uid = ""
     try:
         user_rows = (
             user_client.table("users")
-            .select("firebase_uid")
+            .select("firebase_uid, supabase_uid")
             .eq("id", str(user.id))
             .limit(1)
             .execute()
@@ -4114,6 +4174,7 @@ def delete_account(
         )
         if user_rows:
             firebase_uid = str(user_rows[0].get("firebase_uid") or "").strip()
+            supabase_uid = str(user_rows[0].get("supabase_uid") or "").strip()
     except Exception as exc:
         logger.exception("account_delete_firebase_uid_lookup_failed user_id=%s", user.id)
         raise ApiError(
@@ -4139,6 +4200,31 @@ def delete_account(
                 500,
                 "account_deletion_incomplete",
                 "The linked identity provider account could not be deleted. No local data was removed.",
+            ) from exc
+
+    # The Supabase Auth identity (email + credentials) must die with the
+    # account too, or the address stays "already registered" and can never
+    # sign up again. Same fail-closed contract as Firebase above.
+    if supabase_uid:
+        if not (settings.resolved_supabase_url and settings.supabase_server_key):
+            logger.error(
+                "account_delete_supabase_unconfigured user_id=%s supabase_uid_present=true", user.id
+            )
+            raise ApiError(
+                500,
+                "account_deletion_incomplete",
+                "The Supabase identity could not be deleted because server credentials are missing. No local data was removed.",
+            )
+        try:
+            from app.features.auth.account_deletion import delete_supabase_auth_user
+
+            delete_supabase_auth_user(settings, supabase_uid)
+        except Exception as exc:
+            logger.exception("account_delete_supabase_auth_failed user_id=%s", user.id)
+            raise ApiError(
+                500,
+                "account_deletion_incomplete",
+                "The Supabase identity could not be deleted. No local data was removed. Please retry.",
             ) from exc
 
     # Fail closed: do not erase Firestore identity while storage blobs may remain.

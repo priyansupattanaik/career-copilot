@@ -1,7 +1,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import re
 from pathlib import Path
@@ -270,8 +269,8 @@ def merge_profile_drafts(
         lambda r: _norm(str(r.get("language") or "")),
     )
     links = _merge_list(
-        base.get("links") or [],
         filtered_ai.get("links") or [],
+        base.get("links") or [],
         lambda r: _norm(str(r.get("url") or "")),
     )
     warnings = []

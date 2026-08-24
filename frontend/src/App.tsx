@@ -3,11 +3,25 @@ import { Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } 
 import { LandingPage } from "@/features/marketing/components/landing";
 import { WorkspaceShell } from "@/features/workspace/components/workspace-shell";
 import { WorkspaceBootstrapProvider } from "@/features/workspace/bootstrap-context";
-import { createClient } from "@/features/auth/api/client";
+import { createClient, isDefinitiveSessionRejection } from "@/features/auth/api/client";
 import { isDemoSession } from "@/features/auth/demo-session";
 import { safeRedirectPath } from "@/features/auth/safe-path";
 import { ACCESS_TOKEN_STORAGE_KEY } from "@/shared/config";
 import { Link } from "@/shared/ui/router-link";
+import { useTheme } from "@/shared/theme";
+
+function ThemeFavicon() {
+  const { resolvedTheme } = useTheme();
+
+  useEffect(() => {
+    const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (icon) {
+      icon.href = `/brand/career-copilot-${resolvedTheme}.png`;
+    }
+  }, [resolvedTheme]);
+
+  return null;
+}
 
 
 const SignInScreen = lazy(() =>
@@ -136,8 +150,13 @@ function ProtectedRoute() {
         const { data, error } = await client.auth.getUser();
         if (!active) return;
         if (error || !data?.user) {
-          window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
-          setState("no");
+          // Log out only on definitive rejections. Transient server failures
+          // (5xx) and unreachable backends keep the optimistic session; later
+          // API 401s still fire career-copilot:auth-expired.
+          if (!error || isDefinitiveSessionRejection(error)) {
+            window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+            setState("no");
+          }
         }
       } catch {
         // Transient network failure: do not boot the user out when a token is present.
@@ -243,6 +262,7 @@ function NotFoundPage() {
 export function App() {
   return (
     <>
+      <ThemeFavicon />
       <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route

@@ -1,6 +1,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 import secrets
 import uuid
@@ -25,6 +26,7 @@ _TABLES = {
     "user_notifications",
 }
 _ID_TABLES = _TABLES - {"candidate_preferences", "notification_preferences", "privacy_preferences", "saved_jobs"}
+logger = logging.getLogger(__name__)
 def _identifier(value: str) -> str:
     if not _IDENTIFIER.fullmatch(value):
         raise ValueError(f"Unsafe field identifier: {value}")
@@ -369,6 +371,7 @@ class FirestoreQuery:
         self.columns = ["*"]
         self.filters: list[tuple[str, str, Any]] = []
         self.orders: list[tuple[str, bool]] = []
+        self.server_orders: list[tuple[str, bool]] = []
         self.max_rows: int | None = None
         self.single_row = False
         self.count_requested = False
@@ -408,8 +411,11 @@ class FirestoreQuery:
         self.filters.append((operator, _identifier(column), value))
         return self
 
-    def order(self, column: str, desc: bool = False):
-        self.orders.append((_identifier(column), desc))
+    def order(self, column: str, desc: bool = False, *, server: bool = False):
+        normalized = (_identifier(column), desc)
+        self.orders.append(normalized)
+        if server:
+            self.server_orders.append(normalized)
         return self
 
     def limit(self, amount: int):
@@ -531,7 +537,31 @@ class FirestoreQuery:
         else:
             if self.max_rows is not None and not post_filters and not self.orders:
                 query = query.limit(self.max_rows)
-            docs = list(query.stream())
+            if self.server_orders and not post_filters:
+                try:
+                    ordered_query = query
+                    for column, desc in self.server_orders:
+                        ordered_query = ordered_query.order_by(column, direction=self.client.direction(desc))
+                    if self.max_rows is not None:
+                        ordered_query = ordered_query.limit(self.max_rows)
+                    docs = list(ordered_query.stream())
+                except Exception as exc:
+                    # Composite indexes are an operational concern, and a missing
+                    # optional index must not blank the authenticated workspace.
+                    # Re-run the filtered query without server ordering; the
+                    # existing client-side sort below preserves the same order.
+                    from google.api_core.exceptions import FailedPrecondition
+
+                    if not isinstance(exc, FailedPrecondition) or "requires an index" not in str(exc).lower():
+                        raise
+                    logger.warning(
+                        "firestore_missing_index_fallback table=%s order=%s",
+                        self.table_name,
+                        self.server_orders,
+                    )
+                    docs = list(query.stream())
+            else:
+                docs = list(query.stream())
         if post_filters:
             kept = []
             for document in docs:

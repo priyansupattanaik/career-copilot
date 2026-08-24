@@ -3,6 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
+from google.api_core.exceptions import FailedPrecondition
 
 from app.database.client import FirestoreQuery, _order_value
 
@@ -134,3 +135,40 @@ def test_empty_in_filter_returns_no_documents():
 def test_numeric_order_values_are_not_sorted_as_strings():
     assert sorted([1, 10, 2], key=_order_value) == [1, 2, 10]
     assert sorted(["1", "10", "2"], key=_order_value) == ["1", "2", "10"]
+
+
+def test_server_order_falls_back_when_composite_index_is_missing():
+    class _Document:
+        def __init__(self, doc_id: str, created_at: str):
+            self.id = doc_id
+            self.created_at = created_at
+
+        def to_dict(self):
+            return {"id": self.id, "created_at": self.created_at}
+
+    class _Query:
+        def where(self, *, filter):
+            return self
+
+        def order_by(self, *_args, **_kwargs):
+            raise FailedPrecondition("The query requires an index")
+
+        def stream(self):
+            return [_Document("old", "2026-01-01"), _Document("new", "2026-08-01")]
+
+    class _Collection(_Query):
+        pass
+
+    class _Client:
+        def field_filter(self, column, operator, value):
+            return (column, operator, value)
+
+        def direction(self, _desc):
+            return "DESCENDING"
+
+    query = FirestoreQuery(_Client(), "job_descriptions")  # type: ignore[arg-type]
+    query.eq("user_id", "user-1").order("created_at", desc=True, server=True).limit(1)
+
+    documents = query._documents(_Collection())  # type: ignore[arg-type]
+
+    assert [document.id for document in documents] == ["new"]

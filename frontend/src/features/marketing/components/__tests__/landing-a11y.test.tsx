@@ -4,51 +4,6 @@ import { MemoryRouter } from "react-router-dom";
 import { LandingPage } from "../landing";
 import { ThemeProvider } from "@/shared/theme";
 
-vi.mock("@/features/jobs/components/career-globe", () => ({
-  default: function MockGlobe() {
-    return <div data-testid="mock-globe">Globe</div>;
-  },
-}));
-
-vi.mock("motion/react", () => {
-  const passthrough =
-    (Tag: "div" | "svg") =>
-    ({ children, className, ...rest }: React.PropsWithChildren<{ className?: string } & Record<string, unknown>>) => {
-      // Drop framer-motion-only props so React does not warn.
-      const {
-        whileInView: _a,
-        initial: _b,
-        animate: _c,
-        transition: _d,
-        ...dom
-      } = rest;
-      void _a;
-      void _b;
-      void _c;
-      void _d;
-      if (Tag === "svg") {
-        return <svg className={className} {...dom}>{children}</svg>;
-      }
-      return (
-        <div className={className} {...dom}>
-          {children}
-        </div>
-      );
-    };
-  return {
-    motion: {
-      div: passthrough("div"),
-      svg: passthrough("svg"),
-    },
-    useScroll: () => ({ scrollYProgress: { get: () => 0 } }),
-    useTransform: () => 0,
-  };
-});
-
-vi.mock("@/shared/ui/parallax-layer", () => ({
-  ParallaxLayer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}));
-
 function renderLanding() {
   return render(
     <MemoryRouter>
@@ -93,12 +48,10 @@ describe("Landing page a11y & labelling", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("keeps the hero globe free of unsupported labels", async () => {
+  it("labels the practice workspace visual without unsupported values", async () => {
     renderLanding();
-    const globe = await screen.findByTestId("mock-globe");
-    const label = globe.getAttribute("aria-label");
-    if (label) {
-      expect(label.toLowerCase()).not.toMatch(/undefined|null|\[object/i);
-    }
+    const dashboard = screen.getByRole("img", { name: /video interview practice workspace/i });
+    expect(dashboard.getAttribute("aria-label")?.toLowerCase()).not.toMatch(/undefined|null|\[object/i);
+    expect(screen.getByText(/Tell me about a time your plan changed/i)).toBeTruthy();
   });
 });

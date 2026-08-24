@@ -14,7 +14,7 @@ import {
 } from "@/features/auth/firebase";
 import { supabaseAuthClient, SupabaseWebConfigError } from "@/features/auth/supabase";
 
-type AuthError = { message: string } | null;
+type AuthError = { message: string; status?: number } | null;
 type AuthUser = {
   id: string;
   email: string;
@@ -53,7 +53,11 @@ async function request(path: string, body?: unknown) {
   if (!response.ok) {
     const message = payload?.error?.message || payload?.detail || `Authentication request failed (${response.status}).`;
     const code = payload?.error?.code ? ` [${payload.error.code}]` : "";
-    throw new Error(`${message}${code}`);
+    // Enrich with the HTTP status so callers can distinguish definitive
+    // rejections (401/403) from transient server failures (5xx).
+    const error = new Error(`${message}${code}`) as Error & { status?: number };
+    error.status = response.status;
+    throw error;
   }
   if (path !== "/auth/resend" && path !== "/auth/reset-password" && path !== "/auth/sign-out" && !payload?.access_token && path !== "/auth/session") {
     throw new Error("Authentication server returned an incomplete session. Please try again.");
@@ -84,7 +88,10 @@ export function createClient() {
         error: null as AuthError,
       };
     } catch (error) {
-      return { data: { session: null, user: null }, error: { message: (error as Error).message } };
+      return {
+        data: { session: null, user: null },
+        error: { message: (error as Error).message, status: (error as { status?: number }).status },
+      };
     }
   }
 
@@ -128,19 +135,67 @@ export function createClient() {
         password: string;
         options?: { data?: Record<string, unknown>; emailRedirectTo?: string };
       }) {
+        const trimmed = email.trim();
         try {
           const result = await supabaseAuthClient().auth.signUp({
-            email: email.trim(),
+            email: trimmed,
             password,
             options: {
               data: { full_name: String(options?.data?.full_name || "") },
               emailRedirectTo: options?.emailRedirectTo,
             },
           });
-          if (result.error) return { data: { session: null, user: null }, error: { message: result.error.message } };
-          return { data: { session: null, user: null }, error: null as AuthError };
+          if (result.error) {
+            return {
+              data: { session: null, user: null },
+              error: { message: result.error.message, status: result.error.status },
+              emailConfirmationSent: false,
+            };
+          }
+          const sessionToken = result.data.session?.access_token;
+          if (sessionToken) {
+            // Email confirmations are disabled for this project: the account
+            // is active immediately and Supabase sends no verification email.
+            // Exchange the access token instead of showing an inbox screen.
+            const exchanged = await signInWithSupabaseAccessToken(sessionToken);
+            return { ...exchanged, emailConfirmationSent: false };
+          }
+          // No session means the account awaits email confirmation; Supabase
+          // (or its configured SMTP) delivers the verification message.
+          return {
+            data: { session: null, user: null },
+            error: null as AuthError,
+            emailConfirmationSent: true,
+          };
         } catch (error) {
-          return { data: { session: null, user: null }, error: { message: error instanceof SupabaseWebConfigError ? error.message : emailPasswordAuthErrorMessage(error) } };
+          if (error instanceof SupabaseWebConfigError) {
+            // Supabase is not configured in this environment. The legacy app
+            // account has no email step: create it and return the session.
+            try {
+              const payload = await request("/auth/sign-up", {
+                email: trimmed,
+                password,
+                full_name: String(options?.data?.full_name || ""),
+              });
+              saveToken(payload.access_token);
+              return {
+                data: { session: { access_token: payload.access_token }, user: payload.user },
+                error: null as AuthError,
+                emailConfirmationSent: false,
+              };
+            } catch (legacyError) {
+              return {
+                data: { session: null, user: null },
+                error: { message: (legacyError as Error).message, status: undefined },
+                emailConfirmationSent: false,
+              };
+            }
+          }
+          return {
+            data: { session: null, user: null },
+            error: { message: error instanceof SupabaseWebConfigError ? error.message : emailPasswordAuthErrorMessage(error), status: undefined },
+            emailConfirmationSent: false,
+          };
         }
       },
       async resend({ email }: { type: string; email: string; options?: unknown }) {
@@ -200,7 +255,8 @@ export function createClient() {
           const payload = await request("/auth/session");
           return { data: { user: payload.user as AuthUser }, error: null as AuthError };
         } catch (error) {
-          return { data: { user: null }, error: { message: (error as Error).message } };
+          const status = (error as { status?: number }).status;
+          return { data: { user: null }, error: { message: (error as Error).message, status } };
         }
       },
       async updateUser({
@@ -249,4 +305,8 @@ export function createClient() {
       },
     },
   };
+}
+
+export function isDefinitiveSessionRejection(error: { status?: number } | null | undefined): boolean {
+  return error?.status === 401 || error?.status === 403;
 }
