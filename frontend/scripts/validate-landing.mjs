@@ -70,7 +70,7 @@ async function main() {
       dataTheme: root.getAttribute("data-theme"),
       stored: localStorage.getItem("career-copilot-theme"),
       background: cs.getPropertyValue("--background").trim(),
-      ink: cs.getPropertyValue("--ink").trim(),
+      text: cs.getPropertyValue("--text").trim(),
       colorScheme: cs.colorScheme,
     };
   });

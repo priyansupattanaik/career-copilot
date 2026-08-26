@@ -133,15 +133,16 @@ export function createClient() {
       }: {
         email: string;
         password: string;
-        options?: { data?: Record<string, unknown>; emailRedirectTo?: string };
+        options?: { data?: Record<string, unknown>; emailRedirectTo?: string; phone?: string };
       }) {
         const trimmed = email.trim();
+        const phone = String(options?.phone || "").trim();
         try {
           const result = await supabaseAuthClient().auth.signUp({
             email: trimmed,
             password,
             options: {
-              data: { full_name: String(options?.data?.full_name || "") },
+              data: { full_name: String(options?.data?.full_name || ""), ...(phone ? { phone } : {}) },
               emailRedirectTo: options?.emailRedirectTo,
             },
           });
@@ -168,15 +169,16 @@ export function createClient() {
             emailConfirmationSent: true,
           };
         } catch (error) {
-          if (error instanceof SupabaseWebConfigError) {
-            // Supabase is not configured in this environment. The legacy app
-            // account has no email step: create it and return the session.
-            try {
-              const payload = await request("/auth/sign-up", {
-                email: trimmed,
-                password,
-                full_name: String(options?.data?.full_name || ""),
-              });
+            if (error instanceof SupabaseWebConfigError) {
+              // Supabase is not configured in this environment. The legacy app
+              // account has no email step: create it and return the session.
+              try {
+                const payload = await request("/auth/sign-up", {
+                  email: trimmed,
+                  password,
+                  full_name: String(options?.data?.full_name || ""),
+                  ...(phone ? { phone } : {}),
+                });
               saveToken(payload.access_token);
               return {
                 data: { session: { access_token: payload.access_token }, user: payload.user },

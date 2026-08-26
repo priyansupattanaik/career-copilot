@@ -16,22 +16,22 @@ test.describe("Theme visibility", () => {
       }, theme);
       await page.waitForTimeout(350);
 
-      const contrast = await page.locator(".file-picker").first().evaluate((element) => {
-        const picker = getComputedStyle(element);
-        const button = getComputedStyle(element.querySelector(".file-picker-ui") as Element);
-        const name = getComputedStyle(element.querySelector(".file-picker-name") as Element);
+      const contrast = await page.locator(".profile-resume-upload-control").first().evaluate((element) => {
+        const control = getComputedStyle(element);
+        const button = getComputedStyle(element.querySelector(".profile-resume-upload-button") as Element);
+        const hint = getComputedStyle(element.querySelector(".profile-resume-upload-hint") as Element);
         return {
-          pickerBackground: picker.backgroundColor,
-          pickerText: picker.color,
+          controlBackground: control.backgroundColor,
+          controlBorder: control.borderTopColor,
           buttonBackground: button.backgroundColor,
           buttonText: button.color,
-          nameText: name.color,
+          hintText: hint.color,
         };
       });
 
-      expect(contrast.pickerBackground).not.toBe(contrast.pickerText);
+      expect(contrast.controlBackground).not.toBe(contrast.buttonText);
       expect(contrast.buttonBackground).not.toBe(contrast.buttonText);
-      expect(contrast.nameText).not.toBe(contrast.pickerBackground);
+      expect(contrast.hintText).not.toBe(contrast.controlBackground);
     }
   });
 });

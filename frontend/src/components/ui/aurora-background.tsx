@@ -10,7 +10,7 @@ interface AuroraBackgroundProps extends React.HTMLProps<HTMLDivElement> {
 
 /**
  * A restrained, theme-aware light field for the auth introduction panel.
- * The palette intentionally uses the landing system: ink, paper, and lime.
+ * The palette intentionally uses the landing system: deep navy text, paper, and lime.
  */
 export function AuroraBackground({
   className,

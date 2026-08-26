@@ -11,100 +11,90 @@ async function enterDemo(page: Page) {
 }
 
 test.describe("workspace sidebar", () => {
-  test("keeps the desktop rail aligned when collapsed and expanded", async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await enterDemo(page);
-
-    const expanded = await page.locator(".workspace").evaluate((element) => {
-      const workspace = element as HTMLElement;
-      const sidebar = workspace.querySelector(".sidebar") as HTMLElement;
-      return { track: workspace.getBoundingClientRect().width - workspace.querySelector(".workspace-main")!.getBoundingClientRect().width, sidebar: sidebar.getBoundingClientRect().width };
-    });
-    expect(Math.abs(expanded.track - expanded.sidebar)).toBeLessThanOrEqual(1);
-
-    await page.getByRole("button", { name: "Collapse navigation" }).click();
-    await expect(page.getByRole("button", { name: "Expand navigation" })).toBeVisible();
-    const collapsed = await page.locator(".workspace").evaluate((element) => {
-      const workspace = element as HTMLElement;
-      const sidebar = workspace.querySelector(".sidebar") as HTMLElement;
-      return { track: workspace.getBoundingClientRect().width - workspace.querySelector(".workspace-main")!.getBoundingClientRect().width, sidebar: sidebar.getBoundingClientRect().width };
-    });
-    expect(Math.abs(collapsed.track - collapsed.sidebar)).toBeLessThanOrEqual(1);
-    await expect(page.locator(".sidebar-link", { hasText: "Dashboard" })).toBeVisible();
-  });
-
-  test("supports explicit sidebar retraction across laptop widths", async ({ page }) => {
-    for (const width of [1024, 1280, 1366]) {
-      await page.setViewportSize({ width, height: 768 });
+  test("desktop rail is permanent: no retraction button, fixed 248px, labels visible", async ({ page }) => {
+    for (const width of [1024, 1280, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
       await enterDemo(page);
+
       const workspace = page.locator(".workspace");
       const sidebar = page.locator(".sidebar");
-      const collapse = page.getByRole("button", { name: "Collapse navigation" });
-      await expect(collapse).toBeVisible();
-      await expect(sidebar).not.toHaveClass(/open/);
 
-      await collapse.click();
-      await expect(page.getByRole("button", { name: "Expand navigation" })).toBeVisible();
-      await expect.poll(() => sidebar.evaluate((element) => Math.round(element.getBoundingClientRect().width))).toBe(78);
-      await expect.poll(() => workspace.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ")[0])).toMatch(/78px/);
+      // The retraction feature is gone entirely.
+      await expect(page.getByRole("button", { name: /collapse navigation/i })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: /expand navigation/i })).toHaveCount(0);
+      await expect(workspace).not.toHaveClass(/sidebar-collapsed/);
 
-      await page.getByRole("button", { name: "Expand navigation" }).click();
-      await expect(page.getByRole("button", { name: "Collapse navigation" })).toBeVisible();
-      await expect.poll(() => sidebar.evaluate((element) => Math.round(element.getBoundingClientRect().width))).toBe(248);
-    }
-  });
+      await expect.poll(() =>
+        sidebar.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          return { visible: rect.width > 0, width: Math.round(rect.width) };
+        }),
+      ).toEqual(expect.objectContaining({ visible: true, width: 248 }));
 
-  test("keeps collapsed brand and navigation icons inside the rail", async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await enterDemo(page);
-    await page.getByRole("button", { name: "Collapse navigation" }).click();
-    await page.waitForTimeout(300);
-
-    const geometry = await page.locator(".workspace").evaluate((element) => {
-      const rail = element.querySelector(".sidebar")!.getBoundingClientRect();
-      const brand = element.querySelector(".sidebar-header .brand")!.getBoundingClientRect();
-      const profile = element.querySelector(".sidebar-profile-card")!.getBoundingClientRect();
-      const icons = [...element.querySelectorAll<HTMLElement>(".sidebar-link-icon")].map((icon) => {
-        const rect = icon.getBoundingClientRect();
-        return { left: rect.left, right: rect.right, center: rect.left + rect.width / 2 };
-      });
-      return {
-        rail: { left: rail.left, right: rail.right, center: rail.left + rail.width / 2 },
-        brand: { left: brand.left, right: brand.right },
-        profile: { left: profile.left, right: profile.right, center: profile.left + profile.width / 2 },
-        brandShortVisible: getComputedStyle(element.querySelector(".sidebar-brand-short")!).display !== "none",
-        navWidths: [...element.querySelectorAll<HTMLElement>(".sidebar-link")].map((link) => link.getBoundingClientRect().width),
-        icons,
-      };
-    });
-
-    expect(geometry.brandShortVisible).toBe(false);
-    expect(geometry.brand.left).toBeGreaterThanOrEqual(geometry.rail.left);
-    expect(geometry.brand.right).toBeLessThanOrEqual(geometry.rail.right);
-    expect(geometry.brand.right - geometry.brand.left).toBeLessThanOrEqual(48);
-    expect(Math.abs(geometry.profile.center - geometry.rail.center)).toBeLessThanOrEqual(1);
-    expect(geometry.profile.right).toBeLessThanOrEqual(geometry.rail.right);
-    for (const width of geometry.navWidths) expect(width).toBeLessThanOrEqual(48);
-    for (const icon of geometry.icons) {
-      expect(icon.left).toBeGreaterThanOrEqual(geometry.rail.left);
-      expect(icon.right).toBeLessThanOrEqual(geometry.rail.right);
-      expect(Math.abs(icon.center - geometry.rail.center)).toBeLessThanOrEqual(1);
-    }
-  });
-
-  test("opens and closes as a drawer on tablet and phone widths", async ({ page }) => {
-    for (const viewport of [{ width: 900, height: 900 }, { width: 390, height: 844 }]) {
-      await page.setViewportSize(viewport);
-      await enterDemo(page);
-      const sidebar = page.locator(".sidebar");
-      await expect(sidebar).not.toHaveClass(/open/);
-      await page.getByRole("button", { name: "Open navigation" }).click();
-      await expect(sidebar).toHaveClass(/open/);
       await expect(page.locator(".sidebar-link", { hasText: "Dashboard" })).toBeVisible();
-      expect(await page.locator("body").evaluate((body) => getComputedStyle(body).overflowY)).toBe("hidden");
-      await sidebar.getByRole("button", { name: "Close navigation" }).click();
-      await expect(sidebar).not.toHaveClass(/open/);
-      await expect.poll(() => page.locator("body").evaluate((body) => getComputedStyle(body).overflowY)).toBe("auto");
+      await expect(page.locator(".sidebar-link-label", { hasText: "Recommended Jobs" })).toBeVisible();
     }
+  });
+
+  test("no hamburger or drawer machinery remains on any width", async ({ page }) => {
+    for (const width of [1440, 1024, 900, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      await enterDemo(page);
+      await expect(page.getByRole("button", { name: "Open navigation" })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Close navigation" })).toHaveCount(0);
+      await expect(page.locator(".sidebar-backdrop")).toHaveCount(0);
+      await expect(page.locator(".mobile-sidebar-button")).toHaveCount(0);
+    }
+  });
+
+  test("mobile view swaps the rail for a bottom navigation bar", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await enterDemo(page);
+
+    const nav = page.locator(".mobile-bottom-nav");
+    await expect(nav).toBeVisible();
+
+    const links = ["Dashboard", "Resume Analysis", "Mock Interview", "Learning Path", "Jobs", "Profile"];
+    for (const label of links) {
+      await expect(nav.locator("a", { hasText: label })).toBeVisible();
+    }
+
+    // Rail is fully hidden on mobile.
+    await expect(page.locator(".sidebar")).toBeHidden();
+
+    // The bar must not overlap content: main leaves clearance for it.
+    const gap = await page.evaluate(() => {
+      const content = document.querySelector(".workspace-content") as HTMLElement;
+      const nav = document.querySelector(".mobile-bottom-nav") as HTMLElement;
+      return nav.getBoundingClientRect().top - content.getBoundingClientRect().bottom;
+    });
+    expect(gap).toBeGreaterThanOrEqual(-2);
+
+    // Bottom padding keeps the last content above the bar.
+    const padding = await page.evaluate(
+      () => getComputedStyle(document.querySelector(".workspace-content") as HTMLElement).paddingBottom,
+    );
+    expect(parseFloat(padding)).toBeGreaterThanOrEqual(88);
+  });
+
+  test("bottom navigation drives routes and tracks the active item", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await enterDemo(page);
+
+    const nav = page.locator(".mobile-bottom-nav");
+    await nav.locator("a", { hasText: "Learning Path" }).click();
+    await page.waitForURL(/learning/);
+    await expect(nav.locator("a.active", { hasText: "Learning Path" })).toBeVisible();
+    await expect(page.locator(".sidebar")).toBeHidden();
+
+    await nav.locator("a", { hasText: "Profile" }).click();
+    await page.waitForURL(/settings\/profile/);
+    await expect(nav.locator("a.active", { hasText: "Profile" })).toBeVisible();
+
+    // Desktop counterpart: same route shows the permanent rail instead.
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await expect(page.locator(".sidebar")).toBeVisible();
+    await expect(page.locator(".sidebar-link", { hasText: "Recommended Jobs" })).toBeVisible();
+    await expect(page.locator(".mobile-bottom-nav")).toBeHidden();
   });
 });

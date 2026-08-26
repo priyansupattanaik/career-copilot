@@ -4,7 +4,7 @@ from __future__ import annotations
 import io
 import logging
 import re
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from typing import Any
 
 from docx import Document
@@ -96,6 +96,23 @@ def _docx_embedded_links(document: DocumentObject) -> list[str]:
     return links
 
 
+def _make_text_run_collector(
+    runs: list[tuple[str, float, float]],
+) -> Callable[[str, Any, Any, Any, Any], None]:
+    """Build a pypdf visitor_text callback appending positioned runs to ``runs``.
+
+    The factory binds the list at call time so the closure never references a
+    loop variable; each page gets an independent collector.
+    """
+
+    def _visit(text: str, cm: Any, tm: Any, font_dict: Any, font_size: Any) -> None:
+        stripped = (text or "").strip()
+        if stripped:
+            runs.append((stripped, float(tm[4]), float(tm[5])))
+
+    return _visit
+
+
 def _pdf_embedded_links(content: bytes) -> list[str]:
     """Return external URI actions stored in PDF link annotations.
 
@@ -139,13 +156,8 @@ def _pdf_embedded_links(content: bytes) -> list[str]:
             continue
         runs: list[tuple[str, float, float]] = []
 
-        def _visit(text: str, cm: Any, tm: Any, font_dict: Any, font_size: Any) -> None:
-            stripped = (text or "").strip()
-            if stripped:
-                runs.append((stripped, float(tm[4]), float(tm[5])))
-
         try:
-            page.extract_text(visitor_text=_visit)
+            page.extract_text(visitor_text=_make_text_run_collector(runs))
         except Exception:
             runs = []
         for target, rect in rects:

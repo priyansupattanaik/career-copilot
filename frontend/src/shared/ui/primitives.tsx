@@ -10,6 +10,7 @@ import {
 } from "react";
 import { AlertTriangle, ArrowRight, Inbox } from "lucide-react";
 import { cn } from "@/shared/utils";
+import { AnimatedIcon } from "@/components/ui/animated-icon";
 
 type ButtonVariant = "primary" | "secondary" | "danger" | "quiet" | "destructive" | "ghost" | "outline" | "default";
 type BadgeTone = "info" | "success" | "warning" | "danger" | "ai" | "default" | "secondary" | "outline" | "destructive";
@@ -56,7 +57,7 @@ export function ButtonLink({
   return (
     <Link href={href} className={cn("button", `button-${resolved}`, className)} onClick={onClick}>
       {children}
-      <ArrowRight size={17} aria-hidden />
+      <AnimatedIcon icon={ArrowRight} size={17} aria-hidden />
     </Link>
   );
 }

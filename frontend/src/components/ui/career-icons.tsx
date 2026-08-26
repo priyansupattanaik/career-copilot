@@ -1,4 +1,5 @@
 import type { ReactNode, SVGProps } from "react";
+import { motion, useReducedMotion } from "motion/react";
 
 export type CareerIconName =
   | "dashboard"
@@ -81,21 +82,32 @@ const paths: Record<CareerIconName, ReactNode> = {
 };
 
 export function CareerIcon({ name, size = 22, className, ...props }: CareerIconProps) {
+  const reducedMotion = useReducedMotion();
+
   return (
-    <svg
-      {...props}
-      className={className}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden={props['aria-label'] ? undefined : true}
+    <motion.span
+      className="career-icon"
+      initial={reducedMotion ? false : { opacity: 0.72, scale: 0.94 }}
+      animate={reducedMotion ? undefined : { opacity: 1, scale: 1 }}
+      whileHover={reducedMotion ? undefined : { scale: 1.12, rotate: name === "opportunities" ? 8 : 0 }}
+      whileTap={reducedMotion ? undefined : { scale: 0.9 }}
+      transition={{ type: "spring", stiffness: 420, damping: 22, mass: 0.55 }}
     >
-      {paths[name]}
-    </svg>
+      <svg
+        {...props}
+        className={className}
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden={props['aria-label'] ? undefined : true}
+      >
+        {paths[name]}
+      </svg>
+    </motion.span>
   );
 }

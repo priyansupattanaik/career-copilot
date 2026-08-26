@@ -22,6 +22,7 @@ export function useReveal<T extends HTMLElement>(options: RevealOptions = {}) {
     const el = ref.current;
     if (!el) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (el.closest("[data-motion='paused']")) return;
     if (typeof IntersectionObserver === "undefined") return;
 
     el.style.setProperty("--reveal-delay", `${delay}ms`);

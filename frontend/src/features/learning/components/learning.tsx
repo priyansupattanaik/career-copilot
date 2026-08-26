@@ -13,6 +13,7 @@ import {
   Video,
 } from "lucide-react";
 import { apiRequest } from "@/shared/api/client";
+import LoadingState from "@/components/ui/loading-state";
 import { Badge, Button, Card, EmptyState, PageHeader, Progress } from "@/shared/ui/primitives";
 
 type Resource = {
@@ -193,6 +194,7 @@ export function LearningHome() {
           <p className="field-error">{error}</p>
         </div>
       )}
+      {busy ? <LoadingState label="Building your learning path" variant="Drive" /> : null}
       {paths.length === 0 && !error ? (
         <EmptyState
           title="No learning path yet"

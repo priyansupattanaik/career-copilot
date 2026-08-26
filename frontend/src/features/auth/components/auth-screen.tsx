@@ -9,6 +9,7 @@ import { Eye, MailCheck } from "lucide-react";
 import { createClient } from "@/features/auth/api/client";
 import { safeRedirectPath } from "@/features/auth/safe-path";
 import { Button, Input } from "@/shared/ui/primitives";
+import { PhoneField, isValidPhone, composePhone, type PhoneValue } from "@/shared/ui/phone-field";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { CareerIcon } from "@/components/ui/career-icons";
@@ -229,6 +230,7 @@ export function SignUpScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [phone, setPhone] = useState<PhoneValue>({ iso2: "IN", national: "" });
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -236,6 +238,7 @@ export function SignUpScreen() {
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (password !== confirm) return setError("Passwords do not match.");
+    if (!isValidPhone(phone)) return setError("Enter a valid mobile number (6–15 digits) with its country code.");
     const authClient = createClient();
     if (!authClient) return setError(configurationError());
     setBusy(true);
@@ -247,6 +250,7 @@ export function SignUpScreen() {
         options: {
           data: { full_name: name.trim() },
           emailRedirectTo: `${location.origin}/auth/callback?next=/onboarding`,
+          phone: composePhone(phone),
         },
       });
       if (result.error) return setError(authErrorMessage(result.error.message));
@@ -320,6 +324,12 @@ export function SignUpScreen() {
             Email
             <Input type="email" required value={email} onChange={(e: any) => setEmail(e.target.value)} />
           </label>
+          <PhoneField
+            label="Mobile number"
+            required
+            value={phone}
+            onChange={setPhone}
+          />
           <label className="field-label">
             Password
             <Input

@@ -1,4 +1,4 @@
-
+﻿
 import { Link } from "@/shared/ui/router-link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
@@ -7,6 +7,7 @@ import { AgentAudioVisualizerAura } from "@/components/agents-ui/agent-audio-vis
 
 import { apiRequest, isAbortError } from "@/shared/api/client";
 import { Button, Card, PageHeader, Textarea } from "@/shared/ui/primitives";
+import LoadingState from "@/components/ui/loading-state";
 import { useTheme } from "@/shared/theme";
 import {
   DEFAULT_ANSWER_SILENCE_MS,
@@ -124,7 +125,7 @@ function buildConversationalCoachLine(evaluation: AnswerEvaluation | null): stri
   if (improvement) return `That answer needs one adjustment: ${improvement}`.slice(0, 300);
   if (strongerApproach) return `A stronger way to answer would be: ${strongerApproach}`.slice(0, 300);
   if (strength) return `That was a clear point: ${strength}`.slice(0, 300);
-  return "Thanks, I’ve noted that answer. Let’s continue with the next question.";
+  return "Thanks, Iâ€™ve noted that answer. Letâ€™s continue with the next question.";
 }
 
 type PracticeReadiness = {
@@ -263,7 +264,7 @@ export function InterviewHome() {
     queueMicrotask(() => {
       void loadSessions(controller.signal);
     });
-    // Re-sync when returning from a completed session or switching tabs —
+    // Re-sync when returning from a completed session or switching tabs â€”
     // dashboard bootstrap and this list share the same Firestore collection.
     function onVisible() {
       if (document.visibilityState === "visible") {
@@ -319,7 +320,7 @@ export function InterviewHome() {
         action={
           <>
             <Button type="button" variant="secondary" disabled={loading} onClick={() => void loadSessions()}>
-              {loading ? "Refreshing…" : "Refresh"}
+              {loading ? "Refreshingâ€¦" : "Refresh"}
             </Button>
             <Link className="button button-secondary" href="/mock-interview/preparation">
               Prepare interview
@@ -344,7 +345,7 @@ export function InterviewHome() {
       )}
       {loading && data.length === 0 && !error && (
         <div className="feature-loading" aria-live="polite">
-          Loading interview sessions from your account…
+          Loading interview sessions from your accountâ€¦
         </div>
       )}
       {data.length > 0 && (
@@ -356,8 +357,8 @@ export function InterviewHome() {
                   <h2>{s.target_role || s.mode} interview</h2>
                   <p className="entity-card-meta">
                     {(s.mode || "session").replaceAll("_", " ")}
-                    {s.question_count != null ? ` · ${s.question_count} questions` : ""}
-                    {s.created_at ? ` · ${new Date(s.created_at).toLocaleString()}` : ""}
+                    {s.question_count != null ? ` Â· ${s.question_count} questions` : ""}
+                    {s.created_at ? ` Â· ${new Date(s.created_at).toLocaleString()}` : ""}
                   </p>
                 </div>
                 <span className="status-chip" data-tone={statusTone(s.status)}>
@@ -378,7 +379,7 @@ export function InterviewHome() {
                   disabled={deletingId === s.id}
                   onClick={() => void deleteSession(s)}
                 >
-                  {deletingId === s.id ? "Deleting…" : "Delete"}
+                  {deletingId === s.id ? "Deletingâ€¦" : "Delete"}
                 </Button>
               </div>
             </article>
@@ -518,7 +519,7 @@ export function InterviewSetup() {
           Resume context <span className="field-hint">optional, but recommended</span>
           {resumesLoading ? (
             <p className="muted" style={{ margin: "8px 0 0" }}>
-              Loading saved resumes…
+              Loading saved resumesâ€¦
             </p>
           ) : resumesWithVersion.length ? (
             <select
@@ -526,16 +527,16 @@ export function InterviewSetup() {
               value={resumeVersionId}
               onChange={(e) => setResumeVersionId(e.target.value)}
             >
-              {!needsResume ? <option value="">None — general practice</option> : null}
+              {!needsResume ? <option value="">None â€” general practice</option> : null}
               {resumesWithVersion.map((row) => (
                 <option key={row.latest_version!.id} value={row.latest_version!.id}>
                   {row.title}
                   {row.is_active ? " (active)" : ""}
                   {row.latest_version?.original_filename
-                    ? ` · ${row.latest_version.original_filename}`
+                    ? ` Â· ${row.latest_version.original_filename}`
                     : ""}
                   {row.latest_version?.extraction_status
-                    ? ` · ${row.latest_version.extraction_status}`
+                    ? ` Â· ${row.latest_version.extraction_status}`
                     : ""}
                 </option>
               ))}
@@ -544,7 +545,7 @@ export function InterviewSetup() {
             <p className="muted" style={{ margin: "8px 0 0" }}>
               No saved resume yet.{" "}
               <Link href="/settings/profile">Complete your profile</Link> or{" "}
-              <Link href="/resume-analysis?tab=upload">upload one</Link> — it will appear here for reuse.
+              <Link href="/resume-analysis?tab=upload">upload one</Link> â€” it will appear here for reuse.
             </p>
           )}
         </label>
@@ -566,7 +567,7 @@ export function InterviewSetup() {
           <Textarea
             value={jobDescriptionText}
             onChange={(e: { target: { value: string } }) => setJobDescriptionText(e.target.value)}
-            placeholder="Paste the JD text here. Questions will only use requirements written in this text — nothing invented."
+            placeholder="Paste the JD text here. Questions will only use requirements written in this text â€” nothing invented."
           />
         </label>
             <label className="field-label">
@@ -626,7 +627,7 @@ export function InterviewSetup() {
         </div>
         {error && <p className="field-error">{error}</p>}
         <Button disabled={busy} onClick={() => void create()}>
-          {busy ? "Creating session…" : "Create session & start"}
+          {busy ? "Creating sessionâ€¦" : "Create session & start"}
         </Button>
       </Card>
     </div>
@@ -643,7 +644,7 @@ export function InterviewSession() {
   const [activeIndex, setActiveIndex] = useState(0);
   /** Finalized answer text (typed + speech finals). */
   const [answer, setAnswer] = useState("");
-  /** Live partial speech — shown in the answer box while speaking. */
+  /** Live partial speech â€” shown in the answer box while speaking. */
   const [interim, setInterim] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -759,10 +760,10 @@ export function InterviewSession() {
     }
     setSpeechSupported(true);
 
-    // Never capture interviewer audio — only open the mic after TTS is idle.
+    // Never capture interviewer audio â€” only open the mic after TTS is idle.
     // Do NOT cancel mid-sentence here; caller waits until speech finishes first.
     if (isInterviewSpeechBusy()) {
-      setMediaMessage("Wait for the interviewer to finish speaking…");
+      setMediaMessage("Wait for the interviewer to finish speakingâ€¦");
       return;
     }
     cancelInterviewSpeech();
@@ -795,7 +796,7 @@ export function InterviewSession() {
       instance.onstart = () => {
         if (listenGenerationRef.current !== generation) return;
         setPhase("listening");
-        setMediaMessage("Listening… speak your answer. Your words will appear as you talk.");
+        setMediaMessage("Listeningâ€¦ speak your answer. Your words will appear as you talk.");
       };
       instance.onaudiostart = () => {
         if (listenGenerationRef.current === generation) {
@@ -804,7 +805,7 @@ export function InterviewSession() {
       };
       instance.onspeechstart = () => {
         if (listenGenerationRef.current === generation) {
-          setMediaMessage("Hearing you… keep speaking until your answer is complete.");
+          setMediaMessage("Hearing youâ€¦ keep speaking until your answer is complete.");
         }
       };
       instance.onresult = (event) => {
@@ -820,7 +821,7 @@ export function InterviewSession() {
           return merged.committed;
         });
         setInterim(interimText);
-        setMediaMessage("Listening… your words appear in the answer box as you speak.");
+        setMediaMessage("Listeningâ€¦ your words appear in the answer box as you speak.");
       };
 
       instance.onerror = (event) => {
@@ -854,7 +855,7 @@ export function InterviewSession() {
           recognitionRef.current = null;
         }
         if (listenGenerationRef.current !== generation) return;
-        // Chrome often ends continuous sessions after a pause — restart while we still want input.
+        // Chrome often ends continuous sessions after a pause â€” restart while we still want input.
         if (keepListeningRef.current && phaseRef.current === "listening") {
           window.setTimeout(() => {
             if (
@@ -876,7 +877,7 @@ export function InterviewSession() {
             } catch {
               keepListeningRef.current = false;
               setPhase("idle");
-              setMediaMessage("Voice input stopped. Press “Answer by voice” or type your answer.");
+              setMediaMessage("Voice input stopped. Press â€œAnswer by voiceâ€ or type your answer.");
             }
           }, 160);
           return;
@@ -889,7 +890,7 @@ export function InterviewSession() {
     recognitionRef.current = recognition;
     setPhase("listening");
     setInterim("");
-    setMediaMessage("Listening… speak your answer. It will appear below.");
+    setMediaMessage("Listeningâ€¦ speak your answer. It will appear below.");
     try {
       recognition.start();
     } catch {
@@ -914,7 +915,7 @@ export function InterviewSession() {
           keepListeningRef.current = false;
           recognitionRef.current = null;
           setPhase("idle");
-          setMediaMessage("Voice input could not be started. Press “Answer by voice” or type your answer.");
+          setMediaMessage("Voice input could not be started. Press â€œAnswer by voiceâ€ or type your answer.");
         }
       }, 280);
     }
@@ -922,7 +923,7 @@ export function InterviewSession() {
 
   /**
    * Speak a full interviewer line via Fish Audio (or browser fallback).
-   * Resolves only after the entire sentence finishes — never mid-utterance.
+   * Resolves only after the entire sentence finishes â€” never mid-utterance.
    */
   const speakInterviewer = useCallback(
     async (
@@ -950,8 +951,8 @@ export function InterviewSession() {
       setInterim("");
       setMediaMessage(
         options?.kind === "feedback" || options?.kind === "bridge"
-          ? "Interviewer speaking… please wait until they finish."
-          : "Asking the question… listening starts only after the full question is spoken.",
+          ? "Interviewer speakingâ€¦ please wait until they finish."
+          : "Asking the questionâ€¦ listening starts only after the full question is spoken.",
       );
 
       try {
@@ -992,7 +993,7 @@ export function InterviewSession() {
         `/interviews/${sessionId}/complete`,
         { method: "POST" },
       );
-      setMessage(result.message || "Session complete. Opening your debrief report…");
+      setMessage(result.message || "Session complete. Opening your debrief reportâ€¦");
       setSession((s) => (s ? { ...s, status: "completed" } : s));
       setPhase("complete");
       setMediaMessage("Session complete. Review the detailed report.");
@@ -1016,7 +1017,7 @@ export function InterviewSession() {
       if (next === null) {
         setLastFeedback(null);
         setPhase("complete");
-        setMediaMessage("All questions answered. Building your debrief report…");
+        setMediaMessage("All questions answered. Building your debrief reportâ€¦");
         await completeSession();
         return;
       }
@@ -1035,12 +1036,12 @@ export function InterviewSession() {
   /** Listen only for short "proceed / next / yes" commands between questions. */
   const startProceedListening = useCallback(() => {
     if (!media.microphone) {
-      setMediaMessage("Microphone is off — press Continue when you are ready.");
+      setMediaMessage("Microphone is off â€” press Continue when you are ready.");
       return;
     }
     const Constructor = speechRecognitionConstructor();
     if (!Constructor) {
-      setMediaMessage("Voice commands unavailable — press Continue for the next question.");
+      setMediaMessage("Voice commands unavailable â€” press Continue for the next question.");
       return;
     }
 
@@ -1073,7 +1074,7 @@ export function InterviewSession() {
       const heard = `${finalChunk} ${interimText}`.trim();
       if (!heard) return;
       if (isHoldIntent(heard)) {
-        setMediaMessage("Okay — take a moment. Press Continue or say proceed when ready.");
+        setMediaMessage("Okay â€” take a moment. Press Continue or say proceed when ready.");
         return;
       }
       if (isProceedIntent(heard)) {
@@ -1083,13 +1084,13 @@ export function InterviewSession() {
         } catch {
           /* ignore */
         }
-        setMediaMessage("Proceeding…");
+        setMediaMessage("Proceedingâ€¦");
         void advanceAfterFeedback();
       }
     };
 
     recognition.onerror = () => {
-      /* ignore — user can still click Continue */
+      /* ignore â€” user can still click Continue */
     };
 
     recognition.onend = () => {
@@ -1124,7 +1125,7 @@ export function InterviewSession() {
 
     recognitionRef.current = recognition;
     setPhase("awaiting_proceed");
-    setMediaMessage("Listening for “proceed” / “next” / “yes”… or press Continue.");
+    setMediaMessage("Listening for â€œproceedâ€ / â€œnextâ€ / â€œyesâ€â€¦ or press Continue.");
     try {
       recognition.start();
     } catch {
@@ -1152,12 +1153,12 @@ export function InterviewSession() {
       setMediaMessage(
         autoContinue
           ? isLast
-            ? "Wrapping up after short feedback…"
-            : "Short feedback — continuing automatically…"
-          : "Short feedback — then say proceed or press Continue.",
+            ? "Wrapping up after short feedbackâ€¦"
+            : "Short feedback â€” continuing automaticallyâ€¦"
+          : "Short feedback â€” then say proceed or press Continue.",
       );
 
-      // Speak full feedback, then full bridge — never advance while still talking.
+      // Speak full feedback, then full bridge â€” never advance while still talking.
       speakLine(
         shortLine,
         () => {
@@ -1258,7 +1259,7 @@ export function InterviewSession() {
         const evaluation = result.evaluation || null;
         setLastFeedback(evaluation);
         setLastAnswerSnapshot(text);
-        // Natural interview cadence: short coach line → auto-next or "proceed".
+        // Natural interview cadence: short coach line â†’ auto-next or "proceed".
         runPostAnswerFlow(evaluation);
       } catch (e) {
         setError((e as Error).message);
@@ -1302,7 +1303,7 @@ export function InterviewSession() {
     };
   }, [sessionId]);
 
-  // Camera preview only — do NOT open getUserMedia audio.
+  // Camera preview only â€” do NOT open getUserMedia audio.
   // Holding the mic via MediaStream blocks Chrome SpeechRecognition for answers.
   useEffect(() => {
     if (!session) return;
@@ -1337,7 +1338,7 @@ export function InterviewSession() {
           video.muted = true;
           video.playsInline = true;
           void video.play().catch(() => {
-            /* autoplay policies — muted should allow play */
+            /* autoplay policies â€” muted should allow play */
           });
         }
         // Warm FaceDetector when present; canvas fallback still works without it.
@@ -1398,7 +1399,7 @@ export function InterviewSession() {
   }, [media.camera, current?.id]);
 
   // Camera presence sampling while the candidate is answering.
-  // FaceDetector when available; canvas skin-mass heuristic otherwise — never silent.
+  // FaceDetector when available; canvas skin-mass heuristic otherwise â€” never silent.
   useEffect(() => {
     if (!media.camera || phase !== "listening") return;
     const video = videoRef.current;
@@ -1454,7 +1455,7 @@ export function InterviewSession() {
           stopRecognition({ keepPhase: true });
           abortInterviewerSpeech();
           setPhase("complete");
-          setMediaMessage("Camera check paused the interview. Preparing your evaluation report…");
+          setMediaMessage("Camera check paused the interview. Preparing your evaluation reportâ€¦");
           void completeSession();
           return;
         }
@@ -1463,7 +1464,7 @@ export function InterviewSession() {
         recentGazeStatesRef.current = [...recentGazeStatesRef.current, entry.state].slice(-12);
         setGazeCoach(liveGazeCoachMessage(recentGazeStatesRef.current));
       } catch {
-        // Single-frame failures are fine — keep sampling.
+        // Single-frame failures are fine â€” keep sampling.
       }
     };
 
@@ -1477,7 +1478,7 @@ export function InterviewSession() {
     };
   }, [abortInterviewerSpeech, completeSession, media.camera, phase, current?.id, stopRecognition]);
 
-  // Auto ask → listen loop when the active question changes (skip while feedback is open)
+  // Auto ask â†’ listen loop when the active question changes (skip while feedback is open)
   useEffect(() => {
     if (loading || !current?.question || session?.status === "completed") return;
     if (phaseRef.current === "feedback" || phaseRef.current === "saving") return;
@@ -1499,7 +1500,7 @@ export function InterviewSession() {
       if (cancelled) return;
       const nextPhase = phaseAfterQuestionSpoken(media.microphone, autoVoiceRef.current);
       if (nextPhase === "listening") {
-        // Wait until the FULL question audio finishes — never cut mid-sentence.
+        // Wait until the FULL question audio finishes â€” never cut mid-sentence.
         listenTimer = scheduleListenAfterQuestionSpoken(
           () => {
             if (!cancelled) startListening();
@@ -1514,7 +1515,7 @@ export function InterviewSession() {
         setPhase("idle");
         setMediaMessage(
           media.microphone
-            ? "Press “Answer by voice” or type your answer, then save."
+            ? "Press â€œAnswer by voiceâ€ or type your answer, then save."
             : "Type your answer, then save to continue.",
         );
       }
@@ -1535,7 +1536,7 @@ export function InterviewSession() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run on question change
   }, [current?.id, loading, session?.status]);
 
-  // Silence → auto-save; also refresh live pace/filler metrics while listening.
+  // Silence â†’ auto-save; also refresh live pace/filler metrics while listening.
   useEffect(() => {
     if (phase !== "listening") return;
     const id = window.setInterval(() => {
@@ -1621,24 +1622,24 @@ export function InterviewSession() {
   if (loading) {
     return (
       <Card>
-        <p>Loading session…</p>
+        <LoadingState label="Preparing your session" variant="Orbit" />
       </Card>
     );
   }
 
   const phaseLabel =
     phase === "asking"
-      ? "Interviewer is asking…"
+      ? "Interviewer is askingâ€¦"
       : phase === "listening"
-        ? "Your turn — speak now"
+        ? "Your turn â€” speak now"
         : phase === "saving"
-          ? "Agent is thinking and evaluating your answer…"
+          ? "Agent is thinking and evaluating your answerâ€¦"
           : phase === "feedback"
             ? "Short interviewer feedback"
             : phase === "awaiting_proceed"
               ? "Say proceed for the next question"
               : phase === "between"
-                ? "Moving on…"
+                ? "Moving onâ€¦"
                 : phase === "complete"
                   ? "Session complete"
                   : "Ready";
@@ -1656,7 +1657,7 @@ export function InterviewSession() {
       <PageHeader
         eyebrow="Interview session"
         title={session?.target_role ? `${session.target_role} practice` : "Practice workspace"}
-        description={`${session?.mode || "mixed"} · ${session?.status || "unknown"} · ${questions.length} question(s)${questionSource ? ` · ${questionSource}` : ""}`}
+        description={`${session?.mode || "mixed"} Â· ${session?.status || "unknown"} Â· ${questions.length} question(s)${questionSource ? ` Â· ${questionSource}` : ""}`}
       />
       {error && (
         <p role="alert" className="field-error">
@@ -1706,7 +1707,7 @@ export function InterviewSession() {
             </p>
             <p style={{ margin: 0, fontWeight: 600 }}>{phaseLabel}</p>
             <p className="muted" style={{ margin: 0, fontSize: "var(--text-sm)" }}>
-              Voice interview · {media.camera ? "Presence coaching is on" : "Camera is off"}
+              Voice interview Â· {media.camera ? "Presence coaching is on" : "Camera is off"}
             </p>
             {!speechSupported ? (
               <p className="field-error" style={{ margin: 0 }}>
@@ -1784,16 +1785,16 @@ export function InterviewSession() {
             onChange={(e) => setAutoVoice(e.target.checked)}
             disabled={!media.microphone}
           />
-          Hands-free interview (question → your answer → short feedback → next question automatically)
+          Hands-free interview (question â†’ your answer â†’ short feedback â†’ next question automatically)
         </label>
         <p className="muted" style={{ margin: 0, fontSize: "var(--text-sm)" }}>
           {autoVoice
             ? "Natural back-and-forth: the interviewer finishes each full line before listening. After your answer you get a short coach note, then the next question."
-            : "After each answer you’ll hear a short coach note, then “Shall we move on?” — say proceed / yes / next, or press Continue."}
+            : "After each answer youâ€™ll hear a short coach note, then â€œShall we move on?â€ â€” say proceed / yes / next, or press Continue."}
         </p>
         <div className="cluster interview-agent-actions">
           <Button variant="secondary" onClick={askQuestionAloud} disabled={!current || phase === "asking" || phase === "saving"}>
-            {phase === "asking" ? "Asking question…" : "Ask question aloud"}
+            {phase === "asking" ? "Asking questionâ€¦" : "Ask question aloud"}
           </Button>
           {media.microphone ? (
             <Button
@@ -1813,14 +1814,14 @@ export function InterviewSession() {
             Start the session again, or create a new session.
           </p>
           <Button variant="destructive" disabled={deleting} onClick={() => void deleteThisSession()}>
-            {deleting ? "Deleting…" : "Delete session"}
+            {deleting ? "Deletingâ€¦" : "Delete session"}
           </Button>
         </Card>
       ) : (
         <Card className="stack interview-question-card">
           <p className="mono" style={{ margin: 0 }}>
             Question {activeIndex + 1} of {questions.length}
-            {current?.question_type ? ` · ${current.question_type}` : ""}
+            {current?.question_type ? ` Â· ${current.question_type}` : ""}
           </p>
           <h2 style={{ margin: 0 }}>{current?.question}</h2>
           <label className="field-label">
@@ -1838,10 +1839,10 @@ export function InterviewSession() {
           {phase === "listening" ? (
             <p className="muted" style={{ margin: 0, fontSize: "var(--text-sm)" }} role="status">
               {interim
-                ? `Hearing now: “${interim}”`
+                ? `Hearing now: â€œ${interim}â€`
                 : answer
-                  ? "Listening for more… pause 5 seconds when finished, or submit when you are done."
-                  : "Listening… start speaking. Your words will show above."}
+                  ? "Listening for moreâ€¦ pause 5 seconds when finished, or submit when you are done."
+                  : "Listeningâ€¦ start speaking. Your words will show above."}
             </p>
           ) : null}
           {phase === "listening" && media.camera ? (
@@ -1889,7 +1890,7 @@ export function InterviewSession() {
               }
               onClick={() => void submitCurrentAnswer()}
             >
-              {saving ? "Evaluating…" : "Submit answer"}
+              {saving ? "Evaluatingâ€¦" : "Submit answer"}
             </Button>
             <Button
               variant="secondary"
@@ -1916,7 +1917,7 @@ export function InterviewSession() {
               Complete session
             </Button>
             <Button variant="destructive" disabled={saving || deleting} onClick={() => void deleteThisSession()}>
-              {deleting ? "Deleting…" : "Delete session"}
+              {deleting ? "Deletingâ€¦" : "Delete session"}
             </Button>
           </div>
         </Card>
@@ -1926,7 +1927,7 @@ export function InterviewSession() {
           <div className="cluster" style={{ justifyContent: "space-between" }}>
             <h2 style={{ margin: 0 }}>Interviewer note</h2>
           </div>
-          <p style={{ margin: 0, color: "var(--ink)", fontWeight: 600, fontSize: "1.05rem" }}>
+          <p style={{ margin: 0, color: "var(--text)", fontWeight: 600, fontSize: "1.05rem" }}>
             {buildConversationalCoachLine(lastFeedback)}
           </p>
           {lastAnswerSnapshot ? (
@@ -1934,7 +1935,7 @@ export function InterviewSession() {
               <summary className="muted" style={{ cursor: "pointer" }}>
                 Your answer (expand)
               </summary>
-              <p style={{ margin: "8px 0 0", whiteSpace: "pre-wrap", color: "var(--ink)" }}>
+              <p style={{ margin: "8px 0 0", whiteSpace: "pre-wrap", color: "var(--text)" }}>
                 {lastAnswerSnapshot}
               </p>
             </details>
@@ -1949,7 +1950,7 @@ export function InterviewSession() {
             {phase === "awaiting_proceed" ? (
               <>
                 <Button onClick={() => void advanceAfterFeedback()} disabled={saving}>
-                  {activeIndex >= questions.length - 1 ? "Proceed to debrief" : "Continue — next question"}
+                  {activeIndex >= questions.length - 1 ? "Proceed to debrief" : "Continue â€” next question"}
                 </Button>
                 <p className="muted" style={{ margin: 0, fontSize: "var(--text-sm)" }}>
                   Or say <strong>proceed</strong>, <strong>yes</strong>, or <strong>next</strong>
@@ -1958,12 +1959,12 @@ export function InterviewSession() {
             ) : phase === "feedback" ? (
               <p className="muted" style={{ margin: 0 }} role="status">
                 {autoVoice
-                  ? "Listening to short feedback — next question starts automatically…"
-                  : "Listening to short feedback — then you’ll be asked to proceed…"}
+                  ? "Listening to short feedback â€” next question starts automaticallyâ€¦"
+                  : "Listening to short feedback â€” then youâ€™ll be asked to proceedâ€¦"}
               </p>
             ) : (
               <p className="muted" style={{ margin: 0 }} role="status">
-                Moving on…
+                Moving onâ€¦
               </p>
             )}
             {phase === "feedback" || phase === "between" ? (
@@ -2032,7 +2033,7 @@ export function InterviewReport() {
   if (loading) {
     return (
       <Card>
-        <p>Loading interview report…</p>
+        <p>Loading interview reportâ€¦</p>
       </Card>
     );
   }
@@ -2061,7 +2062,7 @@ export function InterviewReport() {
       <PageHeader
         eyebrow="Interview report"
         title={session?.target_role ? `${session.target_role} debrief` : "Mock interview debrief"}
-        description="Evidence-based practice debrief: scores, speech pace, fillers, and readiness coaching — stored for this session. Not an employer hiring decision."
+        description="Evidence-based practice debrief: scores, speech pace, fillers, and readiness coaching â€” stored for this session. Not an employer hiring decision."
         action={
           <Link className="button button-secondary" href="/mock-interview">
             All sessions
@@ -2111,7 +2112,7 @@ export function InterviewReport() {
                 <div key={label}>
                   <div className="cluster" style={{ justifyContent: "space-between" }}>
                     <span>{label}</span>
-                    <strong>{value ?? "—"}</strong>
+                    <strong>{value ?? "â€”"}</strong>
                   </div>
                   <div
                     style={{
@@ -2181,19 +2182,19 @@ export function InterviewReport() {
           <div className="dashboard-metrics" style={{ gridTemplateColumns: "1fr 1fr" }}>
             <article className="metric-card">
               <p className="metric-card-label">Overall</p>
-              <div className="metric-value">{overall ?? "—"}</div>
+              <div className="metric-value">{overall ?? "â€”"}</div>
             </article>
             <article className="metric-card">
               <p className="metric-card-label">Communication</p>
-              <div className="metric-value">{communication ?? "—"}</div>
+              <div className="metric-value">{communication ?? "â€”"}</div>
             </article>
             <article className="metric-card">
               <p className="metric-card-label">Structure</p>
-              <div className="metric-value">{structure ?? "—"}</div>
+              <div className="metric-value">{structure ?? "â€”"}</div>
             </article>
             <article className="metric-card">
               <p className="metric-card-label">Content</p>
-              <div className="metric-value">{content ?? "—"}</div>
+              <div className="metric-value">{content ?? "â€”"}</div>
             </article>
           </div>
           {speaking ? (
@@ -2282,12 +2283,12 @@ export function InterviewReport() {
               <h2>Q{index + 1}. {review.question}</h2>
               <span className="status-chip" data-tone="info">
                 {(review.verdict || "reviewed").replaceAll("_", " ")}
-                {review.score != null ? ` · ${review.score}` : ""}
+                {review.score != null ? ` Â· ${review.score}` : ""}
               </span>
             </div>
             <div>
               <p className="mono" style={{ margin: "0 0 4px" }}>Your answer</p>
-              <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{review.answer || "—"}</p>
+              <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{review.answer || "â€”"}</p>
             </div>
             {review.interviewer_feedback ? (
               <p style={{ margin: 0 }}>{review.interviewer_feedback}</p>

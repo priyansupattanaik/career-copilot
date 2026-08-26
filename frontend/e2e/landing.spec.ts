@@ -16,6 +16,7 @@ const zooms = [1, 1.25, 1.5, 2] as const;
 
 test.describe("Landing page audit acceptance", () => {
   test("loads hero, truthful job labels, and light mode", async ({ page }) => {
+    test.slow();
     const consoleErrors: string[] = [];
     await page.route("https://fonts.googleapis.com/**", (route) =>
       route.fulfill({ status: 200, contentType: "text/css", body: "" }),
@@ -32,6 +33,48 @@ test.describe("Landing page audit acceptance", () => {
       /Show up\s*ready/i
     );
     await expect(page.getByText(/practice room/i).first()).toBeVisible();
+    await expect(page.locator(".home-particles canvas")).toBeVisible();
+    expect(await page.locator(".home-particles").evaluate((element) => getComputedStyle(element).pointerEvents)).toBe("none");
+    expect(await page.locator(".home-particles").evaluate((element) => getComputedStyle(element).zIndex)).toBe("2");
+    expect(Number(await page.locator(".home-particles").evaluate((element) => getComputedStyle(element).opacity))).toBeGreaterThan(0);
+    await expect.poll(() => page.locator(".home-particles canvas").evaluate((canvas) => {
+      const context = (canvas as HTMLCanvasElement).getContext("2d");
+      if (!context) return 0;
+      const width = Math.min((canvas as HTMLCanvasElement).width, 1000);
+      const height = Math.min((canvas as HTMLCanvasElement).height, 700);
+      const pixels = context.getImageData(0, 0, width, height).data;
+      let visiblePixels = 0;
+      for (let index = 3; index < pixels.length; index += 4) {
+        if (pixels[index] > 30) visiblePixels += 1;
+      }
+      return visiblePixels;
+    })).toBeGreaterThan(100);
+    const practiceVideo = page.locator(".home-camera-video");
+    await expect(practiceVideo).toBeVisible();
+    await expect(practiceVideo).toHaveAttribute("src", "/media/interview-practice.mp4");
+    expect(await practiceVideo.evaluate((element) => getComputedStyle(element).objectFit)).toBe("contain");
+    await expect.poll(() => practiceVideo.evaluate((element) => (element as HTMLVideoElement).videoWidth)).toBeGreaterThan(0);
+    expect(await practiceVideo.evaluate((element) => {
+      const video = element as HTMLVideoElement;
+      return {
+        controls: video.controls,
+        pointerEvents: getComputedStyle(video).pointerEvents,
+        draggable: video.draggable,
+        pictureInPicture: video.disablePictureInPicture,
+        contextMenuBlocked: !video.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })),
+      };
+    })).toEqual({ controls: false, pointerEvents: "none", draggable: false, pictureInPicture: true, contextMenuBlocked: true });
+    const videoAsset = await page.request.get("/media/interview-practice.mp4");
+    expect(videoAsset.status()).toBe(200);
+    expect(videoAsset.headers()["content-type"]).toContain("video/mp4");
+    await expect.poll(() =>
+      practiceVideo.evaluate((element) => {
+        const video = element as HTMLVideoElement;
+        return { muted: video.muted, loop: video.loop, autoplay: video.autoplay, playsInline: video.playsInline };
+      }),
+    ).toEqual({ muted: true, loop: true, autoplay: true, playsInline: true });
+    expect(await page.locator(".home-page").getAttribute("data-motion")).toBe("running");
+    expect(await page.locator(".home-window").evaluate((element) => getComputedStyle(element).animationName)).toContain("cc-window-breathe");
     await expect(page.getByText(/verified job locations/i)).toHaveCount(0);
 
     const theme = await page.evaluate(() => ({
@@ -42,6 +85,7 @@ test.describe("Landing page audit acceptance", () => {
     expect(theme.dataTheme).toBe("light");
     expect(theme.colorScheme).toBe("light");
     expect(theme.background.toLowerCase()).toContain("f5faff");
+    await expect(page.locator(".home-particles")).toHaveAttribute("data-particle-theme", "light");
 
     const lightLogo = page.locator(".home-brand .brand-mark").first();
     await expect(lightLogo.locator(".brand-mark-image-light")).toBeVisible();
@@ -88,6 +132,7 @@ test.describe("Landing page audit acceptance", () => {
     await page.goto("/", { waitUntil: "networkidle" });
 
     await expect(page.locator(".home-page")).toBeVisible();
+    await expect(page.locator(".home-particles")).toHaveAttribute("data-particle-theme", "dark");
     await expect(page.locator(".home-practice-copy h2")).toBeVisible();
     await expect(page.getByRole("heading", { name: /Confidence is/i })).toBeVisible();
 
@@ -115,6 +160,14 @@ test.describe("Landing page audit acceptance", () => {
       "src",
       "/brand/career-copilot-dark.png",
     );
+  });
+
+  test("reduced motion disables ambient landing animation", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect(page.locator(".home-page")).toHaveAttribute("data-motion", "paused");
+    expect(await page.locator(".home-window").evaluate((element) => getComputedStyle(element).animationName)).toBe("none");
+    await expect(page.locator(".home-camera-video")).toBeVisible();
   });
 
   test("key landing copy meets readable contrast in both themes", async ({ page }) => {

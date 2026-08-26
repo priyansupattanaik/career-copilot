@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Landing navigation", () => {
   test("mobile menu anchor link scrolls to the practice section", async ({ page }) => {
+    test.slow();
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
 

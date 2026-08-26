@@ -9,7 +9,7 @@ from app.agents.providers.groq_client import PROMPTS_DIR
 from app.agents.providers.reliable import generate_structured_with_failover
 from app.core.config import Settings
 from app.core.errors import ApiError
-from app.features.learning.agents.crew.models import YoutubeLessonPlanItem, YoutubeLessonPlanResult
+from app.features.learning.agents.crew.models import YoutubeLessonPlanResult
 from app.features.learning.article_catalog import build_reading_resources, is_allowed_article_url
 from app.features.learning.youtube_api import search_youtube_videos
 from app.features.learning.youtube_catalog import (

@@ -1,16 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Link } from "@/shared/ui/router-link";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
-import {
-  ChevronUp,
-  LogOut,
-  Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Settings,
-  UserRound,
-  X,
-} from "lucide-react";
+import { ChevronUp, LogOut, Settings, UserRound } from "lucide-react";
 import { CareerIcon, type CareerIconName } from "@/components/ui/career-icons";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { BrandMark } from "@/components/ui/brand-mark";
@@ -52,8 +43,6 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { data: bootstrap } = useWorkspaceBootstrap();
-  const [open, setOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
@@ -80,25 +69,6 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (bootstrap) setLiveCompletion(null);
   }, [bootstrap]);
-
-  useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpen(false);
-        setProfileMenuOpen(false);
-      }
-    }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open]);
 
   useEffect(() => {
     if (!profileMenuOpen) return;
@@ -158,7 +128,6 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
 
   function closeMenus() {
     setProfileMenuOpen(false);
-    setOpen(false);
   }
 
   async function logout() {
@@ -176,50 +145,20 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className={`workspace ${collapsed ? "sidebar-collapsed" : ""}`}>
-      {open ? (
-        <button
-          type="button"
-          className="sidebar-backdrop"
-          aria-label="Close navigation"
-          onClick={() => {
-            setOpen(false);
-            setProfileMenuOpen(false);
-          }}
-        />
-      ) : null}
-
-      <aside className={`sidebar ${open ? "open" : ""}`} aria-label="Workspace navigation">
+    <div className="workspace">
+      <aside className="sidebar" aria-label="Workspace navigation">
         <div className="sidebar-top">
           <div className="row sidebar-header">
             <Link
               className="brand"
               href={routes.dashboard}
-              onClick={() => setOpen(false)}
               onMouseEnter={() => prefetchRoute(routes.dashboard)}
               onFocus={() => prefetchRoute(routes.dashboard)}
               aria-label="Career Copilot dashboard"
             >
               <BrandMark compact />
               <span className="sidebar-brand-full">Career Copilot</span>
-              <span className="sidebar-brand-short" aria-hidden="true">
-                CC
-              </span>
             </Link>
-            <button
-              type="button"
-              className="icon-button sidebar-collapse-button"
-              onClick={() => setCollapsed((current) => !current)}
-              aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
-              aria-expanded={!collapsed}
-            >
-              {collapsed ? <PanelLeftOpen size={18} aria-hidden /> : <PanelLeftClose size={18} aria-hidden />}
-            </button>
-            {open ? (
-              <button type="button" className="icon-button" onClick={() => setOpen(false)} aria-label="Close navigation">
-                <X size={18} aria-hidden />
-              </button>
-            ) : null}
           </div>
 
           <nav className="sidebar-nav">
@@ -229,7 +168,6 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setOpen(false)}
                   onMouseEnter={() => prefetchRoute(item.href)}
                   onFocus={() => prefetchRoute(item.href)}
                   className={`sidebar-link ${active ? "active" : ""}`}
@@ -376,15 +314,6 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
       <div className="workspace-main">
         <header className="app-header">
           <div className="app-header-left">
-            <button
-              type="button"
-              className="icon-button mobile-sidebar-button"
-              onClick={() => setOpen(true)}
-              aria-label="Open navigation"
-              aria-expanded={open}
-            >
-              <Menu size={18} aria-hidden />
-            </button>
             <div className="app-header-titles">
               <strong className="app-header-title">{activeNav}</strong>
               <span className="app-header-kicker">Career workspace</span>
@@ -401,6 +330,39 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         </main>
         <ProfileCompletionToast completion={completion} missing={missing} />
       </div>
+
+      <nav className="mobile-bottom-nav" aria-label="Primary">
+        {navigation.map((item) => {
+          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onMouseEnter={() => prefetchRoute(item.href)}
+              onFocus={() => prefetchRoute(item.href)}
+              className={active ? "active" : ""}
+              aria-current={active ? "page" : undefined}
+            >
+              <span className="mobile-bottom-nav-icon" aria-hidden>
+                <CareerIcon name={item.icon} size={20} />
+              </span>
+              <span className="mobile-bottom-nav-label">{item.label}</span>
+            </Link>
+          );
+        })}
+        <Link
+          href="/settings/profile"
+          onMouseEnter={() => prefetchRoute("/settings/profile")}
+          onFocus={() => prefetchRoute("/settings/profile")}
+          className={pathname.startsWith("/settings") ? "active" : ""}
+          aria-current={pathname.startsWith("/settings") ? "page" : undefined}
+        >
+          <span className="mobile-bottom-nav-icon" aria-hidden>
+            <Settings size={20} />
+          </span>
+          <span className="mobile-bottom-nav-label">Profile</span>
+        </Link>
+      </nav>
     </div>
   );
 }

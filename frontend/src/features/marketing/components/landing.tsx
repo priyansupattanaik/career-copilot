@@ -1,8 +1,9 @@
 import { ArrowRight, Check, Menu, Play, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode, type SyntheticEvent } from "react";
 import { CareerIcon } from "@/components/ui/career-icons";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { BeamsBackground } from "@/components/ui/beams-background";
+import { ParticlesBackground } from "@/components/ui/particles-background";
 import { RuixenGradientFooter } from "@/components/ui/ruixen-gradient-footer";
 import { MotionProvider, useMotion } from "../motion-context";
 import { useReveal } from "../use-reveal";
@@ -184,6 +185,7 @@ function LandingInner() {
   return (
     <div className="home-page" data-motion={isMotionPaused ? "paused" : "running"}>
       <BeamsBackground theme={resolvedTheme} paused={isMotionPaused} intensity="subtle" className="home-beams" />
+      <ParticlesBackground theme={resolvedTheme} paused={isMotionPaused} className="home-particles-layer" />
       <a href="#main-content" className="skip-link sr-only focus:not-sr-only">Skip to main content</a>
       <header className="home-nav" aria-label="Primary"><div className="home-frame home-nav-inner">
         <Link href="/" className="home-brand" aria-label="Career Copilot home"><BrandMark /><span>Career Copilot</span></Link>
@@ -238,8 +240,10 @@ function LandingInner() {
 }
 
 function HeroVisual() {
+  const blockVideoInteraction = (event: SyntheticEvent) => event.preventDefault();
+
   return (
-    <div className="home-hero-visual" role="img" aria-label="Video interview practice workspace preview"><div className="home-window"><div className="home-window-top"><span className="home-window-dots"><i /><i /><i /></span><span>practice room</span><span>04:18</span></div><div className="home-window-body"><div className="home-live-label"><i /> live practice</div><div className="home-question-label">Question 03 · behavioral</div><h2>“Tell me about a time your plan changed.”</h2><div className="home-response-line"><span>your response</span><div><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div></div><div className="home-camera"><span>camera preview</span><div className="home-camera-face">you</div><b>ready</b></div></div><div className="home-window-bottom"><span><CareerIcon name="signal" size={15} /> clarity <b>84</b></span><span><CareerIcon name="evidence" size={15} /> evidence <b>91</b></span><span><CareerIcon name="confidence" size={15} /> confidence <b>growing</b></span></div></div><div className="home-float-card"><CareerIcon name="confidence" size={17} /><span><b>One useful note</b><small>Lead with the result, then the decision.</small></span></div></div>
+    <div className="home-hero-visual" role="img" aria-label="Video interview practice workspace preview"><div className="home-window"><div className="home-window-top"><span className="home-window-dots"><i /><i /><i /></span><span>practice room</span><span>04:18</span></div><div className="home-window-body"><div className="home-live-label"><i /> live practice</div><div className="home-question-label">Question 03 · behavioral</div><h2>“Tell me about a time your plan changed.”</h2><div className="home-response-line"><span>your response</span><div><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div></div><div className="home-camera" onClick={blockVideoInteraction} onContextMenu={blockVideoInteraction} onDragStart={blockVideoInteraction}><span>camera preview</span><video className="home-camera-video" src="/media/interview-practice.mp4" autoPlay loop muted playsInline preload="metadata" controlsList="nodownload noplaybackrate" disablePictureInPicture draggable={false} tabIndex={-1} onClick={blockVideoInteraction} onContextMenu={blockVideoInteraction} onDragStart={blockVideoInteraction} aria-label="Candidate giving an interview" /><b>ready</b></div></div><div className="home-window-bottom"><span><CareerIcon name="signal" size={15} /> clarity <b>84</b></span><span><CareerIcon name="evidence" size={15} /> evidence <b>91</b></span><span><CareerIcon name="confidence" size={15} /> confidence <b>growing</b></span></div></div><div className="home-float-card"><CareerIcon name="confidence" size={17} /><span><b>One useful note</b><small>Lead with the result, then the decision.</small></span></div></div>
   );
 }
 

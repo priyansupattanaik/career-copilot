@@ -52,9 +52,9 @@ export function ProfileCompletionToast({ completion, missing }: Props) {
     window.dispatchEvent(new Event(DISMISS_EVENT));
   }
 
-  // The profile editor already exposes completion inline. Keeping this global
-  // toast off that route prevents it from covering controls the user is editing.
-  if (pathname === "/settings/profile" || !open || percent >= 100 || safeMissing.length === 0) return null;
+  // Settings pages already expose completion or dense controls. Keeping this
+  // toast off those routes prevents it from covering save, logout, and delete.
+  if (pathname.startsWith("/settings/") || !open || percent >= 100 || safeMissing.length === 0) return null;
 
   const shown = safeMissing.slice(0, 6);
   const extra = safeMissing.length - shown.length;

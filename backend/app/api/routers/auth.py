@@ -1,6 +1,7 @@
-import hashlib
+﻿import hashlib
 import hmac
 import logging
+import re
 import secrets
 import uuid
 from typing import Any
@@ -51,7 +52,7 @@ def _create_user_records(client, user: dict[str, Any]) -> dict[str, Any]:
             raise RuntimeError("The users record was not created")
         user_created = True
         for table, row in (
-            ("profiles", {"id": user_id, "full_name": user.get("full_name") or ""}),
+            ("profiles", {"id": user_id, "full_name": user.get("full_name") or "", **({"phone": user["phone"]} if user.get("phone") else {})}),
             ("candidate_preferences", {"user_id": user_id}),
             ("notification_preferences", {"user_id": user_id}),
             ("privacy_preferences", {"user_id": user_id}),
@@ -98,11 +99,32 @@ def _supabase_user(access_token: str, settings: Settings) -> dict[str, Any]:
     return user
 
 
+_PHONE_ALLOWED = re.compile(r"^[\d\s()+\-]{6,20}$")
+
+
+def sanitize_signup_phone(value: Any) -> str | None:
+    """Normalize an optional signup phone to a compact E.164-ish string.
+
+    Accepts digits with optional +, spaces, dashes and parentheses. Returns
+    None when absent or malformed so a bad value never blocks account creation.
+    """
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    compact = re.sub(r"[\s()\-]", "", raw)
+    if not _PHONE_ALLOWED.match(raw) or not re.fullmatch(r"\+?\d{6,15}", compact):
+        return None
+    if not compact.startswith("+"):
+        compact = f"+{compact}"
+    return compact[:20]
+
+
 @router.post("/auth/sign-up", status_code=201)
 def auth_sign_up(payload: dict[str, Any] = Body(...), settings: Settings = Depends(get_settings)):
     email = str(payload.get("email") or "").strip().lower()
     password = str(payload.get("password") or "")
     full_name = str(payload.get("full_name") or "").strip()[:120] or None
+    phone = sanitize_signup_phone(payload.get("phone"))
     if "@" not in email or len(password) < MIN_PASSWORD_LENGTH:
         raise ApiError(
             400,
@@ -117,7 +139,7 @@ def auth_sign_up(payload: dict[str, Any] = Body(...), settings: Settings = Depen
     try:
         user = _create_user_records(
             client,
-            {"id": str(uuid.uuid5(uuid.NAMESPACE_URL, f"career-copilot:{email}")), "email": email, "full_name": full_name, "password_hash": _password_hash(password), "token_version": 0},
+            {"id": str(uuid.uuid5(uuid.NAMESPACE_URL, f"career-copilot:{email}")), "email": email, "full_name": full_name, "password_hash": _password_hash(password), "token_version": 0, "phone": phone},
         )
     except ApiError:
         if client.table("users").select("id").eq("email", email).limit(1).execute().data:
@@ -180,7 +202,7 @@ def auth_firebase(payload: dict[str, Any] = Body(...), settings: Settings = Depe
     except ApiError:
         raise
     except RuntimeError as exc:
-        # Producer is misconfigured Admin/credentials — not an invalid user token.
+        # Producer is misconfigured Admin/credentials â€” not an invalid user token.
         detail = str(exc)[:200]
         raise ApiError(
             503,
@@ -271,9 +293,10 @@ def auth_supabase(payload: dict[str, Any] = Body(...), settings: Settings = Depe
             user_id = str(UUID(supabase_uid))
         except ValueError:
             user_id = str(uuid.uuid4())
+        metadata_phone = sanitize_signup_phone((metadata or {}).get("phone"))
         user = _create_user_records(
             client,
-            {"id": user_id, "email": email, "full_name": full_name, "supabase_uid": supabase_uid, "password_hash": ""},
+            {"id": user_id, "email": email, "full_name": full_name, "supabase_uid": supabase_uid, "password_hash": "", "phone": metadata_phone},
         )
     return _auth_payload(user, settings)
 

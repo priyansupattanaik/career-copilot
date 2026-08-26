@@ -96,10 +96,13 @@ export function BeamsBackground({
     const dim = THEME_DIM[theme] * OPACITY_MAP[intensity];
     const totalBeams = 16;
 
+    // The canvas is viewport-fixed: ambient beams always fill the visible
+    // screen while painting only viewport-sized pixels, instead of the whole
+    // (much taller) page — the per-frame blur makes tall canvases expensive.
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
-      const w = wrapper.clientWidth || 1;
-      const h = wrapper.clientHeight || 1;
+      const w = window.innerWidth || 1;
+      const h = window.innerHeight || 1;
       sizeRef.current = { w, h };
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
@@ -190,8 +193,14 @@ export function BeamsBackground({
     <div ref={wrapperRef} className={cn("home-beams-root", className)} aria-hidden>
       <canvas
         ref={canvasRef}
-        className="absolute inset-0"
-        style={{ filter: "blur(14px)" }}
+        style={{
+          position: "fixed",
+          inset: 0,
+          width: "100vw",
+          height: "100vh",
+          filter: "blur(14px)",
+          pointerEvents: "none",
+        }}
       />
       <motion.div
         className="absolute inset-0"
