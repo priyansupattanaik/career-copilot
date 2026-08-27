@@ -1,4 +1,5 @@
 import logging
+import sys
 import time
 import uuid
 
@@ -14,6 +15,8 @@ settings = get_settings()
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    stream=sys.stdout,
+    force=True,
 )
 logger = logging.getLogger("career_copilot.api")
 app = FastAPI(
@@ -36,18 +39,21 @@ async def request_context(request: Request, call_next):
     request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
     request.state.request_id = request_id
     started = time.perf_counter()
-    response = await call_next(request)
-    response.headers["X-Request-ID"] = request_id
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    logger.info(
-        "request_id=%s method=%s path=%s status=%s duration_ms=%.1f",
-        request_id,
-        request.method,
-        request.url.path,
-        response.status_code,
-        (time.perf_counter() - started) * 1000,
-    )
-    return response
+    response = None
+    try:
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+    finally:
+        logger.info(
+            "api_request request_id=%s method=%s path=%s status=%s duration_ms=%.1f",
+            request_id,
+            request.method,
+            request.url.path,
+            response.status_code if response is not None else "error",
+            (time.perf_counter() - started) * 1000,
+        )
 app.include_router(router, prefix=settings.api_v1_prefix)
 app.include_router(ats_scoring_router, prefix=settings.api_v1_prefix)

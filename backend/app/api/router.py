@@ -1,11 +1,15 @@
 import logging
 import mimetypes
 import threading
+import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
+
+_bootstrap_cache: dict[str, tuple[float, dict[str, Any]]] = {}
+_bootstrap_cache_ttl = 5.0
 
 from fastapi import APIRouter, Body, Depends, File, Form, Header, Query, UploadFile
 from fastapi.responses import JSONResponse
@@ -172,8 +176,8 @@ def health_live(settings: Settings = Depends(get_settings)) -> dict[str, Any]:
 def health(settings: Settings = Depends(get_settings)) -> dict[str, Any]:
     """App health with bounded dependency probes (never hangs indefinitely)."""
     status = agents_status(settings)
-    # Short timeouts keep /health usable for load balancers and dev tooling.
-    probe = database_probe(settings, timeout_seconds=3.0)
+    # Concurrent probes + 5s timeout (was 3s sequential)
+    probe = database_probe(settings, timeout_seconds=5.0)
     probe_status = probe.get("status") or "unreachable"
     overall = "ok" if probe_status == "reachable" else "degraded"
     return {
@@ -287,15 +291,32 @@ def bootstrap(
     # Bootstrap is a read endpoint. Completion is recalculated after mutations;
     # never perform cleanup or writes while loading a page.
     uid = str(user.id)
+    # Cache per user/scope for 5s to avoid hammering Firestore on every navigation
+    cache_key = f"{uid}:{scope}"
+    now = time.time()
+    if cache_key in _bootstrap_cache:
+        ts, cached = _bootstrap_cache[cache_key]
+        if now - ts < _bootstrap_cache_ttl:
+            return cached
 
     def _read_profile():
-        return (
-            client.table("profiles")
-            .select("id,full_name,avatar_url,avatar_path,profile_completion,profile_completion_details")
-            .eq("id", uid)
-            .limit(1)
-            .execute()
-        )
+        from app.database.client import FirestoreResult
+        try:
+            snap = client.db.collection("profiles").document(uid).get()
+            if snap.exists:
+                data = snap.to_dict() or {}
+                data["id"] = snap.id
+                filtered = {k: data.get(k) for k in ("id","full_name","avatar_url","avatar_path","profile_completion","profile_completion_details")}
+                return FirestoreResult([filtered])
+            return FirestoreResult([])
+        except Exception:
+            return (
+                client.table("profiles")
+                .select("id,full_name,avatar_url,avatar_path,profile_completion,profile_completion_details")
+                .eq("id", uid)
+                .limit(1)
+                .execute()
+            )
 
     def _read_active_resume():
         return (
@@ -390,7 +411,7 @@ def bootstrap(
             active_resume_future = executor.submit(_read_active_resume)
             profile = (profile_future.result().data or [{}])[0]
             active_resume = active_resume_future.result().data or []
-        return {
+        result = {
             "profile": attach_avatar_url(profile, client, settings),
             "active_resume": active_resume[0] if active_resume else None,
             "workspace": {
@@ -405,6 +426,8 @@ def bootstrap(
                 "has_active_resume": bool(active_resume),
             },
         }
+        _bootstrap_cache[cache_key] = (time.time(), result)
+        return result
 
     with ThreadPoolExecutor(max_workers=8, thread_name_prefix="bootstrap") as executor:
         futures = {
@@ -448,7 +471,7 @@ def bootstrap(
         }
         counts = {key: count_futures[key].result() for key in ("resumes", "ats_analyses", "interviews", "learning_paths", "saved_jobs")}
         failed_ats = count_futures["failed_ats"].result()
-    return {
+    result = {
         "profile": attach_avatar_url(profile, client, settings),
         "active_resume": active_resume[0] if active_resume else None,
         "active_job_description": latest_jd[0] if latest_jd else None,
@@ -493,6 +516,8 @@ def bootstrap(
         },
         "agents": agents_status(settings),
     }
+    _bootstrap_cache[cache_key] = (time.time(), result)
+    return result
 
 
 def _safe_score(value: Any) -> int | None:
@@ -679,24 +704,13 @@ def _latest_actions(client, user: CurrentUser) -> dict[str, Any]:
     uid = str(user.id)
     last_resume_upload = None
     try:
-        parents = (
-            client.table("resumes")
-            .select("id,title,deleted_at,created_at")
-            .eq("user_id", uid)
-            .is_("deleted_at", "null")
-            .execute()
-            .data
-            or []
-        )
+        from concurrent.futures import ThreadPoolExecutor as _TPE
+        with _TPE(max_workers=2) as _ex:
+            f_parents = _ex.submit(lambda: (client.table("resumes").select("id,title,deleted_at,created_at").eq("user_id", uid).is_("deleted_at", "null").execute().data or []))
+            f_versions = _ex.submit(lambda: (client.table("resume_versions").select("id,resume_id,original_filename,created_at,source_type,version_number").eq("user_id", uid).execute().data or []))
+            parents = f_parents.result()
+            versions = f_versions.result()
         parent_by_id = {str(row.get("id")): row for row in parents}
-        versions = (
-            client.table("resume_versions")
-            .select("id,resume_id,original_filename,created_at,source_type,version_number")
-            .eq("user_id", uid)
-            .execute()
-            .data
-            or []
-        )
         # Prefer version recency; fall back to version_number when created_at is missing.
         versions = sort_rows_by_recency(versions, desc=True)
         versions = sorted(

@@ -738,7 +738,6 @@ export function ProfileSettings() {
   // Keep the structured phone editor in sync whenever the stored value
   // changes (profile load, draft apply) — avoid overwriting user typing.
   // Only sync when form.phone differs from composed phoneParts (idempotent).
-  const phoneComposed = useMemo(() => composePhone(phoneParts), [phoneParts]);
   useEffect(() => {
     const parsed = parsePhone(form.phone);
     const currentComposed = composePhone(phoneParts);

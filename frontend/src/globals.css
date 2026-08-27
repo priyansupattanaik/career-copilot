@@ -23,8 +23,8 @@
 
   --font-family: "Outfit", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-ui: var(--font-family);
-  --font-heading: "Fraunces", "Iowan Old Style", "Times New Roman", serif;
-  --font-code: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-heading: var(--font-family);
+  --font-code: var(--font-family);
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 18px;
@@ -5833,7 +5833,7 @@ select option { color: var(--text); background: var(--surface); }
 .auth-aside-points li { display: flex; align-items: flex-start; gap: 9px; }.auth-aside-points li::before { display: none; }.auth-aside-points li svg { flex: 0 0 auto; margin-top: .12em; color: var(--auth-mint, #b8e1c7); }
 
 /* Career Copilot home: a quiet, editorial workspace built around interview confidence. */
-.home-page { --home-paper: #f7f7f5; --home-panel: #ffffff; --home-text: #111111; --home-muted: #686863; --home-line: #deded9; --home-accent: #e7ff62; --home-blue: #526bff; min-height: 100vh; min-height: 100dvh; overflow: clip; background: var(--home-paper); color: var(--home-text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.home-page { --home-paper: #f7f7f5; --home-panel: #ffffff; --home-text: #111111; --home-muted: #686863; --home-line: #deded9; --home-accent: #e7ff62; --home-blue: #526bff; min-height: 100vh; min-height: 100dvh; overflow: clip; background: var(--home-paper); color: var(--home-text); font-family: var(--font-ui); }
 .home-frame { width: min(1160px, calc(100% - 64px)); margin-inline: auto; }
 .home-nav { position: sticky; top: 0; z-index: 40; border-bottom: 1px solid color-mix(in srgb, var(--home-line) 80%, transparent); background: color-mix(in srgb, var(--home-paper) 88%, transparent); backdrop-filter: blur(18px) saturate(135%); transition: background-color .28s ease, box-shadow .28s ease, border-color .28s ease; }
 .home-nav.is-scrolled { background: color-mix(in srgb, var(--home-paper) 94%, transparent); box-shadow: 0 10px 28px rgb(30 35 23 / 6%); }
@@ -6045,7 +6045,7 @@ select option { color: var(--text); background: var(--surface); }
   min-height: 100vh; min-height: 100dvh;
   background: var(--app-paper) !important;
   color: var(--app-text) !important;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-ui);
 }
 .auth-shell .auth-aside {
   background: #111 !important;
@@ -6055,14 +6055,14 @@ select option { color: var(--text); background: var(--surface); }
 }
 .auth-shell .auth-aside .auth-aside-copy { max-width: 520px; }
 .auth-shell .auth-aside .eyebrow { color: var(--app-accent) !important; }
-.auth-shell .auth-aside h1 { color: #f8f8f4 !important; font-family: Inter, ui-sans-serif, system-ui, sans-serif !important; font-size: clamp(3rem, 6vw, 6.4rem) !important; font-weight: 650 !important; letter-spacing: -.08em !important; line-height: .92 !important; }
+.auth-shell .auth-aside h1 { color: #f8f8f4 !important; font-family: var(--font-ui) !important; font-size: clamp(3rem, 6vw, 6.4rem) !important; font-weight: 650 !important; letter-spacing: -.08em !important; line-height: .92 !important; }
 .auth-shell .auth-aside p, .auth-shell .auth-aside-points li, .auth-shell .auth-aside-foot { color: #a7a8a0 !important; }
 .auth-shell .auth-aside-points li::before { background: var(--app-accent) !important; }
 .auth-shell .auth-main { background: var(--app-paper) !important; color: var(--app-text) !important; }
 .auth-shell .auth-main-inner { width: min(100%, 520px); }
 .auth-shell .auth-theme-control { color: var(--app-text); }
 .auth-shell .auth-card { background: var(--app-panel) !important; border: 1px solid var(--app-line) !important; border-radius: 24px !important; box-shadow: var(--app-shadow) !important; color: var(--app-text) !important; }
-.auth-shell .auth-card h1, .auth-shell .auth-card h2, .auth-shell .auth-card h3 { color: var(--app-text) !important; font-family: Inter, ui-sans-serif, system-ui, sans-serif !important; letter-spacing: -.05em; }
+.auth-shell .auth-card h1, .auth-shell .auth-card h2, .auth-shell .auth-card h3 { color: var(--app-text) !important; font-family: var(--font-ui) !important; letter-spacing: -.05em; }
 .auth-shell .auth-card p, .auth-shell .auth-card .muted { color: var(--app-muted) !important; }
 .auth-shell .auth-card a { color: var(--app-blue) !important; }
 .auth-shell .field { background: var(--app-panel) !important; border: 1px solid var(--app-line) !important; border-radius: 14px !important; color: var(--app-text) !important; }
@@ -6076,7 +6076,7 @@ select option { color: var(--text); background: var(--surface); }
   min-height: 100vh; min-height: 100dvh;
   background: var(--app-paper) !important;
   color: var(--app-text) !important;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-ui);
 }
 .workspace .sidebar {
   background: color-mix(in srgb, var(--app-paper) 88%, transparent) !important;
@@ -6103,7 +6103,7 @@ select option { color: var(--text); background: var(--surface); }
 /* Shared feature pages and primitives */
 .workspace .feature-page { max-width: 1160px; margin: 0 auto; color: var(--app-text); }
 .workspace .page-heading { align-items: end; margin-bottom: 44px; }
-.workspace .page-heading h1 { color: var(--app-text) !important; font-family: Inter, ui-sans-serif, system-ui, sans-serif !important; font-size: clamp(2.8rem, 6vw, 5.8rem) !important; font-weight: 650 !important; letter-spacing: -.08em !important; line-height: .92 !important; }
+.workspace .page-heading h1 { color: var(--app-text) !important; font-family: var(--font-ui) !important; font-size: clamp(2.8rem, 6vw, 5.8rem) !important; font-weight: 650 !important; letter-spacing: -.08em !important; line-height: .92 !important; }
 .workspace .page-heading p { color: var(--app-muted) !important; max-width: 56ch; }
 .workspace .page-heading .eyebrow, .workspace .eyebrow { color: var(--app-blue) !important; }
 .workspace .panel, .workspace .metric-card, .workspace .dashboard-panel, .workspace .activity-feed, .workspace .interview-chart-card, .workspace .interview-progress-panel { background: var(--app-panel) !important; border: 1px solid var(--app-line) !important; border-radius: 22px !important; box-shadow: var(--app-shadow-soft) !important; color: var(--app-text) !important; }
@@ -6135,7 +6135,7 @@ select option { color: var(--text); background: var(--surface); }
 .section:has(.page-heading) { min-height: 100vh; min-height: 100dvh; background: var(--app-paper); color: var(--app-text); }
 .section:has(.page-heading) .container { max-width: 1160px; }
 .section:has(.page-heading) .panel { background: var(--app-panel); border-color: var(--app-line); border-radius: 22px; box-shadow: var(--app-shadow-soft); }
-.section:has(.page-heading) .page-heading h1 { color: var(--app-text); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: clamp(2.8rem, 6vw, 5.8rem); font-weight: 650; letter-spacing: -.08em; line-height: .92; }
+.section:has(.page-heading) .page-heading h1 { color: var(--app-text); font-family: var(--font-ui); font-size: clamp(2.8rem, 6vw, 5.8rem); font-weight: 650; letter-spacing: -.08em; line-height: .92; }
 .section:has(.page-heading) .page-heading p, .section:has(.page-heading) .muted { color: var(--app-muted); }
 .section:has(.page-heading) .field { background: var(--app-panel); border-color: var(--app-line); color: var(--app-text); border-radius: 14px; }
 
@@ -6361,7 +6361,7 @@ select option { color: var(--text); background: var(--surface); }
 .workspace .dashboard-page h1,
 .workspace .dashboard-page h2,
 .workspace .dashboard-page h3,
-.workspace .dashboard-page .app-header-title { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; }
+.workspace .dashboard-page .app-header-title { font-family: var(--font-ui) !important; }
 [data-theme="dark"] .workspace,
 [data-theme="dark"] .workspace:has(.dashboard-page),
 [data-theme="dark"] .workspace:has(.dashboard-page) .workspace-main,
@@ -6417,7 +6417,7 @@ select option { color: var(--text); background: var(--surface); }
 .workspace .suggestion { padding: 24px !important; }
 .workspace .feature-page h2,
 .workspace .feature-page h3,
-.workspace .feature-page .job-card-title { font-family: Inter, ui-sans-serif, system-ui, sans-serif !important; letter-spacing: -.04em; }
+.workspace .feature-page .job-card-title { font-family: var(--font-ui) !important; letter-spacing: -.04em; }
 .workspace .feature-page .muted,
 .workspace .feature-page .field-hint,
 .workspace .feature-page .feature-status,
@@ -7409,7 +7409,7 @@ select option { color: var(--text); background: var(--surface); }
   display: block;
   margin-bottom: 18px;
   color: var(--profile-muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-ui);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: .14em;
@@ -7656,7 +7656,7 @@ select option { color: var(--text); background: var(--surface); }
   border-radius: 24px;
   background: var(--profile-soft);
   color: var(--profile-text);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-ui);
   font-size: 1.4rem;
   font-weight: 700;
 }
@@ -7729,7 +7729,7 @@ select option { color: var(--text); background: var(--surface); }
 
 .workspace .profile-overview-score strong {
   color: var(--profile-text);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-ui);
   font-size: clamp(1.8rem, 3vw, 2.7rem);
   letter-spacing: -0.08em;
   line-height: 1;
@@ -9045,7 +9045,7 @@ select option { color: var(--text); background: var(--surface); }
   max-width: none !important;
   margin-bottom: 10px;
   color: var(--app-text) !important;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif !important;
+  font-family: var(--font-ui) !important;
   font-size: clamp(2.8rem, 6vw, 5.8rem) !important;
   font-weight: 650 !important;
   letter-spacing: -.08em !important;
@@ -10176,5 +10176,570 @@ select option { color: var(--text); background: var(--surface); }
   .workspace .feature-page.settings-page .profile-section-actions .button,
   .workspace .feature-page.settings-page .profile-composer-actions .button {
     flex: 1 1 auto;
+  }
+}
+
+/* ==========================================================================
+   Minimal product layout — Outfit only, quiet paper, charts that move.
+   This block is last so it wins over earlier stacked theme layers.
+   ========================================================================== */
+html, body,
+.workspace,
+.auth-shell,
+.home-page {
+  font-family: var(--font-ui);
+}
+
+.workspace,
+.auth-shell,
+.home-page,
+.workspace h1,
+.workspace h2,
+.workspace h3,
+.auth-shell h1,
+.auth-shell h2,
+.auth-shell h3,
+.home-page h1,
+.home-page h2,
+.home-page h3,
+.eyebrow,
+.mono,
+.badge,
+.metric-value {
+  font-family: var(--font-ui) !important;
+}
+
+.workspace .page-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px 28px;
+  margin-bottom: 28px !important;
+  padding: 0 0 4px !important;
+  border-bottom: 0 !important;
+  min-width: 0;
+}
+
+.workspace .page-heading::after {
+  display: none !important;
+}
+
+.workspace .page-heading > div {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.workspace .page-heading h1,
+.workspace .feature-page.settings-page .page-heading h1,
+.section:has(.page-heading) .page-heading h1 {
+  font-family: var(--font-ui) !important;
+  font-size: clamp(1.7rem, 2.2vw, 2.25rem) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.04em !important;
+  line-height: 1.18 !important;
+  max-width: 22ch !important;
+}
+
+.workspace .feature-page.settings-page.profile-v2 > .page-heading h1 {
+  font-size: clamp(1.9rem, 2.2vw + 0.9rem, 2.35rem) !important;
+  max-width: none !important;
+}
+
+.workspace .page-heading p {
+  margin: 0;
+  max-width: 52ch;
+}
+
+.workspace .page-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.workspace .feature-page {
+  display: grid;
+  gap: 24px;
+  max-width: 1180px;
+  min-width: 0;
+  width: 100%;
+}
+
+.workspace .workspace-content {
+  min-width: 0;
+}
+
+.workspace .panel,
+.workspace .metric-card,
+.workspace .dashboard-panel,
+.workspace .activity-feed,
+.workspace .interview-chart-card,
+.workspace .interview-progress-panel,
+.workspace .entity-card,
+.workspace .job-card,
+.workspace .path-card,
+.workspace .filters-bar,
+.workspace .empty-state,
+.workspace .suggestion,
+.workspace .dropzone {
+  box-shadow: none !important;
+  border-radius: 16px !important;
+  min-width: 0;
+}
+
+.workspace .metric-card:hover,
+.workspace .dashboard-panel:hover,
+.workspace .activity-feed:hover,
+.workspace .job-card:hover,
+.workspace .entity-card:hover,
+.workspace .path-card:hover {
+  transform: none;
+}
+
+.workspace .dashboard-page {
+  gap: 24px;
+}
+
+.workspace .dashboard-page .page-heading {
+  margin-bottom: 8px !important;
+}
+
+.workspace .dashboard-page .page-heading > p,
+.workspace .dashboard-page .page-heading > div > p:not(.eyebrow) {
+  color: var(--app-muted, var(--muted)) !important;
+}
+
+.workspace .dashboard-page .metric-card-link,
+.workspace .dashboard-page .dashboard-ats-link {
+  color: var(--app-blue) !important;
+}
+
+.workspace .dashboard-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+.workspace .dashboard-page .metric-card {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 8px;
+  min-height: 0;
+  padding: 18px 18px 16px !important;
+  border-radius: 16px !important;
+  animation: dash-rise 560ms var(--ease-out) both;
+}
+
+.workspace .dashboard-page .metric-card:nth-child(1) { animation-delay: 40ms; }
+.workspace .dashboard-page .metric-card:nth-child(2) { animation-delay: 90ms; }
+.workspace .dashboard-page .metric-card:nth-child(3) { animation-delay: 140ms; }
+.workspace .dashboard-page .metric-card:nth-child(4) { animation-delay: 190ms; }
+
+.workspace .dashboard-page .metric-value {
+  font-size: clamp(1.55rem, 2.2vw, 2rem) !important;
+  letter-spacing: -0.05em !important;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.workspace .dashboard-page .metric-card-note {
+  margin: 0;
+  min-height: 2.6em;
+}
+
+.workspace .dashboard-page .metric-card-link {
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+.dashboard-insight {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  min-width: 0;
+  align-items: start;
+}
+
+.dashboard-insight > * {
+  min-width: 0;
+}
+
+.workspace .interview-progress-panel {
+  display: grid;
+  gap: 20px;
+  padding: 22px !important;
+  animation: dash-rise 620ms var(--ease-out) 160ms both;
+}
+
+.workspace .interview-progress-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 24px;
+}
+
+.workspace .interview-progress-head > div {
+  min-width: 0;
+  flex: 1 1 16rem;
+}
+
+.workspace .interview-progress-head h2 {
+  max-width: 28ch;
+  margin: 6px 0;
+}
+
+.workspace .interview-progress-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.workspace .interview-progress-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.workspace .interview-progress-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(240px, 0.82fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.workspace .interview-progress-chart-col,
+.workspace .interview-progress-side {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  align-content: start;
+}
+
+.workspace .interview-chart-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px !important;
+  overflow: hidden;
+}
+
+.dash-pie-card {
+  animation: dash-rise 620ms var(--ease-out) 220ms both;
+}
+
+.dash-pie-layout {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 20px 24px;
+  align-items: center;
+  min-width: 0;
+}
+
+.dash-pie-layout-compact {
+  gap: 14px 16px;
+}
+
+.dash-pie {
+  position: relative;
+  flex: 0 0 auto;
+  margin-inline: auto;
+}
+
+.dash-pie-svg {
+  display: block;
+  overflow: visible;
+}
+
+.dash-pie-track {
+  stroke: color-mix(in srgb, var(--app-line, var(--border)) 85%, transparent);
+}
+
+.dash-pie-slice {
+  transition: stroke-dasharray 700ms var(--ease-out), filter 180ms var(--ease-out);
+}
+
+.dash-pie-slice:hover {
+  filter: brightness(1.08);
+}
+
+.dash-pie-center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 2px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.dash-pie-value {
+  font-size: 1.35rem !important;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-pie-label {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--app-muted, var(--muted));
+}
+
+.dash-pie-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dash-pie-legend li {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.dash-pie-swatch {
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  border-radius: 99px;
+  flex-shrink: 0;
+}
+
+.dash-pie-legend-copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.dash-pie-legend-label {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--app-text, var(--text));
+}
+
+.dash-pie-legend-meta {
+  font-size: 0.72rem;
+  color: var(--app-muted, var(--muted));
+  font-variant-numeric: tabular-nums;
+}
+
+.trend-chart-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 1.15s var(--ease-out);
+}
+
+.trend-chart.is-drawn .trend-chart-line {
+  stroke-dashoffset: 0;
+}
+
+.trend-chart-area {
+  opacity: 0;
+  transition: opacity 700ms 280ms var(--ease-out);
+}
+
+.trend-chart.is-drawn .trend-chart-area {
+  opacity: 1;
+}
+
+.trend-chart-dot {
+  opacity: 0;
+  transform: scale(0.35);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: opacity 320ms var(--ease-out), transform 320ms var(--ease-out);
+}
+
+.trend-chart.is-drawn .trend-chart-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.workspace .dashboard-page .dashboard-main {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.workspace .dashboard-page .dashboard-main.is-profile-complete {
+  grid-template-columns: 1fr;
+}
+
+.workspace .dashboard-page .dashboard-panel,
+.workspace .dashboard-page .activity-feed {
+  padding: 22px !important;
+  animation: dash-rise 560ms var(--ease-out) 240ms both;
+}
+
+.workspace .dashboard-page .latest-action-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px 16px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.workspace .dashboard-page .latest-action-when {
+  white-space: nowrap;
+}
+
+.workspace .dashboard-page .feature-alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+
+.workspace .dashboard-page .feature-alert > div {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.workspace .dashboard-page .feature-alert > p {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+.workspace .dashboard-page .feature-alert > .button,
+.workspace .dashboard-page .feature-alert > a.button {
+  flex: 0 0 auto;
+}
+
+.activity-feed-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.activity-feed-head h2 {
+  margin: 0;
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 16px;
+  min-width: 0;
+}
+
+.activity-item-summary {
+  margin: 0;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.activity-item-when {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.empty-sparkline span {
+  transform-origin: bottom center;
+  animation: dash-bar 1.4s var(--ease-out) infinite alternate;
+}
+
+.empty-sparkline span:nth-child(1) { animation-delay: 0ms; }
+.empty-sparkline span:nth-child(2) { animation-delay: 80ms; }
+.empty-sparkline span:nth-child(3) { animation-delay: 160ms; }
+.empty-sparkline span:nth-child(4) { animation-delay: 240ms; }
+.empty-sparkline span:nth-child(5) { animation-delay: 320ms; }
+
+@keyframes dash-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dash-bar {
+  from { transform: scaleY(0.45); }
+  to { transform: scaleY(1); }
+}
+
+.score-ring-progress {
+  transition: stroke-dashoffset 900ms var(--ease-out);
+}
+
+@media (max-width: 1100px) {
+  .workspace .interview-progress-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1024px) {
+  .workspace .dashboard-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .workspace .dashboard-page .dashboard-main {
+    grid-template-columns: 1fr;
+  }
+  .workspace .interview-progress-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .workspace .page-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .workspace .page-heading-actions {
+    width: 100%;
+  }
+  .workspace .page-heading-actions .button,
+  .workspace .page-heading-actions a.button {
+    flex: 1 1 auto;
+  }
+  .dash-pie-layout {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: left;
+  }
+  .dash-pie-legend {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .workspace .dashboard-metrics {
+    grid-template-columns: 1fr;
+  }
+  .workspace .interview-progress-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .activity-item {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace .dashboard-page .metric-card,
+  .workspace .interview-progress-panel,
+  .dash-pie-card,
+  .workspace .dashboard-page .dashboard-panel,
+  .workspace .dashboard-page .activity-feed,
+  .empty-sparkline span {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .trend-chart-line,
+  .trend-chart-area,
+  .trend-chart-dot,
+  .dash-pie-slice,
+  .score-ring-progress,
+  .dimension-fill,
+  .dimension-fill-prev {
+    transition: none !important;
   }
 }

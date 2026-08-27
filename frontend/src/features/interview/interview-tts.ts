@@ -5,10 +5,6 @@
  * playback before resolving — never advances mid-sentence.
  */
 
-import { createClient as createAuthClient } from "@/features/auth/api/client";
-import { isDemoSession } from "@/features/auth/demo-session";
-import { resolveApiBase } from "@/shared/config";
-
 export type InterviewTtsKind = "question" | "feedback" | "bridge" | "general";
 
 export type SpeakOptions = {
@@ -30,31 +26,7 @@ let cachedStatus: TtsStatus | null = null;
 let statusFetchedAt = 0;
 const STATUS_TTL_MS = 60_000;
 
-/** Active HTMLAudioElement so we can cancel cleanly between turns. */
-let activeAudio: HTMLAudioElement | null = null;
-let activeObjectUrl: string | null = null;
-
 export function cancelInterviewSpeech(): void {
-  if (activeAudio) {
-    try {
-      activeAudio.onended = null;
-      activeAudio.onerror = null;
-      activeAudio.pause();
-      activeAudio.removeAttribute("src");
-      activeAudio.load();
-    } catch {
-      /* ignore */
-    }
-    activeAudio = null;
-  }
-  if (activeObjectUrl) {
-    try {
-      URL.revokeObjectURL(activeObjectUrl);
-    } catch {
-      /* ignore */
-    }
-    activeObjectUrl = null;
-  }
   if (typeof window !== "undefined" && "speechSynthesis" in window) {
     try {
       window.speechSynthesis.cancel();
@@ -65,30 +37,12 @@ export function cancelInterviewSpeech(): void {
 }
 
 export function isInterviewSpeechBusy(): boolean {
-  if (activeAudio && !activeAudio.paused && !activeAudio.ended) return true;
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return false;
   try {
     return Boolean(window.speechSynthesis.speaking || window.speechSynthesis.pending);
   } catch {
     return false;
   }
-}
-
-async function authHeaders(): Promise<Record<string, string>> {
-  if (isDemoSession()) {
-    return { "Content-Type": "application/json" };
-  }
-  const authClient = createAuthClient();
-  const {
-    data: { session },
-  } = await authClient.auth.getSession();
-  if (!session?.access_token) {
-    throw new Error("Your session has expired. Sign in again.");
-  }
-  return {
-    Authorization: `Bearer ${session.access_token}`,
-    "Content-Type": "application/json",
-  };
 }
 
 export async function fetchInterviewTtsStatus(force = false): Promise<TtsStatus> {
@@ -101,90 +55,6 @@ export async function fetchInterviewTtsStatus(force = false): Promise<TtsStatus>
   cachedStatus = { provider: null, configured: false, fallback: "browser_speech_synthesis" };
   statusFetchedAt = now;
   return cachedStatus;
-}
-
-async function fetchFishAudioBlob(text: string, kind: InterviewTtsKind, signal?: AbortSignal): Promise<Blob> {
-  const base = resolveApiBase();
-  const headers = await authHeaders();
-  const res = await fetch(`${base}/interviews/tts`, {
-    method: "POST",
-    credentials: "include",
-    headers,
-    signal,
-    body: JSON.stringify({ text, kind }),
-  });
-  if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    throw new Error(`Fish TTS failed (${res.status})${detail ? `: ${detail.slice(0, 120)}` : ""}`);
-  }
-  const blob = await res.blob();
-  if (!blob || blob.size < 32) {
-    throw new Error("Fish TTS returned empty audio");
-  }
-  return blob;
-}
-
-function playBlob(blob: Blob, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    cancelInterviewSpeech();
-    if (signal?.aborted) {
-      reject(new DOMException("Aborted", "AbortError"));
-      return;
-    }
-    const url = URL.createObjectURL(blob);
-    activeObjectUrl = url;
-    const audio = new Audio(url);
-    activeAudio = audio;
-    let settled = false;
-
-    const cleanup = () => {
-      if (activeAudio === audio) activeAudio = null;
-      if (activeObjectUrl === url) {
-        try {
-          URL.revokeObjectURL(url);
-        } catch {
-          /* ignore */
-        }
-        activeObjectUrl = null;
-      }
-      signal?.removeEventListener("abort", onAbort);
-    };
-
-    const finish = (err?: Error) => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      if (err) reject(err);
-      else resolve();
-    };
-
-    const onAbort = () => {
-      try {
-        audio.pause();
-      } catch {
-        /* ignore */
-      }
-      finish(new DOMException("Aborted", "AbortError"));
-    };
-
-    signal?.addEventListener("abort", onAbort, { once: true });
-    audio.onended = () => finish();
-    audio.onerror = () => finish(new Error("Audio playback failed"));
-
-    // Safety: never hang forever if ended never fires.
-    // Estimate from size (~16KB/s for 128kbps mp3) + cushion, min 8s max 90s.
-    const estimatedMs = Math.min(90_000, Math.max(8_000, (blob.size / 16) * 1000 + 2_000));
-    window.setTimeout(() => {
-      if (!settled && audio.ended) finish();
-      else if (!settled && audio.paused && audio.currentTime > 0) finish();
-      // If still playing past estimate, give extra 30s then force-complete (do not cancel early).
-    }, estimatedMs + 30_000);
-    window.setTimeout(() => {
-      if (!settled) finish();
-    }, estimatedMs + 60_000);
-
-    void audio.play().catch((err) => finish(err instanceof Error ? err : new Error("play() failed")));
-  });
 }
 
 /** Split long lines into sentence-sized chunks so Chrome does not drop long utterances. */

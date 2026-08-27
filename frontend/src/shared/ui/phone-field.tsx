@@ -208,7 +208,9 @@ export function PhoneField({ value, onChange, id, required, disabled, label = "M
   const national = value.national.replace(/\D/g, "");
   // Use ref to avoid stale closure on blur — producer holds latest value.
   const valueRef = useRef(value);
-  valueRef.current = value;
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
   return (
     <div className="field-label">
       {label ? <span className="phone-field-label" id={id ? `${id}-label` : undefined}>{label}</span> : null}

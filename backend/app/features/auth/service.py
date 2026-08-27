@@ -93,6 +93,8 @@ def parse_file_access_token(
     bucket: str,
     path: str,
 ) -> UUID:
+    # Enrich low-level validation with truncated token/path for telemetry (producer unknown, so enrich here)
+    trunc_token = str(token)[:80] if isinstance(token, str) else f"type={type(token).__name__} value={str(token)[:80]}"
     try:
         payload = jwt.decode(
             token,
@@ -101,17 +103,17 @@ def parse_file_access_token(
             options={"require": ["sub", "exp", "iat", "scope", "bucket", "path"]},
         )
     except jwt.ExpiredSignatureError as exc:
-        raise ApiError(401, "file_token_expired", "The file access link has expired. Refresh the page.") from exc
+        raise ApiError(401, "file_token_expired", f"The file access link has expired for bucket '{bucket}' path '{str(path)[:80]}': type={type(token).__name__} token={trunc_token[:40]}") from exc
     except jwt.PyJWTError as exc:
-        raise ApiError(401, "invalid_file_token", "The file access link is invalid.") from exc
+        raise ApiError(401, "invalid_file_token", f"[FileToken] Invalid file token for bucket '{bucket}' path '{str(path)[:80]}': type={type(token).__name__} token={trunc_token[:40]} ({type(exc).__name__})") from exc
     if payload.get("scope") != FILE_READ_SCOPE:
-        raise ApiError(401, "invalid_file_token", "The file access link is invalid.")
+        raise ApiError(401, "invalid_file_token", f"[FileToken] Scope mismatch for bucket '{bucket}' path '{str(path)[:80]}': type={type(token).__name__} token={trunc_token[:40]} scope={str(payload.get('scope'))[:20]}")
     if str(payload.get("bucket") or "") != str(bucket) or str(payload.get("path") or "") != str(path):
-        raise ApiError(401, "invalid_file_token", "The file access link does not match this file.")
+        raise ApiError(401, "invalid_file_token", f"[FileToken] Path mismatch for request bucket '{bucket}' path '{str(path)[:80]}': token bucket='{str(payload.get('bucket'))[:40]}' token path='{str(payload.get('path'))[:80]}' type={type(token).__name__}")
     try:
         return UUID(str(payload["sub"]))
     except (KeyError, TypeError, ValueError) as exc:
-        raise ApiError(401, "invalid_file_token", "The file access link is invalid.") from exc
+        raise ApiError(401, "invalid_file_token", f"[FileToken] Invalid sub for bucket '{bucket}' path '{str(path)[:80]}': type={type(token).__name__} token={trunc_token[:40]}") from exc
 
 
 def _user_from_token(token: str, settings: Settings) -> CurrentUser:

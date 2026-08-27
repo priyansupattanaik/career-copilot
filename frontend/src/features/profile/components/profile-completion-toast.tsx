@@ -52,10 +52,11 @@ export function ProfileCompletionToast({ completion, missing }: Props) {
     window.dispatchEvent(new Event(DISMISS_EVENT));
   }
 
-  // Settings already exposes completion. Mock interview can start without a
-  // completed profile, so the toast must not cover that flow.
+  // Settings and dashboard already expose completion inline. Mock interview
+  // can start without a completed profile, so the toast must not cover those.
   if (
     pathname.startsWith("/settings/") ||
+    pathname === "/dashboard" ||
     pathname.startsWith("/mock-interview") ||
     !open ||
     percent >= 100 ||

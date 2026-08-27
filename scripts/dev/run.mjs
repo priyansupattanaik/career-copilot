@@ -78,7 +78,7 @@ const commands = [
   {
     name: "backend",
     command: backendPython,
-    args: ["-m", "uvicorn", "app.main:app", "--reload", "--reload-dir", "backend", "--access-log", "--port", backendPort(process.env), "--app-dir", "backend"],
+    args: ["-m", "uvicorn", "app.main:app", "--reload", "--reload-dir", "backend", "--access-log", "--log-level", "info", "--port", backendPort(process.env), "--app-dir", "backend"],
     cwd: process.cwd(),
     env: process.env,
   },

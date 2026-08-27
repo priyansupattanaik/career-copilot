@@ -10,6 +10,7 @@
     "dev:backend": "node scripts/dev/backend.mjs",
     "firebase:check": "node scripts/dev/preflight.mjs --strict",
     "lint": "node scripts/run-frontend.mjs lint",
+    "tsc": "tsc --noEmit",
     "typecheck": "node scripts/run-frontend.mjs typecheck",
     "build:frontend": "node scripts/run-frontend.mjs build",
     "check:frontend": "node scripts/run-frontend.mjs check:frontend",
@@ -20,5 +21,9 @@
     "omniroute:dev": "node scripts/integrations/omniroute.mjs dev",
     "omniroute:check": "node scripts/integrations/omniroute.mjs check",
     "test:backend": "backend\\.venv\\Scripts\\python.exe -m pytest backend\\tests"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "typescript": "^5.9.3"
   }
 }

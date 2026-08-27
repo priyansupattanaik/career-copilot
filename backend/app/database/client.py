@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import re
 import secrets
+import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -663,10 +664,19 @@ class FirestoreClient:
     def attach_nested(self, table: str, rows: list[dict[str, Any]], columns: list[str]) -> None: return None
 
 
+_firestore_cache: dict[str, Any] = {}
+_firestore_app_cache: dict[str, Any] = {}
+
 def _firestore_for(settings: Settings):
     from firebase_admin import firestore
+
+    cache_key = f"{settings.firebase_project_id}:{settings.firebase_database_id}"
+    if cache_key in _firestore_cache:
+        return _firestore_cache[cache_key]
     app = firebase_admin_app(settings)
-    return firestore.client(app=app, database_id=settings.firebase_database_id)
+    client = firestore.client(app=app, database_id=settings.firebase_database_id)
+    _firestore_cache[cache_key] = client
+    return client
 
 
 def firebase_admin_app(settings: Settings):
@@ -695,6 +705,8 @@ def firebase_admin_app(settings: Settings):
         return firebase_admin.initialize_app(certificate, options, name=app_name)
 
 
+_db_client_cache: dict[str, Any] = {}
+
 def database_client(settings: Settings):
     from app.core.errors import ApiError
 
@@ -704,8 +716,13 @@ def database_client(settings: Settings):
             "database_not_configured",
             "Firestore is not configured. Set FIREBASE_PROJECT_ID and FIREBASE_CREDENTIALS_PATH.",
         )
+    cache_key = f"{settings.firebase_project_id}:{settings.firebase_database_id}:{settings.firebase_credentials_path}"
+    if cache_key in _db_client_cache:
+        return _db_client_cache[cache_key]
     try:
-        return FirestoreClient(settings)
+        client = FirestoreClient(settings)
+        _db_client_cache[cache_key] = client
+        return client
     except RuntimeError as exc:
         raise ApiError(503, "database_unavailable", "Firestore is unavailable or misconfigured.") from exc
 
@@ -737,13 +754,23 @@ def _probe_with_timeout(label: str, fn, timeout_seconds: float = 3.0) -> tuple[b
         pool.shutdown(wait=False, cancel_futures=True)
 
 
+_probe_cache: dict[str, tuple[float, dict[str, Any]]] = {}
+
 def database_probe(settings: Settings, *, timeout_seconds: float = 3.0) -> dict[str, Any]:
     """Reachability check for Firestore + object storage with hard timeouts.
 
     Used by /health and /health/database. Timeouts keep readiness checks from
     hanging when a remote dependency is slow (common cause of ``npm run dev``
     failing after uvicorn has already started).
+    Producer fix: concurrent probes + 10s cache (was sequential sum 6s, now max 3s, cached <10ms).
     """
+    # Cache probe for 10s to avoid hammering Firestore on every /health poll (frontend polls every 2-3s)
+    cache_key = f"{settings.firebase_project_id}:{settings.firebase_database_id}:{settings.supabase_storage_bucket}:{timeout_seconds}"
+    now = time.time()
+    if cache_key in _probe_cache:
+        ts, cached = _probe_cache[cache_key]
+        if now - ts < 10:
+            return cached
     storage_engine = "supabase_storage" if settings.supabase_storage_configured else "unconfigured"
     storage_bucket = settings.supabase_storage_bucket or None
     result: dict[str, Any] = {
@@ -762,18 +789,23 @@ def database_probe(settings: Settings, *, timeout_seconds: float = 3.0) -> dict[
         # Force materialization of the stream so the call is not lazy-noop.
         list(database_client(settings).db.collection("_setup_checks").limit(1).stream())
 
-    ok_db, db_err = _probe_with_timeout("firestore", _db_ping, timeout_seconds)
+    # Concurrent probes so health latency is max, not sum
+    from concurrent.futures import ThreadPoolExecutor as _TPE
+    with _TPE(max_workers=2) as _pool:
+        f_db = _pool.submit(_probe_with_timeout, "firestore", _db_ping, timeout_seconds)
+        # Storage ping needs to be defined before submitting, so define inline
+        def _storage_ping_inner() -> None:
+            if not settings.storage_configured:
+                raise RuntimeError("Object storage is not configured")
+            # Reuse cached storage client if possible
+            ObjectStorage(settings).from_(settings.document_bucket).list("_setup_checks")
+        f_st = _pool.submit(_probe_with_timeout, "storage", _storage_ping_inner, timeout_seconds)
+        ok_db, db_err = f_db.result()
+        ok_st, st_err = f_st.result()
     if ok_db:
         result["database_status"] = "reachable"
     elif db_err:
         result["database_error"] = db_err
-
-    def _storage_ping() -> None:
-        if not settings.storage_configured:
-            raise RuntimeError("Object storage is not configured")
-        ObjectStorage(settings).from_(settings.document_bucket).list("_setup_checks")
-
-    ok_st, st_err = _probe_with_timeout("storage", _storage_ping, timeout_seconds)
     if ok_st:
         result["storage_status"] = "reachable"
     elif st_err:
@@ -784,4 +816,5 @@ def database_probe(settings: Settings, *, timeout_seconds: float = 3.0) -> dict[
     elif result["database_status"] == "reachable" or result["storage_status"] == "reachable":
         # Partial connectivity — still useful for ops; not fully healthy.
         result["status"] = "degraded"
+    _probe_cache[cache_key] = (time.time(), result)
     return result

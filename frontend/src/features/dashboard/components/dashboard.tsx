@@ -7,7 +7,9 @@ import {
 import { isDemoSession } from "@/features/auth/demo-session";
 import { Card, PageHeader, Progress } from "@/shared/ui/primitives";
 import {
+  AnimatedNumber,
   InterviewProgressPanel,
+  WorkspaceMixChart,
   type InterviewProgress,
 } from "@/features/dashboard/components/interview-progress-charts";
 import { useWorkspaceBootstrap } from "@/features/workspace/bootstrap-context";
@@ -164,7 +166,9 @@ export function Dashboard() {
       <section className="dashboard-metrics" aria-label="Account metrics">
         <article className="metric-card">
           <p className="metric-card-label">Resumes</p>
-          <div className="metric-value">{data?.counts?.resumes ?? "—"}</div>
+          <div className="metric-value">
+            <AnimatedNumber value={data?.counts?.resumes ?? "—"} />
+          </div>
           <p className="metric-card-note">
             {data?.workspace?.has_confirmed_resume
               ? "Confirmed resume on file"
@@ -178,7 +182,9 @@ export function Dashboard() {
         </article>
         <article className="metric-card">
           <p className="metric-card-label">ATS analyses</p>
-          <div className="metric-value">{data?.counts?.ats_analyses ?? "—"}</div>
+          <div className="metric-value">
+            <AnimatedNumber value={data?.counts?.ats_analyses ?? "—"} />
+          </div>
           <p className="metric-card-note">
             {atsScore == null
               ? data
@@ -199,7 +205,9 @@ export function Dashboard() {
         <article className="metric-card metric-card-interview">
           <p className="metric-card-label">Interviews</p>
           <div className="metric-value-row">
-            <div className="metric-value">{data?.counts?.interviews ?? "—"}</div>
+            <div className="metric-value">
+              <AnimatedNumber value={data?.counts?.interviews ?? "—"} />
+            </div>
             {interviewLatest != null ? (
               <span
                 className="metric-inline-score"
@@ -229,7 +237,9 @@ export function Dashboard() {
         </article>
         <article className="metric-card">
           <p className="metric-card-label">Job pipeline</p>
-          <div className="metric-value">{data?.counts?.saved_jobs ?? "—"}</div>
+          <div className="metric-value">
+            <AnimatedNumber value={data?.counts?.saved_jobs ?? "—"} />
+          </div>
           <p className="metric-card-note">Saved, applied, and tracked roles</p>
           <Link className="metric-card-link" href="/jobs/saved">
             Open job pipeline
@@ -237,7 +247,17 @@ export function Dashboard() {
         </article>
       </section>
 
-      {data ? <InterviewProgressPanel progress={interviewProgress} /> : null}
+      {data ? (
+        <section className="dashboard-insight" aria-label="Progress charts">
+          <InterviewProgressPanel progress={interviewProgress} />
+          <WorkspaceMixChart
+            resumes={data.counts?.resumes}
+            analyses={data.counts?.ats_analyses}
+            interviews={data.counts?.interviews}
+            jobs={data.counts?.saved_jobs}
+          />
+        </section>
+      ) : null}
 
       <section
         className={`dashboard-main ${completion >= 100 ? "is-profile-complete" : ""}`}
