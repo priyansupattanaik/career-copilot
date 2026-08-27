@@ -398,15 +398,6 @@ def main() -> int:
             "main.py CORSMiddleware allow_headers",
         )
 
-    if "return self.omniroute_configured or bool(self.groq_api_key" in config_py:
-        add(
-            "CONN-LLM-01",
-            "P2",
-            "LLM routing",
-            "omniroute_configured makes groq/nvidia appear configured without real provider keys",
-            "Settings.groq_configured / nvidia_configured",
-        )
-
     # Auth session always hits network via POST even though getSession is local
     if "async getSession()" in auth_client and 'request("/auth/session")' in auth_client:
         # getUser hits network — fine

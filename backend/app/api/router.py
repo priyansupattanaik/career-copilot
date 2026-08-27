@@ -8,9 +8,6 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-_bootstrap_cache: dict[str, tuple[float, dict[str, Any]]] = {}
-_bootstrap_cache_ttl = 5.0
-
 from fastapi import APIRouter, Body, Depends, File, Form, Header, Query, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.responses import Response as PlainResponse
@@ -117,6 +114,9 @@ from app.features.profile.avatars import (
 )
 from app.features.profile.importer import insert_validated_batch
 from app.features.resume_improvement.routes import router as resume_improvement_router
+
+_bootstrap_cache: dict[str, tuple[float, dict[str, Any]]] = {}
+_bootstrap_cache_ttl = 5.0
 
 router = APIRouter()
 router.include_router(resume_improvement_router)
@@ -1834,13 +1834,14 @@ async def create_resume(
     settings: Settings = Depends(get_settings),
 ):
     client = client_for(settings, user)
-    # Producer fix: validate size before loading into memory — enrich with type/truncated filename.
     max_bytes = int(getattr(settings, "document_max_bytes", 10 * 1024 * 1024))
     if getattr(file, "size", None) is not None and file.size is not None and file.size > max_bytes:
         raise ApiError(413, "file_too_large", f"File too large for '{str(getattr(file, 'filename', ''))[:80]}': type={type(file.filename).__name__ if hasattr(file, 'filename') else 'unknown'}, size={file.size} > {max_bytes}")
     content = await file.read()
     if len(content) > max_bytes:
         raise ApiError(413, "file_too_large", f"File too large for '{str(getattr(file, 'filename', ''))[:80]}': size={len(content)} > {max_bytes}")
+    validate_document(file.filename or "document", file.content_type, content, max_bytes)
+    resume, version = await _store_uploaded_resume(client, settings, user, file, content)
     write_activity(client, user, "resume_uploaded", "Resume uploaded", "resume", str(resume["id"]))
     return {"resume": resume, "version": version}
 

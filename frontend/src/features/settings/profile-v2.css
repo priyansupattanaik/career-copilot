@@ -9,15 +9,14 @@
    ———————————————————————————————— */
 
 .workspace .feature-page.settings-page.profile-v2 {
-  --ps-text: var(--app-text, #0f172a);
-  --ps-muted: var(--app-muted, #64748b);
-  --ps-line: var(--app-line, #e7e9e2);
-  --ps-panel: var(--app-panel, #ffffff);
-  --ps-soft: var(--app-panel-soft, #f1f5ef);
-  --ps-paper: var(--app-paper, #f8faf7);
-  --ps-accent: var(--app-blue, #4f46e5);
+  --ps-text: var(--text);
+  --ps-muted: var(--muted);
+  --ps-line: var(--border);
+  --ps-panel: var(--surface);
+  --ps-soft: var(--surface-muted);
+  --ps-paper: var(--background);
+  --ps-accent: var(--primary-strong);
   --ps-accent-soft: color-mix(in srgb, var(--ps-accent) 10%, white);
-  --ps-ink: var(--ps-text);
   /* spacing scale — single source of truth */
   --ps-4: 4px;
   --ps-8: 8px;
@@ -417,7 +416,7 @@
 }
 .workspace .feature-page.settings-page.profile-v2 .profile-editor .button-primary,
 .workspace .feature-page.settings-page.profile-v2 .profile-editor .button-primary:hover {
-  background: var(--ps-ink) !important; color: var(--ps-panel) !important; border-color: transparent !important;
+  background: var(--ps-text) !important; color: var(--ps-panel) !important; border-color: transparent !important;
   border-radius: 999px !important; min-height: 42px; font-weight: 650;
   transition: transform 100ms ease, background 160ms ease, box-shadow 160ms ease;
 }
@@ -513,8 +512,7 @@
 
 /* —— Dark —— */
 [data-theme="dark"] .workspace .feature-page.settings-page.profile-v2 {
-  --ps-text: #f1f5f9; --ps-muted: #94a3b8; --ps-line: #1e293b; --ps-panel: #0f172a;
-  --ps-soft: #1e293b; --ps-paper: #020617; --ps-accent-soft: color-mix(in srgb, var(--ps-accent) 18%, transparent);
+  --ps-accent-soft: color-mix(in srgb, var(--ps-accent) 18%, transparent);
 }
 [data-theme="dark"] .workspace .feature-page.settings-page.profile-v2 .profile-masthead,
 [data-theme="dark"] .workspace .feature-page.settings-page.profile-v2 .profile-tabs,

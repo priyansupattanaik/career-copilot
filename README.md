@@ -226,7 +226,7 @@ One root `.env` (template: [`.env.example`](./.env.example)). Only `VITE_*` keys
 | Firestore | `FIREBASE_PROJECT_ID`, `FIREBASE_CREDENTIALS_PATH`, `FIREBASE_DATABASE_ID` |
 | Storage | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`, `DOCUMENT_BUCKET`, `AVATAR_BUCKET` |
 | LLM | `LLM_PROVIDER`, `GROQ_*`, `NVIDIA_*`, `LLM_RPM_LIMIT` |
-| Optional | `YOUTUBE_API_KEY`, `ADZUNA_*`, `FISH_AUDIO_*`, `OMNIROUTE_*` (sidecar, off by default) |
+| Optional | `YOUTUBE_API_KEY`, `ADZUNA_*`, `FISH_AUDIO_*` |
 
 ---
 

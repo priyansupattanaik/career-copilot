@@ -220,16 +220,6 @@ def static_scan() -> None:
             "apiRequest 401 branch",
         )
 
-    if "return self.omniroute_configured or bool(self.groq_api_key" in (
-        ROOT / "backend/app/core/config.py"
-    ).read_text(encoding="utf-8"):
-        add(
-            "P2",
-            "LLM routing",
-            "omniroute_configured makes groq/nvidia appear configured without real keys",
-            "Settings.groq_configured",
-        )
-
     # Flow: complete after only some answers still marks completed
     if 'update({"status": "completed"' in router and "required_ids - answered_ids" not in router:
         add(

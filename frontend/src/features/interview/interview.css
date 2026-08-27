@@ -13,12 +13,11 @@
 .interview-hub,
 .interview-session-page,
 .interview-report {
-  --interview-ink: var(--text);
   --interview-paper: var(--surface);
   --interview-wash: color-mix(in srgb, var(--surface-blue, var(--surface)) 70%, var(--background));
   --interview-line: var(--border);
-  --interview-accent: #3a7ca5;
-  --interview-you: #c47b3b;
+  --interview-accent: var(--primary-strong);
+  --interview-you: var(--accent);
   --interview-gap: 24px;
   display: grid;
   gap: var(--interview-gap);
@@ -94,7 +93,7 @@
 .interview-field-label {
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--interview-ink);
+  color: var(--text);
 }
 
 .interview-field-optional {
@@ -154,7 +153,7 @@
 
 .interview-focus-label {
   font-weight: 650;
-  color: var(--interview-ink);
+  color: var(--text);
 }
 
 .interview-focus-hint {
@@ -203,7 +202,7 @@
 .interview-length-chip.is-selected {
   border-color: var(--interview-accent);
   background: color-mix(in srgb, var(--interview-accent) 12%, var(--surface));
-  color: var(--interview-ink);
+  color: var(--text);
 }
 
 .interview-toggle {

@@ -1,14 +1,9 @@
 import asyncio
-import json
 import time
 from types import SimpleNamespace
 
-import httpx
 import pytest
-from pydantic import BaseModel
 
-from app.agents.providers.groq_client import GroqClient
-from app.agents.providers.routing import provider_route
 from app.core.errors import ApiError
 from app.features.document_parsing import pipeline as document_pipeline
 from app.features.document_parsing.parsing import llm_sections
@@ -59,7 +54,6 @@ def test_profile_draft_fails_without_an_llm_answer(monkeypatch):
             )
         )
     assert caught.value.code == "llm_generation_failed"
-
 
 def test_saved_document_parsing_never_waits_for_a_remote_provider(monkeypatch):
     calls = []
@@ -116,81 +110,3 @@ def test_profile_ai_timeout_fails_without_static_content(monkeypatch):
 
     assert time.perf_counter() - started < 3.0
     assert caught.value.code == "llm_generation_failed"
-
-
-def test_omniroute_route_is_opt_in_and_openai_compatible():
-    settings = SimpleNamespace(
-        omniroute_configured=True,
-        omniroute_base_url="http://127.0.0.1:20128/v1",
-        omniroute_api_key="",
-        omniroute_model="auto/fast",
-        omniroute_timeout_seconds=7.0,
-        omniroute_max_retries=0,
-        groq_base_url="https://api.groq.com/openai/v1",
-        groq_api_key="groq-key",
-        groq_model="groq-model",
-        groq_timeout_seconds=45.0,
-        groq_max_retries=2,
-        nvidia_base_url="https://integrate.api.nvidia.com/v1",
-        nvidia_api_key="nvidia-key",
-        nvidia_model="nvidia-model",
-        nvidia_timeout_seconds=90.0,
-        nvidia_max_retries=2,
-    )
-
-    route = provider_route(settings, "groq")
-
-    assert route == {
-        "provider": "omniroute",
-        "base_url": "http://127.0.0.1:20128/v1",
-        "api_key": "",
-        "model": "auto/fast",
-        "timeout_seconds": 7.0,
-        "max_retries": 0,
-    }
-
-
-def test_groq_client_sends_openai_request_to_omniroute():
-    class Result(BaseModel):
-        answer: str
-
-    captured = {}
-
-    async def handler(request):
-        captured["url"] = str(request.url)
-        captured["authorization"] = request.headers.get("authorization")
-        captured["body"] = json.loads(request.content)
-        return httpx.Response(
-            200,
-            json={"choices": [{"message": {"content": '{"answer":"ok"}'}}]},
-        )
-
-    settings = SimpleNamespace(
-        omniroute_configured=True,
-        omniroute_base_url="http://127.0.0.1:20128/v1",
-        omniroute_api_key="",
-        omniroute_model="auto",
-        omniroute_timeout_seconds=7.0,
-        omniroute_max_retries=0,
-        groq_configured=True,
-        groq_model="unused",
-        groq_temperature=0.4,
-        groq_max_output_tokens=256,
-        groq_timeout_seconds=45.0,
-        groq_max_retries=2,
-        llm_allow_repair=False,
-        llm_rpm_limit=600.0,
-    )
-
-    result = asyncio.run(
-        GroqClient(settings, transport=httpx.MockTransport(handler)).generate_structured(
-            system_prompt="Return JSON.",
-            user_payload={"value": 1},
-            schema_model=Result,
-        )
-    )
-
-    assert result.answer == "ok"
-    assert captured["url"] == "http://127.0.0.1:20128/v1/chat/completions"
-    assert captured["authorization"] is None
-    assert captured["body"]["model"] == "auto"

@@ -22,7 +22,11 @@ MAX_TTS_CHARS = 1_200
 
 
 def fish_audio_configured(settings: Settings) -> bool:
-    return bool((settings.fish_audio_api_key or "").strip())
+    return bool(
+        (settings.fish_audio_api_key or "").strip()
+        and (settings.fish_audio_base_url or "").strip()
+        and (settings.fish_audio_model or "").strip()
+    )
 
 
 def synthesize_speech(
@@ -46,9 +50,13 @@ def synthesize_speech(
     if not fish_audio_configured(settings):
         raise RuntimeError("Fish Audio is not configured")
 
-    base = (settings.fish_audio_base_url or "https://api.fish.audio").rstrip("/")
+    base = (settings.fish_audio_base_url or "").rstrip("/")
+    if not base:
+        raise RuntimeError("Fish Audio base URL is not configured")
     url = f"{base}/v1/tts"
-    model = (settings.fish_audio_model or "s2.1-pro-free").strip()
+    model = (settings.fish_audio_model or "").strip()
+    if not model:
+        raise RuntimeError("Fish Audio model is not configured")
     reference_id = (settings.fish_audio_reference_id or "").strip() or None
     timeout = float(settings.fish_audio_timeout_seconds or 45.0)
 

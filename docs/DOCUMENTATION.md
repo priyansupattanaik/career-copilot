@@ -103,7 +103,6 @@ Career Copilot is a **private career workspace for one candidate at a time**. It
 | **LLM** | Groq preferred, NVIDIA fallback | Chat completions |
 | **Crews** | Optional `crewai`; else built-in sequential orchestrators | Learning + resume improve |
 | **TTS** | Fish Audio (optional) | Interviewer voice |
-| **Optional sidecar** | OmniRoute (`OMNIROUTE_ENABLED`, default off) | OpenAI-compatible proxy |
 
 ### Runtime
 
@@ -122,7 +121,6 @@ career-copilot/
 ├── firebase/          # Deny-all client rules
 ├── scripts/           # setup, dev, diagnostics
 ├── secrets/           # local service-account JSON (gitignored)
-├── integrations/      # optional OmniRoute (not required)
 ├── package.json       # root scripts
 └── .env / .env.example
 ```
@@ -269,7 +267,6 @@ Profile fill may use any version with extractable text (its own preview/apply ga
 
 1. `preferred_llm_provider` reads `LLM_PROVIDER` (`groq` | `nvidia`).  
 2. `preferred_llm_providers` returns configured providers in preference order.  
-3. If only OmniRoute is enabled (no native keys), routing may list a logical provider — clients still require native `*_configured` keys to call unless OmniRoute rewrites the route credentials when `omniroute_configured`.  
 4. Agents try preferred first, then the other, then deterministic behavior where defined.
 
 ### 6.6 Data access patterns
@@ -471,7 +468,6 @@ Inventory: `backend/app/agents/registry.py` → `GET /api/v1/agents/status` and 
 | `agents/providers/nvidia_client.py` | NVIDIA Integrate client |
 | `agents/providers/common.py` | JSON extract / fence strip |
 | `agents/providers/rate_limit.py` | Process-level RPM (`LLM_RPM_LIMIT`) |
-| `agents/providers/routing.py` | Preferred order; OmniRoute credential rewrite |
 | `agents/providers/prompts.py` | Load prompt text files |
 
 ### Crew runtimes
@@ -607,7 +603,6 @@ Paths relative to repository root.
 | `scripts/setup/*` | Install orchestration |
 | `scripts/dev/*` | Preflight + process spawn |
 | `scripts/diagnostics/*` | Env/secrets/API/Firestore audits |
-| `scripts/integrations/omniroute.mjs` | Optional OmniRoute helper |
 
 ### Backend
 
@@ -708,7 +703,6 @@ Single root `.env` (template: `.env.example`). Only `VITE_*` reaches the browser
 | LLM | `LLM_PROVIDER`, `GROQ_*`, `NVIDIA_*`, `LLM_RPM_LIMIT`, `LLM_ALLOW_REPAIR` |
 | YouTube / Jobs | `YOUTUBE_API_KEY`, `ADZUNA_*` |
 | TTS | `FISH_AUDIO_*` |
-| OmniRoute | `OMNIROUTE_ENABLED` (default false) + base/key/model |
 | Browser | `VITE_FIREBASE_*` |
 
 `APP_ENV=test` forces in-memory object storage for automated tests.
@@ -759,7 +753,6 @@ backend\.venv\Scripts\python.exe -m pip install -e "backend/.[pdf-extras]"
 | `check:boundaries` | Import boundaries |
 | `check:frontend` | lint + types + test + build |
 | `test:backend` | pytest |
-| `omniroute:*` | Optional sidecar helpers |
 
 ### Testing
 
@@ -1025,7 +1018,6 @@ Documented so operators and contributors know real system behavior (not product 
 | JWT after password change | Existing tokens remain valid until `exp` (no server-side revocation list) |
 | Upsert races | Preference/saved-job uniqueness is app-level, not a Firestore unique constraint |
 | Bootstrap capability | `capabilities.job_recommendations` may be hard-coded `false` even though generate endpoints exist |
-| OmniRoute-only | Logical routing may list a provider while clients still require native configuration unless OmniRoute supplies credentials |
 | Adzuna | Sync fetches page 1 only; process-global lock under concurrent users |
 | Split deploy | `vercel.json` SPA rewrite alone does not proxy API/files — configure reverse proxy or absolute API + file proxy |
 

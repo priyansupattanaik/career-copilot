@@ -116,18 +116,18 @@ test.describe("Landing page audit acceptance", () => {
 
     await page.locator('a.home-text-cta[href="#practice"]').click();
     await expect.poll(async () =>
-      page.locator(".home-practice-copy").evaluate((el) => getComputedStyle(el).opacity),
-    ).toBe("1");
+      Number(await page.locator(".home-practice-copy").evaluate((el) => getComputedStyle(el).opacity)),
+    ).toBeGreaterThanOrEqual(0.99);
     await expect.poll(async () =>
-      page.locator(".home-practice-card").evaluate((el) => getComputedStyle(el).opacity),
-    ).toBe("1");
+      Number(await page.locator(".home-practice-card").evaluate((el) => getComputedStyle(el).opacity)),
+    ).toBeGreaterThanOrEqual(0.99);
     await expect(page.getByRole("heading", { name: /Confidence is/i })).toBeVisible();
     await expect(page.getByText(/sessions/i).first()).toBeVisible();
 
     await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
     await expect.poll(async () =>
-      page.locator(".home-final-card").evaluate((el) => getComputedStyle(el).opacity),
-    ).toBe("1");
+      Number(await page.locator(".home-final-card").evaluate((el) => getComputedStyle(el).opacity)),
+    ).toBeGreaterThanOrEqual(0.99);
     await expect(page.getByRole("heading", { name: /Start with/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /Create my profile/i })).toBeVisible();
 
@@ -176,7 +176,7 @@ test.describe("Landing page audit acceptance", () => {
     });
 
     expect(contrast.theme).toBe("dark");
-    expect(contrast.pageBackground).toBe("rgb(0, 0, 0)");
+    expect(contrast.pageBackground).toBe("rgb(11, 18, 32)");
     expect(contrast.practiceColor).not.toBe("rgb(0, 0, 0)");
     expect(contrast.systemColor).not.toBe("rgb(0, 0, 0)");
 

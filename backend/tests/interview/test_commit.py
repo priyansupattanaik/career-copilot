@@ -4,8 +4,8 @@ from types import SimpleNamespace
 import pytest
 
 from app.core.errors import ApiError
-from app.features.interview.commit import commit_live_interview
 from app.features.interview.agent.evaluator import evaluate_answer_offline
+from app.features.interview.commit import commit_live_interview
 
 
 class FakeResult:
