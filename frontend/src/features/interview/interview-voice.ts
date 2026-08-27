@@ -113,6 +113,25 @@ export function nextActiveIndex(current: number, total: number): number | null {
  * Compact interviewer line for spoken debrief between questions.
  * Uses only measured evaluation fields — does not invent content.
  */
+export function spokenInterviewerReply(evaluation: {
+  spoken_reply?: string | null;
+  interviewer_feedback?: string | null;
+  verdict?: string | null;
+  score?: number | null;
+  strengths?: string[] | null;
+  improvements?: string[] | null;
+  better_approach?: string | null;
+  filler_notes?: string | null;
+} | null): string {
+  const spoken = String(evaluation?.spoken_reply || "").trim();
+  if (spoken) return spoken.slice(0, 340);
+  const feedback = String(evaluation?.interviewer_feedback || "").trim();
+  if (feedback && !/\b\d+\s*\/\s*100\b/.test(feedback) && !/\bscore\b/i.test(feedback)) {
+    return feedback.slice(0, 340);
+  }
+  return "Thanks, I've noted that. Let's continue.";
+}
+
 export function buildShortInterviewerLine(evaluation: {
   verdict?: string | null;
   score?: number | null;
@@ -205,12 +224,12 @@ export function phaseAfterFeedbackSpoken(autoContinue: boolean): InterviewTurnPh
   return autoContinue ? "between" : "awaiting_proceed";
 }
 
-/** Longer silence so natural pauses mid-answer do not auto-submit too early. */
-export const DEFAULT_ANSWER_SILENCE_MS = 5500;
+/** Silence before auto-submit. Short so the live round is not blocked after you finish. */
+export const DEFAULT_ANSWER_SILENCE_MS = 1800;
 /** Wait after interviewer audio fully ends before opening SpeechRecognition. */
-export const DEFAULT_LISTEN_AFTER_TTS_MS = 700;
-/** Brief beat after short feedback before auto-advance (feels less abrupt). */
-export const DEFAULT_AUTO_ADVANCE_AFTER_FEEDBACK_MS = 900;
+export const DEFAULT_LISTEN_AFTER_TTS_MS = 250;
+/** Brief beat after an answer before the next question. */
+export const DEFAULT_AUTO_ADVANCE_AFTER_FEEDBACK_MS = 150;
 /** How long we listen for "proceed" before showing a soft prompt again. */
 export const DEFAULT_PROCEED_LISTEN_MS = 12000;
 /**

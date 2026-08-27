@@ -15,6 +15,7 @@ import {
   phaseAfterQuestionSpoken,
   sessionMediaFlags,
   shouldAutoSubmitOnSilence,
+  spokenInterviewerReply,
 } from "../interview-voice";
 
 describe("extractSpeechTranscript", () => {
@@ -102,6 +103,24 @@ describe("turn sequencing", () => {
   });
 });
 
+describe("spokenInterviewerReply", () => {
+  it("prefers the live spoken reply and never reads a score aloud", () => {
+    expect(
+      spokenInterviewerReply({
+        spoken_reply: "Stay with that example — what changed after you shipped it?",
+        interviewer_feedback: "As an interviewer: this answer reads as partial (41/100).",
+        score: 41,
+      }),
+    ).toBe("Stay with that example — what changed after you shipped it?");
+  });
+
+  it("falls back without inventing a score line", () => {
+    expect(spokenInterviewerReply({ interviewer_feedback: "Score 80/100 overall." })).toBe(
+      "Thanks, I've noted that. Let's continue.",
+    );
+  });
+});
+
 describe("session media flags", () => {
   it("defaults missing flags to enabled so voice UI is not silently dead", () => {
     expect(sessionMediaFlags({})).toEqual({ camera: true, microphone: true });
@@ -172,8 +191,9 @@ describe("short interviewer turn flow", () => {
     expect(buildProceedPrompt({ isLastQuestion: true, autoContinue: true })).toMatch(/last question/i);
   });
 
-  it("uses a long silence window so mid-answer pauses do not cut the user off", () => {
-    expect(DEFAULT_ANSWER_SILENCE_MS).toBeGreaterThanOrEqual(3000);
+  it("auto-submits quickly after the candidate finishes speaking", () => {
+    expect(DEFAULT_ANSWER_SILENCE_MS).toBeGreaterThanOrEqual(1200);
+    expect(DEFAULT_ANSWER_SILENCE_MS).toBeLessThanOrEqual(2500);
   });
 
   it("waits long enough for full interviewer sentences (never 4s cut-off)", () => {

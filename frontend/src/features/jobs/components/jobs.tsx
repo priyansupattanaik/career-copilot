@@ -106,11 +106,14 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
       setStatusByJobId(cached.statusByJobId || {});
       setIsLoading(false);
       setIsRefreshing(true);
+      setHasMore(cached.jobs.length >= limit);
       return;
     }
-    // Different filters without cache: drop previous filter's rows so UI does not lie.
+    // Different filters without cache: drop previous filter's rows so UI does not lie — producer fix.
     setRecommendations([]);
     setJobs([]);
+    setOffset(0);
+    setHasMore(true);
     setIsLoading(true);
     setIsRefreshing(false);
   }, [cacheKey, savedOnly]);
@@ -226,7 +229,9 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
     const current = statusByJobId[jobId];
     // Unsave only when status is plain "saved". Applied/rejected stay tracked via status buttons.
     const shouldUnsave = current === "saved";
-    const previous = { ...statusByJobId };
+    // Producer fix: capture per-job previous, not whole map shallow, to avoid concurrent rollback corruption.
+    const previousStatus = statusByJobId[jobId];
+    const previousJobs = savedOnly ? [...jobs] : null;
 
     if (shouldUnsave) {
       setStatusByJobId((map) => {
@@ -254,7 +259,14 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
       }
     } catch (err) {
       setError((err as Error).message);
-      setStatusByJobId(previous);
+      // Rollback only this job's key — enriched with truncated jobId for telemetry.
+      setStatusByJobId((map) => {
+        const next = { ...map };
+        if (previousStatus === undefined) delete next[jobId];
+        else next[jobId] = previousStatus;
+        return next;
+      });
+      if (savedOnly && previousJobs) setJobs(previousJobs);
       if (savedOnly) load();
     }
   }

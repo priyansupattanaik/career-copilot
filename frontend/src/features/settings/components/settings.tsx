@@ -8,17 +8,55 @@ import { useNavigate } from "react-router-dom";
 import { apiRequest } from "@/shared/api/client";
 import { createClient } from "@/features/auth/api/client";
 import { Button, Card, Input, PageHeader, Progress, Select, Textarea } from "@/shared/ui/primitives";
+import { CareerIcon, type CareerIconName } from "@/components/ui/career-icons";
+import { AnimatedIcon } from "@/components/ui/animated-icon";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+import { cn } from "@/shared/utils";
 import {
   clampCompletion,
   extractMissing,
   notifyProfileUpdated,
 } from "@/features/profile/model/profile-completion";
+import "../profile-v2.css";
 
 const tabs = [
   ["/settings/account", "Account"],
   ["/settings/preferences", "Preferences"],
   ["/settings/privacy", "Privacy"],
 ] as const;
+
+const PROFILE_NAV = [
+  { id: "profile-details", label: "Details", icon: "profile" as CareerIconName },
+  { id: "profile-resume", label: "Resume", icon: "resume" as CareerIconName },
+  { id: "profile-preferences", label: "Preferences", icon: "opportunities" as CareerIconName },
+  { id: "profile-skills", label: "Skills", icon: "signal" as CareerIconName },
+  { id: "profile-experience", label: "Experience", icon: "evidence" as CareerIconName },
+  { id: "profile-education", label: "Education", icon: "learning" as CareerIconName },
+  { id: "profile-links", label: "Links", icon: "confidence" as CareerIconName },
+] as const;
+
+function sectionForMissingKey(key: string): string {
+  const k = String(key || "").toLowerCase();
+  if (k.includes("skill")) return "profile-skills";
+  if (k.includes("experience") || k.includes("employment")) return "profile-experience";
+  if (k.includes("education") || k.includes("degree") || k.includes("institution")) return "profile-education";
+  if (k.includes("link") || k.includes("linkedin") || k.includes("github") || k.includes("portfolio")) {
+    return "profile-links";
+  }
+  if (k.includes("resume")) return "profile-resume";
+  if (
+    k.includes("prefer") ||
+    k.includes("target_role") ||
+    k.includes("industry") ||
+    k.includes("salary") ||
+    k.includes("relocat") ||
+    k.includes("work_mode") ||
+    k.includes("authorization")
+  ) {
+    return "profile-preferences";
+  }
+  return "profile-details";
+}
 
 const PROFILE_EDITABLE_FIELDS = [
   "full_name",
@@ -239,14 +277,16 @@ function Frame({
   children,
   title,
   description,
+  className,
 }: {
   children: React.ReactNode;
   title: string;
   description: string;
+  className?: string;
 }) {
   const path = usePathname();
   return (
-    <div className="feature-page settings-page">
+    <div className={cn("feature-page settings-page", className)}>
       <PageHeader eyebrow="Career workspace" title={title} description={description} />
       {path !== "/settings/profile" ? (
         <nav className="settings-nav" aria-label="Settings sections">
@@ -266,6 +306,33 @@ function Frame({
         </nav>
       ) : null}
       {children}
+    </div>
+  );
+}
+
+function ProfileSectionHead({
+  icon,
+  title,
+  lede,
+  required,
+}: {
+  icon: CareerIconName;
+  title: string;
+  lede?: string;
+  required?: boolean;
+}) {
+  return (
+    <div className="profile-section-head">
+      <div className="profile-section-kicker">
+        <span className="profile-section-icon" aria-hidden="true">
+          <CareerIcon name={icon} size={18} />
+        </span>
+        <h2>
+          {title}
+          {required ? <RequiredMark /> : null}
+        </h2>
+      </div>
+      {lede ? <p className="profile-section-lede">{lede}</p> : null}
     </div>
   );
 }
@@ -387,8 +454,12 @@ function SelectWithOther({
   const isCustomStored = Boolean(trimmed) && !known.has(trimmed);
 
   // Sticky lock: set true when entering Other or typing; only cleared by dropdown preset.
+  // Fix producer: sync to value so external load (profile fetch) does not leave stale lock.
   const [otherLocked, setOtherLocked] = useState(isCustomStored);
-
+  useEffect(() => {
+    if (isCustomStored) setOtherLocked(true);
+    else if (isPreset) setOtherLocked(false);
+  }, [isCustomStored, isPreset]);
   // Custom stored values always show Other UI; locked keeps it while typing presets names.
   const inOther = otherLocked || isCustomStored;
   const selectValue = inOther ? OTHER_VALUE : isPreset ? trimmed : "";
@@ -665,12 +736,32 @@ export function ProfileSettings() {
   const [phoneParts, setPhoneParts] = useState<PhoneValue>(() => parsePhone(""));
 
   // Keep the structured phone editor in sync whenever the stored value
-  // changes (profile load, draft apply, or the editor itself).
+  // changes (profile load, draft apply) — avoid overwriting user typing.
+  // Only sync when form.phone differs from composed phoneParts (idempotent).
+  const phoneComposed = useMemo(() => composePhone(phoneParts), [phoneParts]);
   useEffect(() => {
-    setPhoneParts(parsePhone(form.phone));
+    const parsed = parsePhone(form.phone);
+    const currentComposed = composePhone(phoneParts);
+    if ((form.phone || "") !== currentComposed) {
+      // Avoid loop: only update if parsed actually differs.
+      if (parsed.iso2 !== phoneParts.iso2 || parsed.national !== phoneParts.national) {
+        setPhoneParts(parsed);
+      }
+    }
   }, [form.phone]);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const AVATAR_MAX_BYTES = 3 * 1024 * 1024;
+
+  const [activeProfileSection, setActiveProfileSection] = useState<string>(() => {
+    if (typeof window === "undefined") return "profile-details";
+    const hash = window.location.hash.replace(/^#/, "");
+    return PROFILE_NAV.some((item) => item.id === hash) ? hash : "profile-details";
+  });
+
+  function openProfileSection(id: string) {
+    setActiveProfileSection(id);
+    history.replaceState(null, "", `#${id}`);
+  }
 
   const applyProfile = useCallback((profile: ProfileRecord | null | undefined) => {
     setForm(profile || {});
@@ -1136,19 +1227,25 @@ export function ProfileSettings() {
     setMessage("");
     setRecordBusy(true);
 
-    const removed =
-      resource === "skills"
-        ? skills.find((item) => String(item.id) === id)
-        : resource === "experiences"
-          ? experiences.find((item) => String(item.id) === id)
-          : resource === "education"
-            ? education.find((item) => String(item.id) === id)
-            : resource === "links"
-              ? links.find((item) => String(item.id) === id)
-              : undefined;
+    // Preserve original index for correct order restoration on failure.
+    let removed: ProfileRecord | undefined;
+    let removedIndex = -1;
+    if (resource === "skills") {
+      removedIndex = skills.findIndex((item) => String(item.id) === id);
+      removed = removedIndex >= 0 ? skills[removedIndex] : undefined;
+    } else if (resource === "experiences") {
+      removedIndex = experiences.findIndex((item) => String(item.id) === id);
+      removed = removedIndex >= 0 ? experiences[removedIndex] : undefined;
+    } else if (resource === "education") {
+      removedIndex = education.findIndex((item) => String(item.id) === id);
+      removed = removedIndex >= 0 ? education[removedIndex] : undefined;
+    } else if (resource === "links") {
+      removedIndex = links.findIndex((item) => String(item.id) === id);
+      removed = removedIndex >= 0 ? links[removedIndex] : undefined;
+    }
 
     // Remove from the visible collection before waiting for the network. The
-    // API call remains authoritative; the original row is restored on failure.
+    // API call remains authoritative; the original row is restored on failure at same index.
     if (resource === "skills") setSkills((current) => current.filter((item) => String(item.id) !== id));
     if (resource === "experiences") setExperiences((current) => current.filter((item) => String(item.id) !== id));
     if (resource === "education") setEducation((current) => current.filter((item) => String(item.id) !== id));
@@ -1162,11 +1259,31 @@ export function ProfileSettings() {
       await apiRequest(`/profile/${resource}/${id}`, { method: "DELETE" });
       setMessage(`${label} removed from your account.`);
     } catch (e) {
-      if (removed) {
-        if (resource === "skills") setSkills((current) => [...current, removed]);
-        if (resource === "experiences") setExperiences((current) => [...current, removed]);
-        if (resource === "education") setEducation((current) => [...current, removed]);
-        if (resource === "links") setLinks((current) => [...current, removed]);
+      if (removed && removedIndex >= 0) {
+        if (resource === "skills")
+          setSkills((current) => {
+            const next = [...current];
+            next.splice(Math.min(removedIndex, next.length), 0, removed);
+            return next;
+          });
+        if (resource === "experiences")
+          setExperiences((current) => {
+            const next = [...current];
+            next.splice(Math.min(removedIndex, next.length), 0, removed);
+            return next;
+          });
+        if (resource === "education")
+          setEducation((current) => {
+            const next = [...current];
+            next.splice(Math.min(removedIndex, next.length), 0, removed);
+            return next;
+          });
+        if (resource === "links")
+          setLinks((current) => {
+            const next = [...current];
+            next.splice(Math.min(removedIndex, next.length), 0, removed);
+            return next;
+          });
       }
       setError((e as Error).message);
     } finally {
@@ -1359,26 +1476,27 @@ export function ProfileSettings() {
 
   return (
     <Frame
+      className="profile-v2"
       title="Candidate profile"
       description="Keep your experience, strengths, and goals ready for every interview."
     >
       {loading ? (
-        <div className="profile-page-body">
+        <div className="profile-studio">
           <div className="profile-loading">
             <LoadingState label="Loading profile" variant="Dots" />
           </div>
         </div>
       ) : (
-        <div className="profile-page-body">
-          <aside className="profile-rail" aria-label="Profile summary">
-            <div className="profile-rail-photo">
+        <div className="profile-studio">
+          <header className="profile-masthead" aria-label="Profile summary">
+            <div className="profile-masthead-photo">
               <div className="profile-avatar-preview" aria-hidden={!form.avatar_url}>
                 {form.avatar_url ? (
                   <img
                     src={form.avatar_url}
                     alt=""
-                    width={96}
-                    height={96}
+                    width={72}
+                    height={72}
                     onError={() =>
                       setForm((current) => ({ ...current, avatar_path: null, avatar_url: null }))
                     }
@@ -1387,6 +1505,27 @@ export function ProfileSettings() {
                   <span className="profile-avatar-fallback">{profileInitials(form.full_name)}</span>
                 )}
               </div>
+            </div>
+            <div className="profile-masthead-copy">
+              <h2 id="profile-overview-title">{form.full_name || "Your profile"}</h2>
+              <p className="profile-masthead-headline">
+                {form.headline || "Add a headline to tell employers what you do."}
+              </p>
+              {(form.location ||
+                form.current_role ||
+                (form.years_experience !== null && form.years_experience !== undefined)) ? (
+                <p className="profile-masthead-facts">
+                  {[
+                    form.location,
+                    form.current_role,
+                    form.years_experience !== null && form.years_experience !== undefined
+                      ? `${form.years_experience} years experience`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              ) : null}
               <div className="profile-identity-actions">
                 <label className="profile-photo-upload">
                   <span>Choose photo</span>
@@ -1408,55 +1547,67 @@ export function ProfileSettings() {
                     {avatarBusy ? "Working…" : "Remove"}
                   </Button>
                 ) : (
-                  <p className="muted profile-rail-photo-hint">JPEG, PNG, or WebP · 3 MB</p>
+                  <p className="muted profile-photo-hint">JPEG, PNG, or WebP · 3 MB</p>
                 )}
               </div>
             </div>
-            <div className="profile-rail-copy">
-              <h2 id="profile-overview-title">{form.full_name || "Your profile"}</h2>
-              <p>{form.headline || "Add a headline to tell employers what you do."}</p>
-              {(form.location || form.current_role || (form.years_experience !== null && form.years_experience !== undefined)) ? (
-                <div className="profile-rail-facts">
-                  {form.location ? <span>{form.location}</span> : null}
-                  {form.current_role ? <span>{form.current_role}</span> : null}
-                  {form.years_experience !== null && form.years_experience !== undefined ? (
-                    <span>{form.years_experience} years experience</span>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-            <div className="profile-rail-score">
-              <div className="profile-rail-score-head">
+            <div className="profile-masthead-meter">
+              <div className="profile-masthead-meter-head">
                 <strong>{completion}%</strong>
                 <span>complete</span>
               </div>
               <Progress value={completion} label="Profile completion" />
-              {!profileComplete && missingFromDetails.length > 0 ? (
-                <div className="profile-rail-missing">
-                  <p>Still needed</p>
-                  <ul>
-                    {missingFromDetails.map((item) => (
-                      <li key={item.key}>
-                        {item.label}
-                        {item.points != null ? ` (+${item.points}%)` : ""}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
             </div>
-          </aside>
+            {!profileComplete && missingFromDetails.length > 0 ? (
+              <p className="profile-masthead-missing">
+                <span>Still needed</span>
+                {missingFromDetails.slice(0, 4).map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className="profile-missing-link"
+                    onClick={() => openProfileSection(sectionForMissingKey(item.key))}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </p>
+            ) : null}
+          </header>
 
-          <div className="profile-main">
-          <Card className="profile-resume-studio profile-card">
+          <nav className="profile-tabs" aria-label="Profile sections">
+            <div className="profile-tabs-track">
+              {PROFILE_NAV.map((item) => (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className={`profile-tab ${activeProfileSection === item.id ? "is-active" : ""}`}
+                  aria-current={activeProfileSection === item.id ? "page" : undefined}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    openProfileSection(item.id);
+                  }}
+                >
+                  <CareerIcon name={item.icon} size={15} aria-hidden />
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          </nav>
+
+          <div className="profile-editor">
+          <Card
+            id="profile-resume"
+            className="profile-resume-studio profile-card"
+            hidden={activeProfileSection !== "profile-resume"}
+          >
             <div className="profile-resume-studio-head">
               <div>
-                <p className="eyebrow">Resume workspace</p>
-                <h2>Shape the profile around your real work.</h2>
-                <p className="profile-section-lede">
-                  Keep named versions of your resume here. Select the source you want to use, preview the profile draft,
-                  and review every change before it is applied.
-                </p>
+                <ProfileSectionHead
+                  icon="resume"
+                  title="Resume workspace"
+                  lede="Keep named versions of your resume here. Select the source you want to use, preview the draft, and review every change before it is applied."
+                />
               </div>
               <div className="profile-resume-studio-count">
                 <strong>{resumes.length}</strong>
@@ -1686,13 +1837,12 @@ export function ProfileSettings() {
             </Card>
           )}
 
-          <Card id="profile-details" className="stack profile-card profile-details-card">
-            <div className="profile-section-head">
-              <h2>Basic details</h2>
-              <p className="profile-section-lede">
-                Name, location, and career context used across interviews and job matching.
-              </p>
-            </div>
+          <Card id="profile-details" className="stack profile-card profile-details-card" hidden={activeProfileSection !== "profile-details"}>
+            <ProfileSectionHead
+              icon="profile"
+              title="Basic details"
+              lede="Name, location, and career context used across interviews and job matching."
+            />
             <div className="profile-fields">
               <label className="field-label">
                 <span>
@@ -1777,13 +1927,12 @@ export function ProfileSettings() {
             </div>
           </Card>
 
-          <Card id="profile-preferences" className="stack profile-card profile-preferences-card">
-            <div className="profile-section-head">
-              <h2>Career preferences</h2>
-              <p className="profile-section-lede">
-                These preferences are saved to your account. Use each dropdown to add options; remove tags with ×.
-              </p>
-            </div>
+          <Card id="profile-preferences" className="stack profile-card profile-preferences-card" hidden={activeProfileSection !== "profile-preferences"}>
+            <ProfileSectionHead
+              icon="opportunities"
+              title="Career preferences"
+              lede="These preferences are saved to your account. Use each dropdown to add options; remove tags with ×."
+            />
             <div className="profile-fields">
               <MultiOptionGroup
                 legend="Target roles"
@@ -1880,13 +2029,8 @@ export function ProfileSettings() {
             </div>
           </Card>
 
-          <Card id="profile-skills" className="stack profile-card profile-skills-card">
-            <div className="profile-section-head">
-              <h2>
-                Skills
-                <RequiredMark />
-              </h2>
-            </div>
+          <Card id="profile-skills" className="stack profile-card profile-skills-card" hidden={activeProfileSection !== "profile-skills"}>
+            <ProfileSectionHead icon="signal" title="Skills" required />
             <div className="profile-composer">
               <SelectWithOther
                 label={editingSkillId ? "Edit skill" : "Skill"}
@@ -1898,6 +2042,7 @@ export function ProfileSettings() {
               />
               <div className="profile-composer-actions">
                 <Button onClick={() => void saveSkill()} disabled={!skillName.trim() || recordBusy}>
+                  <AnimatedIcon icon={Plus} size={16} aria-hidden />
                   {editingSkillId ? "Save skill" : "Add skill"}
                 </Button>
                 {editingSkillId ? (
@@ -1922,37 +2067,32 @@ export function ProfileSettings() {
                   {skill.name}
                   <button
                     type="button"
-                    className="button-quiet"
-                    style={{ minHeight: "auto", padding: 0, boxShadow: "none", border: "none" }}
+                    className="button-quiet profile-chip-action"
                     onClick={() => startEditSkill(skill)}
                     aria-label={`Edit ${skill.name}`}
                   >
-                    Edit
+                    <AnimatedIcon icon={Pencil} size={13} aria-hidden />
                   </button>
                   <button
                     type="button"
-                    className="button-quiet"
-                    style={{ minHeight: "auto", padding: 0, boxShadow: "none", border: "none" }}
+                    className="button-quiet profile-chip-action"
                     onClick={() => removeRecord("skills", skill.id, "Skill")}
                     aria-label={`Remove ${skill.name}`}
                   >
-                    ×
+                    <AnimatedIcon icon={Trash2} size={13} aria-hidden />
                   </button>
                 </span>
               ))}
             </div>
           </Card>
 
-          <Card id="profile-experience" className="stack profile-card profile-experience-card">
-            <div className="profile-section-head">
-              <h2>
-                Work experience
-                <RequiredMark />
-              </h2>
-              <p className="profile-section-lede">
-                Add at least one experience, or set years of experience to 0 for fresher credit.
-              </p>
-            </div>
+          <Card id="profile-experience" className="stack profile-card profile-experience-card" hidden={activeProfileSection !== "profile-experience"}>
+            <ProfileSectionHead
+              icon="evidence"
+              title="Work experience"
+              lede="Add at least one experience, or set years of experience to 0 for fresher credit."
+              required
+            />
             <div className="profile-fields">
               <label className="field-label">
                 Company
@@ -2053,6 +2193,7 @@ export function ProfileSettings() {
                   </div>
                   <div className="profile-record-actions">
                     <Button variant="secondary" onClick={() => startEditExperience(item)} disabled={recordBusy}>
+                      <AnimatedIcon icon={Pencil} size={15} aria-hidden />
                       Edit
                     </Button>
                     <Button
@@ -2060,6 +2201,7 @@ export function ProfileSettings() {
                       onClick={() => removeRecord("experiences", item.id, "Experience")}
                       disabled={recordBusy}
                     >
+                      <AnimatedIcon icon={Trash2} size={15} aria-hidden />
                       Remove
                     </Button>
                   </div>
@@ -2068,13 +2210,8 @@ export function ProfileSettings() {
             )}
           </Card>
 
-          <Card id="profile-education" className="stack profile-card profile-education-card">
-            <div className="profile-section-head">
-              <h2>
-                Education
-                <RequiredMark />
-              </h2>
-            </div>
+          <Card id="profile-education" className="stack profile-card profile-education-card" hidden={activeProfileSection !== "profile-education"}>
+            <ProfileSectionHead icon="learning" title="Education" required />
             <div className="profile-fields">
               <label className="field-label profile-field-span">
                 Institution
@@ -2129,6 +2266,7 @@ export function ProfileSettings() {
                   </div>
                   <div className="profile-record-actions">
                     <Button variant="secondary" onClick={() => startEditEducation(item)} disabled={recordBusy}>
+                      <AnimatedIcon icon={Pencil} size={15} aria-hidden />
                       Edit
                     </Button>
                     <Button
@@ -2136,6 +2274,7 @@ export function ProfileSettings() {
                       onClick={() => removeRecord("education", item.id, "Education")}
                       disabled={recordBusy}
                     >
+                      <AnimatedIcon icon={Trash2} size={15} aria-hidden />
                       Remove
                     </Button>
                   </div>
@@ -2144,13 +2283,8 @@ export function ProfileSettings() {
             )}
           </Card>
 
-          <Card id="profile-links" className="stack profile-card profile-links-card">
-            <div className="profile-section-head">
-              <h2>
-                Professional links
-                <RequiredMark />
-              </h2>
-            </div>
+          <Card id="profile-links" className="stack profile-card profile-links-card" hidden={activeProfileSection !== "profile-links"}>
+            <ProfileSectionHead icon="confidence" title="Professional links" required />
             <div className="profile-fields">
               <label className="field-label">
                 Link type
@@ -2206,6 +2340,7 @@ export function ProfileSettings() {
                   </div>
                   <div className="profile-record-actions">
                     <Button variant="secondary" onClick={() => startEditLink(item)} disabled={recordBusy}>
+                      <AnimatedIcon icon={Pencil} size={15} aria-hidden />
                       Edit
                     </Button>
                     <Button
@@ -2213,6 +2348,7 @@ export function ProfileSettings() {
                       onClick={() => removeRecord("links", item.id, "Link")}
                       disabled={recordBusy}
                     >
+                      <AnimatedIcon icon={Trash2} size={15} aria-hidden />
                       Remove
                     </Button>
                   </div>

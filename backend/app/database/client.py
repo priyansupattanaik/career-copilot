@@ -84,12 +84,24 @@ class Result:
         self.data = data or []
         self.count = count
 def _safe_object_key(name: str) -> str:
-    relative = Path(name)
+    # Validate type at producer; enrich error with type/truncated value for telemetry.
+    if not isinstance(name, str):
+        raise ValueError(f"Invalid storage path: type={type(name).__name__}, value={str(name)[:80]}")
+    # Decode any percent-encoded traversal before check (already decoded by FastAPI, but double-encode guard).
+    from urllib.parse import unquote
+    decoded = unquote(name)
+    relative = Path(decoded)
     if relative.is_absolute() or ".." in relative.parts:
-        raise ValueError("Invalid storage path")
+        raise ValueError(f"Invalid storage path: type=str, value={name[:80]} contains '..' or absolute")
     cleaned = "/".join(part for part in relative.as_posix().split("/") if part and part != ".")
     if not cleaned:
-        raise ValueError("Invalid storage path")
+        raise ValueError(f"Invalid storage path: type=str, value={name[:80]} empty after cleaning")
+    # Ensure cleaned == original (no // or ./ bypass) — if divergence, reject to avoid prefix bypass.
+    if cleaned != decoded.strip("/"):
+        # Allow single slash normalization but reject // or ./ tricks: compare without empty parts.
+        normalized = "/".join(p for p in decoded.split("/") if p and p != ".")
+        if cleaned != normalized:
+            raise ValueError(f"Invalid storage path: type=str, value={name[:80]} normalized mismatch")
     return cleaned
 
 

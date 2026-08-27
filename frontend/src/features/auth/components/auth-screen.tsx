@@ -2,7 +2,7 @@
 import { Link } from "@/shared/ui/router-link";
 import { useNavigate } from "react-router-dom";
 import { useSearchParams } from "@/shared/router";
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { Eye, MailCheck } from "lucide-react";
 
 
@@ -44,6 +44,22 @@ function Shell({ children, title, description }: { children: React.ReactNode; ti
       </section>
     </main>
   );
+}
+
+function submitOnEnter(event: KeyboardEvent<HTMLFormElement>) {
+  if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+  const target = event.target as HTMLElement | null;
+  if (!target) return;
+  if (target instanceof HTMLTextAreaElement) return;
+  if (target.closest(".phone-country-pop")) return;
+  if (target instanceof HTMLButtonElement && target.getAttribute("type") !== "submit") return;
+  if (!(target instanceof HTMLInputElement)) return;
+  event.preventDefault();
+  if (typeof event.currentTarget.requestSubmit === "function") {
+    event.currentTarget.requestSubmit();
+  } else {
+    event.currentTarget.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  }
 }
 
 function configurationError() {
@@ -155,7 +171,7 @@ export function SignInScreen() {
   }
   return (
     <Shell title="Welcome back." description="Sign in to open your private career records and continue where you left off.">
-      <form className="auth-card panel stack atlas-auth-card" onSubmit={submit}>
+      <form className="auth-card panel stack atlas-auth-card" onSubmit={submit} onKeyDown={submitOnEnter}>
         <div className="atlas-auth-card-header">
           <p className="eyebrow">Secure sign in</p>
           <h1>Sign in</h1>
@@ -311,7 +327,7 @@ export function SignUpScreen() {
           </p>
         </div>
       ) : (
-        <form className="auth-card panel stack atlas-auth-card" onSubmit={submit}>
+        <form className="auth-card panel stack atlas-auth-card" onSubmit={submit} onKeyDown={submitOnEnter}>
           <div className="atlas-auth-card-header">
             <p className="eyebrow">Create account</p>
             <h1>Get started</h1>
@@ -420,7 +436,7 @@ export function PasswordScreen({ reset = false }: { reset?: boolean }) {
           : "Password recovery email is not configured for this deployment."
       }
     >
-      <form className="auth-card panel stack atlas-auth-card" onSubmit={submit}>
+      <form className="auth-card panel stack atlas-auth-card" onSubmit={submit} onKeyDown={submitOnEnter}>
         <div className="atlas-auth-card-header">
           <p className="eyebrow">{reset ? "Account security" : "Account recovery"}</p>
           <h1>{reset ? "Choose a new password" : "Reset your password"}</h1>

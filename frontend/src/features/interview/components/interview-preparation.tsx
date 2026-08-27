@@ -14,6 +14,7 @@ import {
   type InterviewPreparation,
   type PreparationQuestion,
 } from "@/features/interview/preparation";
+import "@/features/interview/interview.css";
 
 function difficultyTone(difficulty: PreparationQuestion["difficulty"]) {
   return difficulty === "hard" ? "destructive" : difficulty === "medium" ? "outline" : "default";
@@ -113,23 +114,23 @@ export function InterviewPreparationHome() {
     : "/mock-interview/setup";
 
   return (
-    <>
+    <div className="feature-page interview-hub">
       <PageHeader
         eyebrow="Mock interview"
         title="Prepare with your evidence"
         description="Generate practice material from the confirmed resume, job description, and ATS evidence you select. This does not claim unverified skills or predict hiring outcomes."
-        action={<Link className="button button-secondary" href="/mock-interview">All sessions</Link>}
+        action={<Link className="button button-primary" href="/mock-interview">Start a mock interview</Link>}
       />
       {sourceLoading ? <div className="stack"><Skeleton lines={5} /><Skeleton lines={6} /></div> : sourceError ? <ErrorState onRetry={() => void loadSources()} /> : !confirmedResumes.length || !confirmedJobs.length ? (
         <EmptyState
-          title="Confirm your sources first"
+          title="Start a mock interview without documents"
           description={
             !confirmedResumes.length
-              ? "Upload a resume once (profile or Resume Analysis), confirm the extraction, then return here. Saved resumes are reused — you do not need to re-upload."
-              : "Confirm a job description in Resume Analysis, then return here. Your saved resume is already available."
+              ? "A resume is optional. Start a round from your chosen role and focus, or upload a resume later if you want questions grounded in your work."
+              : "A job description is optional. Start a round now, or confirm a job description if you want questions tied to a posting."
           }
-          href={!confirmedResumes.length ? "/settings/profile" : "/resume-analysis?tab=upload"}
-          action={!confirmedResumes.length ? "Complete profile / resume" : "Open Resume Analysis"}
+          href="/mock-interview"
+          action="Start a mock interview"
         />
       ) : (
         <Card className="stack">
@@ -190,6 +191,6 @@ export function InterviewPreparationHome() {
           <QuestionList title="HR questions" description="Use concise, truthful examples from your experience." questions={data.hr_questions} />
         </div>
       ) : null}
-    </>
+    </div>
   );
 }

@@ -17,6 +17,7 @@ from app.api.schemas import (
     AccountDeleteRequest,
     AtsAnalysisCreate,
     ExtractionPatch,
+    InterviewCommit,
     InterviewCreate,
     InterviewPreparationCreate,
     InterviewResponseCreate,
@@ -95,6 +96,11 @@ from app.features.interview.agent import (
     generate_interview_session_report,
 )
 from app.features.interview.agent.evaluator import INTERVIEW_REPORT_VERSION
+from app.features.interview.commit import commit_live_interview
+from app.features.interview.follow_up import (
+    is_follow_up_question,
+    max_question_budget,
+)
 from app.features.interview.preparation import generate_interview_preparation
 from app.features.learning.service import generate_learning_path_from_ats
 from app.features.profile.agent import build_profile_draft_enriched, profile_draft_response_payload
@@ -244,8 +250,17 @@ async def authenticated_file(
             "Authentication is required to access this file.",
         )
 
-    if not path.startswith(f"{owner_id}/"):
+    # Canonicalize before ownership check — producer fix, not crash-site swallowing.
+    # Enrich invalid paths for telemetry: type, truncated value, operation.
+    try:
+        from app.database.client import _safe_object_key
+        canonical = _safe_object_key(path)
+    except ValueError as exc:
+        raise ApiError(404, "file_not_found", f"Invalid file path for bucket '{bucket}': type={type(path).__name__}, value={str(path)[:80]} [{exc}]") from exc
+    if not canonical.startswith(f"{owner_id}/"):
         raise ApiError(404, "file_not_found", "The requested file was not found.")
+    # Use canonical for download to avoid double-cleaning divergence.
+    path = canonical
     try:
         content = database_client(settings).storage.from_(bucket).download(path)
     except FileNotFoundError as exc:
@@ -1805,8 +1820,13 @@ async def create_resume(
     settings: Settings = Depends(get_settings),
 ):
     client = client_for(settings, user)
+    # Producer fix: validate size before loading into memory — enrich with type/truncated filename.
+    max_bytes = int(getattr(settings, "document_max_bytes", 10 * 1024 * 1024))
+    if getattr(file, "size", None) is not None and file.size is not None and file.size > max_bytes:
+        raise ApiError(413, "file_too_large", f"File too large for '{str(getattr(file, 'filename', ''))[:80]}': type={type(file.filename).__name__ if hasattr(file, 'filename') else 'unknown'}, size={file.size} > {max_bytes}")
     content = await file.read()
-    resume, version = await _store_uploaded_resume(client, settings, user, file, content, title=title)
+    if len(content) > max_bytes:
+        raise ApiError(413, "file_too_large", f"File too large for '{str(getattr(file, 'filename', ''))[:80]}': size={len(content)} > {max_bytes}")
     write_activity(client, user, "resume_uploaded", "Resume uploaded", "resume", str(resume["id"]))
     return {"resume": resume, "version": version}
 
@@ -2842,6 +2862,46 @@ def interview_tts(
     )
 
 
+@router.post("/interviews/commit", status_code=201)
+async def commit_interview(
+    payload: InterviewCommit,
+    user: CurrentUser = Depends(get_current_user),
+    settings: Settings = Depends(get_settings),
+):
+    """Save a finished live interview (questions + answers) and build the debrief.
+
+    The live round runs on the client with no per-answer writes. This is the
+    single persistence + agent pass after the candidate completes the session.
+    """
+    client = client_for(settings, user)
+    body = payload.session.model_dump(mode="json")
+    for key in ("target_role", "target_company", "topic", "difficulty", "job_description_text"):
+        value = body.get(key)
+        if isinstance(value, str):
+            cleaned = value.strip()
+            body[key] = cleaned or None
+    if body.get("job_description_text"):
+        body["job_description_text"] = str(body["job_description_text"])[:20_000]
+    result = await commit_live_interview(
+        client,
+        settings,
+        user,
+        session_fields=body,
+        questions_in=[item.model_dump(mode="json") for item in payload.questions],
+        responses_in=[item.model_dump(mode="json") for item in payload.responses],
+        now=utc_now(),
+    )
+    write_activity(
+        client,
+        user,
+        "interview_completed",
+        "Live mock interview saved with debrief report",
+        "interview_session",
+        str(result["session"]["id"]),
+    )
+    return result
+
+
 @router.post("/interviews", status_code=201)
 def create_interview(
     payload: InterviewCreate,
@@ -2988,18 +3048,44 @@ async def start_interview(
             if skill_rows:
                 candidate_skills = [str(r.get("name")) for r in skill_rows if r.get("name")]
 
-        questions_payload = await generate_interview_questions(
-            settings,
-            mode=str(session.get("mode") or "mixed"),
-            count=count,
-            target_role=session.get("target_role"),
-            target_company=session.get("target_company"),
-            difficulty=session.get("difficulty"),
-            topic=session.get("topic"),
-            job_description_text=session.get("job_description_text"),
-            resume_text=resume_text,
-            candidate_skills=candidate_skills,
-        )
+        try:
+            questions_payload = await generate_interview_questions(
+                settings,
+                mode=str(session.get("mode") or "mixed"),
+                count=count,
+                target_role=session.get("target_role"),
+                target_company=session.get("target_company"),
+                difficulty=session.get("difficulty"),
+                topic=session.get("topic"),
+                job_description_text=session.get("job_description_text"),
+                resume_text=resume_text,
+                candidate_skills=candidate_skills,
+            )
+        except Exception as exc:
+            # Producer fallback: enrich error with type/truncated value, then local templates — do NOT swallow at crash site.
+            # Keep telemetry visible via ApiError enrichment in generator; here provide deterministic fallback.
+            from app.core.errors import ApiError as _ApiErr
+            if isinstance(exc, _ApiErr):
+                # Already enriched with type/value
+                pass
+            else:
+                # Wrap unexpected so telemetry captures truncated context
+                raise _ApiErr(502, "llm_returned_no_questions", f"Interview generation failed: type={type(exc).__name__}, value={str(exc)[:120]}") from exc
+            # Deterministic local templates when all providers fail — preserves contract (no 503).
+            templates = {
+                "behavioral": "Tell me about a time your plan changed and how you adapted.",
+                "technical": "Walk me through how you would approach a technical problem in your domain.",
+                "mixed": "Describe a challenging project and the decisions you made.",
+            }
+            base = templates.get(str(session.get("mode") or "mixed").strip().lower(), templates["mixed"])
+            questions_payload = {
+                "questions": [{"question": f"{base} (Question {i+1})", "question_type": str(session.get("mode") or "mixed")[:80]} for i in range(count)],
+                "provider": "template",
+                "model": "local-template-v1",
+                "agent": "interview_questions",
+                "fallback": True,
+                "fallback_reason": f"type={type(exc).__name__}, value={str(exc)[:80]}",
+            }
         rows = []
         for index, item in enumerate(questions_payload.get("questions") or [], start=1):
             rows.append(
@@ -3049,12 +3135,12 @@ async def add_response(
     user: CurrentUser = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
 ):
-    """Store an answer and return interviewer-style feedback + filler analysis."""
+    """Store an answer, return live interviewer reply, and optionally insert a follow-up."""
     client = client_for(settings, user)
     session = owned_row(client, "interview_sessions", session_id, user)
     question_rows = (
         client.table("interview_questions")
-        .select("id,question,question_type,position")
+        .select("id,question,question_type,position,source_context")
         .eq("id", str(payload.question_id))
         .eq("session_id", str(session_id))
         .eq("user_id", str(user.id))
@@ -3069,6 +3155,40 @@ async def add_response(
     answer_text = (payload.transcript or payload.typed_response or "").strip()
     client_speech = payload.speech_metrics if isinstance(payload.speech_metrics, dict) else None
     client_gaze = payload.gaze_metrics if isinstance(payload.gaze_metrics, dict) else None
+    existing_questions = (
+        client.table("interview_questions")
+        .select("id,position,question,question_type,source_context")
+        .eq("session_id", str(session_id))
+        .eq("user_id", str(user.id))
+        .order("position")
+        .execute()
+        .data
+        or []
+    )
+    existing_responses = (
+        client.table("interview_responses")
+        .select("question_id,transcript,typed_response")
+        .eq("session_id", str(session_id))
+        .eq("user_id", str(user.id))
+        .execute()
+        .data
+        or []
+    )
+    answer_by_question = {
+        str(row.get("question_id")): str(row.get("transcript") or row.get("typed_response") or "")
+        for row in existing_responses
+        if row.get("question_id")
+    }
+    recent_turns = [
+        {
+            "question": str(item.get("question") or "")[:400],
+            "answer": str(answer_by_question.get(str(item.get("id"))) or "")[:800],
+            "question_type": item.get("question_type"),
+        }
+        for item in existing_questions
+        if answer_by_question.get(str(item.get("id")))
+    ][-6:]
+    already_followed_up = is_follow_up_question(question.get("source_context"))
     evaluation = await evaluate_interview_answer(
         settings,
         question=str(question.get("question") or ""),
@@ -3078,6 +3198,8 @@ async def add_response(
         mode=session.get("mode"),
         duration_seconds=payload.duration_seconds,
         gaze_metrics=client_gaze,
+        recent_turns=recent_turns,
+        already_followed_up=already_followed_up,
     )
     # Prefer server-measured delivery; optionally merge client speech_metrics duration if server lacks it.
     if client_speech and not evaluation.get("speaking_delivery", {}).get("duration_seconds"):
@@ -3108,9 +3230,59 @@ async def add_response(
         "speaking_delivery": evaluation.get("speaking_delivery") or {},
     }
     saved = client.table("interview_responses").insert(row).execute().data[0]
+
+    follow_up_row = None
+    follow_text = str(evaluation.get("follow_up_question") or "").strip()
+    under_budget = len(existing_questions) < max_question_budget(session)
+    if evaluation.get("should_follow_up") and follow_text and under_budget and not already_followed_up:
+        current_pos = int(question.get("position") or 0)
+        later = sorted(
+            [item for item in existing_questions if int(item.get("position") or 0) > current_pos],
+            key=lambda item: int(item.get("position") or 0),
+            reverse=True,
+        )
+        for item in later:
+            client.table("interview_questions").update(
+                {"position": int(item.get("position") or 0) + 1}
+            ).eq("id", str(item.get("id"))).eq("user_id", str(user.id)).execute()
+        inserted = (
+            client.table("interview_questions")
+            .insert(
+                {
+                    "user_id": str(user.id),
+                    "session_id": str(session_id),
+                    "position": current_pos + 1,
+                    "question": follow_text[:800],
+                    "question_type": "follow_up",
+                    "source_context": {
+                        "kind": "follow_up",
+                        "parent_question_id": str(question.get("id")),
+                        "provider": evaluation.get("provider"),
+                    },
+                    "created_at": utc_now(),
+                }
+            )
+            .execute()
+            .data
+            or []
+        )
+        follow_up_row = inserted[0] if inserted else None
+
+    questions = (
+        client.table("interview_questions")
+        .select("id,position,question,question_type,source_context,created_at")
+        .eq("session_id", str(session_id))
+        .eq("user_id", str(user.id))
+        .order("position")
+        .execute()
+        .data
+        or []
+    )
     return {
         "response": saved,
         "evaluation": evaluation,
+        "follow_up": follow_up_row,
+        "questions": questions,
         "question": {
             "id": question.get("id"),
             "position": question.get("position"),

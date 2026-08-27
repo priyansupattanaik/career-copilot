@@ -13,6 +13,7 @@ import {
   signInWithGoogle,
 } from "@/features/auth/firebase";
 import { supabaseAuthClient, SupabaseWebConfigError } from "@/features/auth/supabase";
+import { isTimeoutError, withTimeout } from "@/features/auth/api/timeout";
 
 type AuthError = { message: string; status?: number } | null;
 type AuthUser = {
@@ -98,32 +99,46 @@ export function createClient() {
   return {
     auth: {
       async signInWithPassword({ email, password }: { email: string; password: string }) {
+        const trimmed = email.trim();
+        let lastMessage = "The email or password is incorrect.";
         try {
-          const result = await supabaseAuthClient().auth.signInWithPassword({ email: email.trim(), password });
+          const result = await withTimeout(
+            supabaseAuthClient().auth.signInWithPassword({ email: trimmed, password }),
+            "Supabase sign-in",
+          );
           if (!result.error && result.data.session?.access_token) {
-            return signInWithSupabaseAccessToken(result.data.session.access_token);
+            return await withTimeout(
+              signInWithSupabaseAccessToken(result.data.session.access_token),
+              "Supabase session exchange",
+            );
           }
-          if (result.error) {
-            // Preserve existing Firebase and legacy app-password accounts during migration.
-            try {
-              const firebaseResult = await signInWithEmailPassword(email, password);
-              return signInWithFirebaseIdToken(firebaseResult.idToken);
-            } catch {
-              try {
-                const payload = await request("/auth/sign-in", { email, password });
-                saveToken(payload.access_token);
-                return {
-                  data: { session: { access_token: payload.access_token }, user: payload.user },
-                  error: null as AuthError,
-                };
-              } catch {
-                return { data: { session: null, user: null }, error: { message: result.error.message } };
-              }
-            }
-          }
-          return { data: { session: null, user: null }, error: { message: "Supabase did not return an authentication session." } };
+          if (result.error?.message) lastMessage = result.error.message;
         } catch (error) {
-          return { data: { session: null, user: null }, error: { message: error instanceof SupabaseWebConfigError ? error.message : emailPasswordAuthErrorMessage(error) } };
+          if (!(error instanceof SupabaseWebConfigError) && !isTimeoutError(error)) {
+            lastMessage = emailPasswordAuthErrorMessage(error);
+          }
+        }
+
+        try {
+          const firebaseResult = await withTimeout(signInWithEmailPassword(trimmed, password), "Firebase sign-in");
+          return await withTimeout(signInWithFirebaseIdToken(firebaseResult.idToken), "Firebase session exchange");
+        } catch {
+          // Firebase is a migration fallback. Timeouts and rejections must not
+          // block the app-password path or leave the sign-in button spinning.
+        }
+
+        try {
+          const payload = await withTimeout(request("/auth/sign-in", { email: trimmed, password }), "App sign-in");
+          saveToken(payload.access_token);
+          return {
+            data: { session: { access_token: payload.access_token }, user: payload.user },
+            error: null as AuthError,
+          };
+        } catch (error) {
+          return {
+            data: { session: null, user: null },
+            error: { message: error instanceof Error && error.message ? error.message : lastMessage },
+          };
         }
       },
       async signUp({
@@ -138,14 +153,17 @@ export function createClient() {
         const trimmed = email.trim();
         const phone = String(options?.phone || "").trim();
         try {
-          const result = await supabaseAuthClient().auth.signUp({
-            email: trimmed,
-            password,
-            options: {
-              data: { full_name: String(options?.data?.full_name || ""), ...(phone ? { phone } : {}) },
-              emailRedirectTo: options?.emailRedirectTo,
-            },
-          });
+          const result = await withTimeout(
+            supabaseAuthClient().auth.signUp({
+              email: trimmed,
+              password,
+              options: {
+                data: { full_name: String(options?.data?.full_name || ""), ...(phone ? { phone } : {}) },
+                emailRedirectTo: options?.emailRedirectTo,
+              },
+            }),
+            "Supabase sign-up",
+          );
           if (result.error) {
             return {
               data: { session: null, user: null },
@@ -169,7 +187,7 @@ export function createClient() {
             emailConfirmationSent: true,
           };
         } catch (error) {
-            if (error instanceof SupabaseWebConfigError) {
+            if (error instanceof SupabaseWebConfigError || isTimeoutError(error)) {
               // Supabase is not configured in this environment. The legacy app
               // account has no email step: create it and return the session.
               try {

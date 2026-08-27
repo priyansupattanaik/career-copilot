@@ -52,9 +52,17 @@ export function ProfileCompletionToast({ completion, missing }: Props) {
     window.dispatchEvent(new Event(DISMISS_EVENT));
   }
 
-  // Settings pages already expose completion or dense controls. Keeping this
-  // toast off those routes prevents it from covering save, logout, and delete.
-  if (pathname.startsWith("/settings/") || !open || percent >= 100 || safeMissing.length === 0) return null;
+  // Settings already exposes completion. Mock interview can start without a
+  // completed profile, so the toast must not cover that flow.
+  if (
+    pathname.startsWith("/settings/") ||
+    pathname.startsWith("/mock-interview") ||
+    !open ||
+    percent >= 100 ||
+    safeMissing.length === 0
+  ) {
+    return null;
+  }
 
   const shown = safeMissing.slice(0, 6);
   const extra = safeMissing.length - shown.length;

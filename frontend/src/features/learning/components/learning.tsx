@@ -312,15 +312,25 @@ export function LearningPath({ pathId }: { pathId: string }) {
       const nextStatus = (result.status as LearningItem["status"]) || status;
       const nextProgress =
         typeof result.progress_percentage === "number" ? result.progress_percentage : undefined;
-      // Optimistic local update so the step badge flips immediately.
+      // Optimistic local update so the step badge flips immediately — weighted like server.
       setPath((current) => {
         if (!current) return current;
         const items = (current.items || []).map((row) =>
           row.id === item.id ? { ...row, status: nextStatus } : row,
         );
-        const done = items.filter((row) => row.status === "completed").length;
-        const computed =
-          nextProgress ?? (items.length ? Math.round((done / items.length) * 100) : 0);
+        let computed: number;
+        if (nextProgress !== undefined) {
+          computed = nextProgress;
+        } else if (items.length) {
+          const totalWeight = items.reduce((sum, r) => sum + (Number(r.estimated_minutes) || 0), 0);
+          if (totalWeight > 0) {
+            const doneWeight = items.filter((r) => r.status === "completed").reduce((sum, r) => sum + (Number(r.estimated_minutes) || 0), 0);
+            computed = Math.round((doneWeight / totalWeight) * 100);
+          } else {
+            const done = items.filter((row) => row.status === "completed").length;
+            computed = Math.round((done / items.length) * 100);
+          }
+        } else computed = 0;
         return {
           ...current,
           items,
@@ -329,7 +339,7 @@ export function LearningPath({ pathId }: { pathId: string }) {
           status: computed === 100 && items.length ? "completed" : "active",
         };
       });
-      // Refresh from server so path-level fields stay authoritative.
+      // Refresh from server so path-level fields stay authoritative — server may compute weighted differently, so de-duplicate with abort.
       load();
     } catch (e) {
       setError((e as Error).message);

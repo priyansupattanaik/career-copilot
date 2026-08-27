@@ -1,6 +1,8 @@
 /**
- * Mock-interview TTS: Fish Audio (server proxy) with browser speechSynthesis fallback.
- * Guarantees full utterance playback before resolving — never advances mid-sentence.
+ * Mock-interview TTS: Browser speechSynthesis only (Fish Audio disabled for cost).
+ * Fish Audio server proxy is intentionally NOT used — interview questions use
+ * free Web Speech API (SpeechSynthesisUtterance). Guarantees full utterance
+ * playback before resolving — never advances mid-sentence.
  */
 
 import { createClient as createAuthClient } from "@/features/auth/api/client";
@@ -90,37 +92,13 @@ async function authHeaders(): Promise<Record<string, string>> {
 }
 
 export async function fetchInterviewTtsStatus(force = false): Promise<TtsStatus> {
+  // Fish Audio disabled for cost — always report browser-only, no network call.
   const now = Date.now();
   if (!force && cachedStatus && now - statusFetchedAt < STATUS_TTL_MS) {
-    return cachedStatus;
+    // Force browser-only even if previously cached as Fish
+    if (cachedStatus.configured === false) return cachedStatus;
   }
-  if (isDemoSession()) {
-    cachedStatus = { provider: null, configured: false, fallback: "browser_speech_synthesis" };
-    statusFetchedAt = now;
-    return cachedStatus;
-  }
-  try {
-    const base = resolveApiBase();
-    const headers = await authHeaders();
-    const res = await fetch(`${base}/interviews/tts/status`, {
-      method: "GET",
-      credentials: "include",
-      headers,
-    });
-    if (!res.ok) {
-      cachedStatus = { provider: null, configured: false, fallback: "browser_speech_synthesis" };
-    } else {
-      const body = (await res.json()) as TtsStatus;
-      cachedStatus = {
-        provider: body.provider ?? null,
-        configured: Boolean(body.configured),
-        model: body.model ?? null,
-        fallback: body.fallback || "browser_speech_synthesis",
-      };
-    }
-  } catch {
-    cachedStatus = { provider: null, configured: false, fallback: "browser_speech_synthesis" };
-  }
+  cachedStatus = { provider: null, configured: false, fallback: "browser_speech_synthesis" };
   statusFetchedAt = now;
   return cachedStatus;
 }
@@ -338,7 +316,7 @@ function speakWithBrowser(text: string, signal?: AbortSignal): Promise<void> {
 
 /**
  * Speak interviewer text fully, then resolve.
- * Prefer Fish Audio when configured; fall back to browser speechSynthesis.
+ * Browser speechSynthesis only — Fish Audio never called (cost saving).
  * Does not resolve until playback ends (or abort / hard failure).
  */
 export async function speakInterviewLine(text: string, options?: SpeakOptions): Promise<void> {
@@ -347,27 +325,8 @@ export async function speakInterviewLine(text: string, options?: SpeakOptions): 
   if (options?.signal?.aborted) {
     throw new DOMException("Aborted", "AbortError");
   }
-
-  const preferFish = options?.preferFish !== false;
-  const kind = options?.kind ?? "general";
-
-  if (preferFish && !isDemoSession()) {
-    try {
-      const status = await fetchInterviewTtsStatus();
-      if (status.configured) {
-        const blob = await fetchFishAudioBlob(line, kind, options?.signal);
-        if (options?.signal?.aborted) {
-          throw new DOMException("Aborted", "AbortError");
-        }
-        await playBlob(blob, options?.signal);
-        return;
-      }
-    } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") throw err;
-      // Fall through to browser TTS — never leave the interview silent.
-    }
-  }
-
+  // Cost guard: ignore preferFish, never hit Fish Audio endpoint.
+  // Even if caller passes preferFish=true, force browser TTS.
   await speakWithBrowser(line, options?.signal);
 }
 

@@ -41,22 +41,35 @@ const PRIMARY_BY_DIAL: Record<string, string> = {
 export function parsePhone(value: string | null | undefined): PhoneValue {
   const raw = String(value || "").trim();
   if (!raw) return { iso2: "IN", national: "" };
+  // Enrich invalid data for telemetry: include type + truncated value at producer.
+  if (typeof value !== "string" && value !== null && value !== undefined) {
+    throw new Error(`[phone] Invalid phone value for parsePhone: type=${typeof value}, value=${String(value).substring(0, 50)}`);
+  }
   const digits = raw.replace(/[^\d+]/g, "");
+  // Sort by dial length descending to prefer longest match deterministically.
+  const sorted = [...COUNTRIES].sort((a, b) => b.dial.length - a.dial.length);
   let best: Country | null = null;
-  for (const c of COUNTRIES) {
+  for (const c of sorted) {
     const dialDigits = c.dial.replace(/\D/g, "");
     const matches = digits.startsWith(`+${dialDigits}`) || digits.startsWith(dialDigits);
     if (!matches) continue;
-    const longer = !best || c.dial.length > best.dial.length;
-    const tiePrimary =
-      best && c.dial.length === best.dial.length && PRIMARY_BY_DIAL[c.dial] === c.iso2;
-    if (longer || tiePrimary || !best) best = c;
+    // First match in sorted order is longest; handle shared-code tie via PRIMARY_BY_DIAL.
+    if (!best) {
+      best = c;
+      continue;
+    }
+    if (c.dial.length < best.dial.length) break;
+    if (c.dial.length === best.dial.length && PRIMARY_BY_DIAL[c.dial] === c.iso2) {
+      best = c;
+    }
   }
   const country = best ?? countryByIso2("IN");
   const dialDigits = country.dial.replace(/\D/g, "");
-  const national = (digits.startsWith("+") ? digits.slice(1) : digits)
+  let national = (digits.startsWith("+") ? digits.slice(1) : digits)
     .slice(dialDigits.length)
     .replace(/\D/g, "");
+  // Strip leading 0 that is often dialed domestically (India 0, UK 0) — producer fix for E.164.
+  if (national.startsWith("0") && national.length > 6) national = national.replace(/^0+/, "");
   return { iso2: country.iso2, national };
 }
 
@@ -98,8 +111,18 @@ export function CountrySelect({ iso2, onChange, disabled }: CountrySelectProps) 
     const onDocDown = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
+    const onDocEsc = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false);
+      }
+    };
     document.addEventListener("mousedown", onDocDown);
-    return () => document.removeEventListener("mousedown", onDocDown);
+    document.addEventListener("keydown", onDocEsc);
+    return () => {
+      document.removeEventListener("mousedown", onDocDown);
+      document.removeEventListener("keydown", onDocEsc);
+    };
   }, [open]);
 
   return (
@@ -131,10 +154,18 @@ export function CountrySelect({ iso2, onChange, disabled }: CountrySelectProps) 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Escape") setOpen(false);
-              if (e.key === "Enter" && results[0]) {
-                onChange(results[0].iso2);
+              if (e.key === "Escape") {
+                e.preventDefault();
                 setOpen(false);
+                return;
+              }
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.stopPropagation();
+                if (results[0]) {
+                  onChange(results[0].iso2);
+                  setOpen(false);
+                }
               }
             }}
           />
@@ -175,14 +206,17 @@ export interface PhoneFieldProps {
 
 export function PhoneField({ value, onChange, id, required, disabled, label = "Mobile number" }: PhoneFieldProps) {
   const national = value.national.replace(/\D/g, "");
+  // Use ref to avoid stale closure on blur — producer holds latest value.
+  const valueRef = useRef(value);
+  valueRef.current = value;
   return (
     <div className="field-label">
-      {label ? <span className="phone-field-label">{label}</span> : null}
+      {label ? <span className="phone-field-label" id={id ? `${id}-label` : undefined}>{label}</span> : null}
       <span className="phone-field">
         <CountrySelect
           iso2={value.iso2}
           disabled={disabled}
-          onChange={(iso2) => onChange({ ...value, iso2 })}
+          onChange={(iso2) => onChange({ ...valueRef.current, iso2 })}
         />
         <input
           id={id}
@@ -192,14 +226,19 @@ export function PhoneField({ value, onChange, id, required, disabled, label = "M
           autoComplete="tel-national"
           placeholder="98765 43210"
           aria-label={label || "Mobile number"}
+          aria-labelledby={id ? `${id}-label` : undefined}
+          aria-required={required ? "true" : undefined}
           disabled={disabled}
           required={required}
           value={value.national}
-          onChange={(e) => onChange({ ...value, national: e.target.value.replace(/\D/g, "") })}
-          onBlur={() => onChange({ ...value, national })}
+          onChange={(e) => onChange({ ...valueRef.current, national: e.target.value.replace(/\D/g, "") })}
+          onBlur={() => {
+            const trimmed = valueRef.current.national.replace(/\D/g, "");
+            if (trimmed !== valueRef.current.national) onChange({ ...valueRef.current, national: trimmed });
+          }}
         />
       </span>
-      <span className="phone-hint" aria-hidden>
+      <span className="phone-hint" aria-live="polite">
         {national.length >= 6 && national.length <= 15 ? `Will be saved as ${composePhone(value)}` : "Select a country and enter 6–15 digits"}
       </span>
     </div>

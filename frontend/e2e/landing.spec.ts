@@ -110,6 +110,33 @@ test.describe("Landing page audit acceptance", () => {
     expect(serious, serious.join("\n")).toEqual([]);
   });
 
+  test("hash jump and fast scroll still reveal below-fold sections", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/", { waitUntil: "networkidle" });
+
+    await page.locator('a.home-text-cta[href="#practice"]').click();
+    await expect.poll(async () =>
+      page.locator(".home-practice-copy").evaluate((el) => getComputedStyle(el).opacity),
+    ).toBe("1");
+    await expect.poll(async () =>
+      page.locator(".home-practice-card").evaluate((el) => getComputedStyle(el).opacity),
+    ).toBe("1");
+    await expect(page.getByRole("heading", { name: /Confidence is/i })).toBeVisible();
+    await expect(page.getByText(/sessions/i).first()).toBeVisible();
+
+    await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
+    await expect.poll(async () =>
+      page.locator(".home-final-card").evaluate((el) => getComputedStyle(el).opacity),
+    ).toBe("1");
+    await expect(page.getByRole("heading", { name: /Start with/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Create my profile/i })).toBeVisible();
+
+    const hiddenReveals = await page.evaluate(() =>
+      Array.from(document.querySelectorAll(".home-reveal:not(.home-revealed)")).map((el) => el.className),
+    );
+    expect(hiddenReveals, hiddenReveals.join(" | ")).toEqual([]);
+  });
+
   test("mobile navigation has aria-modal, Escape close, focus restore", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/", { waitUntil: "networkidle" });

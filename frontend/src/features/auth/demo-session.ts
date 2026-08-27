@@ -942,6 +942,78 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
   }
 
   if (path === "/interviews" && method === "GET") return state.interviews as T;
+  if (path === "/interviews/commit" && method === "POST") {
+    const sessionBody = ((body as DemoRecord).session || {}) as DemoRecord;
+    const session: DemoRecord = {
+      ...sessionBody,
+      id: id("demo-interview"),
+      user_id: DEMO_USER_ID,
+      status: "completed",
+      mode: sessionBody.mode || "mixed",
+      created_at: now(),
+      completed_at: now(),
+    };
+    state.interviews.unshift(session);
+    const questionsIn = Array.isArray((body as DemoRecord).questions)
+      ? ((body as DemoRecord).questions as DemoRecord[])
+      : [];
+    const mappedQuestions = questionsIn.map((question, index) => ({
+      id: id("demo-question"),
+      session_id: session.id,
+      position: Number(question.position || index + 1),
+      question: question.question,
+      question_type: question.question_type || session.mode || "mixed",
+      source_context: question.source_context || { provider: "live_bank" },
+    }));
+    state.questions.push(...mappedQuestions);
+    const responsesIn = Array.isArray((body as DemoRecord).responses)
+      ? ((body as DemoRecord).responses as DemoRecord[])
+      : [];
+    for (const row of responsesIn) {
+      const question = mappedQuestions.find((item) => Number(item.position) === Number(row.position));
+      if (!question) continue;
+      state.responses.push({
+        id: id("demo-response"),
+        session_id: session.id,
+        question_id: question.id,
+        typed_response: row.typed_response,
+        transcript: row.transcript,
+        duration_seconds: row.duration_seconds,
+        speech_metrics: row.speech_metrics,
+        gaze_metrics: row.gaze_metrics,
+        evaluation: {
+          verdict: "solid",
+          score: 72,
+          spoken_reply: "Thanks, that was clear. Let's move on.",
+          interviewer_feedback: "Demo evaluation stored after the live round.",
+          strengths: ["You answered the question"],
+          improvements: ["Add a measurable result"],
+        },
+        created_at: now(),
+      });
+    }
+    const sessionResponses = state.responses.filter((item) => item.session_id === session.id);
+    const reportBody = buildDemoReport(session, sessionResponses);
+    const report = {
+      id: id("demo-report"),
+      session_id: session.id,
+      user_id: DEMO_USER_ID,
+      overall_score: reportBody.overall_score,
+      communication_score: reportBody.communication_score,
+      structure_score: reportBody.structure_score,
+      content_score: reportBody.content_score,
+      summary: reportBody.overall_summary,
+      report: reportBody,
+      provider: "demo",
+    };
+    state.reports.push(report);
+    return {
+      session,
+      report,
+      questions: mappedQuestions,
+      message: "Session saved. Review your detailed debrief report.",
+    } as T;
+  }
   if (path === "/interviews" && method === "POST") {
     const session = { ...body, id: id("demo-interview"), user_id: DEMO_USER_ID, status: "draft", created_at: now() };
     state.interviews.unshift(session);
@@ -967,11 +1039,23 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
     const wordCount = answer.split(/\s+/).filter(Boolean).length;
     const duration = Number((body as DemoRecord)?.duration_seconds || 0);
     const wpm = duration >= 1 && wordCount > 0 ? Math.round((wordCount / duration) * 60 * 10) / 10 : null;
+    const currentQuestion = state.questions.find((q) => q.id === (body as DemoRecord)?.question_id);
+    const alreadyFollowed =
+      String((currentQuestion as DemoRecord | undefined)?.question_type || "") === "follow_up" ||
+      String(((currentQuestion as DemoRecord | undefined)?.source_context as DemoRecord | undefined)?.kind || "") ===
+        "follow_up";
+    const shouldFollow = !alreadyFollowed && answer.length < 80;
+    const followQuestion = "What specifically did you do, and what changed because of it?";
     const evaluation = {
       verdict: answer.length > 80 ? "solid" : "partial",
       score: Math.min(92, 40 + Math.floor(answer.length / 4) - fillers * 3),
       interviewer_feedback:
         "Demo interviewer: cover situation, action, and result more clearly. Reduce fillers if you used them.",
+      spoken_reply: shouldFollow
+        ? "I'm with you on the setup. Stay with that example for a second."
+        : "Thanks, that was clear. Let's move on.",
+      should_follow_up: shouldFollow,
+      follow_up_question: shouldFollow ? followQuestion : null,
       strengths: answer.length > 40 ? ["Enough detail to discuss"] : ["You responded"],
       improvements: ["Add a measurable result", fillers ? "Cut filler words" : "Keep pauses intentional"],
       better_approach: "Open with context, own the action, close with impact.",
@@ -1007,7 +1091,34 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
       created_at: now(),
     };
     state.responses.push(response);
-    return { response, evaluation, question: state.questions.find((q) => q.id === (body as DemoRecord)?.question_id) } as T;
+    let follow_up: DemoRecord | null = null;
+    if (shouldFollow && currentQuestion) {
+      const currentPos = Number((currentQuestion as DemoRecord).position || 0);
+      for (const item of state.questions) {
+        if (item.session_id === parts[1] && Number(item.position || 0) > currentPos) {
+          item.position = Number(item.position || 0) + 1;
+        }
+      }
+      follow_up = {
+        id: id("demo-question"),
+        session_id: parts[1],
+        position: currentPos + 1,
+        question: followQuestion,
+        question_type: "follow_up",
+        source_context: { kind: "follow_up", provider: "demo", parent_question_id: currentQuestion.id },
+      };
+      state.questions.push(follow_up);
+    }
+    const sessionQuestions = state.questions
+      .filter((item) => item.session_id === parts[1])
+      .sort((a, b) => Number(a.position || 0) - Number(b.position || 0));
+    return {
+      response,
+      evaluation,
+      follow_up,
+      questions: sessionQuestions,
+      question: currentQuestion,
+    } as T;
   }
   if (parts[0] === "interviews" && parts[2] === "complete" && method === "POST") {
     const session = state.interviews.find((item) => item.id === parts[1]);

@@ -56,15 +56,19 @@ async def generate_interview_questions(
         },
         schema_model=InterviewQuestionsResult,
     )
-    result = InterviewQuestionsResult.model_validate(result)
-    questions = [
-        {
-            "question": item.question.strip(),
-            "question_type": (item.question_type or mode)[:80],
-        }
-        for item in result.questions[:count]
-        if item.question.strip()
-    ]
+    try:
+        result = InterviewQuestionsResult.model_validate(result)
+        questions = [
+            {
+                "question": item.question.strip(),
+                "question_type": (item.question_type or mode)[:80],
+            }
+            for item in result.questions[:count]
+            if item.question.strip()
+        ]
+    except Exception as exc:
+        # Enrich low-level validation for telemetry: type, truncated payload.
+        raise ApiError(502, "llm_returned_no_questions", f"LLM validation failed: type={type(exc).__name__}, value={str(exc)[:120]}") from exc
     if not questions:
         raise ApiError(
             502,

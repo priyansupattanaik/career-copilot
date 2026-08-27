@@ -144,6 +144,31 @@ class InterviewResponseCreate(BaseModel):
     gaze_metrics: dict[str, Any] | None = None
 
 
+class InterviewCommitQuestion(BaseModel):
+    position: int = Field(ge=1, le=40)
+    question: str = Field(min_length=8, max_length=800)
+    question_type: str | None = Field(default=None, max_length=80)
+    source_context: dict[str, Any] | None = None
+
+
+class InterviewCommitAnswer(BaseModel):
+    position: int = Field(ge=1, le=40)
+    typed_response: str | None = Field(default=None, max_length=20_000)
+    transcript: str | None = Field(default=None, max_length=50_000)
+    duration_seconds: int | None = Field(default=None, ge=0, le=3600)
+    speech_metrics: dict[str, Any] | None = None
+    gaze_metrics: dict[str, Any] | None = None
+
+
+class InterviewCommit(BaseModel):
+    """Finished live interview: persist session, questions, answers, and report together."""
+
+    model_config = ConfigDict(extra="forbid")
+    session: InterviewCreate
+    questions: list[InterviewCommitQuestion] = Field(min_length=1, max_length=40)
+    responses: list[InterviewCommitAnswer] = Field(min_length=1, max_length=40)
+
+
 class InterviewTtsRequest(BaseModel):
     """Spoken interviewer line for mock interview (Fish Audio, server-proxied)."""
 

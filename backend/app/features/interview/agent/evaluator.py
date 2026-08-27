@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.agents.providers.reliable import generate_structured_with_failover
 from app.core.config import Settings
 from app.core.errors import ApiError
+from app.features.interview.follow_up import decide_interviewer_turn, merge_interviewer_turn
 
 logger = logging.getLogger(__name__)
 INTERVIEW_REPORT_VERSION = "evidence-report-v2"
@@ -61,6 +62,9 @@ class AnswerEvaluationResult(BaseModel):
     improvements: list[str] = Field(default_factory=list, max_length=8)
     better_approach: str = Field(default="", max_length=2000)
     filler_notes: str = Field(default="", max_length=600)
+    spoken_reply: str = Field(default="", max_length=500)
+    should_follow_up: bool = False
+    follow_up_question: str | None = Field(default=None, max_length=800)
 
 
 class SessionReportResult(BaseModel):
@@ -405,6 +409,7 @@ def _score_answer_heuristic(
         f"{delivery.get('pace_notes') or ''} "
         + (" ".join(improvements[:2]) if improvements else "Keep the structure crisp.")
     )
+    turn = decide_interviewer_turn(answer=text, question=question, question_type=None)
     return {
         "verdict": verdict,
         "score": score,
@@ -415,9 +420,27 @@ def _score_answer_heuristic(
         "filler_notes": fillers["notes"],
         "filler_analysis": fillers,
         "speaking_delivery": delivery,
+        "spoken_reply": turn["spoken_reply"],
+        "should_follow_up": turn["should_follow_up"],
+        "follow_up_question": turn["follow_up_question"],
         "provider": "deterministic",
         "model": None,
     }
+
+
+def evaluate_answer_offline(
+    answer: str,
+    question: str,
+    *,
+    duration_seconds: float | int | None = None,
+    gaze_metrics: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Instant heuristic evaluation used when persisting a finished live session."""
+    base = _score_answer_heuristic(answer, question, duration_seconds=duration_seconds)
+    gaze = normalize_gaze_metrics(gaze_metrics)
+    if gaze:
+        base["gaze_metrics"] = gaze
+    return base
 
 
 async def evaluate_interview_answer(
@@ -430,12 +453,20 @@ async def evaluate_interview_answer(
     mode: str | None = None,
     duration_seconds: float | int | None = None,
     gaze_metrics: dict[str, Any] | None = None,
+    recent_turns: list[dict[str, Any]] | None = None,
+    already_followed_up: bool = False,
 ) -> dict[str, Any]:
     """Evaluate one answer with a validated LLM response plus measured metrics."""
     base = _score_answer_heuristic(answer, question, duration_seconds=duration_seconds)
     fillers = base["filler_analysis"]
     delivery = base.get("speaking_delivery") or analyze_speaking_delivery(answer, duration_seconds)
     gaze = normalize_gaze_metrics(gaze_metrics)
+    heuristic_turn = decide_interviewer_turn(
+        answer=answer,
+        question=question,
+        question_type=question_type,
+        already_followed_up=already_followed_up,
+    )
     if gaze and gaze.get("eye_contact_score") is not None and int(gaze["eye_contact_score"]) < 40:
         improvements = list(base.get("improvements") or [])
         tip = "Look into the camera while answering — avoid looking down or off-screen."
@@ -473,10 +504,21 @@ async def evaluate_interview_answer(
                 "duration_seconds": delivery.get("duration_seconds"),
             },
             "gaze_metrics": gaze,
+            "recent_turns": (recent_turns or [])[:6],
+            "already_followed_up": already_followed_up,
         },
         schema_model=AnswerEvaluationResult,
     )
     result = AnswerEvaluationResult.model_validate(result)
+    turn = merge_interviewer_turn(
+        {
+            "spoken_reply": result.spoken_reply,
+            "should_follow_up": result.should_follow_up,
+            "follow_up_question": result.follow_up_question,
+        },
+        heuristic_turn,
+        already_followed_up=already_followed_up,
+    )
     return {
         "verdict": result.verdict.strip()[:40],
         "score": int(result.score),
@@ -485,6 +527,9 @@ async def evaluate_interview_answer(
         "improvements": [str(item).strip() for item in result.improvements[:8]],
         "better_approach": result.better_approach.strip()[:2000],
         "filler_notes": result.filler_notes.strip()[:600],
+        "spoken_reply": turn["spoken_reply"],
+        "should_follow_up": turn["should_follow_up"],
+        "follow_up_question": turn["follow_up_question"],
         "filler_analysis": fillers,
         "speaking_delivery": delivery,
         "gaze_metrics": gaze,

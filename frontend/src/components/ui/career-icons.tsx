@@ -83,6 +83,9 @@ const paths: Record<CareerIconName, ReactNode> = {
 
 export function CareerIcon({ name, size = 22, className, ...props }: CareerIconProps) {
   const reducedMotion = useReducedMotion();
+  // Avoid leaking motion-only props into the raw <svg>; cast to bypass
+  // SVGProps vs SVGMotionProps incompatibility (onDrag / onAnimation*).
+  const svgProps = props as unknown as SVGProps<SVGSVGElement>;
 
   return (
     <motion.span
@@ -94,7 +97,7 @@ export function CareerIcon({ name, size = 22, className, ...props }: CareerIconP
       transition={{ type: "spring", stiffness: 420, damping: 22, mass: 0.55 }}
     >
       <svg
-        {...props}
+        {...svgProps}
         className={className}
         width={size}
         height={size}
@@ -104,7 +107,7 @@ export function CareerIcon({ name, size = 22, className, ...props }: CareerIconP
         strokeWidth="1.7"
         strokeLinecap="round"
         strokeLinejoin="round"
-        aria-hidden={props['aria-label'] ? undefined : true}
+        aria-hidden={(svgProps as { "aria-label"?: string })["aria-label"] ? undefined : true}
       >
         {paths[name]}
       </svg>
