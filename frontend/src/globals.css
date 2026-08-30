@@ -8492,9 +8492,10 @@ select option {
   margin: 0;
   border: 0;
   border-radius: 0;
-  object-fit: cover;
-  object-position: center;
+  object-fit: contain;
+  object-position: center top;
   pointer-events: none;
+  background: #0f1010;
 }
 .home-window-stage .home-live-label {
   position: absolute;

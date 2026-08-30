@@ -450,12 +450,36 @@ function LandingInner() {
 
 // Interview demo questions — varied, never the same two in a row
 const INTERVIEW_QUESTIONS = [
-  { q: "Tell me about a time you led a project under a tight deadline.", topic: "Behavioural", duration: 7500 },
-  { q: "How do you prioritise when everything feels urgent?", topic: "Situational", duration: 7000 },
-  { q: "Walk me through a technical decision you'd make differently today.", topic: "Technical", duration: 8000 },
-  { q: "Describe a moment you received difficult feedback. What did you do?", topic: "Behavioural", duration: 7500 },
-  { q: "What does good collaboration look like to you?", topic: "Culture", duration: 6500 },
-  { q: "How do you keep up with fast-changing tools in your field?", topic: "Growth", duration: 7000 },
+  {
+    q: "Tell me about a time you led a project under a tight deadline.",
+    topic: "Behavioural",
+    duration: 7500,
+  },
+  {
+    q: "How do you prioritise when everything feels urgent?",
+    topic: "Situational",
+    duration: 7000,
+  },
+  {
+    q: "Walk me through a technical decision you'd make differently today.",
+    topic: "Technical",
+    duration: 8000,
+  },
+  {
+    q: "Describe a moment you received difficult feedback. What did you do?",
+    topic: "Behavioural",
+    duration: 7500,
+  },
+  {
+    q: "What does good collaboration look like to you?",
+    topic: "Culture",
+    duration: 6500,
+  },
+  {
+    q: "How do you keep up with fast-changing tools in your field?",
+    topic: "Growth",
+    duration: 7000,
+  },
 ];
 
 function buildSequence(len: number): number[] {
@@ -467,11 +491,16 @@ function buildSequence(len: number): number[] {
   return arr;
 }
 
-type InterviewPhase = "question" | "answering";
+type InterviewPhase = "question" | "answering" | "transitioning";
 
-function useInterviewDemo(paused: boolean) {
+function useInterviewDemo() {
   const seqRef = useRef<number[]>(buildSequence(INTERVIEW_QUESTIONS.length));
-  const posRef = useRef(0);
+  const posRef = useRef(1); // start at 1 since idx = seqRef[0]
+  const timer1Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearTimers = () => {
+    if (timer1Ref.current) clearTimeout(timer1Ref.current);
+  };
 
   const getNext = () => {
     if (posRef.current >= seqRef.current.length) {
@@ -486,36 +515,34 @@ function useInterviewDemo(paused: boolean) {
     return seqRef.current[posRef.current++];
   };
 
-  const [idx, setIdx] = useState(() => {
-    posRef.current = 1;
-    return seqRef.current[0];
-  });
+  const [idx, setIdx] = useState(() => seqRef.current[0]);
   const [phase, setPhase] = useState<InterviewPhase>("question");
-  const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    if (paused) return;
-    const QUESTION_SHOW = 2800;
-    let tid: ReturnType<typeof setTimeout>;
+    clearTimers();
 
     if (phase === "question") {
-      tid = setTimeout(() => setPhase("answering"), QUESTION_SHOW);
+      // Show question for 3s then move to answering
+      timer1Ref.current = setTimeout(() => setPhase("answering"), 3000);
+    } else if (phase === "answering") {
+      // Show answering for the question's duration, then transition
+      const duration = INTERVIEW_QUESTIONS[idx].duration;
+      timer1Ref.current = setTimeout(() => {
+        setPhase("transitioning");
+      }, duration);
     } else {
-      const answerDuration = INTERVIEW_QUESTIONS[idx].duration;
-      tid = setTimeout(() => {
-        setFading(true);
-        setTimeout(() => {
-          setIdx(getNext());
-          setPhase("question");
-          setFading(false);
-        }, 480);
-      }, answerDuration);
+      // transitioning — wait for fade out then swap question
+      timer1Ref.current = setTimeout(() => {
+        setIdx(getNext());
+        setPhase("question");
+      }, 500);
     }
-    return () => clearTimeout(tid);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, idx, paused]);
 
-  return { question: INTERVIEW_QUESTIONS[idx], phase, fading };
+    return clearTimers;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, idx]);
+
+  return { question: INTERVIEW_QUESTIONS[idx], phase };
 }
 
 function PracticeClock() {
@@ -526,13 +553,12 @@ function PracticeClock() {
 }
 
 function InterviewStage({
-  paused,
   blockVideoInteraction,
 }: {
-  paused: boolean;
   blockVideoInteraction: (e: SyntheticEvent) => void;
 }) {
-  const { question, phase, fading } = useInterviewDemo(paused);
+  const { question, phase } = useInterviewDemo();
+  const isTransitioning = phase === "transitioning";
 
   return (
     <div
@@ -564,24 +590,34 @@ function InterviewStage({
         <i /> live practice
       </div>
 
-      {/* Question card — fades in on question phase */}
+      {/* Question card */}
       <div
-        className={`home-demo-question${phase === "question" && !fading ? " home-demo-question--visible" : ""}${fading ? " home-demo-question--out" : ""}`}
+        className={[
+          "home-demo-question",
+          phase === "question" && !isTransitioning ? "home-demo-question--visible" : "",
+          isTransitioning ? "home-demo-question--out" : "",
+        ].join(" ").trim()}
         aria-live="polite"
       >
         <span className="home-demo-topic">{question.topic}</span>
         <p>{question.q}</p>
       </div>
 
-      {/* Answering overlay — shown during answer phase */}
+      {/* Answering bar with waveform */}
       <div
-        className={`home-demo-answer${phase === "answering" && !fading ? " home-demo-answer--visible" : ""}${fading ? " home-demo-answer--out" : ""}`}
+        className={[
+          "home-demo-answer",
+          phase === "answering" && !isTransitioning ? "home-demo-answer--visible" : "",
+          isTransitioning ? "home-demo-answer--out" : "",
+        ].join(" ").trim()}
       >
         <span className="home-demo-answering-label">
           <i /> Answering
         </span>
         <div className="home-demo-waveform" aria-hidden>
-          {Array.from({ length: 14 }, (_, k) => <i key={k} />)}
+          {Array.from({ length: 14 }, (_, k) => (
+            <i key={k} />
+          ))}
         </div>
       </div>
     </div>
@@ -623,7 +659,6 @@ function HeroVisual() {
             <PracticeClock />
           </div>
           <InterviewStage
-            paused={isMotionPaused || Boolean(reduce)}
             blockVideoInteraction={blockVideoInteraction}
           />
         </div>
