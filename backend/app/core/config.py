@@ -2,12 +2,25 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 from urllib.parse import urlparse
+import json
+import re
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+# Documented production frontend (deployment/vercel.frontend.env.example).
+PRODUCTION_FRONTEND_ORIGIN = "https://career-copilot-neon.vercel.app"
+PRODUCTION_FRONTEND_ORIGIN_REGEX = r"^https://career-copilot-neon(?:-[a-z0-9-]+)?\.vercel\.app$"
+
 ROOT_DIR = Path(__file__).resolve().parents[3]
 ROOT_ENV_FILE = ROOT_DIR / ".env"
+
+
+def _normalize_origin(value: object) -> str:
+    text = str(value or "").strip().strip("\"'")
+    return text.rstrip("/")
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ROOT_ENV_FILE, env_file_encoding="utf-8", extra="ignore")
     app_name: str
@@ -88,7 +101,17 @@ class Settings(BaseSettings):
     @classmethod
     def parse_origins(cls, value: object) -> object:
         if isinstance(value, str):
-            return [item.strip() for item in value.split(",") if item.strip()]
+            text = value.strip()
+            if text.startswith("["):
+                try:
+                    parsed = json.loads(text)
+                except json.JSONDecodeError:
+                    parsed = None
+                if isinstance(parsed, list):
+                    return [_normalize_origin(item) for item in parsed if _normalize_origin(item)]
+            return [_normalize_origin(item) for item in text.split(",") if _normalize_origin(item)]
+        if isinstance(value, list):
+            return [_normalize_origin(item) for item in value if _normalize_origin(item)]
         return value
     @field_validator("nvidia_base_url", "groq_base_url", "fish_audio_base_url")
     @classmethod
@@ -177,6 +200,32 @@ class Settings(BaseSettings):
     @property
     def youtube_configured(self) -> bool:
         return bool(self.youtube_api_key and self.youtube_api_base_url)
+
+    @property
+    def cors_allow_origins(self) -> list[str]:
+        origins: list[str] = []
+        seen: set[str] = set()
+        extras = [PRODUCTION_FRONTEND_ORIGIN] if str(self.app_env).lower() == "production" else []
+        for raw in [*self.frontend_origins, *extras]:
+            origin = _normalize_origin(raw)
+            if origin and origin not in seen:
+                seen.add(origin)
+                origins.append(origin)
+        return origins
+
+    @property
+    def cors_allow_origin_regex(self) -> str | None:
+        if str(self.app_env).lower() == "production":
+            return PRODUCTION_FRONTEND_ORIGIN_REGEX
+        hosts = []
+        for origin in self.cors_allow_origins:
+            host = urlparse(origin).hostname or ""
+            if host.endswith(".vercel.app"):
+                name = host.split(".")[0]
+                hosts.append(rf"https://{re.escape(name)}(?:-[a-z0-9-]+)?\.vercel\.app")
+        if not hosts:
+            return None
+        return "^(" + "|".join(hosts) + ")$"
 
     @property
     def fish_audio_configured(self) -> bool:

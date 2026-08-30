@@ -48,7 +48,10 @@ async function request(path: string, body?: unknown) {
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
-    throw new Error(`Authentication server is unavailable at ${endpoint}. Start the backend API and try again.`);
+    const origin = typeof window === "undefined" ? "" : window.location.origin;
+    throw new Error(
+      `Authentication server is unavailable at ${endpoint}. If this is the deployed site, set Render FRONTEND_ORIGINS to ${origin || "your Vercel origin"} and redeploy the API.`,
+    );
   }
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
