@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Menu, Play, X } from "lucide-react";
+import { ArrowRight, Check, Play } from "lucide-react";
 import {
   motion,
   useReducedMotion,
@@ -6,16 +6,16 @@ import {
   useTransform,
 } from "motion/react";
 import {
-  useCallback,
   useEffect,
   useRef,
   useState,
-  type MouseEvent,
   type ReactNode,
   type SyntheticEvent,
 } from "react";
 import { CareerIcon } from "@/components/ui/career-icons";
 import { BrandMark } from "@/components/ui/brand-mark";
+import { Navigation5 } from "@/components/ui/navigation-5";
+import { Team5 } from "@/components/ui/team-5";
 import { BeamsBackground } from "@/components/ui/beams-background";
 import { ParticlesBackground } from "@/components/ui/particles-background";
 import { RuixenGradientFooter } from "@/components/ui/ruixen-gradient-footer";
@@ -335,80 +335,12 @@ function FinalCard() {
 }
 
 function LandingInner() {
-  const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
   const { isMotionPaused } = useMotion();
   const { resolvedTheme } = useTheme();
 
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
-
-  useEffect(() => {
     warmUpBackend();
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
-  const closeMenu = useCallback(() => {
-    setOpen(false);
-    window.setTimeout(() => menuButtonRef.current?.focus(), 0);
-  }, []);
-
-  const closeAndFollowAnchor = useCallback(
-    (event: MouseEvent<HTMLAnchorElement>) => {
-      const sectionId = event.currentTarget.hash.replace(/^#/, "");
-      setOpen(false);
-      window.setTimeout(() => {
-        const target = sectionId ? document.getElementById(sectionId) : null;
-        target?.focus({ preventScroll: true });
-      }, 0);
-    },
-    [],
-  );
-
-  useEffect(() => {
-    if (!open) return;
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    const getFocusable = () =>
-      Array.from(
-        dialog.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ),
-      );
-    const initialFocus = window.setTimeout(() => getFocusable()[0]?.focus(), 0);
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        closeMenu();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const focusable = getFocusable();
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.clearTimeout(initialFocus);
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [closeMenu, open]);
 
   return (
     <div
@@ -426,99 +358,7 @@ function LandingInner() {
         paused={isMotionPaused}
         className="home-particles-layer"
       />
-      <header
-        className={`home-nav${scrolled ? " is-scrolled" : ""}`}
-        aria-label="Primary"
-      >
-        <div className="home-frame home-nav-inner">
-          <Link
-            href="/"
-            className="home-brand"
-            aria-label="Career Copilot home"
-          >
-            <BrandMark />
-            <span>Career Copilot</span>
-          </Link>
-          <nav className="home-nav-links" aria-label="Main navigation">
-            <a href="#practice">Video practice</a>
-            <a href="#system">How it works</a>
-            <Link href="/sign-in">Sign in</Link>
-            <span
-              onMouseEnter={() => prefetchRoute("/sign-up")}
-              onFocus={() => prefetchRoute("/sign-up")}
-            >
-              <ButtonLink href="/sign-up" className="home-nav-cta">
-                Get started
-              </ButtonLink>
-            </span>
-          </nav>
-          <button
-            ref={menuButtonRef}
-            type="button"
-            className="home-menu-button"
-            aria-label="Open navigation"
-            aria-expanded={open}
-            onClick={() => setOpen(true)}
-          >
-            <AnimatedIcon icon={Menu} size={20} aria-hidden />
-          </button>
-        </div>
-      </header>
-
-      {open ? (
-        <div
-          ref={dialogRef}
-          className="home-mobile-dialog"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="home-mobile-title"
-        >
-          <button
-            className="home-mobile-scrim"
-            aria-label="Close navigation"
-            onClick={closeMenu}
-          />
-          <div className="home-mobile-panel">
-            <div className="home-mobile-head">
-              <span id="home-mobile-title" className="home-mobile-title">
-                Career Copilot
-              </span>
-              <button
-                type="button"
-                className="home-mobile-close"
-                aria-label="Close menu"
-                onClick={closeMenu}
-              >
-                <AnimatedIcon icon={X} size={21} idle={false} aria-hidden />
-              </button>
-            </div>
-            <nav className="home-mobile-links" aria-label="Mobile navigation">
-              <a href="#practice" onClick={closeAndFollowAnchor}>
-                Video practice
-              </a>
-              <a href="#system" onClick={closeAndFollowAnchor}>
-                How it works
-              </a>
-              <Link href="/resume-analysis?tab=upload" onClick={closeMenu}>
-                Resume analysis
-              </Link>
-              <Link href="/learning" onClick={closeMenu}>
-                Learning path
-              </Link>
-              <Link href="/sign-in" onClick={closeMenu}>
-                Sign in
-              </Link>
-              <ButtonLink
-                href="/sign-up"
-                className="home-mobile-cta"
-                onClick={closeMenu}
-              >
-                Get started
-              </ButtonLink>
-            </nav>
-          </div>
-        </div>
-      ) : null}
+      <Navigation5 />
 
       <main id="main-content">
         <section className="home-hero" aria-labelledby="home-hero-title">
@@ -590,6 +430,21 @@ function LandingInner() {
           </div>
         </section>
 
+        <section className="home-team" aria-labelledby="team-title">
+          <Team5
+            className="home-team-block"
+            badge="The people"
+            heading="The team"
+            description="The builders behind Career Copilot."
+          />
+          <div className="home-frame home-team-more">
+            <Link href="/teams" className="home-inline-link">
+              Open the team page{" "}
+              <AnimatedIcon icon={ArrowRight} size={15} aria-hidden />
+            </Link>
+          </div>
+        </section>
+
         <section className="home-final">
           <FinalCard />
         </section>
@@ -612,6 +467,7 @@ function LandingInner() {
             <nav className="home-footer-nav" aria-label="Footer navigation">
               <Link href="/sign-in">Sign in</Link>
               <Link href="/sign-up">Create account</Link>
+              <Link href="/teams">Team</Link>
               <a href="#practice">Video practice</a>
               <a href="#system">How it works</a>
             </nav>

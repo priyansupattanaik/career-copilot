@@ -9,7 +9,7 @@ const VIEWPORTS = [
   { name: "phone", width: 390, height: 844 },
 ] as const;
 
-const PUBLIC_ROUTES = ["/", "/sign-in", "/sign-up"];
+const PUBLIC_ROUTES = ["/", "/teams", "/sign-in", "/sign-up"];
 const WORKSPACE_ROUTES = [
   "/dashboard",
   "/resume-analysis",

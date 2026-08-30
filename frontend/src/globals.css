@@ -514,10 +514,9 @@ button:active > svg {
 }
 
 .workspace .jobs-radar-page .filters-bar {
-  grid-template-columns: minmax(150px, 1.2fr) minmax(150px, 1fr) minmax(
-      110px,
-      0.7fr
-    ) auto;
+  grid-template-columns:
+    minmax(150px, 1.2fr) minmax(150px, 1fr) minmax(110px, 0.7fr)
+    auto;
   gap: 10px;
   align-items: end;
   margin-bottom: 16px;
@@ -8233,71 +8232,35 @@ select option {
   width: min(1160px, calc(100% - 64px));
   margin-inline: auto;
 }
-.home-nav {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  border-bottom: 1px solid color-mix(in srgb, var(--home-line) 80%, transparent);
-  background: color-mix(in srgb, var(--home-paper) 88%, transparent);
-  backdrop-filter: blur(18px) saturate(135%);
-  transition:
-    background-color 0.28s ease,
-    box-shadow 0.28s ease,
-    border-color 0.28s ease;
+/* ===== Navigation-5: Floating Island Navbar =============================== */
+.nav5-wrapper {
+  animation: cc-rise 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
 }
-.home-nav.is-scrolled {
-  background: color-mix(in srgb, var(--home-paper) 94%, transparent);
-  box-shadow: 0 10px 28px rgb(30 35 23 / 6%);
+
+.nav5-pill {
+  box-shadow: 0 4px 20px -2px color-mix(in srgb, var(--text) 8%, transparent);
 }
-.home-nav-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 72px;
+
+.nav5-pill-scrolled {
+  box-shadow: 0 12px 32px -4px color-mix(in srgb, var(--text) 14%, transparent);
 }
-.home-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--home-text);
-  font-size: 0.86rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  text-decoration: none;
+
+.nav5-dropdown {
+  animation: nav5-drop 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-.home-nav-links {
-  display: flex;
-  align-items: center;
-  gap: 27px;
-  color: var(--home-muted);
-  font-size: 0.76rem;
+
+@keyframes nav5-drop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
 }
-.home-nav-links a {
-  position: relative;
-  color: inherit;
-  text-decoration: none;
-}
-.home-nav-links a:hover {
-  color: var(--home-text);
-}
-.home-nav-links > a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -6px;
-  height: 1px;
-  background: currentColor;
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-.home-nav-links > a:hover::after {
-  transform: scaleX(1);
-}
-.home-nav-cta,
-.home-primary-cta,
-.home-mobile-cta {
+
+.home-primary-cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -8308,30 +8271,14 @@ select option {
   font-size: 0.77rem;
   font-weight: 700;
   text-decoration: none;
-}
-.home-nav-cta {
-  min-height: 36px;
-  padding: 0 16px;
-}
-.home-primary-cta {
   min-height: 48px;
   padding: 0 20px;
 }
-.home-nav-cta:hover,
+
 .home-primary-cta:hover {
   background: #30302e;
   color: #fff;
   transform: translateY(-1px);
-}
-.home-menu-button {
-  display: none;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border: 1px solid var(--home-line);
-  border-radius: 50%;
-  background: var(--home-panel);
-  color: var(--home-text);
 }
 .home-hero {
   padding: 118px 0 0;
@@ -9072,9 +9019,6 @@ select option {
   --home-blue: var(--accent);
   background: var(--home-paper);
 }
-[data-theme="dark"] .home-page .home-nav {
-  background: color-mix(in srgb, var(--home-paper) 88%, transparent);
-}
 [data-theme="dark"] .home-page .home-hero {
   background: var(--home-paper);
 }
@@ -9102,12 +9046,6 @@ select option {
 @media (max-width: 900px) {
   .home-frame {
     width: min(100% - 40px, 680px);
-  }
-  .home-nav-links {
-    display: none;
-  }
-  .home-menu-button {
-    display: grid;
   }
   .home-hero {
     padding-top: 83px;
@@ -9327,12 +9265,7 @@ select option {
   }
 }
 
-/* Hero entrance Ã¢â‚¬â€ staggered rise on first paint. Animate the nav's inner
-   wrapper only: a transform on the sticky element itself would offset it
-   while the entrance plays. */
-.home-nav-inner {
-  animation: cc-rise 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
-}
+/* Hero entrance — staggered rise on first paint. */
 .home-hero-copy > * {
   animation: cc-rise 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
 }
@@ -11005,12 +10938,8 @@ select option {
 }
 
 /* Landing CTAs use a light surface in dark mode, so their labels must switch to dark text. */
-[data-theme="dark"] .home-page .home-nav-cta,
 [data-theme="dark"] .home-page .home-primary-cta,
-[data-theme="dark"] .home-page .home-mobile-cta,
-[data-theme="dark"] .home-page .home-nav-cta:hover,
-[data-theme="dark"] .home-page .home-primary-cta:hover,
-[data-theme="dark"] .home-page .home-mobile-cta:hover {
+[data-theme="dark"] .home-page .home-primary-cta:hover {
   color: #111 !important;
 }
 
@@ -13618,6 +13547,7 @@ select option {
 @theme inline {
   --color-foreground: var(--foreground);
   --color-muted-foreground: var(--muted-foreground);
+  --color-background: var(--background);
 }
 @keyframes pixel-on {
   0%,
@@ -13824,17 +13754,13 @@ select option {
 [data-theme="dark"] .dashboard-page .button-primary:active,
 [data-theme="dark"] .workspace .button-primary:active,
 [data-theme="dark"] .workspace .settings-nav .button-primary,
-[data-theme="dark"] .home-page .home-nav-cta,
-[data-theme="dark"] .home-page .home-primary-cta,
-[data-theme="dark"] .home-page .home-mobile-cta {
+[data-theme="dark"] .home-page .home-primary-cta {
   color: #171817 !important;
 }
 [data-theme="dark"] .auth-shell .button-primary:hover,
 [data-theme="dark"] .workspace .button-primary:hover,
 [data-theme="dark"] .workspace a.button-primary:hover,
-[data-theme="dark"] .home-page .home-nav-cta:hover,
-[data-theme="dark"] .home-page .home-primary-cta:hover,
-[data-theme="dark"] .home-page .home-mobile-cta:hover {
+[data-theme="dark"] .home-page .home-primary-cta:hover {
   color: #f5f5f0 !important;
 }
 
@@ -15209,8 +15135,6 @@ select option {
   text-wrap: pretty;
 }
 .home-primary-cta:active,
-.home-nav-cta:active,
-.home-mobile-cta:active,
 .home-text-cta:active {
   transform: translateY(1px) scale(0.985);
 }
@@ -15350,8 +15274,6 @@ select option {
   transform: translateX(3px);
 }
 .home-primary-cta,
-.home-nav-cta,
-.home-mobile-cta,
 .home-text-cta {
   transition:
     background-color 220ms cubic-bezier(0.32, 0.72, 0, 1),
@@ -15360,7 +15282,7 @@ select option {
 }
 
 .home-page[data-motion="paused"] .home-hero-copy > *,
-.home-page[data-motion="paused"] .home-nav-inner,
+.home-page[data-motion="paused"] .nav5-wrapper,
 .home-page[data-motion="paused"] .home-hero-visual,
 .home-page[data-motion="paused"] .home-hero-bottom {
   animation: none !important;
@@ -15375,9 +15297,6 @@ select option {
 .home-page[data-motion="paused"] .home-status-dot,
 .home-page[data-motion="paused"] .home-window {
   animation-play-state: paused !important;
-}
-.home-page[data-motion="paused"] .home-nav-links > a::after {
-  transition: none;
 }
 .home-page[data-motion="paused"] .home-feature:hover,
 .home-page[data-motion="paused"] .home-practice-card:hover,
@@ -16422,3 +16341,148 @@ body,
     transition: none !important;
   }
 }
+
+/* ===== Animate UI Icons System ============================================
+   Micro-interactions, spring dynamics, and smooth transforms for all icons.
+   Crisp rendering, zero layout shift, and smooth parent hover triggers. ====== */
+.animate-ui-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  line-height: 0;
+  flex-shrink: 0;
+  transform-origin: center center;
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+.animate-ui-icon svg {
+  display: block;
+  overflow: visible;
+  transition:
+    stroke 0.2s ease,
+    fill 0.2s ease;
+}
+
+.animate-ui-icon.spin,
+.animate-ui-icon.is-spinning {
+  animation: cc-icon-spin 1s linear infinite;
+}
+
+@keyframes cc-icon-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-ui-icon {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* ===== Error-6 / System Error Panel =======================================
+   Modern, hero-style error panel with interactive background grid. ======== */
+.error-6-screen {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.error-6-grid-mask {
+  background-size: 100% 100%;
+}
+
+/* ===== Team 5 (watermelon registry) =======================================
+   Accordion portrait strip. Hover/focus expands a member on pointer devices;
+   small screens use a readable grid so names never sit in 40px slices. */
+.team5 {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  font-family: var(--font-ui);
+}
+.home-page .home-team,
+.teams-page .home-team-block {
+  padding-block: clamp(48px, 8vw, 96px);
+}
+.home-team-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+  padding-bottom: 8px;
+}
+.team5-copy .home-kicker {
+  margin-bottom: 10px;
+}
+.team5-copy h2 {
+  margin: 0;
+  max-width: 16ch;
+  color: var(--text);
+  font-size: clamp(1.7rem, 3.4vw, 2.7rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+}
+.team5-copy p {
+  color: var(--muted);
+}
+.team5-row {
+  min-width: 0;
+}
+.team5-member {
+  min-height: 0;
+  background: var(--surface-muted, var(--surface));
+  outline: none;
+}
+.team5-member:focus-visible {
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--primary);
+}
+.team5-photo {
+  pointer-events: none;
+}
+@media (max-width: 720px) {
+  .team5-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    height: auto !important;
+    gap: 10px !important;
+  }
+  .team5-member {
+    min-height: 240px;
+    flex: none !important;
+  }
+  .team5-shade,
+  .team5-meta {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .team5-photo {
+    filter: none;
+  }
+  .team5-meta h3 {
+    white-space: normal;
+    font-size: 1.05rem;
+  }
+}
+@media (max-width: 420px) {
+  .team5-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .team5-member,
+  .team5-photo,
+  .team5-shade,
+  .team5-meta {
+    transition: none !important;
+  }
+}
+

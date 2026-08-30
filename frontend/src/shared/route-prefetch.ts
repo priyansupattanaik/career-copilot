@@ -34,6 +34,10 @@ const routeLoaders: Array<{ match: (path: string) => boolean; load: () => Promis
     load: () => import("@/features/onboarding/components/onboarding"),
   },
   {
+    match: (p) => p === "/teams",
+    load: () => import("@/features/marketing/components/teams"),
+  },
+  {
     match: (p) =>
       p === "/sign-in" ||
       p === "/sign-up" ||

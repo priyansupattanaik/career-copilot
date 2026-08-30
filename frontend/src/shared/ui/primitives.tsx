@@ -98,13 +98,15 @@ export function Badge({
   children,
   tone,
   variant,
+  className,
 }: {
   children: React.ReactNode;
   tone?: BadgeTone;
   variant?: BadgeTone;
+  className?: string;
 }) {
   const resolved = resolveBadgeTone(tone, variant);
-  return <span className={`badge badge-${resolved}`}>{children}</span>;
+  return <span className={cn(`badge badge-${resolved}`, className)}>{children}</span>;
 }
 
 export function PageHeader({

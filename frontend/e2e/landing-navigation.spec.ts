@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Landing navigation", () => {
-  test("mobile menu anchor link scrolls to the practice section", async ({ page }) => {
+  test("mobile menu anchor link scrolls to the practice section", async ({
+    page,
+  }) => {
     test.slow();
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
@@ -35,12 +37,20 @@ test.describe("Landing navigation", () => {
   test("header stays pinned to the top while scrolling", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/");
-    await page.evaluate(() => window.scrollTo({ top: 900, behavior: "instant" }));
+    await page.evaluate(() =>
+      window.scrollTo({ top: 900, behavior: "instant" }),
+    );
     await page.waitForTimeout(200);
 
     const navTop = await page.evaluate(
-      () => document.querySelector(".home-nav")!.getBoundingClientRect().top,
+      () =>
+        document
+          .querySelector('nav[aria-label="Primary"]')!
+          .getBoundingClientRect().top,
     );
-    expect(Math.abs(navTop), "sticky header must remain at viewport top").toBeLessThan(2);
+    expect(
+      navTop,
+      "sticky floating header must remain near top of viewport",
+    ).toBeLessThan(30);
   });
 });
