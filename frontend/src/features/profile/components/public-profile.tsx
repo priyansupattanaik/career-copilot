@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@/shared/ui/router-link";
 import { resolveApiBase } from "@/shared/config";
+import { demoApiRequest, isDemoSession } from "@/features/auth/demo-session";
+import { isAbortError } from "@/shared/api/client";
 
 type PublicProfilePayload = {
   profile: Record<string, unknown>;
@@ -71,20 +73,28 @@ export function PublicProfile({ username }: { username: string }) {
   }, [data]);
 
   useEffect(() => {
+    const controller = new AbortController();
     let active = true;
-    fetch(`${resolveApiBase()}/public/profiles/${encodeURIComponent(username)}`)
-      .then(async (response) => {
-        if (!response.ok) throw new Error(response.status === 404 ? "Profile not found." : "Could not load this profile.");
-        return response.json() as Promise<PublicProfilePayload>;
-      })
+    setError("");
+    setData(null);
+    const path = `/public/profiles/${encodeURIComponent(username)}`;
+    const load = isDemoSession()
+      ? demoApiRequest<PublicProfilePayload>(path, { signal: controller.signal })
+      : fetch(`${resolveApiBase()}${path}`, { signal: controller.signal }).then(async (response) => {
+          if (!response.ok) throw new Error(response.status === 404 ? "Profile not found." : "Could not load this profile.");
+          return response.json() as Promise<PublicProfilePayload>;
+        });
+    load
       .then((payload) => {
-        if (active) setData(payload);
+        if (active && !controller.signal.aborted) setData(payload);
       })
       .catch((reason: Error) => {
-        if (active) setError(reason.message);
+        if (!active || isAbortError(reason) || controller.signal.aborted) return;
+        setError(reason.message || "Could not load this profile.");
       });
     return () => {
       active = false;
+      controller.abort();
     };
   }, [username]);
 

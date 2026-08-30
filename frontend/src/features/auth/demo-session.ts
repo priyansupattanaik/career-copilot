@@ -29,6 +29,55 @@ type DemoState = {
 
 const DEMO_USER_ID = "demo-user";
 
+/** Public identity cards for Community. Matches existing e2e/backend fixtures; no invented people. */
+const DEMO_PUBLIC_PROFILE_CARD_FIELDS = [
+  "username",
+  "full_name",
+  "avatar_url",
+  "headline",
+  "location",
+  "current_role",
+  "career_level",
+  "career_goal",
+] as const;
+
+const DEMO_PUBLIC_PROFILES: DemoRecord[] = [
+  {
+    username: "ada-lovelace",
+    full_name: "Ada Lovelace",
+    current_role: "AI engineer",
+    career_level: "Experienced",
+  },
+  {
+    username: "grace-hopper",
+    full_name: "Grace Hopper",
+    current_role: "Compiler engineer",
+  },
+];
+
+function demoPublicProfileCards(needle: string, limit: number): DemoRecord[] {
+  let normalized = needle.trim().toLowerCase().replace(/\s+/g, " ");
+  if (normalized.startsWith("@")) normalized = normalized.slice(1).trim();
+  if (normalized.length < 2) return [];
+  const ranked = [...DEMO_PUBLIC_PROFILES].sort((a, b) => {
+    const byName = String(a.full_name || "").toLowerCase().localeCompare(String(b.full_name || "").toLowerCase());
+    if (byName) return byName;
+    return String(a.username || "").toLowerCase().localeCompare(String(b.username || "").toLowerCase());
+  });
+  const matches: DemoRecord[] = [];
+  for (const row of ranked) {
+    const username = String(row.username || "").trim();
+    if (!username) continue;
+    const haystack = DEMO_PUBLIC_PROFILE_CARD_FIELDS.map((key) => String(row[key] || "")).join(" ").toLowerCase();
+    if (!haystack.includes(normalized)) continue;
+    matches.push(
+      Object.fromEntries(DEMO_PUBLIC_PROFILE_CARD_FIELDS.map((key) => [key, row[key] ?? null])) as DemoRecord,
+    );
+    if (matches.length >= limit) break;
+  }
+  return matches;
+}
+
 function now() {
   return new Date().toISOString();
 }
@@ -1395,7 +1444,11 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
       }));
     return { resume_version_id: null, algorithm_version: "demo", recommendations } as T;
   }
-  if (parts[0] === "jobs" && parts.length === 2 && method === "GET") return state.jobs.find((job) => job.id === parts[1]) as T;
+  if (parts[0] === "jobs" && parts.length === 2 && method === "GET") {
+    const job = state.jobs.find((item) => item.id === parts[1]);
+    if (!job) throw new Error("The requested record was not found.");
+    return job as T;
+  }
   if (path === "/saved-jobs" && method === "GET") {
     // Return full pipeline (saved / applied / rejected / …), matching backend list_saved_jobs.
     return state.savedJobs.map((saved) => ({
@@ -1666,6 +1719,33 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
   if (parts[0] === "account" && method === "DELETE") {
     state = initialState();
     return undefined as T;
+  }
+  if (parts[0] === "public" && parts[1] === "profiles" && parts[2] === "search" && method === "GET") {
+    const params = new URLSearchParams(path.includes("?") ? path.slice(path.indexOf("?") + 1) : "");
+    const needle = (params.get("q") || "").trim().replace(/\s+/g, " ").toLowerCase();
+    const parsedLimit = Number(params.get("limit") || 20);
+    const limit = Math.min(50, Math.max(1, Number.isFinite(parsedLimit) ? parsedLimit : 20));
+    return demoPublicProfileCards(needle, limit) as T;
+  }
+  if (parts[0] === "public" && parts[1] === "profiles" && parts[2] && method === "GET") {
+    const username = decodeURIComponent(parts[2]).trim().toLowerCase();
+    const row = DEMO_PUBLIC_PROFILES.find((item) => String(item.username || "").toLowerCase() === username);
+    if (!row) throw new Error("Profile not found.");
+    const profile = Object.fromEntries(
+      DEMO_PUBLIC_PROFILE_CARD_FIELDS.map((key) => [key, row[key] ?? null]),
+    ) as DemoRecord;
+    return {
+      profile: { ...profile, id: `demo-public-${username}` },
+      sections: {
+        skills: [],
+        experiences: [],
+        education: [],
+        projects: [],
+        certifications: [],
+        languages: [],
+        links: [],
+      },
+    } as T;
   }
 
   // Fail closed: unknown demo routes must not return {} (callers treat that as success).

@@ -1001,31 +1001,79 @@ def public_username_availability(username: str = Query(..., min_length=3, max_le
     return {"username": normalized, "available": not rows, "reason": None if not rows else "Username is already taken.", "suggestions": suggestions}
 
 
+_PUBLIC_PROFILE_CARD_FIELDS = (
+    "username",
+    "full_name",
+    "avatar_url",
+    "headline",
+    "location",
+    "current_role",
+    "career_level",
+    "career_goal",
+)
+
+
+def public_profile_search_needle(raw: str) -> str:
+    """Normalize a community search. Leading @ is stripped because stored usernames never include it."""
+    cleaned = " ".join((raw or "").split()).casefold()
+    if cleaned.startswith("@"):
+        cleaned = cleaned[1:].lstrip()
+    return cleaned
+
+
+def public_profile_directory_cards(
+    rows: list[dict[str, Any]],
+    needle: str,
+    limit: int,
+) -> list[dict[str, Any]]:
+    """Return public identity cards that match needle. Empty or short needles return nothing."""
+    cleaned = public_profile_search_needle(needle)
+    if len(cleaned) < 2:
+        return []
+    matches: list[dict[str, Any]] = []
+    ranked = sorted(
+        rows,
+        key=lambda row: (
+            str(row.get("full_name") or "").casefold(),
+            str(row.get("username") or "").casefold(),
+        ),
+    )
+    for row in ranked:
+        username = str(row.get("username") or "").strip()
+        if not username:
+            continue
+        haystack = " ".join(str(row.get(key) or "") for key in _PUBLIC_PROFILE_CARD_FIELDS).casefold()
+        if cleaned not in haystack:
+            continue
+        matches.append({key: row.get(key) for key in _PUBLIC_PROFILE_CARD_FIELDS})
+        if len(matches) >= limit:
+            break
+    return matches
+
+
 @router.get("/public/profiles/search")
 def search_public_profiles(
     q: str = Query(..., min_length=2, max_length=80),
     limit: int = Query(20, ge=1, le=50),
     settings: Settings = Depends(get_settings),
 ):
-    """Search only public identity/profile fields; never expose resume records."""
-    needle = " ".join(q.split()).casefold()
-    rows = database_client(settings).table("profiles").select(
-        "username,full_name,avatar_url,avatar_path,headline,location,current_role,career_level,career_goal"
-    ).limit(500).execute().data or []
-    matches = []
-    for row in rows:
-        haystack = " ".join(str(row.get(key) or "") for key in (
-            "username", "full_name", "headline", "current_role", "career_level", "career_goal", "location"
-        )).casefold()
-        if needle not in haystack or not str(row.get("username") or "").strip():
-            continue
-        item = {key: row.get(key) for key in (
-            "username", "full_name", "avatar_url", "headline", "location", "current_role", "career_level", "career_goal"
-        )}
-        matches.append(item)
-        if len(matches) >= limit:
-            break
-    return matches
+    """Search public identity/profile fields; never list the directory or expose resume records.
+
+    Requires a query of at least 2 characters. An empty or short query is rejected.
+    """
+    needle = public_profile_search_needle(q)
+    if len(needle) < 2:
+        return []
+    rows = (
+        database_client(settings)
+        .table("profiles")
+        .select("username,full_name,avatar_url,avatar_path,headline,location,current_role,career_level,career_goal")
+        .limit(500)
+        .execute()
+        .data
+        or []
+    )
+    return public_profile_directory_cards(rows, needle, limit)
 
 
 @router.get("/public/profiles/{username}")
