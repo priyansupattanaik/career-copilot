@@ -2,8 +2,8 @@ import type { ElementType, ReactNode } from "react";
 import { FaDribbble, FaGithub, FaGlobe, FaLinkedinIn } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/shared/utils";
+import { Badge } from "@/shared/ui/primitives";
 
 export type Team5SocialPlatform =
   | "linkedin"

@@ -16,8 +16,7 @@
     "check:frontend": "node scripts/run-frontend.mjs check:frontend",
     "check:env": "node scripts/diagnostics/verify-environment.mjs",
     "check:secrets": "node scripts/diagnostics/check-secrets.mjs",
-    "check:boundaries": "node scripts/verify-boundaries.mjs",
-    "test:backend": "backend\\.venv\\Scripts\\python.exe -m pytest backend\\tests"
+    "check:boundaries": "node scripts/verify-boundaries.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.4.0",

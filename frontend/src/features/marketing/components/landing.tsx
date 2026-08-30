@@ -531,7 +531,7 @@ function useTyping(text: string, active: boolean) {
 type InterviewPhase = "question" | "answering" | "transitioning";
 
 function useInterviewDemo() {
-  const seqRef = useRef<number[]>(buildSequence(INTERVIEW_QUESTIONS.length));
+  const seqRef = useRef<number[] | null>(null);
   const posRef = useRef(1);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -540,6 +540,9 @@ function useInterviewDemo() {
   };
 
   const getNext = () => {
+    if (!seqRef.current) {
+      seqRef.current = buildSequence(INTERVIEW_QUESTIONS.length);
+    }
     if (posRef.current >= seqRef.current.length) {
       const last = seqRef.current[seqRef.current.length - 1];
       const next = buildSequence(INTERVIEW_QUESTIONS.length);
@@ -552,7 +555,7 @@ function useInterviewDemo() {
     return seqRef.current[posRef.current++];
   };
 
-  const [idx, setIdx] = useState(() => seqRef.current[0]);
+  const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<InterviewPhase>("question");
 
   useEffect(() => {
@@ -578,7 +581,6 @@ function useInterviewDemo() {
     }
 
     return clearTimer;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, idx]);
 
   return { question: INTERVIEW_QUESTIONS[idx], phase };

@@ -1,9 +1,9 @@
+import json
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 from urllib.parse import urlparse
-import json
-import re
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
