@@ -9,8 +9,14 @@ from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 # Documented production frontend (deployment/vercel.frontend.env.example).
-PRODUCTION_FRONTEND_ORIGIN = "https://career-copilot-neon.vercel.app"
-PRODUCTION_FRONTEND_ORIGIN_REGEX = r"^https://career-copilot-neon(?:-[a-z0-9-]+)?\.vercel\.app$"
+PRODUCTION_FRONTEND_ORIGIN = "https://careercopilotai.vercel.app"
+PRODUCTION_FRONTEND_ORIGINS = (
+    "https://careercopilotai.vercel.app",
+    "https://career-copilot-neon.vercel.app",
+)
+PRODUCTION_FRONTEND_ORIGIN_REGEX = (
+    r"^https://(?:careercopilotai|career-copilot-neon)(?:-[a-z0-9-]+)?\.vercel\.app$"
+)
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 ROOT_ENV_FILE = ROOT_DIR / ".env"
@@ -205,7 +211,7 @@ class Settings(BaseSettings):
     def cors_allow_origins(self) -> list[str]:
         origins: list[str] = []
         seen: set[str] = set()
-        extras = [PRODUCTION_FRONTEND_ORIGIN] if str(self.app_env).lower() == "production" else []
+        extras = list(PRODUCTION_FRONTEND_ORIGINS) if str(self.app_env).lower() == "production" else []
         for raw in [*self.frontend_origins, *extras]:
             origin = _normalize_origin(raw)
             if origin and origin not in seen:
