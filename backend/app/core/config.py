@@ -67,22 +67,22 @@ class Settings(BaseSettings):
     improvement_max_source_chars: int = Field(default=30_000, ge=1_000, le=100_000)
     improvement_max_jd_chars: int = Field(default=12_000, ge=1_000, le=50_000)
     export_signed_url_seconds: int = Field(default=300, ge=30, le=3600)
+    avatar_token_ttl_seconds: int = Field(default=86400, ge=300, le=604800)
     youtube_api_key: str = ""
     youtube_api_base_url: str = "https://www.googleapis.com/youtube/v3"
     youtube_search_max_results: int = Field(default=3, ge=1, le=5)
     youtube_timeout_seconds: float = Field(default=20.0, gt=0, le=60)
     llm_rpm_limit: float = Field(default=40.0, ge=1.0, le=600.0)
-    adzuna_app_id: str = ""
-    adzuna_app_key: str = ""
-    adzuna_country: str = "us"
-    adzuna_timeout_seconds: float = Field(default=15.0, gt=0, le=60)
-    adzuna_results_per_page: int = Field(default=50, ge=1, le=50)
-    adzuna_max_days_old: int | None = Field(default=30, ge=1, le=365)
+    freehire_enabled: bool = True
+    freehire_api_url: str = "https://freehire.me"
+    freehire_timeout_seconds: float = Field(default=15.0, gt=0, le=60)
+    freehire_results_per_page: int = Field(default=25, ge=1, le=50)
+    freehire_max_days_old: int | None = Field(default=30, ge=1, le=365)
     # Fish Audio TTS for mock-interview interviewer voice (server-side key only).
     fish_audio_api_key: str = ""
-    fish_audio_base_url: str = ""
-    fish_audio_model: str = ""
-    fish_audio_reference_id: str = ""
+    fish_audio_base_url: str = "https://api.fish.audio"
+    fish_audio_model: str = "s2.1-pro-free"
+    fish_audio_reference_id: str = "bf322df2096a46f18c579d0baa36f41d"
     fish_audio_timeout_seconds: float = Field(default=45.0, gt=5, le=120)
     @field_validator("frontend_origins", mode="before")
     @classmethod
@@ -179,16 +179,8 @@ class Settings(BaseSettings):
         return bool(self.youtube_api_key and self.youtube_api_base_url)
 
     @property
-    def adzuna_configured(self) -> bool:
-        return bool(self.adzuna_app_id and self.adzuna_app_key)
-
-    @property
     def fish_audio_configured(self) -> bool:
-        return bool(
-            (self.fish_audio_api_key or "").strip()
-            and (self.fish_audio_base_url or "").strip()
-            and (self.fish_audio_model or "").strip()
-        )
+        return bool((self.fish_audio_api_key or "").strip())
 @lru_cache
 def get_settings() -> Settings:
     return Settings()

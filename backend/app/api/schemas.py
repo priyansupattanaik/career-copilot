@@ -15,6 +15,7 @@ class ProfilePatch(BaseModel):
     years_experience: float | None = Field(default=None, ge=0, le=80)
     career_level: str | None = Field(default=None, max_length=80)
     career_goal: str | None = Field(default=None, max_length=2000)
+    username: str | None = Field(default=None, max_length=30)
     onboarding_step: int | None = Field(default=None, ge=1, le=6)
     onboarding_completed: bool | None = None
 class ProfileFromResumePreviewRequest(BaseModel):
@@ -63,10 +64,13 @@ class LlmProjectItem(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     role: str | None = Field(default=None, max_length=160)
     description: str | None = Field(default=None, max_length=4000)
+    github_url: HttpUrl | str | None = Field(default=None, max_length=500)
+    live_url: HttpUrl | str | None = Field(default=None, max_length=500)
 class LlmCertificationItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
     name: str = Field(min_length=1, max_length=200)
     issuer: str | None = Field(default=None, max_length=160)
+    credential_url: HttpUrl | str | None = Field(default=None, max_length=500)
 class LlmLanguageItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
     language: str = Field(min_length=1, max_length=80)
@@ -190,6 +194,28 @@ class LearningPathGenerate(BaseModel):
     source_analysis_id: UUID | None = None
 class LearningItemProgressPatch(BaseModel):
     status: Literal["pending", "in_progress", "completed"]
+class LearningResourceProgressPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    position_seconds: float | None = Field(default=None, ge=0, le=86400)
+    duration_seconds: float | None = Field(default=None, ge=0, le=86400)
+    watched_ranges: list[list[float]] | None = Field(default=None, max_length=200)
+    status: Literal["not_started", "in_progress", "completed"] | None = None
+    opened: bool | None = None
+
+    @field_validator("watched_ranges")
+    @classmethod
+    def _ranges_are_pairs(cls, value: list[list[float]] | None) -> list[list[float]] | None:
+        if value is None:
+            return value
+        cleaned: list[list[float]] = []
+        for pair in value:
+            if not isinstance(pair, (list, tuple)) or len(pair) < 2:
+                continue
+            start, end = float(pair[0]), float(pair[1])
+            if end <= start:
+                continue
+            cleaned.append([start, end])
+        return cleaned
 class JobRecommendationGenerate(BaseModel):
     resume_version_id: UUID | None = None
     limit: int = Field(default=20, ge=1, le=50)
@@ -197,6 +223,21 @@ class JobRecommendationGenerate(BaseModel):
     location: str | None = Field(default=None, max_length=200)
     work_mode: str | None = Field(default=None, max_length=80)
     salary_min: float | None = Field(default=None, ge=0)
+
+
+class JobFitDecision(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    job_id: str = Field(min_length=1, max_length=120)
+    score: float = Field(ge=0, le=100)
+    verdict: Literal["strong_fit", "possible_fit", "stretch", "not_a_fit"]
+    strengths: list[str] = Field(default_factory=list, max_length=3)
+    gaps: list[str] = Field(default_factory=list, max_length=3)
+    rationale: str = Field(default="", max_length=800)
+
+
+class JobFitBatch(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    evaluations: list[JobFitDecision] = Field(default_factory=list, max_length=50)
 class SavedJobPatch(BaseModel):
     status: Literal[
         "saved", "applied", "interviewing", "offer", "rejected", "withdrawn", "dismissed"

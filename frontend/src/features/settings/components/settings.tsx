@@ -740,13 +740,15 @@ export function ProfileSettings() {
   // Only sync when form.phone differs from composed phoneParts (idempotent).
   useEffect(() => {
     const parsed = parsePhone(form.phone);
-    const currentComposed = composePhone(phoneParts);
-    if ((form.phone || "") !== currentComposed) {
-      // Avoid loop: only update if parsed actually differs.
-      if (parsed.iso2 !== phoneParts.iso2 || parsed.national !== phoneParts.national) {
-        setPhoneParts(parsed);
+    setPhoneParts((prev) => {
+      const currentComposed = composePhone(prev);
+      if ((form.phone || "") !== currentComposed) {
+        if (parsed.iso2 !== prev.iso2 || parsed.national !== prev.national) {
+          return parsed;
+        }
       }
-    }
+      return prev;
+    });
   }, [form.phone]);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const AVATAR_MAX_BYTES = 3 * 1024 * 1024;

@@ -310,6 +310,10 @@ def _parse_cert_entry(entry: str) -> dict[str, Any] | None:
     if not lines:
         return None
     header = lines[0]
+    url_match = _URL_RE.search(entry)
+    credential_url = url_match.group(0).rstrip(").,;") if url_match else None
+    if credential_url and credential_url.startswith("www."):
+        credential_url = "https://" + credential_url
     name = header
     issuer = None
     if "|" in header:
@@ -317,11 +321,47 @@ def _parse_cert_entry(entry: str) -> dict[str, Any] | None:
         name = parts[0]
         if len(parts) >= 2 and not re.fullmatch(r"(?:19|20)\d{2}", parts[1]):
             issuer = parts[1]
+    if credential_url:
+        name = _URL_RE.sub("", name).strip(" -–—|:;")
     return {
         "name": _clean(name, 200) or "Certification",
         "issuer": _clean(issuer, 160) if issuer else None,
+        "credential_url": credential_url,
         "selected": True,
     }
+
+
+def _link_label_url_pairs(lines: list[str]) -> list[tuple[str, str]]:
+    pairs: list[tuple[str, str]] = []
+    for line in lines:
+        match = _URL_RE.search(line)
+        if not match:
+            continue
+        url = match.group(0).rstrip(").,;")
+        if url.startswith("www."):
+            url = "https://" + url
+        label = line[: match.start()].strip(" \t—–-:·|")
+        if label:
+            pairs.append((label, url))
+    return pairs
+
+
+def _attach_credential_links(
+    certifications: list[dict[str, Any]], link_lines: list[str]
+) -> None:
+    """Attach only explicitly labelled embedded links to matching credentials."""
+    pairs = _link_label_url_pairs(link_lines)
+    for certification in certifications:
+        if certification.get("credential_url"):
+            continue
+        name = _clean(str(certification.get("name") or ""), 200).casefold()
+        if not name:
+            continue
+        for label, url in pairs:
+            label_norm = _clean(label, 200).casefold()
+            if label_norm == name or label_norm in name or name in label_norm:
+                certification["credential_url"] = url
+                break
 def _parse_language_line(line: str) -> dict[str, Any] | None:
     text = _strip_bullet(line)
     if not text:
@@ -448,6 +488,7 @@ def build_profile_draft(
         parsed = _parse_cert_entry(entry)
         if parsed:
             certifications.append(parsed)
+    _attach_credential_links(certifications, link_lines)
     languages: list[dict[str, Any]] = []
     for line in language_lines:
         if "," in line and "|" not in line and line.count(",") >= 1 and len(line) < 120:

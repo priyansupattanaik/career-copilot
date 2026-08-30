@@ -64,7 +64,10 @@ projects (array of objects)
   - title, optional role, description from bullets
 
 certifications (array of objects)
-  - name, optional issuer
+  - name, optional issuer, optional credential_url
+  - credential_url must be the URL printed on the same course/certification entry
+    or recovered in Embedded links with a matching visible label; otherwise null.
+  - Never assign a generic profile link to a course/certification.
 
 languages (array of objects)
   - language, optional proficiency (Fluent/Native/etc.)

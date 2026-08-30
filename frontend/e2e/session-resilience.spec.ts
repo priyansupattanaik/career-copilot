@@ -12,9 +12,14 @@ async function seedAccount(request: import("@playwright/test").APIRequestContext
 }
 
 async function uiSignIn(page: import("@playwright/test").Page, email: string) {
+  // Keep this helper independent from a reused dev server/browser context.
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.context().clearCookies();
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload({ waitUntil: "domcontentloaded" });
   await page.goto("/sign-in", { waitUntil: "networkidle" });
-  await page.locator('input[type="email"]').first().fill(email);
-  await page.locator('input[type="password"]').first().fill(PASSWORD);
+  await page.getByLabel(/email, phone, or username/i).fill(email);
+  await page.getByLabel(/^password$/i).fill(PASSWORD);
   await page.getByRole("button", { name: /sign in/i }).click();
   await page.waitForURL(/dashboard|onboarding|resume-analysis/, { timeout: 60000 });
 }

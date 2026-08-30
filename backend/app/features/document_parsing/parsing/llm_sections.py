@@ -54,6 +54,8 @@ def _looks_like_heading(line: str) -> bool:
     stripped = line.strip()
     if not stripped or len(stripped) > 80:
         return False
+    if stripped.rstrip(":").casefold() == "embedded links":
+        return True
     if _BULLET_RE.match(stripped):
         return False
     if _looks_like_contact(stripped):
@@ -103,7 +105,7 @@ def _is_known_section_label(line: str) -> bool:
         re.fullmatch(
             r"(?:basic|personal|other) information|academic details|academic projects|"
             r"professional experience|technical skills?|technical certifications?|"
-            r"education|projects?|experience|certifications?|languages?|links?|"
+            r"education|projects?|experience|certifications?|languages?|links?|embedded links|"
             r"extra curricular|hobbies|summary|profile|objective",
             line.strip().rstrip(":").casefold(),
         )

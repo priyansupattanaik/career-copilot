@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createClient } from "../client";
-import { AUTH_PROVIDER_TIMEOUT_MS } from "../timeout";
+import { APP_AUTH_TIMEOUT_MS } from "../timeout";
 
 const { supabaseAuthClientMock, signInWithEmailPasswordMock, SupabaseWebConfigError } = vi.hoisted(() => {
   class SupabaseWebConfigError extends Error {
@@ -70,7 +70,6 @@ describe("signInWithPassword fallbacks", () => {
     expect(result.data.session?.access_token).toBe("app-jwt");
     expect(window.localStorage.getItem(TOKEN_KEY)).toBe("app-jwt");
     expect(fetchMock).toHaveBeenCalled();
-    expect(elapsed).toBeGreaterThanOrEqual(AUTH_PROVIDER_TIMEOUT_MS - 50);
-    expect(elapsed).toBeLessThan(AUTH_PROVIDER_TIMEOUT_MS + 1500);
-  }, 10000);
+    expect(elapsed).toBeLessThan(APP_AUTH_TIMEOUT_MS);
+  }, APP_AUTH_TIMEOUT_MS + 4000);
 });

@@ -56,6 +56,32 @@ def tool_extract_ats_gaps(context: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _deterministic_lesson_plan(allowed_gaps: list[str], role_title: str | None) -> YoutubeLessonPlanResult:
+    """ATS-gap plan with search queries only — never invents video IDs or article URLs."""
+    role = (role_title or "").strip()
+    recommendations = []
+    for index, gap in enumerate(allowed_gaps):
+        skill = str(gap).strip()
+        if not skill:
+            continue
+        recommendations.append(
+            {
+                "skill_gap": skill,
+                "title": f"Close the {skill} gap",
+                "objective": (
+                    f"Study {skill} with free video lessons and articles"
+                    + (f" for {role}" if role else "")
+                    + ", then add truthful resume evidence only if you actually gain that experience."
+                ),
+                "youtube_search_query": f"{skill} tutorial for beginners",
+                "article_search_query": f"{skill} tutorial guide article",
+                "estimated_minutes": 45 if index < 4 else 60,
+                "difficulty": "foundational" if index < 4 else "applied",
+            }
+        )
+    return YoutubeLessonPlanResult.model_validate({"recommendations": recommendations})
+
+
 async def tool_plan_youtube_lessons(settings: Settings, context: dict[str, Any]) -> dict[str, Any]:
     allowed_gaps: list[str] = list(context.get("allowed_gaps") or [])
     if not allowed_gaps:
@@ -71,16 +97,21 @@ async def tool_plan_youtube_lessons(settings: Settings, context: dict[str, Any])
     }
     if not _PROMPT_PATH.is_file():
         raise ApiError(500, "missing_learning_prompt", "The learning planner prompt is missing.")
-    system_prompt = _PROMPT_PATH.read_text(encoding="utf-8")
-    result, provider = await generate_structured_with_failover(
-        settings,
-        system_prompt=system_prompt,
-        user_payload=payload,
-        schema_model=YoutubeLessonPlanResult,
-        temperature=0.2,
-    )
-    result = YoutubeLessonPlanResult.model_validate(result)
-    return {"provider": provider, "plan": result.model_dump()}
+    try:
+        system_prompt = _PROMPT_PATH.read_text(encoding="utf-8")
+        result, provider = await generate_structured_with_failover(
+            settings,
+            system_prompt=system_prompt,
+            user_payload=payload,
+            schema_model=YoutubeLessonPlanResult,
+            temperature=0.2,
+        )
+        result = YoutubeLessonPlanResult.model_validate(result)
+        return {"provider": provider, "plan": result.model_dump()}
+    except Exception as exc:
+        logger.warning("learning_planner_fallback error=%s", type(exc).__name__)
+        fallback = _deterministic_lesson_plan(allowed_gaps, str(context.get("role_title") or "") or None)
+        return {"provider": "deterministic_ats_gaps", "plan": fallback.model_dump()}
 
 
 def _is_safe_resource_url(url: str) -> bool:

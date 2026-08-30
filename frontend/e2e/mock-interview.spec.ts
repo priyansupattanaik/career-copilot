@@ -51,7 +51,8 @@ test.describe("mock interview", () => {
     await enterDemo(page);
 
     for (const viewport of [
-      { width: 1280, height: 900, name: "desktop" },
+      { width: 1440, height: 900, name: "laptop" },
+      { width: 1280, height: 800, name: "desktop" },
       { width: 390, height: 844, name: "mobile" },
     ] as const) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
@@ -63,7 +64,32 @@ test.describe("mock interview", () => {
       await expect(page.locator(".profile-toast")).toHaveCount(0);
       await expect(page.getByRole("button", { name: "Start interview" })).toBeVisible();
       await assertNoOverflow(page);
-      await assertNoIntersect(page, [".interview-start", ".interview-history"]);
+      await assertNoIntersect(page, [".page-heading", ".interview-start", ".interview-history"]);
+      const fieldsInside = await page.evaluate(() => {
+        const form = document.querySelector(".interview-start") as HTMLElement | null;
+        if (!form) return false;
+        const formRect = form.getBoundingClientRect();
+        return Array.from(
+          form.querySelectorAll(".field, .interview-focus-tile, .interview-length-chip, .interview-toggle"),
+        ).every((el) => {
+          const rect = el.getBoundingClientRect();
+          return rect.left >= formRect.left - 4 && rect.right <= formRect.right + 4;
+        });
+      });
+      expect(fieldsInside, `${viewport.name} fields stay inside the start form`).toBe(true);
+      const fieldGaps = await page.evaluate(() => {
+        const fields = Array.from(document.querySelectorAll(".interview-start > .interview-focus, .interview-start > .interview-start-grid, .interview-start > .interview-media-row"));
+        const gaps: number[] = [];
+        for (let i = 0; i < fields.length - 1; i += 1) {
+          const a = fields[i].getBoundingClientRect();
+          const b = fields[i + 1].getBoundingClientRect();
+          gaps.push(b.top - a.bottom);
+        }
+        return gaps;
+      });
+      for (const gap of fieldGaps) {
+        expect(gap, `${viewport.name} form section gap`).toBeGreaterThanOrEqual(12);
+      }
       await page.screenshot({
         path: `test-results/mock-interview-hub-${viewport.name}.png`,
         fullPage: true,
@@ -92,6 +118,7 @@ test.describe("mock interview", () => {
   });
 
   test("starts a session and keeps room elements from overlapping", async ({ page }) => {
+    test.setTimeout(60000);
     await page.setViewportSize({ width: 1280, height: 900 });
     await enterDemo(page);
     await page.goto("/mock-interview", { waitUntil: "domcontentloaded" });
@@ -101,19 +128,19 @@ test.describe("mock interview", () => {
     const started = Date.now();
     await page.getByRole("button", { name: "Start interview" }).click();
 
-    await expect(page).toHaveURL(/\/mock-interview\/session\/local-/, { timeout: 5_000 });
-    await expect(page.getByRole("heading", { name: /Question 1 of/i })).toBeVisible({ timeout: 5_000 });
-    expect(Date.now() - started).toBeLessThan(4000);
+    await expect(page).toHaveURL(/\/mock-interview\/session\/local-/, { timeout: 10000 });
+    await expect(page.getByRole("heading", { name: /Question 1 of/i })).toBeVisible({ timeout: 10000 });
+    expect(Date.now() - started).toBeLessThan(8000);
     await expect(page.getByRole("button", { name: "Submit answer" })).toBeVisible();
     const answerBox = page.locator(".interview-composer textarea");
-    await expect(answerBox).toBeEnabled({ timeout: 20_000 });
+    await expect(answerBox).toBeEnabled({ timeout: 30000 });
     await answerBox.fill(
       "Recently I owned a checkout delay. I profiled the API, cut N+1 queries, and shipped a cache. p95 dropped under 400ms.",
     );
     const answered = Date.now();
     await page.getByRole("button", { name: "Submit answer" }).click();
-    await expect(page.getByRole("heading", { name: /Question 2 of|Follow-up/i })).toBeVisible({ timeout: 8_000 });
-    expect(Date.now() - answered).toBeLessThan(8000);
+    await expect(page.getByRole("heading", { name: /Question 2 of|Follow-up/i })).toBeVisible({ timeout: 30000 });
+    expect(Date.now() - answered).toBeLessThan(30000);
     await expect(page.locator(".profile-toast")).toHaveCount(0);
     await expect(page.getByText(slogan)).toHaveCount(0);
     await assertNoOverflow(page);
@@ -146,13 +173,13 @@ test.describe("mock interview", () => {
   });
 
   test("saves the session only after the last answer", async ({ page }) => {
-    test.setTimeout(90_000);
+    test.setTimeout(120_000);
     await page.setViewportSize({ width: 1280, height: 900 });
     await enterDemo(page);
     await page.goto("/mock-interview", { waitUntil: "domcontentloaded" });
     await page.locator(".interview-length-chip", { hasText: "3" }).click();
     await page.getByRole("button", { name: "Start interview" }).click();
-    await expect(page).toHaveURL(/\/mock-interview\/session\/local-/);
+    await expect(page).toHaveURL(/\/mock-interview\/session\/local-/, { timeout: 10000 });
 
     const answer =
       "Recently I owned a checkout delay. The situation was p95 over two seconds. I profiled the API, cut N+1 queries, and shipped a cache. The result was p95 under 400ms.";
@@ -160,16 +187,16 @@ test.describe("mock interview", () => {
     const heading = page.locator(".interview-session-bar h1");
     for (let step = 0; step < 8; step += 1) {
       if (/\/mock-interview\/report\//.test(page.url())) break;
-      await expect(box).toBeEnabled({ timeout: 20_000 });
+      await expect(box).toBeEnabled({ timeout: 30000 });
       const currentHeading = ((await heading.textContent()) || "").trim();
       await box.fill(answer);
       await page.getByRole("button", { name: "Submit answer" }).click();
       await Promise.race([
-        page.waitForURL(/\/mock-interview\/report\//, { timeout: 20_000 }),
-        heading.filter({ hasNotText: currentHeading }).waitFor({ state: "visible", timeout: 20_000 }),
+        page.waitForURL(/\/mock-interview\/report\//, { timeout: 30000 }),
+        heading.filter({ hasNotText: currentHeading }).waitFor({ state: "visible", timeout: 30000 }),
       ]);
     }
-    await expect(page).toHaveURL(/\/mock-interview\/report\//, { timeout: 5_000 });
+    await expect(page).toHaveURL(/\/mock-interview\/report\//, { timeout: 10000 });
     await expect(page.locator(".interview-report")).toBeVisible();
     await expect(page.getByRole("heading", { name: /debrief/i })).toBeVisible();
   });

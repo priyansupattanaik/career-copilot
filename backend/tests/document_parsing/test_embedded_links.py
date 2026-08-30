@@ -17,6 +17,7 @@ from app.features.document_parsing.parsing.text_extract import (
 )
 from app.features.profile.agent import pipeline as profile_pipeline
 from app.features.profile.agent.deterministic import build_profile_draft
+from app.features.profile.agent.pipeline import merge_profile_drafts
 
 
 def _docx_with_embedded_links() -> bytes:
@@ -180,3 +181,72 @@ def test_profile_agent_receives_embedded_targets_and_keeps_semantic_link_types(m
     ]
     assert draft["meta"]["agent"] == "profile_fill"
     assert draft["meta"]["provider"] == "test-agent"
+
+
+def test_courses_keep_matching_embedded_credential_url_separate_from_profile_links() -> None:
+    course_url = "https://www.coursera.org/learn/python"
+    text = (
+        "Priyansu Pattanaik\n"
+        "Courses\n"
+        "Python for Everybody | Coursera\n"
+        "Embedded links\n"
+        f"Python for Everybody {course_url}\n"
+        "Links\n"
+        "GitHub https://github.com/priyansu-pattanaik\n"
+        "Experience: Backend engineer building reliable recruitment systems.\n"
+        "Education: B.Tech in Electronics and Telecommunication Engineering.\n"
+    )
+
+    draft = build_profile_draft(text, {})
+
+    assert draft["certifications"] == [
+        {
+            "name": "Python for Everybody",
+            "issuer": "Coursera",
+            "credential_url": course_url,
+            "selected": True,
+        }
+    ]
+    assert draft["links"] == [
+        {
+            "link_type": "website",
+            "url": course_url,
+            "label": "Python for Everybody",
+            "selected": True,
+        },
+        {
+            "link_type": "github",
+            "url": "https://github.com/priyansu-pattanaik",
+            "label": "GitHub",
+            "selected": True,
+        },
+    ]
+
+
+def test_agent_keeps_only_source_grounded_course_credential_urls() -> None:
+    course_url = "https://www.coursera.org/learn/python"
+    text = (
+        "Courses\nPython for Everybody | Coursera\n"
+        "Embedded links\nPython for Everybody " + course_url + "\n"
+    )
+    base = build_profile_draft(text, {})
+    ai = {
+        "profile": {}, "skills": [], "experiences": [], "education": [],
+        "projects": [], "languages": [], "links": [],
+        "certifications": [
+            {"name": "Python for Everybody", "issuer": "Coursera", "credential_url": course_url},
+            {"name": "Coursera certificate", "credential_url": "https://example.invalid/fabricated"},
+        ],
+        "meta": {"warnings": [], "ai_used": True},
+    }
+
+    merged = merge_profile_drafts(base, ai, plain_text=text)
+
+    assert merged["certifications"] == [
+        {
+            "name": "Python for Everybody",
+            "issuer": "Coursera",
+            "credential_url": course_url,
+            "selected": True,
+        }
+    ]

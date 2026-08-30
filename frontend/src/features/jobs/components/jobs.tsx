@@ -15,6 +15,7 @@ import type { Job, Recommendation, SavedJobRow, SavedJobStatus } from "./job-typ
 import { isPipelineStatus } from "./job-types";
 import { jobRecsCacheKey, readJobRecsCache, writeJobRecsCache } from "../job-recs-cache";
 import { Badge, Button, Card, EmptyState, PageHeader } from "@/shared/ui/primitives";
+import { AnimatedIcon } from "@/components/ui/animated-icon";
 
 export type { Job, Recommendation } from "./job-types";
 
@@ -27,6 +28,12 @@ type ResumeSummary = {
     id?: string;
     extraction_status?: string | null;
   } | null;
+};
+
+type JobAgentStatus = {
+  mode: "agent" | "evidence" | "evidence_fallback";
+  provider?: string | null;
+  error?: string;
 };
 
 function normalizeStatus(status: string | undefined | null): SavedJobStatus {
@@ -51,6 +58,7 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
   const [filterSalaryMin, setFilterSalaryMin] = useState<number | "">("");
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [statusBusyId, setStatusBusyId] = useState<string | null>(null);
+  const [agentStatus, setAgentStatus] = useState<JobAgentStatus>({ mode: "evidence", provider: null });
   const limit = 20;
   const requestSequence = useRef(0);
   const hydratedCacheKey = useRef<string | null>(null);
@@ -157,11 +165,12 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
           }
           body.resume_version_id = confirmedVersion.id;
 
-          const result = await apiRequest<{ recommendations: Recommendation[] }>("/job-recommendations/generate", {
+          const result = await apiRequest<{ recommendations: Recommendation[]; agent?: JobAgentStatus }>("/job-recommendations/generate", {
             method: "POST",
             body: JSON.stringify(body),
           });
           const newRecs = result.recommendations || [];
+          setAgentStatus(result.agent || { mode: "evidence", provider: null });
           const newJobs = newRecs.map((row) => row.job);
           if (sequence !== requestSequence.current) return;
           const pipeline = applySavedRows(Array.isArray(savedRows) ? savedRows : []);
@@ -223,6 +232,7 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
       setError((e as Error).message);
     }
   }
+
 
   async function toggleSave(jobId: string, e?: React.MouseEvent) {
     if (e) e.stopPropagation();
@@ -338,14 +348,14 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
   const selectedStatus = selected ? statusByJobId[selected.id] : undefined;
 
   return (
-    <div className="feature-page">
+    <div className="feature-page jobs-radar-page">
       <PageHeader
         eyebrow="Jobs"
-        title={savedOnly ? "My job pipeline" : "Job recommendations"}
+        title={savedOnly ? "My job pipeline" : "Your next move, shortlisted"}
         description={
           savedOnly
             ? "Track jobs you saved, applied to, or rejected. Counts update as you mark each role."
-            : "Recommendations are scored from confirmed resume evidence. Save roles, mark applied, or mark rejected as you go."
+            : "A focused shortlist built from your profile, preferences, and confirmed resume evidence."
         }
         action={
           savedOnly ? (
@@ -360,7 +370,22 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
         }
       />
 
-      <div className="grid-3" style={{ marginBottom: 8 }}>
+      {!savedOnly ? (
+        <section className="jobs-radar-intro" aria-labelledby="jobs-radar-title">
+          <div className="jobs-radar-copy">
+            <div className="jobs-radar-kicker"><span className="jobs-radar-pulse" /> AI job search</div>
+            <h2 id="jobs-radar-title">Less scrolling. More signal.</h2>
+            <p>Fresh roles are collected from the configured job-search sources, then the fit agent checks each one against the evidence in your profile.</p>
+          </div>
+          <div className="jobs-agent-panel" data-testid="job-agent-status">
+            <span className="jobs-agent-label">Recommendation engine</span>
+            <strong>{agentStatus.mode === "agent" ? "AI fit agent active" : agentStatus.mode === "evidence_fallback" ? "Evidence matching active" : "Profile evidence active"}</strong>
+            <span>{agentStatus.mode === "agent" ? `Provider: ${agentStatus.provider || "configured LLM"}` : "No profile or job data is invented."}</span>
+          </div>
+        </section>
+      ) : null}
+
+      <div className="jobs-stat-rail">
         <Card className="metric-card">
           <p className="metric-card-label">Saved</p>
           <p className="metric-value">{counts.saved}</p>
@@ -412,8 +437,8 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
               }
             />
           </label>
-          <Button variant="secondary" onClick={() => void syncExternalJobs()}>
-            <RefreshCw size={16} aria-hidden /> Sync external jobs
+          <Button variant="secondary" onClick={() => void syncExternalJobs()} data-testid="freehire-sync">
+            <AnimatedIcon icon={RefreshCw} size={16} aria-hidden /> Refresh job search
           </Button>
         </div>
       ) : (
@@ -548,10 +573,10 @@ export function JobDetail({ jobId }: { jobId: string }) {
         <Card className="stack">
           <div className="cluster">
             <Badge variant="secondary">
-              <MapPin size={14} aria-hidden /> {job.location || "Location not specified"}
+              <AnimatedIcon icon={MapPin} size={14} aria-hidden /> {job.location || "Location not specified"}
             </Badge>
             <Badge variant="secondary">
-              <CheckCircle2 size={14} aria-hidden /> Stored job record
+              <AnimatedIcon icon={CheckCircle2} size={14} aria-hidden /> Stored job record
             </Badge>
             {job.work_mode ? <Badge variant="secondary">{job.work_mode}</Badge> : null}
             {job.salary_min != null || job.salary_max != null ? (
@@ -577,7 +602,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
             <Link className="button button-secondary" href="/jobs">Back to jobs</Link>
             {job.application_url ? (
               <a className="button button-primary" href={job.application_url} target="_blank" rel="noreferrer">
-                Apply on employer site <ExternalLink size={14} aria-hidden />
+                Apply on employer site <AnimatedIcon icon={ExternalLink} size={14} aria-hidden />
               </a>
             ) : null}
           </div>

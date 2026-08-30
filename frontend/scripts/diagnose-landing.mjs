@@ -63,7 +63,6 @@ async function collectPageSignals(page, label) {
       ".home-particles",
       ".home-particles canvas",
       ".home-beams canvas",
-      ".skip-link",
     ];
 
     const boxes = selectors.flatMap((selector) =>
@@ -263,11 +262,6 @@ async function main() {
 
   const zero = hero.boxes.filter((b) => b.width === 0 || b.height === 0);
   if (zero.length) note("warn", "zero-size", zero.map((b) => `${b.selector} ${b.width}x${b.height}`).join("; "));
-
-  const skip = hero.boxes.find((b) => b.selector === ".skip-link");
-  if (skip && skip.clip && skip.clip !== "auto" && /rect\(0/.test(skip.clip)) {
-    note("warn", "skip-link-sr-only-clip", JSON.stringify(skip));
-  }
 
   for (const pad of hero.featurePad) {
     if (pad.paddingTop === "0px" && pad.i > 0) note("warn", "feature-padding-zero", JSON.stringify(pad));

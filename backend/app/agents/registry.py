@@ -16,6 +16,7 @@ AGENT_ATS_IMPROVEMENT_BRIEF = "ats_improvement_brief"
 AGENT_RESUME_IMPROVEMENT_CREW = "resume_improvement_crew"
 AGENT_LEARNING_YOUTUBE_CREW = "learning_youtube_crew"
 AGENT_DOCUMENT_SECTION_EXTRACT = "document_section_extract"
+AGENT_JOB_MATCHING = "job_matching"
 
 
 def _primary_model(settings: Settings, nvidia: dict[str, Any], groq: dict[str, Any]) -> str | None:
@@ -150,6 +151,19 @@ def list_agents(settings: Settings) -> list[dict[str, Any]]:
             "crew_tasks": learning.get("tasks"),
             "algorithm_version": learning.get("algorithm_version"),
             "truthfulness": learning.get("truthfulness"),
+        },
+        {
+            "id": AGENT_JOB_MATCHING,
+            "name": "Job fit matching",
+            "description": "Ranks live job postings against the existing candidate profile and confirmed evidence.",
+            "provider": preferred if any_llm else "none",
+            "provider_order": ordered,
+            "prompt": "job_fit_v1.txt",
+            "configured": any_llm,
+            "ready": any_llm,
+            "model": primary_model,
+            "endpoint": "POST /api/v1/job-recommendations/generate",
+            "fallback": "Evidence-based keyword matching remains available and reports when AI ranking is unavailable.",
         },
         {
             "id": AGENT_DOCUMENT_SECTION_EXTRACT,

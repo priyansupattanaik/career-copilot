@@ -58,7 +58,7 @@ Career Copilot is a monorepo web app where a candidate can:
 | **ATS** | Deterministic keyword coverage (`evidence-keyword-coverage-v4`); history shows resume + JD used |
 | **Interviews** | Question packs + practice sessions; optional Fish Audio / browser TTS + STT; practice feedback (coaching, not hiring scores) |
 | **Learning** | ATS gaps → YouTube (API or search URLs) + allowlisted educational search links (`ats-mixed-learning-v1`) |
-| **Jobs** | Evidence-based recommendations (`evidence-keyword-match-v1`); optional Adzuna sync; saved/pipeline tracking |
+| **Jobs** | Evidence-based recommendations (`evidence-keyword-match-v1`); FreeHire sync; saved/pipeline tracking |
 | **Resume improve** | Evidence-checked rewrite suggestions via sequential crew |
 | **Account wipe** | Confirm with `DELETE MY ACCOUNT` |
 
@@ -101,7 +101,7 @@ Set at least:
 | `SUPABASE_STORAGE_BUCKET` | Private bucket name |
 | `VITE_FIREBASE_*` | Web client config (Google sign-in) |
 
-Optional: `GROQ_*`, `NVIDIA_*`, `YOUTUBE_API_KEY`, `ADZUNA_*`, `LLM_PROVIDER` (default `groq`).
+Optional: `GROQ_*`, `NVIDIA_*`, `YOUTUBE_API_KEY`, `FREEHIRE_*`, `LLM_PROVIDER` (default `groq`).
 
 ```bash
 python -c "import secrets; print(secrets.token_urlsafe(48))"
@@ -166,7 +166,7 @@ Browser (Vite + React)
            FastAPI (ownership enforced)
                 ├─ Firestore      (rows)
                 ├─ Supabase Storage (files under {user_id}/…)
-                └─ Groq / NVIDIA / YouTube / Adzuna  (server .env)
+                └─ Groq / NVIDIA / YouTube / FreeHire  (server .env)
 ```
 
 | Path | Responsibility |
@@ -207,7 +207,7 @@ ATS, learning generation, interview prep evidence, and job-match evidence requir
 ### Learning & jobs
 
 - Learning: ATS gaps → YouTube API or search URLs + allowlisted article searches (`ats-mixed-learning-v1`)  
-- Jobs: score catalog against confirmed resume evidence (`evidence-keyword-match-v1`); optional Adzuna sync  
+- Jobs: score catalog against confirmed resume evidence (`evidence-keyword-match-v1`); FreeHire sync
 
 ### Agents
 
@@ -226,7 +226,7 @@ One root `.env` (template: [`.env.example`](./.env.example)). Only `VITE_*` keys
 | Firestore | `FIREBASE_PROJECT_ID`, `FIREBASE_CREDENTIALS_PATH`, `FIREBASE_DATABASE_ID` |
 | Storage | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`, `DOCUMENT_BUCKET`, `AVATAR_BUCKET` |
 | LLM | `LLM_PROVIDER`, `GROQ_*`, `NVIDIA_*`, `LLM_RPM_LIMIT` |
-| Optional | `YOUTUBE_API_KEY`, `ADZUNA_*`, `FISH_AUDIO_*` |
+| Optional | `YOUTUBE_API_KEY`, `FREEHIRE_*`, `FISH_AUDIO_*` |
 
 ---
 
@@ -295,6 +295,6 @@ cd frontend && npm run test && npm run typecheck
 1. **Evidence over invention** — confirmed text is the source of truth.  
 2. **Server-enforced ownership** — every row and file path is scoped to the signed-in user.  
 3. **Deterministic product ATS** — LLMs enrich; they do not own the score.  
-4. **Degrade gracefully** — missing LLM/YouTube/Adzuna reduces features, not the whole app.
+4. **Degrade gracefully** — missing LLM/YouTube/FreeHire reduces features, not the whole app.
 
 Full technical detail: [docs/DOCUMENTATION.md](./docs/DOCUMENTATION.md).

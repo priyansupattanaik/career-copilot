@@ -3,6 +3,7 @@ import { Link } from "@/shared/ui/router-link";
 import { usePathname } from "@/shared/router";
 import { useMemo, useSyncExternalStore } from "react";
 import { X } from "lucide-react";
+import { AnimatedIcon } from "@/components/ui/animated-icon";
 import {
   clampCompletion,
   extractMissing,
@@ -58,6 +59,7 @@ export function ProfileCompletionToast({ completion, missing }: Props) {
     pathname.startsWith("/settings/") ||
     pathname === "/dashboard" ||
     pathname.startsWith("/mock-interview") ||
+    pathname.startsWith("/learning") ||
     !open ||
     percent >= 100 ||
     safeMissing.length === 0
@@ -78,7 +80,7 @@ export function ProfileCompletionToast({ completion, missing }: Props) {
           </p>
         </div>
         <button type="button" className="icon-button" onClick={dismiss} aria-label="Dismiss">
-          <X size={16} />
+          <AnimatedIcon icon={X} size={16} idle={false} />
         </button>
       </div>
       <ul className="profile-toast-list">

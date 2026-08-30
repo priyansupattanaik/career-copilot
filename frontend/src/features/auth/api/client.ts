@@ -13,7 +13,7 @@ import {
   signInWithGoogle,
 } from "@/features/auth/firebase";
 import { supabaseAuthClient, SupabaseWebConfigError } from "@/features/auth/supabase";
-import { isTimeoutError, withTimeout } from "@/features/auth/api/timeout";
+import { APP_AUTH_TIMEOUT_MS, isTimeoutError, withTimeout } from "@/features/auth/api/timeout";
 
 type AuthError = { message: string; status?: number } | null;
 type AuthUser = {
@@ -98,43 +98,80 @@ export function createClient() {
 
   return {
     auth: {
-      async signInWithPassword({ email, password }: { email: string; password: string }) {
-        const trimmed = email.trim();
+      async signInWithPassword({ identifier, email, password }: { identifier?: string; email?: string; password: string }) {
+        const trimmed = (identifier ?? email ?? "").trim();
+        const isEmail = trimmed.includes("@");
         let lastMessage = "The email or password is incorrect.";
+        // The application endpoint is the canonical identifier login path.
+        // Provider auth remains a fallback for migrated accounts, but must not
+        // delay a successful email/phone/username login.
         try {
-          const result = await withTimeout(
-            supabaseAuthClient().auth.signInWithPassword({ email: trimmed, password }),
-            "Supabase sign-in",
+          const payload = await withTimeout(
+            request("/auth/sign-in", { identifier: trimmed, password }),
+            "App sign-in",
+            APP_AUTH_TIMEOUT_MS,
           );
-          if (!result.error && result.data.session?.access_token) {
-            return await withTimeout(
-              signInWithSupabaseAccessToken(result.data.session.access_token),
-              "Supabase session exchange",
-            );
-          }
-          if (result.error?.message) lastMessage = result.error.message;
-        } catch (error) {
-          if (!(error instanceof SupabaseWebConfigError) && !isTimeoutError(error)) {
-            lastMessage = emailPasswordAuthErrorMessage(error);
-          }
-        }
-
-        try {
-          const firebaseResult = await withTimeout(signInWithEmailPassword(trimmed, password), "Firebase sign-in");
-          return await withTimeout(signInWithFirebaseIdToken(firebaseResult.idToken), "Firebase session exchange");
-        } catch {
-          // Firebase is a migration fallback. Timeouts and rejections must not
-          // block the app-password path or leave the sign-in button spinning.
-        }
-
-        try {
-          const payload = await withTimeout(request("/auth/sign-in", { email: trimmed, password }), "App sign-in");
           saveToken(payload.access_token);
           return {
             data: { session: { access_token: payload.access_token }, user: payload.user },
             error: null as AuthError,
           };
         } catch (error) {
+          if (!isTimeoutError(error) && error instanceof Error && error.message) lastMessage = error.message;
+        }
+
+        if (isEmail) {
+          let shouldTryFirebaseMigration = false;
+          try {
+            const result = await withTimeout(
+              supabaseAuthClient().auth.signInWithPassword({ email: trimmed, password }),
+              "Supabase sign-in",
+              APP_AUTH_TIMEOUT_MS,
+            );
+            if (!result.error && result.data.session?.access_token) {
+              return await withTimeout(
+                signInWithSupabaseAccessToken(result.data.session.access_token),
+                "Supabase session exchange",
+                APP_AUTH_TIMEOUT_MS,
+              );
+            }
+            if (result.error?.message) lastMessage = result.error.message;
+          } catch (error) {
+            shouldTryFirebaseMigration = error instanceof SupabaseWebConfigError || isTimeoutError(error);
+            if (!(error instanceof SupabaseWebConfigError) && !isTimeoutError(error)) {
+              lastMessage = emailPasswordAuthErrorMessage(error);
+            }
+          }
+
+          if (shouldTryFirebaseMigration) {
+            try {
+              const firebaseResult = await withTimeout(signInWithEmailPassword(trimmed, password), "Firebase sign-in", APP_AUTH_TIMEOUT_MS);
+              return await withTimeout(signInWithFirebaseIdToken(firebaseResult.idToken), "Firebase session exchange", APP_AUTH_TIMEOUT_MS);
+            } catch {
+              // Migration fallback is bounded; the app-password path below
+              // remains the final source of truth for identifier sign-in.
+            }
+          }
+        }
+
+        try {
+          const payload = await withTimeout(
+            request("/auth/sign-in", { identifier: trimmed, password }),
+            "App sign-in",
+            APP_AUTH_TIMEOUT_MS,
+          );
+          saveToken(payload.access_token);
+          return {
+            data: { session: { access_token: payload.access_token }, user: payload.user },
+            error: null as AuthError,
+          };
+        } catch (error) {
+          if (isTimeoutError(error)) {
+            return {
+              data: { session: null, user: null },
+              error: { message: "Authentication server is taking too long. Please check your connection and try again." },
+            };
+          }
           return {
             data: { session: null, user: null },
             error: { message: error instanceof Error && error.message ? error.message : lastMessage },
@@ -158,7 +195,7 @@ export function createClient() {
               email: trimmed,
               password,
               options: {
-                data: { full_name: String(options?.data?.full_name || ""), ...(phone ? { phone } : {}) },
+                data: { full_name: String(options?.data?.full_name || ""), ...(options?.data?.username ? { username: String(options.data.username) } : {}), ...(phone ? { phone } : {}) },
                 emailRedirectTo: options?.emailRedirectTo,
               },
             }),
@@ -195,6 +232,7 @@ export function createClient() {
                   email: trimmed,
                   password,
                   full_name: String(options?.data?.full_name || ""),
+                  ...(options?.data?.username ? { username: String(options.data.username) } : {}),
                   ...(phone ? { phone } : {}),
                 });
               saveToken(payload.access_token);

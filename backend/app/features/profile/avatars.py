@@ -81,7 +81,7 @@ def signed_avatar_url(
     path = str(avatar_path).strip()
     try:
         response = client.storage.from_(settings.avatar_bucket).create_signed_url(
-            path, settings.export_signed_url_seconds
+            path, settings.avatar_token_ttl_seconds
         )
         url = response.get("signedURL") or response.get("signed_url")
     except Exception as exc:
@@ -109,7 +109,7 @@ def signed_avatar_url(
             bucket=settings.avatar_bucket,
             path=path,
             settings=settings,
-            expires_seconds=settings.export_signed_url_seconds,
+            expires_seconds=settings.avatar_token_ttl_seconds,
         )
     except Exception:
         return url

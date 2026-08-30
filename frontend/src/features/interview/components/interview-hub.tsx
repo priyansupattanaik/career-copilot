@@ -152,37 +152,39 @@ export function InterviewStartForm() {
         </div>
       </fieldset>
 
-      <label className="interview-field">
-        <span className="interview-field-label">
-          Role you are practicing for <span className="interview-field-optional">(optional)</span>
-        </span>
-        <input
-          className="field"
-          value={targetRole}
-          onChange={(event) => setTargetRole(event.target.value)}
-          placeholder="Backend engineer, product designer, data analyst"
-          maxLength={200}
-          autoComplete="off"
-        />
-      </label>
+      <div className="interview-start-grid">
+        <label className="interview-field">
+          <span className="interview-field-label">
+            Role you are practicing for <span className="interview-field-optional">(optional)</span>
+          </span>
+          <input
+            className="field"
+            value={targetRole}
+            onChange={(event) => setTargetRole(event.target.value)}
+            placeholder="Backend engineer, product designer, data analyst"
+            maxLength={200}
+            autoComplete="off"
+          />
+        </label>
 
-      <fieldset className="interview-length">
-        <legend className="interview-field-label">How many questions</legend>
-        <div className="interview-length-row">
-          {QUESTION_COUNTS.map((count) => (
-            <label key={count} className={`interview-length-chip${questionCount === count ? " is-selected" : ""}`}>
-              <input
-                type="radio"
-                name="interview-length"
-                value={count}
-                checked={questionCount === count}
-                onChange={() => setQuestionCount(count)}
-              />
-              {count}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+        <fieldset className="interview-length">
+          <legend className="interview-field-label">How many questions</legend>
+          <div className="interview-length-row">
+            {QUESTION_COUNTS.map((count) => (
+              <label key={count} className={`interview-length-chip${questionCount === count ? " is-selected" : ""}`}>
+                <input
+                  type="radio"
+                  name="interview-length"
+                  value={count}
+                  checked={questionCount === count}
+                  onChange={() => setQuestionCount(count)}
+                />
+                {count}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      </div>
 
       <div className="interview-media-row">
         <label className="interview-toggle">
@@ -191,7 +193,7 @@ export function InterviewStartForm() {
             checked={cameraEnabled}
             onChange={(event) => setCameraEnabled(event.target.checked)}
           />
-          Camera presence
+          <span>Camera presence</span>
         </label>
         <label className="interview-toggle">
           <input
@@ -199,7 +201,7 @@ export function InterviewStartForm() {
             checked={microphoneEnabled}
             onChange={(event) => setMicrophoneEnabled(event.target.checked)}
           />
-          Voice answers
+          <span>Voice answers</span>
         </label>
       </div>
 
@@ -249,6 +251,7 @@ export function InterviewStartForm() {
               Job description <span className="interview-field-optional">optional</span>
             </span>
             <Textarea
+              className="interview-jd-field"
               value={jobDescriptionText}
               onChange={(event: { target: { value: string } }) => setJobDescriptionText(event.target.value)}
               placeholder="Paste a job description if you want questions tied to that posting."

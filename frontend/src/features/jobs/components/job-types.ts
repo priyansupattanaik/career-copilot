@@ -10,6 +10,17 @@ export type Job = {
   published_at?: string | null;
   salary_min?: number | null;
   salary_max?: number | null;
+  source?: string | null;
+  application_count?: number | null;
+};
+
+export type PublicProfileResult = {
+  username: string;
+  full_name?: string | null;
+  headline?: string | null;
+  current_role?: string | null;
+  career_level?: string | null;
+  location?: string | null;
 };
 
 export type SavedJobStatus =
@@ -47,8 +58,10 @@ export type Recommendation = {
   match_breakdown?: {
     matched_requirements?: string[];
     missing_requirements?: string[];
+    verdict?: "strong_fit" | "possible_fit" | "stretch" | "not_a_fit";
+    rationale?: string;
   };
-  evidence?: { note?: string };
+  evidence?: { note?: string; method?: string; provider?: string | null; agent?: string };
 };
 
 export function isPipelineStatus(status: string | undefined | null): boolean {

@@ -193,16 +193,14 @@ async function main() {
 
   const a11ySmoke = await page.evaluate(() => {
     const main = document.getElementById("main-content");
-    const skip = document.querySelector(".skip-link");
     const dialogOpen = document.querySelector('[role="dialog"][aria-modal="true"]');
     return {
       hasMain: Boolean(main),
-      hasSkip: Boolean(skip),
       dialogCount: dialogOpen ? 1 : 0,
       h1Count: document.querySelectorAll("h1").length,
     };
   });
-  if (a11ySmoke.hasMain && a11ySmoke.hasSkip && a11ySmoke.h1Count >= 1) {
+  if (a11ySmoke.hasMain && a11ySmoke.h1Count >= 1) {
     pass("a11y-smoke", JSON.stringify(a11ySmoke));
   } else {
     fail("a11y-smoke", JSON.stringify(a11ySmoke));

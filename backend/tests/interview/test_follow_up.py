@@ -1,5 +1,6 @@
 from app.features.interview.follow_up import (
     decide_interviewer_turn,
+    follow_up_budget,
     is_follow_up_question,
     max_question_budget,
     merge_interviewer_turn,
@@ -31,6 +32,19 @@ def test_complete_star_answer_does_not_follow_up():
     assert turn["follow_up_question"] is None
 
 
+def test_complete_enough_answer_without_star_labels_moves_on():
+    turn = decide_interviewer_turn(
+        answer=(
+            "I owned the checkout delay last quarter. I profiled the API, cut N+1 queries, "
+            "and shipped a cache layer so p95 dropped under 400 milliseconds."
+        ),
+        question="Tell me about a challenging bug.",
+        question_type="behavioural",
+    )
+    assert turn["should_follow_up"] is False
+    assert turn["follow_up_question"] is None
+
+
 def test_does_not_chain_follow_ups():
     turn = decide_interviewer_turn(
         answer="I fixed it.",
@@ -40,6 +54,17 @@ def test_does_not_chain_follow_ups():
     )
     assert turn["should_follow_up"] is False
     assert turn["follow_up_question"] is None
+
+
+def test_budget_blocks_unearned_follow_ups():
+    turn = decide_interviewer_turn(
+        answer="I fixed it.",
+        question="Tell me about a challenging bug.",
+        question_type="behavioural",
+        follow_ups_used=2,
+        seed_count=5,
+    )
+    assert turn["should_follow_up"] is False
 
 
 def test_merge_prefers_llm_probe_when_valid():
@@ -77,13 +102,37 @@ def test_merge_blocks_follow_up_on_follow_up_parent():
     assert merged["follow_up_question"] is None
 
 
+def test_merge_heuristic_vetoes_llm_follow_up_on_complete_answers():
+    heuristic = decide_interviewer_turn(
+        answer=(
+            "I owned the checkout delay last quarter. I profiled the API, cut N+1 queries, "
+            "and shipped a cache layer so p95 dropped under 400 milliseconds."
+        ),
+        question="Tell me about a challenging bug.",
+        question_type="behavioural",
+    )
+    merged = merge_interviewer_turn(
+        {
+            "spoken_reply": "Alright, thanks.",
+            "should_follow_up": True,
+            "follow_up_question": "And then what happened next?",
+        },
+        heuristic,
+        already_followed_up=False,
+    )
+    assert heuristic["should_follow_up"] is False
+    assert merged["should_follow_up"] is False
+    assert merged["follow_up_question"] is None
+
+
 def test_is_follow_up_question_reads_source_context():
     assert is_follow_up_question({"kind": "follow_up"}) is True
     assert is_follow_up_question({"kind": "seed"}) is False
     assert is_follow_up_question(None) is False
 
 
-def test_question_budget_caps_at_twice_planned():
-    assert max_question_budget({"question_count": 5}) == 10
+def test_question_budget_caps_follow_ups():
+    assert follow_up_budget(5) == 2
+    assert max_question_budget({"question_count": 5}) == 7
     assert max_question_budget({"question_count": 20}) == 20
-    assert max_question_budget({}) == 10
+    assert max_question_budget({}) == 7

@@ -455,6 +455,8 @@ async def evaluate_interview_answer(
     gaze_metrics: dict[str, Any] | None = None,
     recent_turns: list[dict[str, Any]] | None = None,
     already_followed_up: bool = False,
+    follow_ups_used: int = 0,
+    seed_count: int = 5,
 ) -> dict[str, Any]:
     """Evaluate one answer with a validated LLM response plus measured metrics."""
     base = _score_answer_heuristic(answer, question, duration_seconds=duration_seconds)
@@ -466,6 +468,8 @@ async def evaluate_interview_answer(
         question=question,
         question_type=question_type,
         already_followed_up=already_followed_up,
+        follow_ups_used=follow_ups_used,
+        seed_count=seed_count,
     )
     if gaze and gaze.get("eye_contact_score") is not None and int(gaze["eye_contact_score"]) < 40:
         improvements = list(base.get("improvements") or [])
@@ -506,6 +510,8 @@ async def evaluate_interview_answer(
             "gaze_metrics": gaze,
             "recent_turns": (recent_turns or [])[:6],
             "already_followed_up": already_followed_up,
+            "follow_ups_used": follow_ups_used,
+            "seed_count": seed_count,
         },
         schema_model=AnswerEvaluationResult,
     )

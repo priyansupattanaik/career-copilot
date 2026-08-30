@@ -50,13 +50,17 @@ HEADING_ALIASES: dict[str, frozenset[str]] = {
             "certifications",
             "certificates",
             "licenses",
+            "courses",
+            "coursework",
+            "training",
+            "online_courses",
             "technical_certification",
             "technical_certifications",
             "certificate",
         }
     ),
     "languages": frozenset({"languages", "spoken_languages"}),
-    "links": frozenset({"links", "profiles", "online_profiles"}),
+    "links": frozenset({"links", "profiles", "online_profiles", "embedded_links"}),
 }
 
 

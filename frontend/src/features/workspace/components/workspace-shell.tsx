@@ -3,6 +3,7 @@ import { Link } from "@/shared/ui/router-link";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { ChevronUp, LogOut, Settings, UserRound } from "lucide-react";
 import { CareerIcon, type CareerIconName } from "@/components/ui/career-icons";
+import { AnimatedIcon } from "@/components/ui/animated-icon";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { routes } from "@/shared/routes";
@@ -24,11 +25,12 @@ import {
 
 /** Primary nav only — Settings lives in the profile account menu. */
 const navigation = [
-  { href: routes.dashboard, label: "Dashboard", icon: "dashboard" as CareerIconName },
-  { href: routes.resume, label: "Resume Analysis", icon: "resume" as CareerIconName },
-  { href: routes.interview, label: "Mock Interview", icon: "interview" as CareerIconName },
-  { href: routes.learning, label: "Learning Path", icon: "learning" as CareerIconName },
-  { href: routes.jobs, label: "Recommended Jobs", icon: "opportunities" as CareerIconName },
+  { href: routes.dashboard, label: "Dashboard", shortLabel: "Home", icon: "dashboard" as CareerIconName },
+  { href: routes.resume, label: "Resume Analysis", shortLabel: "Resume", icon: "resume" as CareerIconName },
+  { href: routes.interview, label: "Mock Interview", shortLabel: "Interview", icon: "interview" as CareerIconName },
+  { href: routes.learning, label: "Learning Path", shortLabel: "Learn", icon: "learning" as CareerIconName },
+  { href: routes.jobs, label: "Recommended Jobs", shortLabel: "Jobs", icon: "opportunities" as CareerIconName },
+  { href: routes.community, label: "Community", shortLabel: "People", icon: "profile" as CareerIconName },
 ];
 
 function readDemoMode() {
@@ -241,7 +243,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
                     onMouseEnter={() => prefetchRoute("/settings/profile")}
                     onFocus={() => prefetchRoute("/settings/profile")}
                   >
-                    <UserRound size={16} aria-hidden />
+                    <AnimatedIcon icon={UserRound} size={16} aria-hidden />
                     View profile
                   </Link>
                   <Link
@@ -252,7 +254,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
                     onMouseEnter={() => prefetchRoute("/settings/account")}
                     onFocus={() => prefetchRoute("/settings/account")}
                   >
-                    <Settings size={16} aria-hidden />
+                    <AnimatedIcon icon={Settings} size={16} aria-hidden />
                     Settings
                   </Link>
                   <button
@@ -262,7 +264,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
                     disabled={loggingOut}
                     onClick={() => void logout()}
                   >
-                    <LogOut size={16} aria-hidden />
+                    <AnimatedIcon icon={LogOut} size={16} aria-hidden />
                     {loggingOut ? "Signing out…" : "Logout"}
                   </button>
                 </div>
@@ -301,7 +303,9 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
                   <span className="sidebar-profile-sub">Account</span>
                 )}
               </span>
-              <ChevronUp
+              <AnimatedIcon
+                icon={ChevronUp}
+                idle={false}
                 className={`sidebar-profile-caret ${profileMenuOpen ? "is-open" : ""}`}
                 size={16}
                 aria-hidden
@@ -341,12 +345,13 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
               onMouseEnter={() => prefetchRoute(item.href)}
               onFocus={() => prefetchRoute(item.href)}
               className={active ? "active" : ""}
+              aria-label={item.label}
               aria-current={active ? "page" : undefined}
             >
               <span className="mobile-bottom-nav-icon" aria-hidden>
                 <CareerIcon name={item.icon} size={20} />
               </span>
-              <span className="mobile-bottom-nav-label">{item.label}</span>
+              <span className="mobile-bottom-nav-label">{item.shortLabel}</span>
             </Link>
           );
         })}
@@ -358,7 +363,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
           aria-current={pathname.startsWith("/settings") ? "page" : undefined}
         >
           <span className="mobile-bottom-nav-icon" aria-hidden>
-            <Settings size={20} />
+            <AnimatedIcon icon={Settings} size={20} />
           </span>
           <span className="mobile-bottom-nav-label">Profile</span>
         </Link>

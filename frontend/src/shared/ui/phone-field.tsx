@@ -222,7 +222,7 @@ export function PhoneField({ value, onChange, id, required, disabled, label = "M
         />
         <input
           id={id}
-          className="phone-national"
+          className="field phone-national"
           type="tel"
           inputMode="tel"
           autoComplete="tel-national"

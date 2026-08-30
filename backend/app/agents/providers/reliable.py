@@ -20,6 +20,8 @@ async def generate_structured_with_failover(
     schema_model: type,
     temperature: float | None = None,
     attempts_per_provider: int = 2,
+    allow_repair: bool = True,
+    timeout_seconds: float | None = None,
 ) -> tuple[Any, str]:
     """Generate validated LLM output, retrying providers without static content.
 
@@ -50,6 +52,9 @@ async def generate_structured_with_failover(
                 }
                 if temperature is not None:
                     kwargs["temperature"] = temperature
+                kwargs["allow_repair"] = allow_repair
+                if timeout_seconds is not None:
+                    kwargs["timeout_seconds"] = timeout_seconds
                 # The outer loop owns retries for structured agent calls. Do
                 # not multiply latency with an inner transport retry loop.
                 if provider == "groq":

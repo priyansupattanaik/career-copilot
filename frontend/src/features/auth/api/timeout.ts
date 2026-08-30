@@ -1,4 +1,5 @@
 export const AUTH_PROVIDER_TIMEOUT_MS = 4000;
+export const APP_AUTH_TIMEOUT_MS = 12000;
 
 export async function withTimeout<T>(
   promise: Promise<T>,

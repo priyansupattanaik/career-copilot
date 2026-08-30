@@ -1,4 +1,4 @@
-# Dependencies
+﻿# Dependencies
 node_modules/
 frontend/node_modules/
 backend/.venv/
@@ -68,3 +68,10 @@ backend/.data/
 .vscode/
 *.swp
 *~
+
+# Presentation assets (not code)
+Career-Copilot-Project-Presentation/
+*.pptx
+
+# Codex smoke-test logs
+.codex-*

@@ -143,7 +143,7 @@ export function EmptyState({
 }) {
   return (
     <Card className="empty-state">
-      <Inbox aria-hidden />
+      <AnimatedIcon icon={Inbox} aria-hidden />
       <h2>{title}</h2>
       <p>{description}</p>
       {href && action && <ButtonLink href={href}>{action}</ButtonLink>}
@@ -154,7 +154,7 @@ export function EmptyState({
 export function ErrorState({ onRetry }: { onRetry?: () => void }) {
   return (
     <Card className="empty-state">
-      <AlertTriangle aria-hidden />
+      <AnimatedIcon icon={AlertTriangle} aria-hidden />
       <h2>We could not load this section</h2>
       <p>Your stored records were not changed. Check the API connection and try again.</p>
       {onRetry && <Button onClick={onRetry}>Retry</Button>}

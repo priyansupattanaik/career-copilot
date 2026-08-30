@@ -6,12 +6,14 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from typing import Any
+from urllib.parse import urlparse
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, File, Form, Header, Query, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.responses import Response as PlainResponse
 
+from app.agents.providers.routing import preferred_llm_providers
 from app.agents.registry import agents_status
 from app.api.routers.auth import router as auth_router
 from app.api.schemas import (
@@ -29,6 +31,7 @@ from app.api.schemas import (
     LearningItemProgressPatch,
     LearningPathCreate,
     LearningPathGenerate,
+    LearningResourceProgressPatch,
     NotificationSettings,
     PreferencesUpdate,
     PrivacySettings,
@@ -71,13 +74,13 @@ from app.features.auth.service import (
     get_current_user_optional,
     parse_file_access_token,
 )
+from app.features.auth.username import normalize_username, validate_username
 from app.features.career_matching import (
     ALGORITHM_VERSION as CAREER_MATCH_ALGORITHM_VERSION,
 )
 from app.features.career_matching import (
     _infer_work_mode,
     candidate_skill_evidence,
-    progress_percentage,
     score_job,
 )
 from app.features.document_parsing.pipeline import parse_document_bytes
@@ -103,7 +106,19 @@ from app.features.interview.follow_up import (
     max_question_budget,
 )
 from app.features.interview.preparation import generate_interview_preparation
+from app.features.job_agent import rank_jobs_with_agent
 from app.features.learning.service import generate_learning_path_from_ats
+from app.features.learning.watch_progress import (
+    apply_watch_patch,
+    build_ats_source_snapshot,
+    complete_resource,
+    empty_watch_fields,
+    item_percent,
+    item_status_from_percent,
+    path_rollup,
+    watch_fields_for_write,
+    with_watch_defaults,
+)
 from app.features.profile.agent import build_profile_draft_enriched, profile_draft_response_payload
 from app.features.profile.agent.normalize import normalize_date_value
 from app.features.profile.avatars import (
@@ -887,6 +902,58 @@ def _prepare_candidate_payload(
     elif resource == "education" and require_core:
         if not str(data.get("institution") or "").strip():
             raise ApiError(400, "invalid_education", "Institution is required.")
+    elif resource == "projects":
+        # Title is required for new projects; patch may update only URLs.
+        if require_core and not str(data.get("title") or "").strip():
+            raise ApiError(400, "invalid_project", "Project title is required.")
+        if "title" in data:
+            title = str(data.get("title") or "").strip()
+            if not title and require_core:
+                raise ApiError(400, "invalid_project", "Project title is required.")
+            if title:
+                if len(title) > 200:
+                    raise ApiError(400, "invalid_project", "Project title must be 200 characters or fewer.")
+                data["title"] = title
+        # Normalize optional URL aliases (github / live -> github_url / live_url)
+        url_aliases = {
+            "github": "github_url",
+            "github_url": "github_url",
+            "githubUrl": "github_url",
+            "live": "live_url",
+            "live_url": "live_url",
+            "liveUrl": "live_url",
+            "url": "live_url",
+            "demo_url": "live_url",
+        }
+        for alias, canonical in list(url_aliases.items()):
+            if alias in data and alias != canonical:
+                if canonical not in data or not str(data.get(canonical) or "").strip():
+                    data[canonical] = data.pop(alias)
+                else:
+                    data.pop(alias, None)
+        for key in ("github_url", "live_url"):
+            if key in data:
+                raw = str(data.get(key) or "").strip()
+                if not raw:
+                    data[key] = None
+                else:
+                    if len(raw) > 500:
+                        raise ApiError(400, "invalid_project_url", f"{key} must be 500 characters or fewer.")
+                    parsed = urlparse(raw)
+                    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                        raise ApiError(400, "invalid_project_url", f"{key} must be a valid http(s) URL.")
+                    # Normalize: ensure no trailing spaces
+                    data[key] = raw
+        # Description / role optional but trimmed and length-limited
+        for key, max_len in (("description", 4000), ("role", 160)):
+            if key in data and data[key] is not None:
+                val = str(data[key] or "").strip()
+                if not val:
+                    data[key] = None
+                else:
+                    if len(val) > max_len:
+                        raise ApiError(400, "invalid_project", f"{key} must be {max_len} characters or fewer.")
+                    data[key] = val
     elif resource == "links":
         if require_core or "link_type" in data or "url" in data:
             link_type = str(data.get("link_type") or "").strip()
@@ -903,6 +970,97 @@ def _prepare_candidate_payload(
     if resource in {"experiences", "education", "projects", "languages", "links"}:
         data.setdefault("display_order", 0)
     return data
+
+
+@router.get("/profile/username/availability")
+def username_availability(
+    username: str = Query(..., min_length=3, max_length=30),
+    user: CurrentUser = Depends(get_current_user),
+    settings: Settings = Depends(get_settings),
+):
+    try:
+        normalized = validate_username(username)
+    except ValueError as exc:
+        return {"username": normalize_username(username), "available": False, "reason": str(exc)}
+    rows = (
+        client_for(settings, user).table("profiles").select("id").ilike("username", normalized).limit(1).execute().data
+        or []
+    )
+    available = not rows or str(rows[0].get("id")) == str(user.id)
+    return {"username": normalized, "available": available, "reason": None if available else "Username is already taken."}
+
+
+@router.get("/public/username-availability")
+def public_username_availability(username: str = Query(..., min_length=3, max_length=30), settings: Settings = Depends(get_settings)):
+    try:
+        normalized = validate_username(username)
+    except ValueError as exc:
+        return {"username": normalize_username(username), "available": False, "reason": str(exc), "suggestions": []}
+    rows = database_client(settings).table("profiles").select("id").ilike("username", normalized).limit(1).execute().data or []
+    suggestions = [] if not rows else [f"{normalized}_{suffix}"[:30] for suffix in (1, 2, 3)]
+    return {"username": normalized, "available": not rows, "reason": None if not rows else "Username is already taken.", "suggestions": suggestions}
+
+
+@router.get("/public/profiles/search")
+def search_public_profiles(
+    q: str = Query(..., min_length=2, max_length=80),
+    limit: int = Query(20, ge=1, le=50),
+    settings: Settings = Depends(get_settings),
+):
+    """Search only public identity/profile fields; never expose resume records."""
+    needle = " ".join(q.split()).casefold()
+    rows = database_client(settings).table("profiles").select(
+        "username,full_name,avatar_url,avatar_path,headline,location,current_role,career_level,career_goal"
+    ).limit(500).execute().data or []
+    matches = []
+    for row in rows:
+        haystack = " ".join(str(row.get(key) or "") for key in (
+            "username", "full_name", "headline", "current_role", "career_level", "career_goal", "location"
+        )).casefold()
+        if needle not in haystack or not str(row.get("username") or "").strip():
+            continue
+        item = {key: row.get(key) for key in (
+            "username", "full_name", "avatar_url", "headline", "location", "current_role", "career_level", "career_goal"
+        )}
+        matches.append(item)
+        if len(matches) >= limit:
+            break
+    return matches
+
+
+@router.get("/public/profiles/{username}")
+def public_profile(username: str, settings: Settings = Depends(get_settings)):
+    try:
+        normalized = validate_username(username)
+    except ValueError:
+        raise ApiError(404, "profile_not_found", "Public profile not found.") from None
+    client = database_client(settings)
+    rows = client.table("profiles").select(
+        "id,username,full_name,avatar_url,avatar_path,headline,bio,location,current_role,years_experience,career_level,career_goal"
+    ).ilike("username", normalized).limit(1).execute().data or []
+    if not rows:
+        raise ApiError(404, "profile_not_found", "Public profile not found.")
+    profile = rows[0]
+    owner = str(profile["id"])
+    public_rows: dict[str, list[dict[str, Any]]] = {}
+    for resource in ("skills", "experiences", "education", "projects", "certifications", "languages", "links"):
+        table = CANDIDATE_TABLES.get(resource)
+        if not table:
+            continue
+        fields = "*" if resource != "links" else "id,link_type,label,url,display_order"
+        public_rows[resource] = client.table(table).select(fields).eq("user_id", owner).limit(100).execute().data or []
+    # Public page should show the avatar like private bootstrap does.
+    # Generate a fresh signed URL with token so <img> works without Authorization.
+    # Keep avatar_url, hide raw storage path from public response.
+    try:
+        enriched = attach_avatar_url(profile, client, settings)
+        if enriched is not None:
+            profile = enriched
+    except Exception:
+        logger.warning("public_profile_avatar_failed username=%s id=%s", normalized, owner[:8])
+    profile.pop("avatar_path", None)
+    # Keep avatar_url (None when no avatar or storage outage) for frontend <img>
+    return {"profile": profile, "sections": public_rows}
 
 
 @router.get("/profile")
@@ -930,7 +1088,16 @@ def update_profile(
     settings: Settings = Depends(get_settings),
 ):
     client = client_for(settings, user)
-    client.table("profiles").update(payload.model_dump(exclude_none=True)).eq("id", str(user.id)).execute()
+    values = payload.model_dump(exclude_none=True)
+    if "username" in values:
+        try:
+            values["username"] = validate_username(values["username"])
+        except ValueError as exc:
+            raise ApiError(400, "invalid_username", str(exc)) from None
+        existing = client.table("profiles").select("id").ilike("username", values["username"]).limit(1).execute().data or []
+        if existing and str(existing[0].get("id")) != str(user.id):
+            raise ApiError(409, "username_taken", "That username is already taken.")
+    client.table("profiles").update(values).eq("id", str(user.id)).execute()
     profile = recalculate_completion(client, user)
     write_activity(client, user, "profile_updated", "Candidate profile updated", "profile", str(user.id))
     return attach_avatar_url(profile, client, settings)
@@ -2826,24 +2993,27 @@ async def create_interview_preparation(
 
 @router.get("/interviews/tts/status")
 def interview_tts_status(
-    user: CurrentUser = Depends(get_current_user),
+    user: CurrentUser | None = Depends(get_current_user_optional),
     settings: Settings = Depends(get_settings),
 ):
     """Whether Fish Audio interviewer voice is available (no secrets leaked)."""
     _ = user
     configured = bool((settings.fish_audio_api_key or "").strip())
+    stt_configured = bool(settings.groq_configured)
     return {
         "provider": "fish_audio" if configured else None,
         "configured": configured,
         "model": (settings.fish_audio_model or "").strip() or None if configured else None,
         "fallback": "browser_speech_synthesis",
+        "stt_provider": "groq_whisper" if stt_configured else None,
+        "stt_configured": stt_configured,
     }
 
 
 @router.post("/interviews/tts")
 def interview_tts(
     payload: InterviewTtsRequest,
-    user: CurrentUser = Depends(get_current_user),
+    user: CurrentUser | None = Depends(get_current_user_optional),
     settings: Settings = Depends(get_settings),
 ):
     """
@@ -2875,6 +3045,43 @@ def interview_tts(
             "X-TTS-Kind": payload.kind,
         },
     )
+
+
+@router.post("/interviews/transcribe")
+async def interview_transcribe(
+    audio: UploadFile = File(...),
+    user: CurrentUser | None = Depends(get_current_user_optional),
+    settings: Settings = Depends(get_settings),
+):
+    """Verbatim speech-to-text for a spoken answer (Groq Whisper). Keeps filler words."""
+    _ = user
+    from app.features.interview.transcribe import MAX_AUDIO_BYTES, transcribe_audio
+
+    if not settings.groq_configured:
+        raise ApiError(
+            503,
+            "stt_unavailable",
+            "Speech transcription is not configured. Browser speech recognition remains available.",
+        )
+    raw = await audio.read()
+    if not raw:
+        raise ApiError(400, "stt_empty_audio", "Audio is empty.")
+    if len(raw) > MAX_AUDIO_BYTES:
+        raise ApiError(413, "stt_audio_too_large", "Audio is too large to transcribe.")
+    filename = (audio.filename or "answer.webm").strip() or "answer.webm"
+    content_type = (audio.content_type or "audio/webm").split(";")[0]
+    try:
+        transcript = transcribe_audio(
+            settings,
+            raw,
+            filename=filename,
+            content_type=content_type,
+        )
+    except ValueError as exc:
+        raise ApiError(400, "stt_invalid_audio", str(exc)) from exc
+    except RuntimeError as exc:
+        raise ApiError(503, "stt_provider_error", str(exc)) from exc
+    return {"transcript": transcript, "provider": "groq_whisper"}
 
 
 @router.post("/interviews/commit", status_code=201)
@@ -3204,6 +3411,9 @@ async def add_response(
         if answer_by_question.get(str(item.get("id")))
     ][-6:]
     already_followed_up = is_follow_up_question(question.get("source_context"))
+    follow_ups_used = sum(
+        1 for item in existing_questions if is_follow_up_question(item.get("source_context"))
+    )
     evaluation = await evaluate_interview_answer(
         settings,
         question=str(question.get("question") or ""),
@@ -3215,6 +3425,8 @@ async def add_response(
         gaze_metrics=client_gaze,
         recent_turns=recent_turns,
         already_followed_up=already_followed_up,
+        follow_ups_used=follow_ups_used,
+        seed_count=int(session.get("question_count") or 5),
     )
     # Prefer server-measured delivery; optionally merge client speech_metrics duration if server lacks it.
     if client_speech and not evaluation.get("speaking_delivery", {}).get("duration_seconds"):
@@ -3525,6 +3737,55 @@ async def get_interview_report(
     return {"session": session, "report": rows[0]}
 
 
+def _sort_learning_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(
+        items,
+        key=lambda row: (
+            row.get("position") is None,
+            int(row["position"]) if isinstance(row.get("position"), (int, float)) else 10**9,
+            str(row.get("id") or ""),
+        ),
+    )
+
+
+def _load_learning_resources_for_items(client, user: CurrentUser, item_ids: list[str]) -> dict[str, list[dict[str, Any]]]:
+    by_item: dict[str, list[dict[str, Any]]] = {}
+    if not item_ids:
+        return by_item
+    resources = (
+        client.table("learning_resources")
+        .select("*")
+        .eq("user_id", str(user.id))
+        .in_("learning_item_id", item_ids)
+        .execute()
+        .data
+        or []
+    )
+    for resource in resources:
+        row = with_watch_defaults(resource)
+        by_item.setdefault(str(resource.get("learning_item_id") or ""), []).append(row)
+    return by_item
+
+
+def _persist_path_rollup(client, user: CurrentUser, path_id: str, items: list[dict[str, Any]]) -> dict[str, Any]:
+    rollup = path_rollup(items)
+    client.table("learning_paths").update({
+        "progress_percentage": rollup["progress_percentage"],
+        "status": rollup["status"],
+        "watch_summary": rollup["watch_summary"],
+        "updated_at": utc_now(),
+    }).eq("id", str(path_id)).eq("user_id", str(user.id)).execute()
+    return rollup
+
+
+def _first_row(result: Any) -> dict[str, Any] | None:
+    data = getattr(result, "data", None)
+    if isinstance(data, list) and data:
+        row = data[0]
+        return row if isinstance(row, dict) else None
+    return None
+
+
 @router.get("/learning-paths")
 def list_learning(user: CurrentUser = Depends(get_current_user), settings: Settings = Depends(get_settings)):
     """List learning paths with lightweight item summaries for list-card counts.
@@ -3545,24 +3806,32 @@ def list_learning(user: CurrentUser = Depends(get_current_user), settings: Setti
         .data
         or []
     )
+    item_ids = [
+        str(item.get("id"))
+        for item in all_items
+        if item.get("id") and str(item.get("learning_path_id") or "") in path_ids
+    ]
+    by_item_resources = _load_learning_resources_for_items(client, user, item_ids)
     by_path: dict[str, list[dict[str, Any]]] = {}
     for item in all_items:
         pid = str(item.get("learning_path_id") or "")
         if pid not in path_ids:
             continue
-        by_path.setdefault(pid, []).append(item)
+        row = dict(item)
+        resources = by_item_resources.get(str(item.get("id")), [])
+        row["learning_resources"] = resources
+        row["watch_percent"] = item_percent(row)
+        if resources:
+            row["status"] = item_status_from_percent(row["watch_percent"])
+        by_path.setdefault(pid, []).append(row)
     for path in paths:
         pid = str(path.get("id") or "")
-        items = by_path.get(pid, [])
-        items = sorted(
-            items,
-            key=lambda row: (
-                row.get("position") is None,
-                int(row["position"]) if isinstance(row.get("position"), (int, float)) else 10**9,
-                str(row.get("id") or ""),
-            ),
-        )
+        items = _sort_learning_items(by_path.get(pid, []))
+        rollup = path_rollup(items)
         path["item_count"] = len(items)
+        path["progress_percentage"] = rollup["progress_percentage"]
+        path["status"] = rollup["status"] if items else (path.get("status") or "active")
+        path["watch_summary"] = rollup["watch_summary"]
         # Lightweight items (no resources) so the list UI can show step counts.
         path["items"] = [
             {
@@ -3570,6 +3839,7 @@ def list_learning(user: CurrentUser = Depends(get_current_user), settings: Setti
                 "title": item.get("title"),
                 "status": item.get("status") or "pending",
                 "position": item.get("position"),
+                "watch_percent": item.get("watch_percent") or 0,
             }
             for item in items
         ]
@@ -3582,35 +3852,32 @@ def get_learning(
 ):
     client = client_for(settings, user)
     path = owned_row(client, "learning_paths", path_id, user)
-    items = (
+    items = _sort_learning_items(
         client.table("learning_items")
         .select("*")
         .eq("learning_path_id", str(path_id))
         .eq("user_id", str(user.id))
-        .order("position")
         .execute()
         .data
         or []
     )
     item_ids = [str(item.get("id")) for item in items if item.get("id")]
-    resources = []
-    if item_ids:
-        resources = (
-            client.table("learning_resources")
-            .select("*")
-            .eq("user_id", str(user.id))
-            .in_("learning_item_id", item_ids)
-            .execute()
-            .data
-            or []
-        )
-    by_item: dict[str, list[dict[str, Any]]] = {}
-    for resource in resources:
-        key = str(resource.get("learning_item_id") or "")
-        by_item.setdefault(key, []).append(resource)
+    by_item = _load_learning_resources_for_items(client, user, item_ids)
+    attached: list[dict[str, Any]] = []
     for item in items:
-        item["learning_resources"] = by_item.get(str(item.get("id")), [])
-    path["items"] = items
+        row = dict(item)
+        resources = by_item.get(str(item.get("id")), [])
+        row["learning_resources"] = resources
+        row["watch_percent"] = item_percent(row)
+        if resources:
+            row["status"] = item_status_from_percent(row["watch_percent"])
+        attached.append(row)
+    rollup = path_rollup(attached)
+    path["items"] = attached
+    path["item_count"] = len(attached)
+    path["progress_percentage"] = rollup["progress_percentage"]
+    path["status"] = rollup["status"] if attached else (path.get("status") or "active")
+    path["watch_summary"] = rollup["watch_summary"]
     return path
 
 
@@ -3706,16 +3973,25 @@ async def generate_learning_path(
     if not analyses:
         raise ApiError(409, "completed_ats_required", "Complete an ATS analysis before generating a learning path.")
     analysis = analyses[0]
-    version = owned_row(client, "resume_versions", analysis["resume_version_id"], user)
+    resume_version_id = analysis.get("resume_version_id")
+    if not resume_version_id:
+        raise ApiError(
+            409,
+            "completed_ats_required",
+            "Complete an ATS analysis before generating a learning path.",
+        )
+    version = owned_row(client, "resume_versions", resume_version_id, user)
     resume = owned_row(client, "resumes", version["resume_id"], user)
     # Optional role context from linked JD (never invents a role)
     role_title: str | None = None
+    jd: dict[str, Any] | None = None
     jd_id = analysis.get("job_description_id")
     if jd_id:
         try:
             jd = owned_row(client, "job_descriptions", jd_id, user)
             role_title = str(jd.get("role_title") or jd.get("title") or "").strip() or None
         except Exception:
+            jd = None
             role_title = None
     evidence = (
         client.table("ats_evidence")
@@ -3748,18 +4024,37 @@ async def generate_learning_path(
             "No missing or partial ATS requirements were available to build a learning path.",
         )
     algorithm_version = str(generated.get("algorithm_version") or CAREER_MATCH_ALGORITHM_VERSION)
+    source_snapshot = build_ats_source_snapshot(
+        analysis=analysis,
+        resume=resume,
+        job=jd,
+        evidence_rows=evidence,
+        role_title=role_title,
+    )
+    role_label = source_snapshot.get("role_title") or resume.get("title") or "your resume"
     path = client.table("learning_paths").insert({
         "user_id": str(user.id),
-        "title": f"Skill gap path · {resume.get('title') or 'your resume'}",
+        "title": f"Skill gap path · {role_label}",
         "description": (
             "Study plan from requirements not fully evidenced in your completed ATS analysis. "
             "Each step includes free video lessons and blogs/articles grounded in those gaps. "
-            "Watch or read, practice, then mark the step complete — progress is saved to your account."
+            "Watch progress is saved as you play each lesson — skipping ahead does not count."
         ),
         "source_type": "ats_analysis",
         "source_id": str(analysis["id"]),
+        "source_snapshot": source_snapshot,
+        "algorithm_version": algorithm_version,
         "status": "active",
         "progress_percentage": 0,
+        "watch_summary": {
+            "resource_count": 0,
+            "completed_resources": 0,
+            "watched_percent": 0,
+            "last_watched_at": None,
+            "last_resource_id": None,
+            "last_resource_title": None,
+            "last_item_id": None,
+        },
     }).execute().data[0]
     stored_items = []
     for item in items:
@@ -3774,26 +4069,32 @@ async def generate_learning_path(
             "learning_path_id": path["id"],
             "status": "pending",
         }).execute().data[0]
+        stored_resources = []
         for resource in resources:
-            client.table("learning_resources").insert({
+            inserted = client.table("learning_resources").insert({
                 **resource,
+                **empty_watch_fields(),
                 "user_id": str(user.id),
                 "learning_item_id": stored["id"],
             }).execute()
-        stored["learning_resources"] = (
-            client.table("learning_resources")
-            .select("*")
-            .eq("learning_item_id", stored["id"])
-            .eq("user_id", str(user.id))
-            .execute()
-            .data
-            or []
-        )
+            row = _first_row(inserted)
+            stored_resources.append(with_watch_defaults(row or {**resource, **empty_watch_fields()}))
+        stored["learning_resources"] = stored_resources
+        stored["watch_percent"] = item_percent(stored)
         stored_items.append(stored)
+    rollup = path_rollup(stored_items)
+    path["progress_percentage"] = rollup["progress_percentage"]
+    path["watch_summary"] = rollup["watch_summary"]
+    client.table("learning_paths").update({
+        "watch_summary": rollup["watch_summary"],
+        "progress_percentage": rollup["progress_percentage"],
+    }).eq("id", path["id"]).eq("user_id", str(user.id)).execute()
     return {
         **path,
         "items": stored_items,
+        "item_count": len(stored_items),
         "algorithm_version": algorithm_version,
+        "source_snapshot": source_snapshot,
         "crew": generated.get("crew"),
         "grounding": {
             "source": "completed_ats_analysis",
@@ -3829,23 +4130,153 @@ def update_learning_item(
     )
     if not item:
         raise ApiError(404, "learning_item_not_found", "The learning item was not found.")
-    updated = client.table("learning_items").update({
+    now = utc_now()
+    resources = (
+        client.table("learning_resources")
+        .select("*")
+        .eq("learning_item_id", str(item_id))
+        .eq("user_id", str(user.id))
+        .execute()
+        .data
+        or []
+    )
+    if payload.status == "completed":
+        for resource in resources:
+            completed = complete_resource(resource, now=now)
+            client.table("learning_resources").update(watch_fields_for_write(completed)).eq(
+                "id", str(resource.get("id"))
+            ).eq("user_id", str(user.id)).execute()
+    updated_result = client.table("learning_items").update({
         "status": payload.status,
-        "completed_at": utc_now() if payload.status == "completed" else None,
-    }).eq("id", str(item_id)).eq("user_id", str(user.id)).execute().data[0]
-    all_items = client.table("learning_items").select("status").eq("learning_path_id", str(path_id)).eq("user_id", str(user.id)).execute().data or []
-    percentage = progress_percentage(all_items)
-    client.table("learning_paths").update({
-        "progress_percentage": percentage,
-        "status": "completed" if percentage == 100 and all_items else "active",
-        "updated_at": utc_now(),
-    }).eq("id", str(path_id)).eq("user_id", str(user.id)).execute()
-    return {**updated, "progress_percentage": percentage}
+        "completed_at": now if payload.status == "completed" else None,
+        "watch_percent": 100 if payload.status == "completed" else (item_percent({"learning_resources": resources}) if payload.status != "pending" else 0),
+    }).eq("id", str(item_id)).eq("user_id", str(user.id)).execute()
+    updated = _first_row(updated_result) or {**item[0], "status": payload.status}
+    all_items = (
+        client.table("learning_items")
+        .select("*")
+        .eq("learning_path_id", str(path_id))
+        .eq("user_id", str(user.id))
+        .execute()
+        .data
+        or []
+    )
+    item_ids = [str(row.get("id")) for row in all_items if row.get("id")]
+    by_item = _load_learning_resources_for_items(client, user, item_ids)
+    attached = []
+    for row in all_items:
+        packed = dict(row)
+        packed["learning_resources"] = by_item.get(str(row.get("id")), [])
+        if str(row.get("id")) == str(item_id):
+            packed["status"] = payload.status
+            if payload.status == "completed":
+                packed["learning_resources"] = [complete_resource(r, now=now) for r in packed["learning_resources"]]
+        packed["watch_percent"] = 100 if packed.get("status") == "completed" else item_percent(packed)
+        attached.append(packed)
+    rollup = _persist_path_rollup(client, user, str(path_id), attached)
+    return {**updated, "progress_percentage": rollup["progress_percentage"], "watch_summary": rollup["watch_summary"]}
+
+
+@router.patch("/learning-paths/{path_id}/resources/{resource_id}")
+def update_learning_resource_progress(
+    path_id: UUID,
+    resource_id: UUID,
+    payload: LearningResourceProgressPatch,
+    user: CurrentUser = Depends(get_current_user),
+    settings: Settings = Depends(get_settings),
+):
+    """Persist accurate watch/read progress for one lesson resource."""
+    client = client_for(settings, user)
+    owned_row(client, "learning_paths", path_id, user)
+    resources = (
+        client.table("learning_resources")
+        .select("*")
+        .eq("id", str(resource_id))
+        .eq("user_id", str(user.id))
+        .limit(1)
+        .execute()
+        .data
+        or []
+    )
+    if not resources:
+        raise ApiError(404, "learning_resource_not_found", "The learning resource was not found.")
+    resource = resources[0]
+    item_id = str(resource.get("learning_item_id") or "")
+    item_rows = (
+        client.table("learning_items")
+        .select("*")
+        .eq("id", item_id)
+        .eq("learning_path_id", str(path_id))
+        .eq("user_id", str(user.id))
+        .limit(1)
+        .execute()
+        .data
+        or []
+    )
+    if not item_rows:
+        raise ApiError(404, "learning_item_not_found", "The learning item was not found for this path.")
+    now = utc_now()
+    patched = apply_watch_patch(resource, payload.model_dump(exclude_unset=True), now=now)
+    write_fields = watch_fields_for_write(patched)
+    updated_result = (
+        client.table("learning_resources")
+        .update(write_fields)
+        .eq("id", str(resource_id))
+        .eq("user_id", str(user.id))
+        .execute()
+    )
+    updated_resource = _first_row(updated_result) or {**resource, **write_fields}
+    updated_resource = with_watch_defaults(updated_resource)
+
+    all_items = (
+        client.table("learning_items")
+        .select("*")
+        .eq("learning_path_id", str(path_id))
+        .eq("user_id", str(user.id))
+        .execute()
+        .data
+        or []
+    )
+    item_ids = [str(row.get("id")) for row in all_items if row.get("id")]
+    by_item = _load_learning_resources_for_items(client, user, item_ids)
+    by_item[item_id] = [
+        updated_resource if str(row.get("id")) == str(resource_id) else row
+        for row in (by_item.get(item_id) or [updated_resource])
+    ]
+    attached: list[dict[str, Any]] = []
+    current_item: dict[str, Any] | None = None
+    for row in all_items:
+        packed = dict(row)
+        packed["learning_resources"] = by_item.get(str(row.get("id")), [])
+        packed["watch_percent"] = item_percent(packed)
+        packed["status"] = item_status_from_percent(packed["watch_percent"])
+        if packed["status"] != row.get("status"):
+            client.table("learning_items").update({
+                "status": packed["status"],
+                "watch_percent": packed["watch_percent"],
+                "completed_at": now if packed["status"] == "completed" else None,
+            }).eq("id", str(row.get("id"))).eq("user_id", str(user.id)).execute()
+        elif packed["watch_percent"] != row.get("watch_percent"):
+            client.table("learning_items").update({
+                "watch_percent": packed["watch_percent"],
+            }).eq("id", str(row.get("id"))).eq("user_id", str(user.id)).execute()
+        attached.append(packed)
+        if str(row.get("id")) == item_id:
+            current_item = packed
+    rollup = _persist_path_rollup(client, user, str(path_id), attached)
+    return {
+        **updated_resource,
+        "item_status": (current_item or {}).get("status"),
+        "item_watch_percent": (current_item or {}).get("watch_percent"),
+        "progress_percentage": rollup["progress_percentage"],
+        "watch_summary": rollup["watch_summary"],
+    }
 
 
 @router.get("/jobs")
 def list_jobs(user: CurrentUser = Depends(get_current_user), settings: Settings = Depends(get_settings)):
-    return (
+    client = client_for(settings, user)
+    jobs = (
         client_for(settings, user)
         .table("jobs")
         .select("*")
@@ -3855,6 +4286,7 @@ def list_jobs(user: CurrentUser = Depends(get_current_user), settings: Settings 
         .data
         or []
     )
+    return _with_application_counts(client, jobs)
 
 
 _external_sync_lock = __import__("threading").Lock()
@@ -3865,6 +4297,22 @@ _recommendation_generation_lock = threading.Lock()
 _recommendation_generation_by_user: dict[str, int] = {}
 
 
+def _with_application_counts(client: Any, jobs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Attach distinct tracked applicants without exposing who applied."""
+    if not jobs:
+        return jobs
+    job_ids = {str(row.get("id")) for row in jobs if row.get("id")}
+    rows = client.table("saved_jobs").select("job_id,user_id,status").execute().data or []
+    applicants: dict[str, set[str]] = {}
+    for row in rows:
+        job_id = str(row.get("job_id") or "")
+        status = str(row.get("status") or "").casefold()
+        user_id = str(row.get("user_id") or "")
+        if job_id in job_ids and user_id and status in {"applied", "interviewing", "offer"}:
+            applicants.setdefault(job_id, set()).add(user_id)
+    return [{**job, "application_count": len(applicants.get(str(job.get("id")), set()))} for job in jobs]
+
+
 @router.post("/jobs/external/sync")
 def sync_external_jobs(
     user: CurrentUser = Depends(get_current_user),
@@ -3872,7 +4320,7 @@ def sync_external_jobs(
 ):
     import time
 
-    from app.features.adzuna_api import AdzunaClient
+    from app.features.ai_job_search import AiJobSearchClient
 
     now = time.monotonic()
     last = _external_sync_last.get(str(user.id), 0.0)
@@ -3898,62 +4346,63 @@ def sync_external_jobs(
         prefs = prefs_rows[0] if prefs_rows else {}
         target_roles = [str(r).strip() for r in (prefs.get("target_roles") or []) if str(r).strip()]
         locations = [str(loc).strip() for loc in (prefs.get("preferred_locations") or []) if str(loc).strip()]
-        adzuna = AdzunaClient(
-            settings.adzuna_app_id,
-            settings.adzuna_app_key,
-            settings.adzuna_country,
-            timeout_seconds=settings.adzuna_timeout_seconds,
-        )
-        fetched = adzuna.search_jobs(
-            target_roles=target_roles,
-            locations=locations,
-            results_per_page=settings.adzuna_results_per_page,
-            max_days_old=settings.adzuna_max_days_old,
-        )
-        existing_rows = (
-            client.table("jobs").select("id,external_id").eq("source", "adzuna").execute().data or []
-        )
+        fetched_by_source: list[tuple[str, list[dict[str, Any]]]] = []
+        if getattr(settings, "freehire_enabled", True):
+            job_search = AiJobSearchClient(
+                getattr(settings, "freehire_api_url", "https://freehire.me"),
+                timeout_seconds=getattr(settings, "freehire_timeout_seconds", 15.0),
+            )
+            fetched_by_source.append(("freehire", job_search.search_jobs(
+                target_roles=target_roles,
+                locations=locations,
+                results_per_page=getattr(settings, "freehire_results_per_page", 25),
+                max_days_old=getattr(settings, "freehire_max_days_old", 30),
+            )))
+        if not fetched_by_source:
+            raise ApiError(503, "job_sources_not_configured", "No external job source is configured.")
+        fetched = [job for _, rows in fetched_by_source for job in rows]
+        existing_rows = client.table("jobs").select("id,external_id,source").execute().data or []
         existing_by_external = {
-            str(row.get("external_id") or "").strip(): str(row.get("id"))
+            f"{row.get('source') or 'freehire'}:{str(row.get('external_id') or '').strip()}": str(row.get("id"))
             for row in existing_rows
             if str(row.get("external_id") or "").strip()
         }
         created = 0
         updated = 0
         stamp = utc_now()
-        for job in fetched:
-            external_id = str(job.get("external_id") or "").strip()
-            if not external_id:
-                continue
-            payload = {
-                "source": "adzuna",
-                "external_id": external_id,
-                "title": job.get("title") or "Unknown Title",
-                "company": job.get("company") or "Unknown Company",
-                "location": job.get("location"),
-                "description": job.get("description") or "",
-                "application_url": job.get("application_url"),
-                "salary_min": job.get("salary_min"),
-                "salary_max": job.get("salary_max"),
-                "published_at": job.get("published_at") or stamp,
-                "latitude": job.get("latitude"),
-                "longitude": job.get("longitude"),
-                "is_active": True,
-                "requirements": job.get("requirements") or [],
-                # Persist Adzuna-inferred mode so generate filters + UI cards stay in sync
-                # without re-deriving from free text on every request.
-                "work_mode": job.get("work_mode"),
-                "updated_at": stamp,
-            }
-            existing_id = existing_by_external.get(external_id)
-            if existing_id:
-                client.table("jobs").update(payload).eq("id", existing_id).execute()
-                updated += 1
-            else:
-                new_id = str(uuid.uuid4())
-                client.table("jobs").insert({**payload, "id": new_id, "created_at": stamp}).execute()
-                existing_by_external[external_id] = new_id
-                created += 1
+        for source, jobs_for_source in fetched_by_source:
+            for job in jobs_for_source:
+                external_id = str(job.get("external_id") or "").strip()
+                if not external_id:
+                    continue
+                payload = {
+                    "source": source,
+                    "external_id": external_id,
+                    "title": job.get("title") or "Unknown Title",
+                    "company": job.get("company") or "Unknown Company",
+                    "location": job.get("location"),
+                    "description": job.get("description") or "",
+                    "application_url": job.get("application_url"),
+                    "salary_min": job.get("salary_min"),
+                    "salary_max": job.get("salary_max"),
+                    "published_at": job.get("published_at") or stamp,
+                    "latitude": job.get("latitude"),
+                    "longitude": job.get("longitude"),
+                    "is_active": True,
+                    "requirements": job.get("requirements") or [],
+                    # Persist source-inferred mode so filters and UI cards stay in sync.
+                    "work_mode": job.get("work_mode"),
+                    "updated_at": stamp,
+                }
+                existing_id = existing_by_external.get(f"{payload['source']}:{external_id}")
+                if existing_id:
+                    client.table("jobs").update(payload).eq("id", existing_id).execute()
+                    updated += 1
+                else:
+                    new_id = str(uuid.uuid4())
+                    client.table("jobs").insert({**payload, "id": new_id, "created_at": stamp}).execute()
+                    existing_by_external[f"{payload['source']}:{external_id}"] = new_id
+                    created += 1
         _external_sync_last[str(user.id)] = time.monotonic()
         write_activity(
             client,
@@ -3964,8 +4413,9 @@ def sync_external_jobs(
             None,
         )
         return {
-            "provider": "adzuna",
-            "configured": adzuna.configured,
+            "workflow": AiJobSearchClient.workflow,
+            "providers": [source for source, _ in fetched_by_source],
+            "configured": bool(fetched_by_source),
             "fetched": len(fetched),
             "created": created,
             "updated": updated,
@@ -4017,7 +4467,7 @@ def list_job_recommendations(
 
 
 @router.post("/job-recommendations/generate")
-def generate_job_recommendations(
+async def generate_job_recommendations(
     payload: JobRecommendationGenerate,
     user: CurrentUser = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
@@ -4068,6 +4518,7 @@ def generate_job_recommendations(
         .data
         or []
     )
+    jobs = _with_application_counts(client, jobs)
     if payload.location:
         needle = payload.location.casefold()
         jobs = [job for job in jobs if needle in str(job.get("location") or "").casefold()]
@@ -4092,11 +4543,59 @@ def generate_job_recommendations(
                 and float(job.get("salary_min") or 0) >= float(payload.salary_min)
             )
         ]
-    ranked = sorted(
+    deterministic_ranked = sorted(
         (score_job(job, skills, evidence_text) for job in jobs),
         key=lambda row: row["match_score"],
         reverse=True,
     )
+    profile_rows = client.table("profiles").select(
+        "full_name,headline,bio,location,current_role,years_experience,career_level,career_goal"
+    ).eq("id", str(user.id)).limit(1).execute().data or []
+    preference_rows = client.table("candidate_preferences").select("*").eq(
+        "user_id", str(user.id)
+    ).limit(1).execute().data or []
+    candidate_profile = {
+        "profile": profile_rows[0] if profile_rows else {},
+        "preferences": preference_rows[0] if preference_rows else {},
+        "skills": sorted(skills),
+        "confirmed_evidence": evidence_text[:12_000],
+    }
+    agent_status: dict[str, Any] = {"mode": "evidence", "provider": None}
+    ranked = deterministic_ranked
+    if preferred_llm_providers(settings):
+        try:
+            agent_result, provider = await rank_jobs_with_agent(
+                settings,
+                candidate=candidate_profile,
+                jobs=[row["job"] for row in deterministic_ranked[:24]],
+            )
+            decisions = {str(item["job_id"]): item for item in agent_result["evaluations"]}
+            for row in ranked:
+                decision = decisions.get(str(row["job"]["id"]))
+                if not decision:
+                    continue
+                row["match_score"] = decision["score"]
+                row["match_breakdown"] = {
+                    **row["match_breakdown"],
+                    "matched_requirements": decision["strengths"],
+                    "missing_requirements": decision["gaps"],
+                    "verdict": decision["verdict"],
+                    "rationale": decision["rationale"],
+                }
+                row["evidence"] = {
+                    **row["evidence"],
+                    "method": "llm-job-fit-v1",
+                    "provider": provider,
+                    "agent": "job_matching",
+                }
+            ranked.sort(key=lambda row: row["match_score"], reverse=True)
+            agent_status = {"mode": "agent", "provider": provider}
+        except ApiError as exc:
+            agent_status = {
+                "mode": "evidence_fallback",
+                "provider": None,
+                "error": getattr(exc, "code", "llm_generation_failed"),
+            }
     page = ranked[payload.offset : payload.offset + payload.limit]
     # Always clear prior recommendations for this resume version before writing a page
     # so offset>0 pagination cannot accumulate duplicate (user, resume, job) rows.
@@ -4129,6 +4628,7 @@ def generate_job_recommendations(
         "algorithm_version": CAREER_MATCH_ALGORITHM_VERSION,
         "recommendations": recommendations,
         "candidate_evidence": sorted(skills),
+        "agent": agent_status,
     }
 
 

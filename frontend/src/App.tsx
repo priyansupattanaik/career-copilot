@@ -8,6 +8,8 @@ import { isDemoSession } from "@/features/auth/demo-session";
 import { safeRedirectPath } from "@/features/auth/safe-path";
 import { ACCESS_TOKEN_STORAGE_KEY } from "@/shared/config";
 import { Link } from "@/shared/ui/router-link";
+import { PublicProfile } from "@/features/profile/components/public-profile";
+import { CommunityProfiles } from "@/features/community/components/community-profiles";
 import { useTheme } from "@/shared/theme";
 
 function ThemeFavicon() {
@@ -241,6 +243,11 @@ function JobDetailRoute() {
   return <JobDetail jobId={jobId || ""} />;
 }
 
+function PublicProfileRoute() {
+  const { username } = useParams<{ username: string }>();
+  return <PublicProfile username={username || ""} />;
+}
+
 function LearningPathRoute() {
   const { pathId } = useParams<{ pathId: string }>();
   return <LearningPath pathId={pathId || ""} />;
@@ -321,6 +328,7 @@ export function App() {
           <Route path="/jobs" element={<JobsHome />} />
           <Route path="/jobs/saved" element={<JobsHome savedOnly />} />
           <Route path="/jobs/:jobId" element={<JobDetailRoute />} />
+          <Route path="/community" element={<CommunityProfiles />} />
           <Route path="/learning" element={<LearningHome />} />
           <Route path="/learning/:pathId" element={<LearningPathRoute />} />
           <Route path="/learning/topic/:topicId" element={<Navigate to="/learning" replace />} />
@@ -339,6 +347,7 @@ export function App() {
           <Route path="/settings/privacy" element={<PrivacySettings />} />
         </Route>
       </Route>
+      <Route path="/:username" element={<PublicProfileRoute />} />
       <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>

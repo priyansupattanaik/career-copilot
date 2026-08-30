@@ -407,6 +407,11 @@ class FirestoreQuery:
 
     def eq(self, column: str, value: Any): return self._filter("==", column, value)
     def neq(self, column: str, value: Any): return self._filter("!=", column, value)
+    def ilike(self, column: str, value: Any):
+        # Firestore has no case-insensitive LIKE operator. Keep this compatible
+        # with the Supabase query surface and apply the pattern after retrieval.
+        self.filters.append(("ilike", _identifier(column), str(value or "")))
+        return self
     def lt(self, column: str, value: Any): return self._filter("<", column, value)
     def lte(self, column: str, value: Any): return self._filter("<=", column, value)
     def gt(self, column: str, value: Any): return self._filter(">", column, value)
@@ -520,6 +525,9 @@ class FirestoreQuery:
             if operator == "is_null_or_missing":
                 post_filters.append((operator, column, value))
                 continue
+            if operator == "ilike":
+                post_filters.append((operator, column, value))
+                continue
             if operator == "in":
                 values = list(value or [])
                 if not values:
@@ -583,6 +591,12 @@ class FirestoreQuery:
                 for operator, column, _value in post_filters:
                     if operator == "is_null_or_missing":
                         if column in data and data.get(column) is not None:
+                            ok = False
+                            break
+                    elif operator == "ilike":
+                        pattern = re.escape(str(_value)).replace(r"%", ".*").replace(r"_", ".")
+                        candidate = data.get(column)
+                        if candidate is None or re.fullmatch(pattern, str(candidate), flags=re.IGNORECASE) is None:
                             ok = False
                             break
                 if ok:

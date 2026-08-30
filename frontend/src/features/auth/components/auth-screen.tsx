@@ -2,8 +2,9 @@
 import { Link } from "@/shared/ui/router-link";
 import { useNavigate } from "react-router-dom";
 import { useSearchParams } from "@/shared/router";
-import { useState, type KeyboardEvent } from "react";
-import { Eye, MailCheck } from "lucide-react";
+import { useEffect, useState, type KeyboardEvent } from "react";
+import { Eye, EyeOff, MailCheck } from "lucide-react";
+import { AnimatedIcon } from "@/components/ui/animated-icon";
 
 
 import { createClient } from "@/features/auth/api/client";
@@ -14,6 +15,7 @@ import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { CareerIcon } from "@/components/ui/career-icons";
 import { AuroraBackground } from "@/components/ui/aurora-background";
+import { resolveApiBase } from "@/shared/config";
 
 function Shell({ children, title, description }: { children: React.ReactNode; title: string; description: string }) {
   return (
@@ -86,10 +88,21 @@ function authErrorMessage(message: string) {
   return message;
 }
 
+function GoogleMark() {
+  return (
+    <svg className="google-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path fill="#4285F4" d="M21.35 12.27c0-.72-.06-1.41-.18-2.07H12v3.92h5.24a4.48 4.48 0 0 1-1.94 2.94v2.45h3.15c1.85-1.7 2.9-4.2 2.9-7.24Z" />
+      <path fill="#34A853" d="M12 21.72c2.64 0 4.86-.87 6.48-2.36l-3.15-2.45c-.87.58-1.98.92-3.33.92-2.56 0-4.73-1.73-5.51-4.06H3.24v2.53A9.79 9.79 0 0 0 12 21.72Z" />
+      <path fill="#FBBC05" d="M6.49 13.77A5.88 5.88 0 0 1 6.18 12c0-.61.11-1.21.31-1.77V7.7H3.24A9.77 9.77 0 0 0 2.2 12c0 1.57.38 3.05 1.04 4.3l3.25-2.53Z" />
+      <path fill="#EA4335" d="M12 6.17c1.44 0 2.73.5 3.75 1.48l2.81-2.81C16.86 3.27 14.64 2.28 12 2.28a9.79 9.79 0 0 0-8.76 5.42l3.25 2.53C7.27 7.9 9.44 6.17 12 6.17Z" />
+    </svg>
+  );
+}
+
 export function SignInScreen() {
   const navigate = useNavigate();
   const search = useSearchParams();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(
     search.get("error") === "configuration_required" ? configurationError() : "",
@@ -109,7 +122,7 @@ export function SignInScreen() {
     setNeedsVerification(false);
     setShowPassword(false);
     try {
-      const result = await authClient.auth.signInWithPassword({ email: email.trim(), password });
+      const result = await authClient.auth.signInWithPassword({ identifier: identifier.trim(), password });
       if (result.error) {
         const normalized = result.error.message.toLowerCase();
       setNeedsVerification(
@@ -128,7 +141,7 @@ export function SignInScreen() {
     }
   }
   async function resendVerification() {
-    const address = email.trim();
+    const address = identifier.trim();
     if (!address) return setError("Enter your email address first.");
     const authClient = createClient();
     if (!authClient) return setError(configurationError());
@@ -177,8 +190,8 @@ export function SignInScreen() {
           <h1>Sign in</h1>
         </div>
         <label className="field-label">
-          Email
-          <Input type="email" autoComplete="email" required value={email} onChange={(e: any) => setEmail(e.target.value)} />
+          Email, phone, or username
+          <Input autoComplete="username" required value={identifier} onChange={(e: any) => setIdentifier(e.target.value)} placeholder="you@example.com or @username" />
         </label>
         <label className="field-label">
           Password
@@ -193,19 +206,29 @@ export function SignInScreen() {
             <button
               type="button"
               className="password-reveal"
-              aria-label="Hold to show password"
-              title="Hold to show password"
-              tabIndex={-1}
-              onPointerDown={(e: any) => {
-                e.preventDefault();
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-pressed={showPassword}
+              title={showPassword ? "Hide password" : "Show password"}
+              data-testid="password-visibility-toggle"
+              onPointerDown={(event) => {
+                event.preventDefault();
                 setShowPassword(true);
               }}
               onPointerUp={() => setShowPassword(false)}
               onPointerLeave={() => setShowPassword(false)}
               onPointerCancel={() => setShowPassword(false)}
-              onContextMenu={(e: any) => e.preventDefault()}
+              onBlur={() => setShowPassword(false)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setShowPassword(true);
+                }
+              }}
+              onKeyUp={(event) => {
+                if (event.key === "Enter" || event.key === " ") setShowPassword(false);
+              }}
             >
-              <Eye size={18} aria-hidden />
+              <AnimatedIcon icon={showPassword ? EyeOff : Eye} size={18} aria-hidden />
             </button>
           </div>
         </label>
@@ -226,7 +249,7 @@ export function SignInScreen() {
         <div className="auth-divider">or</div>
         <div className="auth-oauth">
           <Button type="button" variant="secondary" disabled={busy} onClick={() => { setBusy(true); void oauth("google"); }}>
-            Continue with Google
+            <GoogleMark /> Continue with Google
           </Button>
         </div>
         <p className="auth-switch">
@@ -244,6 +267,8 @@ export function SignUpScreen() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [usernameAvailability, setUsernameAvailability] = useState<{ available: boolean; reason?: string; suggestions?: string[] } | null>(null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [phone, setPhone] = useState<PhoneValue>({ iso2: "IN", national: "" });
@@ -251,10 +276,35 @@ export function SignUpScreen() {
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
+  const usernameSuggestions = name
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("_");
+
+  useEffect(() => {
+    const value = username.trim().toLowerCase().replace(/^@/, "");
+    if (value.length < 3) {
+      setUsernameAvailability(value ? { available: false, reason: "Use at least 3 characters." } : null);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void fetch(`${resolveApiBase()}/public/username-availability?username=${encodeURIComponent(value)}`, { signal: controller.signal })
+        .then((response) => response.json())
+        .then((result: { available?: boolean; reason?: string; suggestions?: string[] }) => setUsernameAvailability({ available: Boolean(result.available), reason: result.reason, suggestions: result.suggestions }))
+        .catch(() => undefined);
+    }, 180);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [username]);
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (password !== confirm) return setError("Passwords do not match.");
     if (!isValidPhone(phone)) return setError("Enter a valid mobile number (6–15 digits) with its country code.");
+    if (!username.trim() || usernameAvailability?.available === false) return setError(usernameAvailability?.reason || "Choose an available username.");
     const authClient = createClient();
     if (!authClient) return setError(configurationError());
     setBusy(true);
@@ -264,7 +314,7 @@ export function SignUpScreen() {
         email: email.trim(),
         password,
         options: {
-          data: { full_name: name.trim() },
+          data: { full_name: name.trim(), ...(username.trim() ? { username: username.trim().replace(/^@/, "").toLowerCase() } : {}) },
           emailRedirectTo: `${location.origin}/auth/callback?next=/onboarding`,
           phone: composePhone(phone),
         },
@@ -312,7 +362,7 @@ export function SignUpScreen() {
     >
       {sent ? (
         <div className="auth-card panel empty-state atlas-auth-card">
-          <MailCheck size={44} />
+          <AnimatedIcon icon={MailCheck} size={44} />
           <h1>Check your inbox</h1>
           <p>Open the verification link we sent to activate your account.</p>
           {error && <p role="alert" className="field-error">{error}</p>}
@@ -327,7 +377,7 @@ export function SignUpScreen() {
           </p>
         </div>
       ) : (
-        <form className="auth-card panel stack atlas-auth-card" onSubmit={submit} onKeyDown={submitOnEnter}>
+        <form className="auth-card panel stack atlas-auth-card atlas-auth-signup-card" onSubmit={submit} onKeyDown={submitOnEnter}>
           <div className="atlas-auth-card-header">
             <p className="eyebrow">Create account</p>
             <h1>Get started</h1>
@@ -339,6 +389,12 @@ export function SignUpScreen() {
           <label className="field-label">
             Email
             <Input type="email" required value={email} onChange={(e: any) => setEmail(e.target.value)} />
+          </label>
+          <label className="field-label">
+            Username
+            <Input autoComplete="username" required minLength={3} maxLength={30} value={username} onChange={(e: any) => setUsername(e.target.value)} placeholder={usernameSuggestions || "your_name"} />
+            {usernameAvailability ? <span className={usernameAvailability.available ? "field-hint field-hint-success" : "field-error"}>{usernameAvailability.available ? "Username is available." : usernameAvailability.reason}</span> : <span className="field-hint">Your public profile will be /{usernameSuggestions || "username"}.</span>}
+            {!usernameAvailability?.available && usernameAvailability?.suggestions?.length ? <span className="username-suggestions">Try: {usernameAvailability.suggestions.map((suggestion) => <button type="button" key={suggestion} onClick={() => setUsername(suggestion)}>{suggestion}</button>)}</span> : null}
           </label>
           <PhoneField
             label="Mobile number"
@@ -391,7 +447,7 @@ export function VerifyEmailScreen() {
   return (
     <Shell title="Confirm your email." description="We sent a verification link to finish setting up your account.">
       <div className="auth-card panel empty-state atlas-auth-card">
-        <MailCheck size={44} />
+        <AnimatedIcon icon={MailCheck} size={44} />
         <h1>Check your inbox</h1>
         <p>Open the verification link to continue. If it expired, return to sign up and request a new message.</p>
         <Link className="button button-secondary" href="/sign-in">

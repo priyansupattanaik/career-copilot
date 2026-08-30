@@ -19,6 +19,7 @@ test.describe("candidate profile responsive layout", () => {
       await expect(page.getByRole("heading", { name: "Candidate profile" })).toBeVisible();
       await expect(page.locator(".settings-nav")).toHaveCount(0);
       await expect(page.getByRole("navigation", { name: "Profile sections" })).toHaveCount(1);
+      // The profile editor exposes seven real sections, including Links.
       await expect(page.getByRole("navigation", { name: "Profile sections" }).getByRole("link")).toHaveCount(7);
 
       await page.getByRole("navigation", { name: "Profile sections" }).getByRole("link", { name: "Details" }).click();

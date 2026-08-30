@@ -41,6 +41,74 @@ function daysAgo(days: number) {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 }
 
+function demoMergeRanges(ranges: unknown): number[][] {
+  const cleaned: number[][] = [];
+  if (!Array.isArray(ranges)) return cleaned;
+  for (const pair of ranges) {
+    if (!Array.isArray(pair) || pair.length < 2) continue;
+    const start = Math.max(0, Number(pair[0]) || 0);
+    const end = Math.max(0, Number(pair[1]) || 0);
+    if (end <= start) continue;
+    cleaned.push([start, end]);
+  }
+  cleaned.sort((a, b) => a[0] - b[0]);
+  const merged: number[][] = [];
+  for (const [start, end] of cleaned) {
+    const last = merged[merged.length - 1];
+    if (!last || start > last[1] + 0.35) merged.push([start, end]);
+    else last[1] = Math.max(last[1], end);
+  }
+  return merged;
+}
+
+function demoResourcePercent(resource: DemoRecord): number {
+  if (String(resource.watch_status || "") === "completed") return 100;
+  const stored = Number(resource.watch_percent);
+  if (Number.isFinite(stored) && stored > 0) return Math.max(0, Math.min(100, Math.round(stored)));
+  if (resource.opened_at) return 50;
+  return 0;
+}
+
+function demoItemPercent(item: DemoRecord): number {
+  const resources = Array.isArray(item.learning_resources) ? (item.learning_resources as DemoRecord[]) : [];
+  if (resources.length) {
+    return Math.round(resources.reduce((sum, row) => sum + demoResourcePercent(row), 0) / resources.length);
+  }
+  if (item.status === "completed") return 100;
+  if (item.status === "in_progress") return 50;
+  return 0;
+}
+
+function demoRollupPath(path: DemoRecord) {
+  const items = Array.isArray(path.items) ? (path.items as DemoRecord[]) : [];
+  const percents = items.map((item) => demoItemPercent(item));
+  const progress = percents.length ? Math.round(percents.reduce((sum, value) => sum + value, 0) / percents.length) : 0;
+  const resources = items.flatMap((item) =>
+    Array.isArray(item.learning_resources) ? (item.learning_resources as DemoRecord[]) : [],
+  );
+  const last = [...resources].sort((a, b) =>
+    String(b.last_watched_at || "").localeCompare(String(a.last_watched_at || "")),
+  )[0];
+  path.progress_percentage = progress;
+  path.status = progress === 100 && items.length ? "completed" : "active";
+  path.item_count = items.length;
+  path.watch_summary = {
+    resource_count: resources.length,
+    completed_resources: resources.filter((row) => demoResourcePercent(row) >= 90).length,
+    watched_percent: progress,
+    last_watched_at: last?.last_watched_at || null,
+    last_resource_id: last?.id || null,
+    last_resource_title: last?.title || null,
+    last_item_id:
+      items.find((item) =>
+        (Array.isArray(item.learning_resources) ? (item.learning_resources as DemoRecord[]) : []).some(
+          (row) => row.id === last?.id,
+        ),
+      )?.id || null,
+  };
+  return path;
+}
+
 /** Seed completed mock sessions with an upward score trend for dashboard charts. */
 function seedDemoInterviewProgress(): Pick<DemoState, "interviews" | "reports"> {
   const sessions = [
@@ -194,9 +262,50 @@ function initialState(): DemoState {
     links: [],
     resumes: [],
     resumeVersions: [],
-    jobDescriptions: [],
-    analyses: [],
-    evidence: [],
+    jobDescriptions: [
+      {
+        id: "demo-jd-1",
+        user_id: DEMO_USER_ID,
+        title: "Backend Engineer",
+        company: "Northstar Labs",
+        role_title: "Backend Engineer",
+        extraction_status: "confirmed",
+        created_at: created,
+      },
+    ],
+    analyses: [
+      {
+        id: "demo-ats-1",
+        user_id: DEMO_USER_ID,
+        status: "completed",
+        overall_score: 64,
+        resume_version_id: null,
+        job_description_id: "demo-jd-1",
+        created_at: created,
+        completed_at: created,
+        score_breakdown: {
+          matched_terms: ["TypeScript", "Python"],
+          missing_terms: ["Docker"],
+          partial_terms: [],
+          total_terms: 3,
+        },
+        summary: {
+          matched: 2,
+          missing: 1,
+          total: 3,
+          missing_terms: ["Docker"],
+        },
+      },
+    ],
+    evidence: [
+      {
+        id: "demo-evidence-1",
+        analysis_id: "demo-ats-1",
+        requirement_text: "Docker",
+        match_status: "not_found",
+        explanation: "Not found in the demo resume.",
+      },
+    ],
     interviews: seeded.interviews,
     questions: [],
     responses: [],
@@ -210,31 +319,37 @@ function initialState(): DemoState {
       {
         id: "demo-path-1",
         user_id: DEMO_USER_ID,
-        title: "Backend interview readiness",
-        description: "A short practice path for API design and interview communication, grounded in sample skill gaps.",
-        source_type: "candidate_selected",
+        title: "Skill gap path · Demo ATS",
+        description: "Study plan from requirements not fully evidenced in the demo ATS analysis.",
+        source_type: "ats_analysis",
+        source_id: "demo-ats-1",
         status: "active",
-        progress_percentage: 25,
+        progress_percentage: 0,
         item_count: 1,
         created_at: created,
         items: [
           {
             id: "demo-item-1",
-            title: "Explain an API design decision",
-            objective: "Practice structuring a clear API design explanation with trade-offs and a concrete example.",
+            title: "Learn Docker with guided practice",
+            objective: "Study Docker using free video lessons and articles, then practise a small container workflow.",
             status: "pending",
             estimated_minutes: 45,
             difficulty: "foundational",
             learning_resources: [
               {
                 id: "demo-resource-1",
-                title: "REST API design fundamentals",
+                title: "Docker Tutorial for Beginners — Demo",
                 resource_type: "youtube_video",
                 provider: "freeCodeCamp.org",
-                url: "https://www.youtube.com/watch?v=Q-BpqyOT3a8",
-                reason_recommended: "Free lesson for practicing clear API design explanations (demo sample).",
+                url: "https://www.youtube.com/watch?v=fqMOX6JJhGo",
+                reason_recommended: "Demo video lesson for an ATS Docker gap (not live API).",
+                watch_status: "not_started",
+                watch_percent: 0,
+                position_seconds: 0,
+                watched_seconds: 0,
+                watched_ranges: [],
                 metadata: {
-                  video_id: "Q-BpqyOT3a8",
+                  video_id: "fqMOX6JJhGo",
                   channel_title: "freeCodeCamp.org",
                   source: "demo",
                   video_id_policy: "demo_known_public_video",
@@ -242,12 +357,14 @@ function initialState(): DemoState {
               },
               {
                 id: "demo-resource-1b",
-                title: "Blogs & articles: REST API design",
+                title: "Blogs & articles: Docker",
                 resource_type: "article_search",
                 provider: "Google · educational sites",
-                url: "https://www.google.com/search?q=REST+API+design+guide+OR+article+%28site%3Afreecodecamp.org+OR+site%3Adev.to+OR+site%3Adeveloper.mozilla.org%29",
+                url: "https://www.google.com/search?q=Docker+tutorial+guide+OR+article+%28site%3Afreecodecamp.org+OR+site%3Adev.to+OR+site%3Adocs.docker.com%29",
                 reason_recommended:
-                  "Free blogs and articles for the sample skill gap (demo). Specific post URLs are never invented.",
+                  "Free blogs and articles for the ATS Docker gap (demo). Specific post URLs are never invented.",
+                watch_status: "not_started",
+                watch_percent: 0,
                 metadata: {
                   source: "demo",
                   url_policy: "allowlisted_search_only_no_invented_articles",
@@ -256,6 +373,14 @@ function initialState(): DemoState {
             ],
           },
         ],
+        source_snapshot: {
+          analysis_id: "demo-ats-1",
+          overall_score: 64,
+          role_title: "Software Engineer",
+          resume_title: "Demo resume",
+          missing_count: 1,
+          partial_count: 0,
+        },
       },
     ],
   };
@@ -842,8 +967,8 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
       return record as T;
     }
   }
-  if (path === "/jobs/external/sync" && method === "POST") {
-    return { synced: 0, created: 0, updated: 0, message: "Demo mode — external job sync is simulated." } as T;
+    if (path === "/jobs/external/sync" && method === "POST") {
+      return { synced: state.jobs.length, created: 0, updated: state.jobs.length, provider: "freehire", message: "Demo mode — FreeHire refresh is simulated." } as T;
   }
   if (parts[0] === "job-descriptions" && parts[1] === "upload" && method === "POST") {
     const form = init.body instanceof FormData ? init.body : null;
@@ -1326,32 +1451,51 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
   }
   if (path === "/learning-paths" && method === "GET") {
     return state.learningPaths.map((row) => {
-      const items = Array.isArray(row.items) ? (row.items as DemoRecord[]) : [];
+      const rolled = demoRollupPath({ ...row });
+      const items = Array.isArray(rolled.items) ? (rolled.items as DemoRecord[]) : [];
       return {
-        ...row,
-        item_count: typeof row.item_count === "number" ? row.item_count : items.length,
+        ...rolled,
+        item_count: items.length,
         // List payload keeps lightweight item summaries (matches backend list_learning).
         items: items.map((item) => ({
           id: item.id,
           title: item.title,
           status: item.status || "pending",
           position: item.position,
+          watch_percent: demoItemPercent(item),
         })),
       };
     }) as T;
   }
   if (path === "/learning-paths/generate" && method === "POST") {
+    const completed = state.analyses.filter((row) => row.status === "completed");
+    const requestedId = String((body as DemoRecord)?.source_analysis_id || "");
+    const analysis = requestedId
+      ? completed.find((row) => String(row.id) === requestedId)
+      : completed[0];
+    if (!analysis) {
+      throw new Error("Complete an ATS analysis before generating a learning path.");
+    }
     const pathId = id("demo-path");
     const itemId = id("demo-item");
     const resourceId = id("demo-resource");
     const articleResourceId = id("demo-article");
-    const path = {
+    const path = demoRollupPath({
       id: pathId,
       user_id: DEMO_USER_ID,
       title: "Skill gap path · Demo ATS gaps",
       description:
         "Demo path grounded in illustrative ATS gaps with free video lessons and blogs/articles (no invented skills).",
       source_type: "ats_analysis",
+      source_id: String(analysis.id),
+      source_snapshot: {
+        analysis_id: String(analysis.id),
+        overall_score: analysis.overall_score,
+        role_title: "Software Engineer",
+        resume_title: "Demo resume",
+        missing_count: 1,
+        partial_count: 0,
+      },
       status: "active",
       progress_percentage: 0,
       item_count: 1,
@@ -1373,6 +1517,11 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
               provider: "freeCodeCamp.org",
               url: "https://www.youtube.com/watch?v=fqMOX6JJhGo",
               reason_recommended: "Demo video lesson for an illustrative ATS gap (not live API).",
+              watch_status: "not_started",
+              watch_percent: 0,
+              position_seconds: 0,
+              watched_seconds: 0,
+              watched_ranges: [],
               metadata: {
                 video_id: "fqMOX6JJhGo",
                 channel_title: "freeCodeCamp.org",
@@ -1388,6 +1537,8 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
               url: "https://www.google.com/search?q=Docker+tutorial+guide+OR+article+%28site%3Afreecodecamp.org+OR+site%3Adev.to+OR+site%3Adocs.docker.com%29",
               reason_recommended:
                 "Demo reading search for blogs and docs on Docker. Specific article URLs are never invented.",
+              watch_status: "not_started",
+              watch_percent: 0,
               metadata: {
                 source: "demo",
                 url_policy: "allowlisted_search_only_no_invented_articles",
@@ -1400,6 +1551,8 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
               provider: "Docker Docs",
               url: "https://docs.docker.com/search/?q=Docker",
               reason_recommended: "Official documentation search for the sample Docker gap (demo).",
+              watch_status: "not_started",
+              watch_percent: 0,
               metadata: {
                 source: "demo",
                 url_policy: "allowlisted_search_only_no_invented_articles",
@@ -1409,7 +1562,7 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
         },
       ],
       algorithm_version: "ats-mixed-learning-v1",
-    };
+    });
     state.learningPaths.unshift(path);
     return path as T;
   }
@@ -1418,7 +1571,7 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
     if (!path) {
       throw new Error("The requested record was not found.");
     }
-    return path as T;
+    return demoRollupPath(path) as T;
   }
   if (parts[0] === "learning-paths" && parts.length === 2 && method === "DELETE") {
     const before = state.learningPaths.length;
@@ -1439,11 +1592,76 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
       throw new Error("The learning item was not found.");
     }
     item.status = body.status || item.status;
-    const done = items.filter((row) => row.status === "completed").length;
-    path.progress_percentage = items.length ? Math.round((done / items.length) * 100) : 0;
-    path.item_count = items.length;
-    path.status = path.progress_percentage === 100 && items.length ? "completed" : "active";
-    return { ...item, progress_percentage: path.progress_percentage } as T;
+    if (item.status === "completed") {
+      const resources = Array.isArray(item.learning_resources) ? (item.learning_resources as DemoRecord[]) : [];
+      for (const resource of resources) {
+        resource.watch_status = "completed";
+        resource.watch_percent = 100;
+        resource.completed_at = now();
+      }
+    }
+    demoRollupPath(path);
+    return { ...item, progress_percentage: path.progress_percentage, watch_summary: path.watch_summary } as T;
+  }
+  if (parts[0] === "learning-paths" && parts[2] === "resources" && method === "PATCH") {
+    const path = state.learningPaths.find((item) => item.id === parts[1]);
+    if (!path) {
+      throw new Error("The learning path was not found.");
+    }
+    const items = Array.isArray(path.items) ? (path.items as DemoRecord[]) : [];
+    let resource: DemoRecord | undefined;
+    let parent: DemoRecord | undefined;
+    for (const item of items) {
+      const resources = Array.isArray(item.learning_resources) ? (item.learning_resources as DemoRecord[]) : [];
+      const found = resources.find((row) => row.id === parts[3]);
+      if (found) {
+        resource = found;
+        parent = item;
+        break;
+      }
+    }
+    if (!resource || !parent) {
+      throw new Error("The learning resource was not found.");
+    }
+    const stamp = now();
+    const incoming = Array.isArray(body.watched_ranges) ? body.watched_ranges : [];
+    resource.watched_ranges = demoMergeRanges([...(Array.isArray(resource.watched_ranges) ? resource.watched_ranges : []), ...incoming]);
+    const watched = (resource.watched_ranges as number[][]).reduce((sum, pair) => sum + (pair[1] - pair[0]), 0);
+    resource.watched_seconds = Math.round(watched * 100) / 100;
+    if (body.position_seconds != null) resource.position_seconds = Number(body.position_seconds) || 0;
+    if (body.duration_seconds != null) resource.duration_seconds = Number(body.duration_seconds) || null;
+    if (body.opened) resource.opened_at = resource.opened_at || stamp;
+    const duration = Number(resource.duration_seconds || 0);
+    let percent = duration > 0 ? Math.max(0, Math.min(100, Math.round((Number(resource.watched_seconds) / duration) * 100))) : Number(resource.watch_percent || 0);
+    if (resource.opened_at && percent < 50 && String(resource.resource_type || "").includes("article")) percent = 50;
+    if (body.status === "completed" || percent >= 90) {
+      resource.watch_status = "completed";
+      resource.watch_percent = 100;
+      resource.completed_at = resource.completed_at || stamp;
+    } else if (body.status === "not_started") {
+      resource.watch_status = "not_started";
+      resource.watch_percent = 0;
+      resource.watched_ranges = [];
+      resource.watched_seconds = 0;
+      resource.position_seconds = 0;
+      resource.opened_at = null;
+      resource.completed_at = null;
+    } else {
+      resource.watch_status = percent > 0 || resource.opened_at ? "in_progress" : "not_started";
+      resource.watch_percent = percent;
+    }
+    resource.last_watched_at = stamp;
+    const itemPercent = demoItemPercent(parent);
+    parent.watch_percent = itemPercent;
+    parent.status = itemPercent >= 90 ? "completed" : itemPercent > 0 ? "in_progress" : "pending";
+    demoRollupPath(path);
+    return {
+      ...resource,
+      item_status: parent.status,
+      item_watch_percent: itemPercent,
+      progress_percentage: path.progress_percentage,
+      watch_summary: path.watch_summary,
+    } as T;
   }
   if (parts[0] === "account" && method === "DELETE") {
     state = initialState();

@@ -9,6 +9,7 @@ from app.core.config import Settings
 from app.features.document_parsing.parsing.llm_sections import extract_sections_enriched
 from app.features.document_parsing.parsing.sections import canonicalize_sections
 from app.features.document_parsing.parsing.text_extract import extract_text
+from app.features.document_parsing.semantic_json import build_semantic_json
 
 
 def _clean_structured(
@@ -42,9 +43,11 @@ def _clean_structured(
     )
     if links:
         sections["links"] = links
+    document_type = "job_description" if schema_version.startswith("jd-") else "resume"
     return {
         "schema_version": schema_version,
         "sections": sections,
+        "semantic_json": build_semantic_json(sections, document_type=document_type),
         "warnings": warnings,
         "extraction_method": str(result.get("extraction_method") or "simple_parse_v1"),
     }

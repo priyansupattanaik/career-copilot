@@ -98,8 +98,8 @@ def _requirements(job: dict[str, Any]) -> list[str]:
     if not isinstance(value, list):
         value = []
     items = [str(item).strip() for item in value if str(item).strip()]
-    # Fallback: pull tech-looking tokens from description when requirements empty
-    # (common for Adzuna-synced jobs that only store free-text description).
+    # Fallback: pull tech-looking tokens from free-text job descriptions when
+    # structured requirements are unavailable.
     if not items:
         description = str(job.get("description") or "")
         if description:

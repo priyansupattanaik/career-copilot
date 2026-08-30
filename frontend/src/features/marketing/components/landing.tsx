@@ -13,7 +13,7 @@ import { useReveal } from "../use-reveal";
 import { useTheme } from "@/shared/theme";
 import { ButtonLink } from "@/shared/ui/primitives";
 import { Link } from "@/shared/ui/router-link";
-import { prefetchRoute } from "@/shared/route-prefetch";
+import { prefetchRoute, warmUpBackend } from "@/shared/route-prefetch";
 
 const features = [
   { icon: "resume" as const, label: "Resume evidence", title: "Know what your experience already proves.", text: "Turn projects, wins, and skills into a clear story you can carry into every application." },
@@ -84,7 +84,7 @@ function HeroCopy() {
           <AnimatedIcon icon={Play} size={14} fill="currentColor" aria-hidden /> See the practice room
         </a>
       </div>
-      <p className="home-note"><Check size={14} /> Private by default · shaped around your work</p>
+      <p className="home-note"><AnimatedIcon icon={Check} size={14} aria-hidden /> Private by default · shaped around your work</p>
     </div>
   );
 }
@@ -97,9 +97,9 @@ function PracticeCopy() {
       <h2 id="practice-title">Confidence is<br /><span>a practice habit.</span></h2>
       <p>Answer realistic questions on camera before the real conversation. Review the moments that matter and come back with a better answer.</p>
       <div className="home-check-list">
-        <span><Check size={15} /> Camera and microphone readiness</span>
-        <span><Check size={15} /> Clear feedback after every answer</span>
-        <span><Check size={15} /> Evidence, pace, and clarity signals</span>
+        <span><AnimatedIcon icon={Check} size={15} aria-hidden /> Camera and microphone readiness</span>
+        <span><AnimatedIcon icon={Check} size={15} aria-hidden /> Clear feedback after every answer</span>
+        <span><AnimatedIcon icon={Check} size={15} aria-hidden /> Evidence, pace, and clarity signals</span>
       </div>
       <Link href="/mock-interview/preparation" className="home-inline-link">
         Start a video practice session <AnimatedIcon icon={ArrowRight} size={15} aria-hidden />
@@ -188,6 +188,7 @@ function LandingInner() {
   }, [open]);
 
   useEffect(() => {
+    warmUpBackend();
     const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -271,7 +272,7 @@ function LandingInner() {
         </button>
       </div></header>
 
-      {open ? <div ref={dialogRef} className="home-mobile-dialog" role="dialog" aria-modal="true" aria-labelledby="home-mobile-title"><button className="home-mobile-scrim" aria-label="Close navigation" onClick={closeMenu} /><div className="home-mobile-panel"><div className="home-mobile-head"><span id="home-mobile-title" className="home-mobile-title">Career Copilot</span><button type="button" className="home-mobile-close" aria-label="Close menu" onClick={closeMenu}><X size={21} /></button></div><nav className="home-mobile-links" aria-label="Mobile navigation"><a href="#practice" onClick={closeAndFollowAnchor}>Video practice</a><a href="#system" onClick={closeAndFollowAnchor}>How it works</a><Link href="/resume-analysis?tab=upload" onClick={closeMenu}>Resume analysis</Link><Link href="/learning" onClick={closeMenu}>Learning path</Link><Link href="/sign-in" onClick={closeMenu}>Sign in</Link><ButtonLink href="/sign-up" className="home-mobile-cta" onClick={closeMenu}>Get started</ButtonLink></nav></div></div> : null}
+      {open ? <div ref={dialogRef} className="home-mobile-dialog" role="dialog" aria-modal="true" aria-labelledby="home-mobile-title"><button className="home-mobile-scrim" aria-label="Close navigation" onClick={closeMenu} /><div className="home-mobile-panel"><div className="home-mobile-head"><span id="home-mobile-title" className="home-mobile-title">Career Copilot</span><button type="button" className="home-mobile-close" aria-label="Close menu" onClick={closeMenu}><AnimatedIcon icon={X} size={21} idle={false} aria-hidden /></button></div><nav className="home-mobile-links" aria-label="Mobile navigation"><a href="#practice" onClick={closeAndFollowAnchor}>Video practice</a><a href="#system" onClick={closeAndFollowAnchor}>How it works</a><Link href="/resume-analysis?tab=upload" onClick={closeMenu}>Resume analysis</Link><Link href="/learning" onClick={closeMenu}>Learning path</Link><Link href="/sign-in" onClick={closeMenu}>Sign in</Link><ButtonLink href="/sign-up" className="home-mobile-cta" onClick={closeMenu}>Get started</ButtonLink></nav></div></div> : null}
 
       <main id="main-content">
         <section className="home-hero" aria-labelledby="home-hero-title"><div className="home-frame home-hero-grid"><HeroCopy /><HeroVisual /></div>

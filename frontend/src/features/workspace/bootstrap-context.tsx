@@ -84,6 +84,18 @@ export type WorkspaceBootstrap = {
   };
 };
 
+const BOOTSTRAP_STORAGE_KEY = "career_copilot_bootstrap_cache";
+
+function readCachedBootstrap(): WorkspaceBootstrap | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(BOOTSTRAP_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 type BootstrapContextValue = {
   data: WorkspaceBootstrap | null;
   error: string;
@@ -95,14 +107,17 @@ const WorkspaceBootstrapContext = createContext<BootstrapContextValue | null>(nu
 
 export function WorkspaceBootstrapProvider({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const [data, setData] = useState<WorkspaceBootstrap | null>(null);
+  const [data, setData] = useState<WorkspaceBootstrap | null>(() => readCachedBootstrap());
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !readCachedBootstrap());
   const fetchGen = useRef(0);
 
   const refresh = useCallback(() => {
     const gen = ++fetchGen.current;
-    setLoading(true);
+    setData((current) => {
+      if (!current) setLoading(true);
+      return current;
+    });
     setError("");
     const bootstrapScope = pathname === "/dashboard" ? "full" : "shell";
     apiRequest<WorkspaceBootstrap>(`/me/bootstrap?scope=${bootstrapScope}`)
@@ -110,9 +125,22 @@ export function WorkspaceBootstrapProvider({ children }: { children: ReactNode }
         if (gen !== fetchGen.current) return;
         setData(payload);
         setError("");
+        try {
+          window.sessionStorage.setItem(BOOTSTRAP_STORAGE_KEY, JSON.stringify(payload));
+        } catch {
+          // Ignore quota errors
+        }
       })
       .catch((err: Error) => {
         if (gen !== fetchGen.current) return;
+        if ((err as Error & { status?: number }).status === 401) {
+          try {
+            window.sessionStorage.removeItem(BOOTSTRAP_STORAGE_KEY);
+          } catch {
+            // Ignore storage access errors
+          }
+          return;
+        }
         // Keep last-good snapshot so a flaky refresh does not blank the shell/dashboard.
         setError(err?.message || "Could not load workspace bootstrap.");
         console.warn("[workspace] bootstrap failed:", err?.message || err);
@@ -130,8 +158,19 @@ export function WorkspaceBootstrapProvider({ children }: { children: ReactNode }
     function onProfileUpdated() {
       refresh();
     }
+    function onAuthExpired() {
+      try {
+        window.sessionStorage.removeItem(BOOTSTRAP_STORAGE_KEY);
+      } catch {
+        // Ignore storage access errors
+      }
+    }
     window.addEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
-    return () => window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
+    window.addEventListener("career-copilot:auth-expired", onAuthExpired);
+    return () => {
+      window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
+      window.removeEventListener("career-copilot:auth-expired", onAuthExpired);
+    };
   }, [refresh]);
 
   // Leaving settings often mutates profile — soft refresh once.

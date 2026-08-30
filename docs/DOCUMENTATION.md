@@ -5,7 +5,7 @@
 **Source of truth:** this file (generated from the repository)  
 **Scope:** product purpose, architecture, how every subsystem works, data model, APIs, agents, code map, frontend, operations, and diagrams  
 
-> **Golden rule:** Do not invent the candidate’s career. Only text the user types, uploads, **confirms**, or explicitly accepts is used for ATS, learning gaps, interview evidence, and job matching. LLM / YouTube / Adzuna / storage service keys stay on the server. The browser never talks to Firestore directly.
+> **Golden rule:** Do not invent the candidate’s career. Only text the user types, uploads, **confirms**, or explicitly accepts is used for ATS, learning gaps, interview evidence, and job matching. LLM / YouTube / storage service keys stay on the server. The browser never talks to Firestore directly.
 
 ---
 
@@ -69,7 +69,7 @@ Career Copilot is a **private career workspace for one candidate at a time**. It
 | **ATS** | Deterministic keyword coverage (`evidence-keyword-coverage-v4`); history shows resume + JD used |
 | **Interviews** | Question packs, practice sessions, optional Fish Audio TTS / browser STT, gaze metrics, practice evaluation |
 | **Learning** | ATS gaps → YouTube + allowlisted educational search URLs (`ats-mixed-learning-v1`) |
-| **Jobs** | Evidence-based recommendations; optional Adzuna sync; saved/pipeline tracking |
+| **Jobs** | Evidence-based recommendations; FreeHire sync; saved/pipeline tracking |
 | **Resume improvement** | Evidence-checked rewrite suggestions via sequential crew |
 | **Account wipe** | Confirm with phrase `DELETE MY ACCOUNT` |
 | **Theme** | Light / dark / system preference |
@@ -99,7 +99,7 @@ Career Copilot is a **private career workspace for one candidate at a time**. It
 | **Object storage** | Supabase Storage (service role HTTP) | Resumes, avatars, exports |
 | **Documents** | pypdf, python-docx; optional pymupdf, pdfplumber | Text extract |
 | **PDF export** | reportlab | Resume export |
-| **HTTP** | httpx | LLMs, YouTube, Adzuna, Supabase, Fish Audio |
+| **HTTP** | httpx | LLMs, YouTube, FreeHire, Supabase, Fish Audio |
 | **LLM** | Groq preferred, NVIDIA fallback | Chat completions |
 | **Crews** | Optional `crewai`; else built-in sequential orchestrators | Learning + resume improve |
 | **TTS** | Fish Audio (optional) | Interviewer voice |
@@ -203,7 +203,7 @@ Browser (Vite + React)
            FastAPI (ownership enforced)
                 ├─ Firestore      (rows)
                 ├─ Supabase Storage (files under {user_id}/…)
-                └─ Groq / NVIDIA / YouTube / Adzuna / Fish Audio  (server .env)
+                └─ Groq / NVIDIA / YouTube / FreeHire / Fish Audio  (server .env)
 ```
 
 **Important file URL contract:** signed URLs are stored as relative `/api/files/{bucket}/{path}`. The Vite (or production reverse proxy) must rewrite that path to `/api/v1/files/...`. Direct hits on FastAPI without the rewrite return 404.
@@ -418,7 +418,7 @@ Algorithm `ats-mixed-learning-v1`:
 | Endpoint | Behavior |
 |----------|----------|
 | `GET /jobs` | Active jobs catalog (newest published first, client-side order) |
-| `POST /jobs/external/sync` | Adzuna page 1 search from candidate preferences; cooldown + process lock |
+| `POST /jobs/external/sync` | FreeHire page 1 search from candidate preferences; cooldown + process lock |
 | `POST /job-recommendations/generate` | Score catalog against confirmed resume evidence; paginate with offset/limit |
 | `GET /job-recommendations` | Stored recommendations joined to active jobs |
 | Saved jobs | Save / pipeline status (saved → applied → interviewing → offer / rejected / withdrawn) |
@@ -582,7 +582,7 @@ Every response includes `X-Request-ID`.
 | Interview media | `INTERVIEW_MEDIA_MAX_BYTES=0` disables binary media uploads |
 | ATS terms | Scorer caps JD terms |
 | Improvement | Max sections / source & JD char caps |
-| Adzuna sync | Per-user cooldown + process-wide lock |
+| FreeHire sync | Per-user cooldown + process-wide lock |
 | Job recs generate | In-process generation generation counter per user |
 
 ---
@@ -624,7 +624,7 @@ Paths relative to repository root.
 | `backend/app/features/interview/*` | Questions, evaluation, prep, TTS |
 | `backend/app/features/learning/*` | YouTube/article catalogs, crew |
 | `backend/app/features/career_matching.py` | Job match scoring |
-| `backend/app/features/adzuna_api.py` | External job provider |
+| `backend/app/features/freehire_api.py` | FreeHire public external job provider |
 | `backend/app/features/resume_management/*` | Evidence, improve logic, exports |
 | `backend/app/features/resume_improvement/*` | HTTP + crew for improvements |
 | `backend/tests/*` | pytest suite |
@@ -701,7 +701,7 @@ Single root `.env` (template: `.env.example`). Only `VITE_*` reaches the browser
 | Firestore | `FIREBASE_PROJECT_ID`, `FIREBASE_CREDENTIALS_PATH`, `FIREBASE_DATABASE_ID`, `FIREBASE_CHECK_REVOKED` |
 | Storage | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (or `SUPABASE_SECRET_KEY`), `SUPABASE_STORAGE_BUCKET`, `DOCUMENT_BUCKET`, `AVATAR_BUCKET` |
 | LLM | `LLM_PROVIDER`, `GROQ_*`, `NVIDIA_*`, `LLM_RPM_LIMIT`, `LLM_ALLOW_REPAIR` |
-| YouTube / Jobs | `YOUTUBE_API_KEY`, `ADZUNA_*` |
+| YouTube / Jobs | `YOUTUBE_API_KEY`, `FREEHIRE_*` |
 | TTS | `FISH_AUDIO_*` |
 | Browser | `VITE_FIREBASE_*` |
 
@@ -831,7 +831,7 @@ flowchart TB
   end
 
   subgraph EXT["External"]
-    X1["Groq · NVIDIA · YouTube · Adzuna · Fish Audio"]
+    X1["Groq · NVIDIA · YouTube · FreeHire · Fish Audio"]
   end
 
   UI --> TOK
@@ -933,8 +933,8 @@ flowchart TB
   GEN[generate recommendations] --> RES[confirmed resume evidence]
   RES --> SC[score_job v1]
   SC --> STORE[(job_recommendations)]
-  SYNC[external sync] --> ADZ[Adzuna page 1]
-  ADZ --> JOBS[(jobs)]
+    SYNC[external sync] --> FH[FreeHire page 1]
+  FH --> JOBS[(jobs)]
   JOBS --> SC
 ```
 
@@ -982,7 +982,7 @@ flowchart LR
 1. **Evidence over invention** — confirmed text is the source of truth.  
 2. **Server-enforced ownership** — every row and file path is scoped to the signed-in user.  
 3. **Deterministic product ATS** — LLMs enrich; they do not own the score.  
-4. **Degrade gracefully** — missing LLM/YouTube/Adzuna reduces features, not the whole app.  
+4. **Degrade gracefully** — missing LLM/YouTube/FreeHire reduces features, not the whole app.
 5. **Confirm gate** — unreviewed extraction does not drive product decisions.
 
 ### Key decisions
@@ -1018,7 +1018,7 @@ Documented so operators and contributors know real system behavior (not product 
 | JWT after password change | Existing tokens remain valid until `exp` (no server-side revocation list) |
 | Upsert races | Preference/saved-job uniqueness is app-level, not a Firestore unique constraint |
 | Bootstrap capability | `capabilities.job_recommendations` may be hard-coded `false` even though generate endpoints exist |
-| Adzuna | Sync fetches page 1 only; process-global lock under concurrent users |
+| FreeHire sync | Per-user cooldown + process-global lock; page 1 search |
 | Split deploy | `vercel.json` SPA rewrite alone does not proxy API/files — configure reverse proxy or absolute API + file proxy |
 
 ---

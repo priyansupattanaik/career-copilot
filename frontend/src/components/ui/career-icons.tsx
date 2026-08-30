@@ -10,7 +10,8 @@ export type CareerIconName =
   | "profile"
   | "evidence"
   | "signal"
-  | "confidence";
+  | "confidence"
+  | "projects";
 
 type CareerIconProps = SVGProps<SVGSVGElement> & {
   name: CareerIconName;
@@ -21,7 +22,10 @@ const paths: Record<CareerIconName, ReactNode> = {
   dashboard: (
     <>
       <rect x="3.5" y="3.5" width="17" height="17" rx="4" />
-      <path d="M7 15.5v-3M10.5 15.5V9M14 15.5v-5M17.5 15.5V7" />
+      <path data-bar="1" d="M7 15.5v-3" />
+      <path data-bar="2" d="M10.5 15.5V9" />
+      <path data-bar="3" d="M14 15.5v-5" />
+      <path data-bar="4" d="M17.5 15.5V7" />
       <path d="M7 8.5h2M14 5.8h3.5" opacity=".55" />
     </>
   ),
@@ -36,7 +40,7 @@ const paths: Record<CareerIconName, ReactNode> = {
     <>
       <rect x="3.5" y="5" width="17" height="13" rx="3.5" />
       <path d="m8 18 1.8 2.5L12 18M9 9.5h6M9 13h3" />
-      <circle cx="17" cy="9.5" r="1.3" fill="currentColor" stroke="none" />
+      <circle data-live="true" cx="17" cy="9.5" r="1.3" fill="currentColor" stroke="none" />
     </>
   ),
   learning: (
@@ -49,7 +53,7 @@ const paths: Record<CareerIconName, ReactNode> = {
     <>
       <circle cx="12" cy="12" r="8.5" />
       <path d="M12 3.5v4M20.5 12h-4M12 20.5v-4M3.5 12h4" />
-      <path d="m12 8.2 1.2 2.6 2.8.3-2.1 1.9.6 2.8-2.5-1.5-2.5 1.5.6-2.8-2.1-1.9 2.8-.3L12 8.2Z" />
+      <path data-star="true" d="m12 8.2 1.2 2.6 2.8.3-2.1 1.9.6 2.8-2.5-1.5-2.5 1.5.6-2.8-2.1-1.9 2.8-.3L12 8.2Z" />
     </>
   ),
   profile: (
@@ -68,7 +72,7 @@ const paths: Record<CareerIconName, ReactNode> = {
   ),
   signal: (
     <>
-      <path d="M4 16.5c2.5 0 2.5-9 5-9s2.5 9 5 9 2.5-9 6-9" />
+      <path data-wave="true" d="M4 16.5c2.5 0 2.5-9 5-9s2.5 9 5 9 2.5-9 6-9" />
       <path d="M4 20h16" opacity=".45" />
       <circle cx="9" cy="7.5" r="1.3" fill="currentColor" stroke="none" />
     </>
@@ -79,22 +83,50 @@ const paths: Record<CareerIconName, ReactNode> = {
       <path d="m8.3 12 2.2 2.2 5-5" />
     </>
   ),
+  projects: (
+    <>
+      <rect x="4.5" y="4.5" width="15" height="15" rx="2.5" />
+      <path d="M8 9.5h8M8 12.5h8M8 15.5h5" />
+      <path d="M15 15.5 17 13l2 2.5" />
+      <circle cx="17" cy="8" r="1.2" fill="currentColor" stroke="none" />
+    </>
+  ),
 };
+
+const hoverSpring = { type: "spring" as const, stiffness: 420, damping: 22, mass: 0.6 };
 
 export function CareerIcon({ name, size = 22, className, ...props }: CareerIconProps) {
   const reducedMotion = useReducedMotion();
-  // Avoid leaking motion-only props into the raw <svg>; cast to bypass
-  // SVGProps vs SVGMotionProps incompatibility (onDrag / onAnimation*).
   const svgProps = props as unknown as SVGProps<SVGSVGElement>;
+
+  const hoverVariants = {
+    dashboard: { scale: 1.12, y: -2 },
+    resume: { scale: 1.12, y: -2 },
+    interview: { scale: 1.12, y: -2 },
+    learning: { scale: 1.12, y: -2 },
+    opportunities: { scale: 1.12, rotate: 18, y: -2 },
+    profile: { scale: 1.12, y: -2 },
+    evidence: { scale: 1.12, y: -2 },
+    signal: { scale: 1.12, y: -2 },
+    confidence: { scale: 1.12, y: -2 },
+    projects: { scale: 1.12, y: -2 },
+  };
 
   return (
     <motion.span
       className="career-icon"
-      initial={reducedMotion ? false : { opacity: 0.72, scale: 0.94 }}
-      animate={reducedMotion ? undefined : { opacity: 1, scale: 1 }}
-      whileHover={reducedMotion ? undefined : { scale: 1.12, rotate: name === "opportunities" ? 8 : 0 }}
-      whileTap={reducedMotion ? undefined : { scale: 0.9 }}
-      transition={{ type: "spring", stiffness: 420, damping: 22, mass: 0.55 }}
+      data-icon={name}
+      initial={false}
+      whileHover={reducedMotion ? undefined : hoverVariants[name] || { scale: 1.12, y: -2 }}
+      whileTap={reducedMotion ? undefined : { scale: 0.92, y: 1 }}
+      transition={hoverSpring}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        verticalAlign: "middle",
+        lineHeight: 0,
+      }}
     >
       <svg
         {...svgProps}

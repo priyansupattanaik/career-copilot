@@ -8,5 +8,6 @@
   interview: "/mock-interview",
   learning: "/learning",
   jobs: "/jobs",
+  community: "/community",
   settings: "/settings/profile",
 } as const;

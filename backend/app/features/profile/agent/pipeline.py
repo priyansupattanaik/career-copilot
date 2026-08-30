@@ -50,6 +50,31 @@ def _supported_in_resume(value: str | None, haystack: str, *, min_len: int = 3) 
 def _date_year_supported(value: str | None, haystack: str) -> bool:
     match = re.search(r"(?:19|20)\d{2}", str(value or ""))
     return bool(match and match.group(0) in haystack)
+
+
+def _credential_url_supported(name: str, url: str, plain_text: str) -> bool:
+    """Allow a credential URL only when the source ties it to this credential."""
+    name_norm = _norm(name)
+    url_norm = _norm(url)
+    lines = [line.strip() for line in (plain_text or "").splitlines() if line.strip()]
+    in_embedded_links = False
+    for line in lines:
+        heading = re.sub(r"[:\s]+$", "", line).casefold()
+        if heading in {"embedded links", "links", "profiles", "online profiles"}:
+            in_embedded_links = True
+            continue
+        if in_embedded_links and not re.search(r"https?://|www\.", line, re.I):
+            # A new all-caps/title heading ends the recovered-link block.
+            if line.isupper() or (len(line.split()) <= 6 and line == line.title()):
+                in_embedded_links = False
+        if url_norm in _norm(line) and name_norm in _norm(line):
+            return True
+        if in_embedded_links and url_norm in _norm(line):
+            label = re.sub(r"https?://\S+|www\.\S+", "", line, flags=re.I).strip(" \t—–-:·|")
+            label_norm = _norm(label)
+            if label_norm and (label_norm == name_norm or label_norm in name_norm or name_norm in label_norm):
+                return True
+    return False
 def _llm_to_draft(result: ProfileResumeExtractResult) -> dict[str, Any]:
     profile = result.profile.model_dump()
     profile["career_goal"] = None
@@ -160,8 +185,19 @@ def _filter_draft_by_evidence(draft: dict[str, Any], plain_text: str) -> dict[st
             out["projects"].append({**proj, "selected": True})
     for cert in draft.get("certifications") or []:
         name = str(cert.get("name") or "").strip()
-        if name and _supported_in_resume(name, hay, min_len=3):
-            out["certifications"].append({**cert, "selected": True})
+        name_tokens = [token for token in re.split(r"[^a-z0-9+#]+", _norm(name)) if len(token) >= 3]
+        name_is_grounded = (
+            bool(name)
+            and _supported_in_resume(name, hay, min_len=3)
+            and all(token in hay for token in name_tokens)
+        )
+        if name_is_grounded:
+            row = {**cert, "selected": True}
+            credential_url = str(row.get("credential_url") or "").strip()
+            if credential_url and not _credential_url_supported(name, credential_url, plain_text):
+                row["credential_url"] = None
+                warnings.append(f"Dropped unsupported credential URL for {name}.")
+            out["certifications"].append(row)
     for lang in draft.get("languages") or []:
         language = str(lang.get("language") or "").strip()
         if language and _supported_in_resume(language, hay, min_len=2):
@@ -258,11 +294,23 @@ def merge_profile_drafts(
         base.get("projects") or [],
         lambda r: _norm(str(r.get("title") or "")),
     )
-    certifications = _merge_list(
-        filtered_ai.get("certifications") or [],
-        base.get("certifications") or [],
-        lambda r: _norm(str(r.get("name") or "")),
-    )
+    certifications = []
+    base_certs = {
+        _norm(str(row.get("name") or "")): row for row in (base.get("certifications") or [])
+    }
+    seen_certs: set[str] = set()
+    for row in filtered_ai.get("certifications") or []:
+        key = _norm(str(row.get("name") or ""))
+        if not key or key in seen_certs:
+            continue
+        base_row = base_certs.get(key) or {}
+        certifications.append({**base_row, **row, "credential_url": row.get("credential_url") or base_row.get("credential_url")})
+        seen_certs.add(key)
+    for row in base.get("certifications") or []:
+        key = _norm(str(row.get("name") or ""))
+        if key and key not in seen_certs:
+            certifications.append(row)
+            seen_certs.add(key)
     languages = _merge_list(
         filtered_ai.get("languages") or [],
         base.get("languages") or [],

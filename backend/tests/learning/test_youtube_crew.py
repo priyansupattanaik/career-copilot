@@ -226,6 +226,11 @@ def test_crew_run_end_to_end_without_llm():
             role_title="Backend Engineer",
         )
     )
-    assert audit.success is False
-    assert items == []
-    assert "planner failed" in (audit.message or "").lower()
+    assert audit.success is True
+    assert len(items) == 2
+    requirements = {item["metadata"]["requirement"] for item in items}
+    assert requirements == {"Docker", "Git"}
+    for item in items:
+        urls = [str(resource.get("url") or "") for resource in item.get("resources") or []]
+        assert any("youtube.com/results" in url for url in urls)
+        assert all("/watch" not in url for url in urls)

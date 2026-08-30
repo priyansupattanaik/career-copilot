@@ -197,6 +197,20 @@ test.describe("Landing page audit acceptance", () => {
     await expect(page.locator(".home-camera-video")).toBeVisible();
   });
 
+  test("shared career icons keep a subtle idle motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/", { waitUntil: "networkidle" });
+
+    const icon = page.locator(".career-icon .icon-idle").first();
+    await expect(icon).toBeVisible();
+    await page.waitForTimeout(500);
+    const firstTop = await icon.evaluate((element) => element.getBoundingClientRect().top);
+    await page.waitForTimeout(800);
+    const secondTop = await icon.evaluate((element) => element.getBoundingClientRect().top);
+
+    expect(Math.abs(secondTop - firstTop)).toBeGreaterThan(0.2);
+  });
+
   test("key landing copy meets readable contrast in both themes", async ({ page }) => {
     const selectors = [
       ".home-hero-lede",

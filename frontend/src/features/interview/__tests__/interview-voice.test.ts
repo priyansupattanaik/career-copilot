@@ -40,6 +40,20 @@ describe("extractSpeechTranscript", () => {
     expect(interimText).toBe("We shipped");
   });
 
+  it("prefers the alternative that kept filler words", () => {
+    const results = {
+      length: 1,
+      0: {
+        isFinal: true,
+        length: 2,
+        0: { transcript: "I fixed the bug" },
+        1: { transcript: "Um I fixed the bug" },
+      },
+    };
+    const { finalChunk } = extractSpeechTranscript(results, 0);
+    expect(finalChunk.toLowerCase()).toContain("um");
+  });
+
   it("does not crash on empty recognition payloads (voice not taking regression)", () => {
     expect(extractSpeechTranscript(null)).toEqual({ finalChunk: "", interimText: "" });
     expect(extractSpeechTranscript({ length: 0 })).toEqual({ finalChunk: "", interimText: "" });
@@ -192,8 +206,8 @@ describe("short interviewer turn flow", () => {
   });
 
   it("auto-submits quickly after the candidate finishes speaking", () => {
-    expect(DEFAULT_ANSWER_SILENCE_MS).toBeGreaterThanOrEqual(1200);
-    expect(DEFAULT_ANSWER_SILENCE_MS).toBeLessThanOrEqual(2500);
+    expect(DEFAULT_ANSWER_SILENCE_MS).toBeGreaterThanOrEqual(1800);
+    expect(DEFAULT_ANSWER_SILENCE_MS).toBeLessThanOrEqual(3200);
   });
 
   it("waits long enough for full interviewer sentences (never 4s cut-off)", () => {

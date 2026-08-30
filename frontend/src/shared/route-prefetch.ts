@@ -1,3 +1,5 @@
+import { resolveApiBase } from "@/shared/config";
+
 /**
  * Prefetch lazy route modules on nav hover/focus so first click feels instant.
  * Loaders must match App.tsx dynamic imports.
@@ -43,9 +45,31 @@ const routeLoaders: Array<{ match: (path: string) => boolean; load: () => Promis
 ];
 
 const prefetched = new Set<string>();
+let backendWarmed = false;
+
+/**
+ * Silently pre-warms free-tier backend (e.g. Render spin-up) on visitor entry.
+ * Uses keepalive + non-blocking fetch to ensure zero impact on frontend UI thread.
+ */
+export function warmUpBackend(): void {
+  if (backendWarmed || typeof window === "undefined") return;
+  backendWarmed = true;
+  try {
+    const base = resolveApiBase();
+    void fetch(`${base}/health/live`, {
+      method: "GET",
+      mode: "no-cors",
+      cache: "no-store",
+      keepalive: true,
+    }).catch(() => undefined);
+  } catch {
+    // Ignore warmup errors
+  }
+}
 
 export function prefetchRoute(href: string): void {
   if (typeof window === "undefined" || !href) return;
+  warmUpBackend();
   const path = href.split("?")[0].split("#")[0] || href;
   if (prefetched.has(path)) return;
   const entry = routeLoaders.find((item) => item.match(path));

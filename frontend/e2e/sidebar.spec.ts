@@ -54,7 +54,7 @@ test.describe("workspace sidebar", () => {
     const nav = page.locator(".mobile-bottom-nav");
     await expect(nav).toBeVisible();
 
-    const links = ["Dashboard", "Resume Analysis", "Mock Interview", "Learning Path", "Jobs", "Profile"];
+    const links = ["Home", "Resume", "Interview", "Learn", "Jobs", "People", "Profile"];
     for (const label of links) {
       await expect(nav.locator("a", { hasText: label })).toBeVisible();
     }
@@ -82,9 +82,9 @@ test.describe("workspace sidebar", () => {
     await enterDemo(page);
 
     const nav = page.locator(".mobile-bottom-nav");
-    await nav.locator("a", { hasText: "Learning Path" }).click();
+    await nav.locator("a", { hasText: "Learn" }).click();
     await page.waitForURL(/learning/);
-    await expect(nav.locator("a.active", { hasText: "Learning Path" })).toBeVisible();
+    await expect(nav.locator("a.active", { hasText: "Learn" })).toBeVisible();
     await expect(page.locator(".sidebar")).toBeHidden();
 
     await nav.locator("a", { hasText: "Profile" }).click();

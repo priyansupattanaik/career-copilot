@@ -38,6 +38,12 @@ describe("LoadingState", () => {
     unmount();
     vi_restoreTimers();
   });
+
+  it("keeps every active cell animated rather than relying on a missing utility class", () => {
+    const { container } = render(<LoadingState label="Loading" variant="Drive" />);
+    const dots = Array.from(container.querySelectorAll("span[aria-hidden] > span")) as HTMLElement[];
+    expect(dots.filter((dot) => dot.style.animation !== "none")).toHaveLength(9);
+  });
 });
 
 /* Minimal fake-timer helpers (vitest timers API without importing hooks twice). */

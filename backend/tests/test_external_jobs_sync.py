@@ -3,67 +3,16 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from app.core.errors import ApiError
-from app.features.adzuna_api import AdzunaClient
-
-
-def test_adzuna_client_requires_credentials():
-    client = AdzunaClient("", "")
-    with pytest.raises(ApiError) as exc:
-        client.search_jobs(["engineer"], ["remote"])
-    assert exc.value.code == "adzuna_not_configured"
-
-
-def test_adzuna_client_maps_results():
-    payload = {
-        "results": [
-            {
-                "id": "123",
-                "title": "Backend Engineer",
-                "company": {"display_name": "Acme"},
-                "location": {"display_name": "Remote"},
-                "description": "Build APIs",
-                "redirect_url": "https://example.com/job/123",
-                "salary_min": 100000,
-                "salary_max": 140000,
-                "created": "2026-01-01T00:00:00Z",
-                "latitude": 37.7,
-                "longitude": -122.4,
-            },
-            {
-                "id": "skip",
-                "title": "No company",
-                "company": {},
-            },
-        ]
-    }
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = payload
-
-    with patch("app.features.adzuna_api.httpx.get", return_value=mock_response) as get:
-        client = AdzunaClient("app", "key", "us", timeout_seconds=5)
-        jobs = client.search_jobs(["Backend Engineer"], ["Remote"])
-
-    assert len(jobs) == 1
-    assert jobs[0]["external_id"] == "123"
-    assert jobs[0]["company"] == "Acme"
-    assert jobs[0]["source"] == "adzuna"
-    get.assert_called_once()
-
 
 def test_sync_external_jobs_persists_new_and_updates(monkeypatch):
     from app.api import router as api_router
 
     settings = SimpleNamespace(
-        adzuna_app_id="app",
-        adzuna_app_key="key",
-        adzuna_country="us",
-        adzuna_timeout_seconds=5.0,
-        adzuna_results_per_page=20,
-        adzuna_max_days_old=14,
+        freehire_enabled=True,
+        freehire_api_url="https://freehire.me",
+        freehire_timeout_seconds=5.0,
+        freehire_results_per_page=20,
+        freehire_max_days_old=14,
     )
     user = SimpleNamespace(id="user-1")
 
@@ -84,7 +33,7 @@ def test_sync_external_jobs_persists_new_and_updates(monkeypatch):
         data=[{"target_roles": ["Engineer"], "preferred_locations": ["Remote"]}]
     )
 
-    jobs_table.select.return_value.eq.return_value.execute.return_value = SimpleNamespace(
+    jobs_table.select.return_value.execute.return_value = SimpleNamespace(
         data=[{"id": "job-existing", "external_id": "a2"}]
     )
     jobs_table.insert.return_value.execute.return_value = SimpleNamespace(data=[{"id": "new"}])
@@ -94,7 +43,7 @@ def test_sync_external_jobs_persists_new_and_updates(monkeypatch):
 
     fetched = [
         {
-            "source": "adzuna",
+            "source": "freehire",
             "external_id": "a1",
             "title": "Role A",
             "company": "Co A",
@@ -110,7 +59,7 @@ def test_sync_external_jobs_persists_new_and_updates(monkeypatch):
             "work_mode": "remote",
         },
         {
-            "source": "adzuna",
+            "source": "freehire",
             "external_id": "a2",
             "title": "Role B",
             "company": "Co B",
@@ -130,7 +79,7 @@ def test_sync_external_jobs_persists_new_and_updates(monkeypatch):
     with (
         patch.object(api_router, "client_for", return_value=client),
         patch.object(api_router, "write_activity"),
-        patch("app.features.adzuna_api.AdzunaClient.search_jobs", return_value=fetched),
+        patch("app.features.freehire_api.FreehireClient.search_jobs", return_value=fetched),
     ):
         result = api_router.sync_external_jobs(user=user, settings=settings)
 
@@ -139,8 +88,50 @@ def test_sync_external_jobs_persists_new_and_updates(monkeypatch):
     assert result["updated"] == 1
     assert jobs_table.insert.called
     assert jobs_table.update.called
-    # work_mode must be written so generate filters and UI stay synced with Adzuna.
+    # work_mode must be written so generate filters and UI stay synced with the provider.
     insert_payload = jobs_table.insert.call_args[0][0]
     assert insert_payload.get("work_mode") == "remote"
     update_payload = jobs_table.update.call_args[0][0]
     assert update_payload.get("work_mode") == "hybrid"
+
+
+def test_sync_external_jobs_can_use_freehire_without_provider_credentials():
+    from app.api import router as api_router
+
+    settings = SimpleNamespace(
+        freehire_enabled=True,
+        freehire_api_url="https://freehire.me",
+        freehire_timeout_seconds=5.0,
+        freehire_results_per_page=20,
+        freehire_max_days_old=14,
+    )
+    user = SimpleNamespace(id="user-freehire")
+    client = MagicMock()
+    prefs_table = MagicMock()
+    jobs_table = MagicMock()
+    client.table.side_effect = lambda name: {
+        "candidate_preferences": prefs_table,
+        "jobs": jobs_table,
+    }.get(name, MagicMock())
+    prefs_table.select.return_value.eq.return_value.limit.return_value.execute.return_value = SimpleNamespace(
+        data=[{"target_roles": ["Data Engineer"], "preferred_locations": ["Remote"]}]
+    )
+    jobs_table.select.return_value.execute.return_value = SimpleNamespace(data=[])
+    jobs_table.insert.return_value.execute.return_value = SimpleNamespace(data=[{"id": "new-freehire"}])
+
+    fetched = [{
+        "external_id": "freehire-role-1", "title": "Data Engineer", "company": "Acme",
+        "location": "Remote", "description": "Python", "application_url": "https://freehire.me/jobs/freehire-role-1",
+        "salary_min": None, "salary_max": None, "published_at": None, "latitude": None, "longitude": None,
+        "requirements": ["Python"], "work_mode": "remote",
+    }]
+    with (
+        patch.object(api_router, "client_for", return_value=client),
+        patch.object(api_router, "write_activity"),
+        patch("app.features.freehire_api.FreehireClient.search_jobs", return_value=fetched),
+    ):
+        result = api_router.sync_external_jobs(user=user, settings=settings)
+
+    assert result["providers"] == ["freehire"]
+    assert result["created"] == 1
+    assert jobs_table.insert.call_args.args[0]["source"] == "freehire"

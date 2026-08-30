@@ -47,22 +47,37 @@ beforeEach(() => {
 describe("auth Enter submits the form", () => {
   it("signs in when Enter is pressed in the password field", async () => {
     renderAuth(<SignInScreen />);
-    fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: "a@test.dev" } });
+    fireEvent.change(screen.getByLabelText(/email, phone, or username/i), { target: { value: "a@test.dev" } });
     const password = screen.getByLabelText(/^password$/i);
     fireEvent.change(password, { target: { value: "Passw0rd!" } });
     pressEnter(password);
     await waitFor(() => {
       expect(signInWithPassword).toHaveBeenCalledWith({
-        email: "a@test.dev",
+        identifier: "a@test.dev",
         password: "Passw0rd!",
       });
     });
+  });
+
+  it("reveals the password only while the animated control is held", () => {
+    renderAuth(<SignInScreen />);
+    const password = screen.getByLabelText(/^password$/i);
+    const toggle = screen.getByTestId("password-visibility-toggle");
+
+    expect(password.getAttribute("type")).toBe("password");
+    expect(toggle.getAttribute("aria-label")).toBe("Show password");
+    fireEvent.pointerDown(toggle);
+    expect(password.getAttribute("type")).toBe("text");
+    expect(toggle.getAttribute("aria-label")).toBe("Hide password");
+    fireEvent.pointerUp(toggle);
+    expect(password.getAttribute("type")).toBe("password");
   });
 
   it("creates an account when Enter is pressed in the confirm-password field", async () => {
     renderAuth(<SignUpScreen />);
     fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: "Alex Morgan" } });
     fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: "alex@test.dev" } });
+    fireEvent.change(screen.getByLabelText(/username/i), { target: { value: "alex_morgan" } });
     fireEvent.change(screen.getByLabelText(/mobile number/i), { target: { value: "9876543210" } });
     fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: "Passw0rd!" } });
     const confirm = screen.getByLabelText(/confirm password/i);

@@ -15,6 +15,7 @@ from app.core.constants import MIN_PASSWORD_LENGTH
 from app.core.errors import ApiError
 from app.database.client import database_client
 from app.features.auth.service import CurrentUser, create_access_token, get_current_user
+from app.features.auth.username import validate_username
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Auth"])
@@ -52,7 +53,7 @@ def _create_user_records(client, user: dict[str, Any]) -> dict[str, Any]:
             raise RuntimeError("The users record was not created")
         user_created = True
         for table, row in (
-            ("profiles", {"id": user_id, "full_name": user.get("full_name") or "", **({"phone": user["phone"]} if user.get("phone") else {})}),
+            ("profiles", {"id": user_id, "full_name": user.get("full_name") or "", **({"phone": user["phone"]} if user.get("phone") else {}), **({"username": user["username"]} if user.get("username") else {})}),
             ("candidate_preferences", {"user_id": user_id}),
             ("notification_preferences", {"user_id": user_id}),
             ("privacy_preferences", {"user_id": user_id}),
@@ -125,6 +126,12 @@ def auth_sign_up(payload: dict[str, Any] = Body(...), settings: Settings = Depen
     password = str(payload.get("password") or "")
     full_name = str(payload.get("full_name") or "").strip()[:120] or None
     phone = sanitize_signup_phone(payload.get("phone"))
+    username = None
+    if payload.get("username"):
+        try:
+            username = validate_username(str(payload.get("username")))
+        except ValueError as exc:
+            raise ApiError(400, "invalid_username", str(exc)) from None
     if "@" not in email or len(password) < MIN_PASSWORD_LENGTH:
         raise ApiError(
             400,
@@ -137,9 +144,11 @@ def auth_sign_up(payload: dict[str, Any] = Body(...), settings: Settings = Depen
     # A stable document id makes the email identity collision-safe across
     # concurrent workers; the preflight lookup remains a fast user-facing path.
     try:
+        if username and client.table("profiles").select("id").ilike("username", username).limit(1).execute().data:
+            raise ApiError(409, "username_taken", "That username is already taken.")
         user = _create_user_records(
             client,
-            {"id": str(uuid.uuid5(uuid.NAMESPACE_URL, f"career-copilot:{email}")), "email": email, "full_name": full_name, "password_hash": _password_hash(password), "token_version": 0, "phone": phone},
+            {"id": str(uuid.uuid5(uuid.NAMESPACE_URL, f"career-copilot:{email}")), "email": email, "full_name": full_name, "password_hash": _password_hash(password), "token_version": 0, "phone": phone, "username": username},
         )
     except ApiError:
         if client.table("users").select("id").eq("email", email).limit(1).execute().data:
@@ -148,13 +157,95 @@ def auth_sign_up(payload: dict[str, Any] = Body(...), settings: Settings = Depen
     return _auth_payload(user, settings)
 
 
+def _sync_profile_identity(client, user_id: str, *, full_name: str | None, phone: str | None, username: str | None) -> None:
+    values: dict[str, Any] = {}
+    if full_name:
+        values["full_name"] = full_name[:120]
+    if phone:
+        values["phone"] = phone
+    if username:
+        try:
+            candidate = validate_username(username)
+        except ValueError:
+            candidate = ""
+        if candidate and not client.table("profiles").select("id").ilike("username", candidate).limit(1).execute().data:
+            values["username"] = candidate
+    if values:
+        client.table("profiles").update(values).eq("id", user_id).execute()
+
+
 @router.post("/auth/sign-in")
 def auth_sign_in(payload: dict[str, Any] = Body(...), settings: Settings = Depends(get_settings)):
-    email = str(payload.get("email") or "").strip().lower()
+    import time
+
+    identifier = str(payload.get("identifier") or payload.get("email") or "").strip()
     password = str(payload.get("password") or "")
-    rows = database_client(settings).table("users").select("*").eq("email", email).limit(1).execute().data
-    if not rows or not _password_matches(password, str(rows[0].get("password_hash") or "")):
-        raise ApiError(401, "invalid_credentials", "Email or password is incorrect.")
+    client = database_client(settings)
+    email = identifier.lower()
+    rows: list[dict[str, Any]] | None = None
+    lookup = "none"
+    t_start = time.perf_counter()
+    # Fast-path: legacy app accounts use deterministic uuid5 id; a direct doc get
+    # avoids a full collection query and is measurably faster on cold Firestore
+    # (measured ~0.4s vs ~3.7s for where(email==) in diagnosis).
+    if "@" in email:
+        try:
+            direct_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"career-copilot:{email}"))
+            snap = client.db.collection("users").document(direct_id).get()
+            if snap.exists:
+                data = snap.to_dict() or {}
+                data["id"] = snap.id
+                if str(data.get("email") or "").strip().lower() == email:
+                    rows = [data]
+                    lookup = "direct_uuid5"
+        except Exception:
+            logger.debug("sign_in_direct_lookup_failed identifier=%s", email[:40])
+    if rows is None:
+        q0 = time.perf_counter()
+        rows = client.table("users").select("*").eq("email", email).limit(1).execute().data
+        q_ms = (time.perf_counter() - q0) * 1000
+        lookup = "query_email"
+        if q_ms > 1000:
+            logger.warning("sign_in_slow_query lookup=%s email=%s ms=%.0f", lookup, email[:40], q_ms)
+    if not rows:
+        phone_identifier = sanitize_signup_phone(identifier)
+        if phone_identifier:
+            rows = client.table("users").select("*").eq("phone", phone_identifier).limit(1).execute().data
+            if rows:
+                lookup = "query_phone"
+    if not rows:
+        try:
+            username = validate_username(identifier)
+        except ValueError:
+            username = ""
+        if username:
+            profile_rows = client.table("profiles").select("id").ilike("username", username).limit(1).execute().data or []
+            if profile_rows:
+                rows = client.table("users").select("*").eq("id", str(profile_rows[0]["id"])).limit(1).execute().data
+                if rows:
+                    lookup = "query_username"
+    total_ms = (time.perf_counter() - t_start) * 1000
+    if total_ms > 1500:
+        logger.warning("sign_in_total_slow lookup=%s identifier=%s total_ms=%.0f", lookup, identifier[:40], total_ms)
+    if not rows:
+        logger.info("sign_in_no_user lookup=%s identifier=%s", lookup, identifier[:40])
+        raise ApiError(401, "invalid_credentials", "Email, phone, username, or password is incorrect.")
+    stored_hash = str(rows[0].get("password_hash") or "")
+    if not stored_hash:
+        # Supabase-created accounts have empty password_hash; app password cannot
+        # succeed until a local password is set. Keep 401 for security but log
+        # producer detail so ops can distinguish from wrong-password.
+        logger.info(
+            "sign_in_empty_password_hash user_id=%s email=%s lookup=%s has_supabase_uid=%s",
+            str(rows[0].get("id"))[:8],
+            str(rows[0].get("email") or "")[:40],
+            lookup,
+            bool(str(rows[0].get("supabase_uid") or "").strip()),
+        )
+        raise ApiError(401, "invalid_credentials", "Email, phone, username, or password is incorrect.")
+    if not _password_matches(password, stored_hash):
+        logger.info("sign_in_password_mismatch user_id=%s lookup=%s", str(rows[0].get("id"))[:8], lookup)
+        raise ApiError(401, "invalid_credentials", "Email, phone, username, or password is incorrect.")
     return _auth_payload(rows[0], settings)
 
 
@@ -251,6 +342,13 @@ def auth_firebase(payload: dict[str, Any] = Body(...), settings: Settings = Depe
                 )
             client.table("users").update({"firebase_uid": uid}).eq("id", str(user["id"])).execute()
             user["firebase_uid"] = uid
+        _sync_profile_identity(
+            client,
+            str(user["id"]),
+            full_name=str(decoded.get("name") or "").strip() or None,
+            phone=sanitize_signup_phone(decoded.get("phone")),
+            username=str(decoded.get("username") or "").strip() or None,
+        )
     else:
         user_id = str(uuid.uuid4())
         full_name = str(decoded.get("name") or "").strip()[:120] or None
@@ -270,6 +368,8 @@ def auth_firebase(payload: dict[str, Any] = Body(...), settings: Settings = Depe
 @router.post("/auth/supabase")
 def auth_supabase(payload: dict[str, Any] = Body(...), settings: Settings = Depends(get_settings)):
     """Exchange a verified Supabase Auth access token for the app JWT."""
+    import time
+
     access_token = str(payload.get("access_token") or "").strip()
     if not access_token:
         raise ApiError(400, "invalid_supabase_token", "A Supabase access token is required.")
@@ -277,7 +377,41 @@ def auth_supabase(payload: dict[str, Any] = Body(...), settings: Settings = Depe
     supabase_uid = str(identity["id"]).strip()
     email = str(identity["email"]).strip().lower()
     client = database_client(settings)
-    rows = client.table("users").select("*").eq("email", email).limit(1).execute().data or []
+    rows: list[dict[str, Any]] | None = None
+    t0 = time.perf_counter()
+    # Fast-path: Supabase-created accounts use supabase_uid as document id
+    try:
+        snap = client.db.collection("users").document(supabase_uid).get()
+        if snap.exists:
+            data = snap.to_dict() or {}
+            data["id"] = snap.id
+            if str(data.get("email") or "").strip().lower() == email:
+                rows = [data]
+    except Exception:
+        logger.debug("supabase_direct_lookup_failed uid=%s", supabase_uid[:8])
+    if rows is None:
+        # Legacy fallback: deterministic uuid5 for app-created accounts
+        try:
+            direct_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"career-copilot:{email}"))
+            snap = client.db.collection("users").document(direct_id).get()
+            if snap.exists:
+                data = snap.to_dict() or {}
+                data["id"] = snap.id
+                if str(data.get("email") or "").strip().lower() == email:
+                    rows = [data]
+        except Exception:
+            pass
+    if rows is None:
+        q0 = time.perf_counter()
+        rows = client.table("users").select("*").eq("email", email).limit(1).execute().data or []
+        q_ms = (time.perf_counter() - q0) * 1000
+        if q_ms > 1000:
+            logger.warning("supabase_query_slow email=%s ms=%.0f", email[:40], q_ms)
+    else:
+        # rows already from direct lookup
+        pass
+    if (time.perf_counter() - t0) * 1000 > 1500:
+        logger.warning("supabase_lookup_slow email=%s total_ms=%.0f", email[:40], (time.perf_counter() - t0) * 1000)
     if rows:
         user = rows[0]
         existing_uid = str(user.get("supabase_uid") or "").strip()
@@ -286,6 +420,14 @@ def auth_supabase(payload: dict[str, Any] = Body(...), settings: Settings = Depe
         if not existing_uid:
             client.table("users").update({"supabase_uid": supabase_uid}).eq("id", str(user["id"])).execute()
             user["supabase_uid"] = supabase_uid
+        metadata = identity.get("user_metadata") if isinstance(identity.get("user_metadata"), dict) else {}
+        _sync_profile_identity(
+            client,
+            str(user["id"]),
+            full_name=str(metadata.get("full_name") or metadata.get("name") or "").strip() or None,
+            phone=sanitize_signup_phone(metadata.get("phone")),
+            username=str(metadata.get("username") or "").strip() or None,
+        )
     else:
         metadata = identity.get("user_metadata") if isinstance(identity.get("user_metadata"), dict) else {}
         full_name = str(metadata.get("full_name") or metadata.get("name") or "").strip()[:120] or None
@@ -294,9 +436,15 @@ def auth_supabase(payload: dict[str, Any] = Body(...), settings: Settings = Depe
         except ValueError:
             user_id = str(uuid.uuid4())
         metadata_phone = sanitize_signup_phone((metadata or {}).get("phone"))
+        metadata_username = None
+        if metadata.get("username"):
+            try:
+                metadata_username = validate_username(str(metadata["username"]))
+            except ValueError:
+                metadata_username = None
         user = _create_user_records(
             client,
-            {"id": user_id, "email": email, "full_name": full_name, "supabase_uid": supabase_uid, "password_hash": "", "phone": metadata_phone},
+            {"id": user_id, "email": email, "full_name": full_name, "supabase_uid": supabase_uid, "password_hash": "", "phone": metadata_phone, "username": metadata_username},
         )
     return _auth_payload(user, settings)
 

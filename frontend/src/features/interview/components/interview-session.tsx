@@ -45,7 +45,7 @@ import {
   type GazeSample,
 } from "@/features/interview/interview-gaze";
 import type { AnswerEvaluation, Question, Session } from "@/features/interview/types";
-import { liveFollowUpQuestion } from "@/features/interview/live-bank";
+import { liveFollowUpQuestion, spokenQuestionLine } from "@/features/interview/live-bank";
 import {
   clearLiveInterview,
   isLiveSessionId,
@@ -54,6 +54,7 @@ import {
   writeLiveInterview,
 } from "@/features/interview/live-store";
 import { decideInterviewerTurn, maxLiveQuestionBudget } from "@/features/interview/live-turn";
+import { AnswerRecorder, chooseAnswerTranscript, transcribeInterviewAudio } from "@/features/interview/interview-stt";
 import "@/features/interview/interview.css";
 
 type SpeechRecognitionResultEvent = {
@@ -89,7 +90,7 @@ function speechRecognitionConstructor(): SpeechRecognitionConstructor | null {
 function phaseCopy(phase: InterviewTurnPhase): string {
   if (phase === "asking") return "Interviewer is asking";
   if (phase === "listening") return "Your turn — speak now";
-  if (phase === "saving") return "Listening back through that answer";
+  if (phase === "saving") return "Considering that";
   if (phase === "feedback") return "A short note from the interviewer";
   if (phase === "awaiting_proceed") return "Say proceed when you are ready";
   if (phase === "between") return "Moving on";
@@ -143,6 +144,7 @@ export function InterviewSession() {
   const gazeDetectorKindRef = useRef<GazeDetectorKind>("unavailable");
   const ttsAbortRef = useRef<AbortController | null>(null);
   const speakGenerationRef = useRef(0);
+  const recorderRef = useRef(new AnswerRecorder());
 
   const current = questions[activeIndex];
   const media = sessionMediaFlags(session || {});
@@ -237,7 +239,8 @@ export function InterviewSession() {
     recognition.lang = navigator.language?.startsWith("en") ? navigator.language : "en-US";
     recognition.interimResults = true;
     recognition.continuous = true;
-    recognition.maxAlternatives = 1;
+    recognition.maxAlternatives = 3;
+    void recorderRef.current.start();
     lastSpeechAtRef.current = Date.now();
     listenStartedAtRef.current = Date.now();
     keepListeningRef.current = true;
@@ -255,12 +258,14 @@ export function InterviewSession() {
       };
       instance.onspeechstart = () => {
         if (listenGenerationRef.current === generation) {
+          recorderRef.current.markSpeech();
           setMediaMessage("Hearing you… keep going until the thought is complete.");
         }
       };
       instance.onresult = (event) => {
         if (listenGenerationRef.current !== generation) return;
         lastSpeechAtRef.current = Date.now();
+        recorderRef.current.markSpeech();
         const { finalChunk, interimText } = extractSpeechTranscript(
           event.results,
           typeof event.resultIndex === "number" ? event.resultIndex : 0,
@@ -312,7 +317,7 @@ export function InterviewSession() {
               again.lang = recognition.lang;
               again.interimResults = true;
               again.continuous = true;
-              again.maxAlternatives = 1;
+              again.maxAlternatives = 3;
               bindHandlers(again);
               recognitionRef.current = again;
               again.start();
@@ -348,7 +353,7 @@ export function InterviewSession() {
           retry.lang = recognition.lang;
           retry.interimResults = true;
           retry.continuous = true;
-          retry.maxAlternatives = 1;
+          retry.maxAlternatives = 3;
           bindHandlers(retry);
           recognitionRef.current = retry;
           retry.start();
@@ -381,6 +386,7 @@ export function InterviewSession() {
       const controller = new AbortController();
       ttsAbortRef.current = controller;
       const generation = ++speakGenerationRef.current;
+      void recorderRef.current.stop();
       setPhase(options?.kind === "feedback" || options?.kind === "bridge" ? "feedback" : "asking");
       setInterim("");
       setMediaMessage(
@@ -672,8 +678,9 @@ export function InterviewSession() {
 
   const submitCurrentAnswer = useCallback(async () => {
     const q = questionsRef.current[activeIndexRef.current];
-    const text = answerRef.current.trim();
-    if (!q || !text || submittingRef.current) return;
+    if (!q || submittingRef.current) return;
+    const committed = answerRef.current.trim();
+    if (!committed) return;
     submittingRef.current = true;
     keepListeningRef.current = false;
     stopRecognition({ keepPhase: true });
@@ -682,6 +689,26 @@ export function InterviewSession() {
     setSaving(true);
     setError("");
     setMessage("");
+    const recorded = await recorderRef.current.stop();
+    const speechDetected = recorderRef.current.speechDetected;
+    let text = committed;
+    // A typed answer does not need Whisper. In browsers that expose a silent
+    // MediaRecorder, sending that blob can add a full transcription timeout to
+    // an otherwise local live-interview turn.
+    if (recorded && speechDetected && !committed) {
+      setMediaMessage("Listening back through that answer…");
+      const whispered = await transcribeInterviewAudio(recorded);
+      const next = chooseAnswerTranscript({
+        typedOrSpeech: text,
+        whispered,
+        speechDetected,
+      });
+      if (next) {
+        text = next;
+        answerRef.current = next;
+        setAnswer(next);
+      }
+    }
     const elapsedMs = listenStartedAtRef.current > 0 ? Date.now() - listenStartedAtRef.current : 0;
     const speech = analyzeLiveSpeaking(text, elapsedMs);
     const detectorKind: GazeDetectorKind =
@@ -720,11 +747,20 @@ export function InterviewSession() {
     try {
       if (isLiveSessionId(sessionId)) {
         const alreadyFollowed = q.question_type === "follow_up" || q.source_context?.kind === "follow_up";
+        const followUpsUsed = questionsRef.current.filter(
+          (item) => item.question_type === "follow_up" || item.source_context?.kind === "follow_up",
+        ).length;
+        const seedCount =
+          loadLiveInterview()?.setup.question_count ||
+          questionsRef.current.filter((item) => item.source_context?.kind !== "follow_up").length ||
+          5;
         const turn = decideInterviewerTurn({
           answer: text,
           question: q.question,
           questionType: q.question_type,
           alreadyFollowedUp: alreadyFollowed,
+          followUpsUsed,
+          seedCount,
         });
         const evaluation: AnswerEvaluation = {
           spoken_reply: turn.spoken_reply,
@@ -998,7 +1034,14 @@ export function InterviewSession() {
     };
     const timer = window.setTimeout(() => {
       if (cancelled) return;
-      speakQuestion(current.question, afterSpoken);
+      const spoken = spokenQuestionLine({
+        question: current.question,
+        isFirst: activeIndexRef.current === 0,
+        isFollowUp:
+          current.question_type === "follow_up" || current.source_context?.kind === "follow_up",
+        role: session?.target_role,
+      });
+      speakQuestion(spoken, afterSpoken);
     }, 250);
     return () => {
       cancelled = true;
@@ -1034,6 +1077,7 @@ export function InterviewSession() {
       keepListeningRef.current = false;
       stopRecognition({ keepPhase: true });
       abortInterviewerSpeech();
+      recorderRef.current.dispose();
       streamRef.current?.getTracks().forEach((track) => track.stop());
     },
     [abortInterviewerSpeech, stopRecognition],
@@ -1055,7 +1099,13 @@ export function InterviewSession() {
 
   function repeatQuestion() {
     if (!current?.question) return;
-    speakQuestion(current.question, () => {
+    const spoken = spokenQuestionLine({
+      question: current.question,
+      isFirst: activeIndex === 0,
+      isFollowUp: isFollowUp,
+      role: session?.target_role,
+    });
+    speakQuestion(spoken, () => {
       const nextPhase = phaseAfterQuestionSpoken(media.microphone, autoVoice);
       if (nextPhase === "listening") {
         scheduleListenAfterQuestionSpoken(() => startListening(), {

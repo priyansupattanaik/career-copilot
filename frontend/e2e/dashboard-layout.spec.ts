@@ -63,6 +63,14 @@ test.describe("dashboard layout", () => {
     await expect(page.locator(".trend-chart")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Skill mix" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Workspace mix" })).toBeVisible();
+    const navIcon = page.locator(".sidebar .career-icon").first();
+    await expect(navIcon).toBeVisible();
+    await page.waitForTimeout(500);
+    const firstTop = await navIcon.evaluate((element) => element.getBoundingClientRect().top);
+    await page.waitForTimeout(800);
+    const secondTop = await navIcon.evaluate((element) => element.getBoundingClientRect().top);
+    expect(firstTop).toBeGreaterThan(0);
+    expect(secondTop).toBeGreaterThan(0);
     await expect(page.locator(".profile-toast")).toHaveCount(0);
     await page.waitForTimeout(1200);
 
