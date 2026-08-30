@@ -565,7 +565,10 @@ function useInterviewDemo() {
     } else if (phase === "answering") {
       // Duration = time to type the full answer + 1.2s pause at end
       const typeDuration = 280 + q.a.length * TYPING_SPEED + 1200;
-      timerRef.current = setTimeout(() => setPhase("transitioning"), typeDuration);
+      timerRef.current = setTimeout(
+        () => setPhase("transitioning"),
+        typeDuration,
+      );
     } else {
       // Fade-out transition, then load next question
       timerRef.current = setTimeout(() => {
