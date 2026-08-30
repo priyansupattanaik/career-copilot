@@ -34,10 +34,11 @@ describe("Navigation5 Component", () => {
     renderNav();
 
     expect(screen.getByText("Career Copilot")).toBeTruthy();
-    expect(screen.getByText("Video practice")).toBeTruthy();
-    expect(screen.getByText("How it works")).toBeTruthy();
+    expect(screen.getAllByText("Practice").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("How it works").length).toBeGreaterThan(0);
     expect(screen.getByText("Platform")).toBeTruthy();
     expect(screen.getByText("Community")).toBeTruthy();
+    expect(screen.getAllByText("Team").length).toBeGreaterThan(0);
     expect(screen.getByText("Sign in")).toBeTruthy();
     expect(screen.getByText("Get started")).toBeTruthy();
   });

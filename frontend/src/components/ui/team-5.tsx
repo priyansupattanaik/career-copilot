@@ -193,7 +193,7 @@ function MemberStrip({
         loading="lazy"
       />
 
-      <div className="team5-shade absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-zinc-950/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100" />
+      <div className="team5-shade absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100" />
 
       <div className="team5-meta absolute inset-x-0 bottom-0 flex translate-y-3 flex-col gap-3 p-5 opacity-0 transition-all delay-100 duration-300 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 sm:p-6">
         {member.role ? (

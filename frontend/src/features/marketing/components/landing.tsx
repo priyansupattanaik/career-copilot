@@ -15,7 +15,6 @@ import {
 import { CareerIcon } from "@/components/ui/career-icons";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { Navigation5 } from "@/components/ui/navigation-5";
-import { Team5 } from "@/components/ui/team-5";
 import { BeamsBackground } from "@/components/ui/beams-background";
 import { ParticlesBackground } from "@/components/ui/particles-background";
 import { RuixenGradientFooter } from "@/components/ui/ruixen-gradient-footer";
@@ -358,6 +357,9 @@ function LandingInner() {
         paused={isMotionPaused}
         className="home-particles-layer"
       />
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <Navigation5 />
 
       <main id="main-content">
@@ -427,21 +429,6 @@ function LandingInner() {
           <div className="home-frame home-profile-grid">
             <ProfileIntro />
             <ProfileSheet />
-          </div>
-        </section>
-
-        <section className="home-team" aria-labelledby="team-title">
-          <Team5
-            className="home-team-block"
-            badge="The people"
-            heading="The team"
-            description="The builders behind Career Copilot."
-          />
-          <div className="home-frame home-team-more">
-            <Link href="/teams" className="home-inline-link">
-              Open the team page{" "}
-              <AnimatedIcon icon={ArrowRight} size={15} aria-hidden />
-            </Link>
           </div>
         </section>
 

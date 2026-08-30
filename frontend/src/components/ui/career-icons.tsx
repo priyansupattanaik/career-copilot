@@ -128,21 +128,23 @@ export function CareerIcon({ name, size = 22, className, ...props }: CareerIconP
         lineHeight: 0,
       }}
     >
-      <svg
-        {...svgProps}
-        className={className}
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden={(svgProps as { "aria-label"?: string })["aria-label"] ? undefined : true}
-      >
-        {paths[name]}
-      </svg>
+      <span className="icon-idle">
+        <svg
+          {...svgProps}
+          className={className}
+          width={size}
+          height={size}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden={(svgProps as { "aria-label"?: string })["aria-label"] ? undefined : true}
+        >
+          {paths[name]}
+        </svg>
+      </span>
     </motion.span>
   );
 }

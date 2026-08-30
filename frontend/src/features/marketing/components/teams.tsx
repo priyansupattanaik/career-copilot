@@ -34,6 +34,9 @@ function TeamsInner() {
         paused={isMotionPaused}
         className="home-particles-layer"
       />
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <Navigation5 />
       <main id="main-content">
         <Team5

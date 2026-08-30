@@ -11,7 +11,7 @@ test.describe("Landing navigation", () => {
     await page.getByRole("button", { name: /Open navigation/i }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await dialog.getByRole("link", { name: "Video practice" }).click();
+    await dialog.getByRole("link", { name: "Practice" }).click();
     await expect(dialog).toHaveCount(0);
 
     await page.waitForTimeout(1200);

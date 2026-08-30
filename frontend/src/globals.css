@@ -8223,7 +8223,8 @@ select option {
   --home-blue: var(--accent);
   min-height: 100vh;
   min-height: 100dvh;
-  overflow: clip;
+  overflow-x: clip;
+  overflow-y: visible;
   background: var(--home-paper);
   color: var(--home-text);
   font-family: var(--font-ui);
@@ -8234,15 +8235,72 @@ select option {
 }
 /* ===== Navigation-5: Floating Island Navbar =============================== */
 .nav5-wrapper {
-  animation: cc-rise 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+  font-family: var(--font-ui);
+  /* Opacity-only enter: transform on this layer would flatten backdrop-filter. */
+  animation: nav5-enter 0.55s cubic-bezier(0.32, 0.72, 0, 1) backwards;
 }
-
+@keyframes nav5-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 .nav5-pill {
-  box-shadow: 0 4px 20px -2px color-mix(in srgb, var(--text) 8%, transparent);
+  background: color-mix(in srgb, var(--surface) 48%, transparent);
+  border-color: color-mix(in srgb, var(--border) 58%, white 22%);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 55%, transparent) inset,
+    0 10px 28px color-mix(in srgb, var(--text) 8%, transparent);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  transition:
+    background-color 280ms var(--ease-out),
+    box-shadow 280ms var(--ease-out),
+    border-color 280ms var(--ease-out);
 }
-
 .nav5-pill-scrolled {
-  box-shadow: 0 12px 32px -4px color-mix(in srgb, var(--text) 14%, transparent);
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 40%, transparent) inset,
+    0 14px 36px color-mix(in srgb, var(--text) 12%, transparent);
+}
+.nav5-link:active,
+.nav5-brand:active {
+  transform: scale(0.98);
+}
+.nav5-menu,
+.nav5-drawer {
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--text) 12%, transparent);
+}
+[data-theme="dark"] .nav5-pill {
+  background: color-mix(in srgb, var(--surface) 42%, transparent);
+  border-color: color-mix(in srgb, var(--border) 50%, transparent);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 8%, transparent) inset,
+    0 10px 28px rgb(0 0 0 / 28%);
+}
+[data-theme="dark"] .nav5-pill-scrolled {
+  background: color-mix(in srgb, var(--surface) 58%, transparent);
+}
+[data-theme="dark"] .nav5-menu,
+[data-theme="dark"] .nav5-drawer {
+  background: color-mix(in srgb, var(--surface) 64%, transparent);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .nav5-pill,
+  .nav5-pill-scrolled,
+  .nav5-menu,
+  .nav5-drawer {
+    background: var(--surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 
 .nav5-dropdown {
@@ -8276,13 +8334,17 @@ select option {
 }
 
 .home-primary-cta:hover {
-  background: #30302e;
-  color: #fff;
+  background: var(--primary-deep);
+  color: var(--text-inverse);
   transform: translateY(-1px);
 }
 .home-hero {
-  padding: 118px 0 0;
-  background: linear-gradient(125deg, var(--home-paper) 0%, #f0f1eb 100%);
+  padding: 112px 0 0;
+  background: linear-gradient(
+    125deg,
+    var(--home-paper) 0%,
+    var(--background-subtle) 100%
+  );
 }
 .home-hero-grid {
   display: grid;
@@ -8305,7 +8367,7 @@ select option {
 .home-final h2 {
   margin: 0;
   font-size: clamp(4rem, 7.3vw, 7.2rem);
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.085em;
   line-height: 0.88;
 }
@@ -9048,7 +9110,7 @@ select option {
     width: min(100% - 40px, 680px);
   }
   .home-hero {
-    padding-top: 83px;
+    padding-top: 104px;
   }
   .home-hero-grid,
   .home-practice-grid,
@@ -9101,7 +9163,7 @@ select option {
     width: min(100% - 32px, 500px);
   }
   .home-hero {
-    padding-top: 67px;
+    padding-top: 100px;
   }
   .home-hero h1,
   .home-practice h2,
@@ -9297,6 +9359,14 @@ select option {
 }
 .home-float-card {
   animation: cc-bob 7s ease-in-out 1.4s infinite;
+}
+.career-icon .icon-idle {
+  display: inline-flex;
+  animation: cc-bob 6.5s ease-in-out infinite;
+}
+.home-page[data-motion="paused"] .career-icon .icon-idle,
+.home-page[data-motion="paused"] .home-float-card {
+  animation-play-state: paused;
 }
 .home-page[data-motion="paused"] .home-live-label i,
 .home-page[data-motion="paused"] .home-float-card {
@@ -15196,7 +15266,7 @@ select option {
   width: 3px;
   height: 100%;
   border-radius: 99px;
-  background: #3da2ff;
+  background: var(--accent);
   transform-origin: bottom center;
   animation: cc-wave 1.2s ease-in-out infinite;
 }
@@ -16424,15 +16494,41 @@ body,
 }
 .team5-copy h2 {
   margin: 0;
-  max-width: 16ch;
-  color: var(--text);
-  font-size: clamp(1.7rem, 3.4vw, 2.7rem);
+  max-width: 12ch;
+  color: var(--home-text, var(--text));
+  font-size: clamp(3.2rem, 6vw, 5.4rem);
   font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: 1.08;
+  letter-spacing: -0.07em;
+  line-height: 0.92;
 }
 .team5-copy p {
-  color: var(--muted);
+  color: var(--home-muted, var(--muted));
+}
+.team5-shade {
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--primary-deep) 82%, transparent),
+    color-mix(in srgb, var(--primary-deep) 18%, transparent),
+    transparent
+  );
+}
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -64px;
+  z-index: 80;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--text-inverse);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.skip-link:focus {
+  top: 12px;
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
 }
 .team5-row {
   min-width: 0;

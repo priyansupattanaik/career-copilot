@@ -5,6 +5,7 @@ import {
   useCallback,
   type MouseEvent,
 } from "react";
+import { useLocation } from "react-router-dom";
 import { Link } from "@/shared/ui/router-link";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { AnimatedIcon } from "@/components/ui/animated-icon";
@@ -14,19 +15,20 @@ import { cn } from "@/shared/utils";
 import {
   ArrowRight,
   ArrowUpRight,
-  BadgeCheck,
-  BookOpen,
   ChevronDown,
   FileText,
-  Layers,
   Menu,
-  Sparkles,
-  Users,
   Video,
   X,
 } from "lucide-react";
 
+const navLinkClass =
+  "nav5-link rounded-full px-3 py-2 text-sm font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--surface)_55%,transparent)]";
+
 export function Navigation5({ className }: { className?: string }) {
+  const { pathname } = useLocation();
+  const atHome = pathname === "/";
+  const sectionHref = (id: string) => (atHome ? `#${id}` : `/#${id}`);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [solutionsOpen, setSolutionsOpen] = useState(false);
   const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
@@ -145,15 +147,14 @@ export function Navigation5({ className }: { className?: string }) {
         {/* Floating Navbar Pill */}
         <div
           className={cn(
-            "nav5-pill flex h-16 w-full items-center justify-between gap-3 rounded-full border px-4 transition-all duration-300",
-            scrolled ? "nav5-pill-scrolled shadow-lg" : "shadow-md",
+            "nav5-pill flex h-16 w-full items-center justify-between gap-2 rounded-full border px-3 sm:px-4",
+            scrolled && "nav5-pill-scrolled",
           )}
           style={{
-            backgroundColor:
-              "color-mix(in srgb, var(--surface) 92%, transparent)",
-            borderColor: "color-mix(in srgb, var(--border) 70%, transparent)",
-            backdropFilter: "blur(18px)",
-            WebkitBackdropFilter: "blur(18px)",
+            backgroundColor: "color-mix(in srgb, var(--surface) 48%, transparent)",
+            borderColor: "color-mix(in srgb, var(--border) 58%, transparent)",
+            backdropFilter: "blur(22px) saturate(180%)",
+            WebkitBackdropFilter: "blur(22px) saturate(180%)",
           }}
         >
           {/* Logo Section */}
@@ -169,18 +170,12 @@ export function Navigation5({ className }: { className?: string }) {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden lg:flex lg:items-center lg:gap-1">
-            <a
-              href="#practice"
-              className="rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text)] hover:bg-[var(--surface-muted)]"
-            >
-              Video practice
+          <div className="hidden xl:flex xl:items-center xl:gap-0.5">
+            <a href={sectionHref("practice")} className={navLinkClass}>
+              Practice
             </a>
 
-            <a
-              href="#system"
-              className="rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text)] hover:bg-[var(--surface-muted)]"
-            >
+            <a href={sectionHref("system")} className={navLinkClass}>
               How it works
             </a>
 
@@ -218,15 +213,7 @@ export function Navigation5({ className }: { className?: string }) {
                   role="menu"
                   aria-label="Platform solutions"
                 >
-                  <div
-                    className="overflow-hidden rounded-3xl border p-6 shadow-2xl backdrop-blur-xl"
-                    style={{
-                      backgroundColor: "var(--surface)",
-                      borderColor: "var(--border)",
-                      boxShadow:
-                        "0 24px 60px color-mix(in srgb, var(--text) 12%, transparent)",
-                    }}
-                  >
+                  <div className="nav5-menu overflow-hidden rounded-3xl border p-6">
                     <div className="grid grid-cols-3 gap-6 divide-x divide-[var(--divider)]">
                       {/* Column 1: Resume & ATS */}
                       <div className="flex flex-col gap-3 pr-4">
@@ -330,16 +317,10 @@ export function Navigation5({ className }: { className?: string }) {
               )}
             </div>
 
-            <Link
-              href="/community"
-              className="rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text)] hover:bg-[var(--surface-muted)]"
-            >
+            <Link href="/community" className={navLinkClass}>
               Community
             </Link>
-            <Link
-              href="/teams"
-              className="rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text)] hover:bg-[var(--surface-muted)]"
-            >
+            <Link href="/teams" className={navLinkClass}>
               Team
             </Link>
           </div>
@@ -372,7 +353,7 @@ export function Navigation5({ className }: { className?: string }) {
             </span>
 
             {/* Mobile Menu Trigger Button */}
-            <div className="lg:hidden">
+            <div className="xl:hidden">
               <button
                 ref={menuButtonRef}
                 type="button"
@@ -405,13 +386,7 @@ export function Navigation5({ className }: { className?: string }) {
           />
 
           {/* Drawer Content */}
-          <div
-            className="relative z-10 flex h-full w-full max-w-sm flex-col border-l p-6 shadow-2xl transition-transform"
-            style={{
-              backgroundColor: "var(--surface)",
-              borderColor: "var(--border)",
-            }}
-          >
+          <div className="nav5-drawer relative z-10 flex h-full w-full max-w-sm flex-col border-l p-6 shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-[var(--divider)]">
               <div className="flex items-center gap-2">
@@ -433,15 +408,15 @@ export function Navigation5({ className }: { className?: string }) {
             {/* Navigation Links */}
             <div className="flex flex-1 flex-col gap-2 overflow-y-auto py-6">
               <a
-                href="#practice"
+                href={sectionHref("practice")}
                 className="rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
                 onClick={closeAndFollowAnchor}
               >
-                Video practice
+                Practice
               </a>
 
               <a
-                href="#system"
+                href={sectionHref("system")}
                 className="rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
                 onClick={closeAndFollowAnchor}
               >
