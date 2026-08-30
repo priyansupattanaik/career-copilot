@@ -56,7 +56,7 @@ Career Copilot is a monorepo web app where a candidate can:
 | **Profile** | Structured fields, avatar, completion checklist (0–100), fill-from-resume preview → apply |
 | **Resume / JD** | Upload or paste → review → **confirm** |
 | **ATS** | Deterministic keyword coverage (`evidence-keyword-coverage-v4`); history shows resume + JD used |
-| **Interviews** | Question packs + practice sessions; optional Fish Audio / browser TTS + STT; practice feedback (coaching, not hiring scores) |
+| **Interviews** | Question packs + practice sessions; Groq Orpheus / browser TTS + STT; practice feedback (coaching, not hiring scores) |
 | **Learning** | ATS gaps → YouTube (API or search URLs) + allowlisted educational search links (`ats-mixed-learning-v1`) |
 | **Jobs** | Evidence-based recommendations (`evidence-keyword-match-v1`); FreeHire sync; saved/pipeline tracking |
 | **Resume improve** | Evidence-checked rewrite suggestions via sequential crew |
@@ -201,7 +201,7 @@ ATS, learning generation, interview prep evidence, and job-match evidence requir
 ### Interviews
 
 - Questions: Groq structured output, or **local templates** if the provider fails  
-- Optional Fish Audio TTS (server) + browser speech synthesis / recognition  
+- Interviewer TTS: Groq Orpheus, then NVIDIA Magpie, then Fish Audio, then browser speech  
 - Practice feedback + session report (Groq or deterministic heuristics) — **coaching only**, not a hiring decision  
 
 ### Learning & jobs
@@ -226,7 +226,7 @@ One root `.env` (template: [`.env.example`](./.env.example)). Only `VITE_*` keys
 | Firestore | `FIREBASE_PROJECT_ID`, `FIREBASE_CREDENTIALS_PATH`, `FIREBASE_DATABASE_ID` |
 | Storage | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`, `DOCUMENT_BUCKET`, `AVATAR_BUCKET` |
 | LLM | `LLM_PROVIDER`, `GROQ_*`, `NVIDIA_*`, `LLM_RPM_LIMIT` |
-| Optional | `YOUTUBE_API_KEY`, `FREEHIRE_*`, `FISH_AUDIO_*` |
+| Optional | `YOUTUBE_API_KEY`, `FREEHIRE_*`, `GROQ_TTS_*` |
 
 ---
 

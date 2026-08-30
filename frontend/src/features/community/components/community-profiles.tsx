@@ -88,7 +88,6 @@ export function CommunityProfiles() {
   return (
     <main className="feature-page community-page">
       <PageHeader
-        eyebrow="Community"
         title="Find people worth learning from"
         description="Search public profiles by name, username, profession, career level, goal, or location. Use real journeys as inspiration without exposing resumes."
       />
@@ -99,7 +98,7 @@ export function CommunityProfiles() {
           </span>
           <div>
             <h2>Explore the community</h2>
-            <p className="muted">Try “AI engineer”, “fresher”, or a username. Matches appear as you type — nothing is listed until you search.</p>
+            <p className="muted">Try “AI engineer”, “fresher”, or a username. Matches appear as you type. Nothing is listed until you search.</p>
           </div>
         </div>
         <form className="community-search-form" role="search" onSubmit={onSubmit}>

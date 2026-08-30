@@ -287,7 +287,7 @@ function Frame({
   const path = usePathname();
   return (
     <div className={cn("feature-page settings-page", className)}>
-      <PageHeader eyebrow="Career workspace" title={title} description={description} />
+      <PageHeader title={title} description={description} />
       {path !== "/settings/profile" ? (
         <nav className="settings-nav" aria-label="Settings sections">
           {tabs.map(([href, label]) => {
@@ -2443,7 +2443,6 @@ export function AccountSettings() {
     <Frame title="Account & access" description="Manage your active session securely.">
       <div className="settings-canvas">
       <Card className="stack settings-card settings-session-card">
-        <p className="eyebrow">Signed in</p>
         <h2 style={{ margin: 0 }}>Session</h2>
         <div className="settings-session-identity">
           <span className="settings-session-mark" aria-hidden="true">
@@ -2638,7 +2637,6 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
     <div className="settings-canvas">
       {kind === "notifications" ? (
         <Card className="stack settings-card">
-          <p className="eyebrow">Mailbox</p>
           <h2 style={{ margin: 0 }}>Notification preferences</h2>
           <p className="muted" style={{ margin: 0 }}>
             These choices are stored on your account, not in this browser.
@@ -2686,7 +2684,6 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
       ) : (
         <>
           <Card className="stack settings-card">
-            <p className="eyebrow">Visibility</p>
             <h2 style={{ margin: 0 }}>Profile visibility</h2>
             <label className="field-label">
               Who can see your profile
@@ -2715,7 +2712,6 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
             </div>
           </Card>
           <Card className="stack settings-card">
-            <p className="eyebrow">Practice room</p>
             <h2 style={{ margin: 0 }}>Camera and microphone</h2>
             <p className="muted" style={{ margin: 0 }}>
               These apply to mock-interview practice. The server does not invent camera data.

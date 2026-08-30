@@ -3,7 +3,7 @@ import { Link } from "@/shared/ui/router-link";
 import { useNavigate } from "react-router-dom";
 import { useSearchParams } from "@/shared/router";
 import { useEffect, useState, type KeyboardEvent } from "react";
-import { Eye, EyeOff, MailCheck } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, MailCheck } from "lucide-react";
 import { AnimatedIcon } from "@/components/ui/animated-icon";
 
 
@@ -27,7 +27,6 @@ function Shell({ children, title, description }: { children: React.ReactNode; ti
             <span>Career Copilot</span>
           </Link>
           <div className="auth-aside-copy">
-            <p className="eyebrow">Private career workspace</p>
             <h1>{title}</h1>
             <p>{description}</p>
             <ul className="auth-aside-points">
@@ -41,7 +40,7 @@ function Shell({ children, title, description }: { children: React.ReactNode; ti
       <section className="auth-main atlas-auth-main">
         <div className="auth-main-inner">
           <div className="auth-theme-control atlas-auth-theme-control"><ThemeToggle compact /></div>
-          {children}
+          <div className="auth-bezel">{children}</div>
         </div>
       </section>
     </main>
@@ -186,7 +185,6 @@ export function SignInScreen() {
     <Shell title="Welcome back." description="Sign in to open your private career records and continue where you left off.">
       <form className="auth-card panel stack atlas-auth-card" onSubmit={submit} onKeyDown={submitOnEnter}>
         <div className="atlas-auth-card-header">
-          <p className="eyebrow">Secure sign in</p>
           <h1>Sign in</h1>
         </div>
         <label className="field-label">
@@ -243,8 +241,13 @@ export function SignInScreen() {
             Resend verification email
           </Button>
         )}
-        <Button disabled={busy} type="submit">
-          {busy ? "Signing in…" : "Sign in"}
+        <Button disabled={busy} type="submit" className="auth-cta">
+          <span>{busy ? "Signing in…" : "Sign in"}</span>
+          {busy ? null : (
+            <span className="auth-cta-orb" aria-hidden>
+              <ArrowRight size={14} strokeWidth={1.75} />
+            </span>
+          )}
         </Button>
         <div className="auth-divider">or</div>
         <div className="auth-oauth">
@@ -379,8 +382,7 @@ export function SignUpScreen() {
       ) : (
         <form className="auth-card panel stack atlas-auth-card atlas-auth-signup-card" onSubmit={submit} onKeyDown={submitOnEnter}>
           <div className="atlas-auth-card-header">
-            <p className="eyebrow">Create account</p>
-            <h1>Get started</h1>
+            <h1>Create account</h1>
           </div>
           <label className="field-label">
             Full name
@@ -428,8 +430,13 @@ export function SignUpScreen() {
               {error}
             </p>
           )}
-          <Button disabled={busy} type="submit">
-            {busy ? "Creating account…" : "Create account"}
+          <Button disabled={busy} type="submit" className="auth-cta">
+            <span>{busy ? "Creating account…" : "Create account"}</span>
+            {busy ? null : (
+              <span className="auth-cta-orb" aria-hidden>
+                <ArrowRight size={14} strokeWidth={1.75} />
+              </span>
+            )}
           </Button>
           <p className="auth-switch">
             Already registered?{" "}
@@ -494,7 +501,6 @@ export function PasswordScreen({ reset = false }: { reset?: boolean }) {
     >
       <form className="auth-card panel stack atlas-auth-card" onSubmit={submit} onKeyDown={submitOnEnter}>
         <div className="atlas-auth-card-header">
-          <p className="eyebrow">{reset ? "Account security" : "Account recovery"}</p>
           <h1>{reset ? "Choose a new password" : "Reset your password"}</h1>
         </div>
         {reset ? (

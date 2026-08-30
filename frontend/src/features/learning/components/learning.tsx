@@ -239,11 +239,10 @@ export function LearningHome() {
     <div className="lp-page">
       <header className="lp-masthead">
         <div>
-          <p className="lp-kicker">Learning · ATS gaps only</p>
           <h1 className="lp-title">Learning path</h1>
           <p className="lp-sub">
             Build a study plan from skill gaps in your completed ATS analysis. Watch progress is
-            stored as you play each lesson — skipped time is not counted.
+            stored as you play each lesson. Skipped time is not counted.
           </p>
         </div>
         <div className="lp-masthead-actions">
@@ -287,7 +286,7 @@ export function LearningHome() {
                 <h2>No completed ATS analysis yet</h2>
                 <p>
                   Complete a resume-vs-JD ATS analysis first. Paths are built only from those
-                  evidence gaps — skills are never invented.
+                  evidence gaps. Skills are never invented.
                 </p>
                 <Link className="button button-primary" href="/resume-analysis?tab=upload">
                   Open Resume Analysis
@@ -696,7 +695,6 @@ export function LearningPath({ pathId }: { pathId: string }) {
     <div className="lp-page">
       <header className="lp-masthead">
         <div>
-          <p className="lp-kicker">Learning path</p>
           <h1 className="lp-title">{path?.title || "Path details"}</h1>
           <p className="lp-sub">
             {path?.description ||
@@ -1025,7 +1023,6 @@ export function TopicPage({ topicId }: { topicId: string }) {
     <div className="lp-page">
       <header className="lp-masthead">
         <div>
-          <p className="lp-kicker">Learning</p>
           <h1 className="lp-title">Topic not available</h1>
           <p className="lp-sub">Topics open from their parent learning path. Use the path list to continue studying.</p>
         </div>

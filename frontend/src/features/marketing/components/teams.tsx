@@ -41,7 +41,6 @@ function TeamsInner() {
       <main id="main-content">
         <Team5
           className="home-team-block"
-          badge="The people"
           heading="The team"
           description="The builders behind Career Copilot."
         />
@@ -62,7 +61,7 @@ function TeamsInner() {
             </span>
             <nav className="home-footer-nav" aria-label="Footer navigation">
               <Link href="/sign-in">Sign in</Link>
-              <Link href="/sign-up">Create account</Link>
+              <Link href="/sign-up">Get started</Link>
               <Link href="/teams">Team</Link>
               <Link href="/#practice">Video practice</Link>
             </nav>

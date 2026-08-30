@@ -67,6 +67,12 @@ class Settings(BaseSettings):
     nvidia_max_output_tokens: int = Field(default=4096, ge=256, le=8192)
     nvidia_temperature: float = Field(default=0.2, ge=0, le=1)
     nvidia_prompt_version: str
+    nvidia_tts_url: str = (
+        "https://877104f7-e885-42b9-8de8-f6e4c6303969.invocation.api.nvcf.nvidia.com"
+        "/v1/audio/synthesize"
+    )
+    nvidia_tts_voice: str = "Magpie-Multilingual.EN-US.Jason.Calm"
+    nvidia_tts_language: str = "en-US"
     groq_api_key: str = ""
     groq_base_url: str
     groq_model: str
@@ -78,6 +84,8 @@ class Settings(BaseSettings):
     groq_resume_parser_model: str = "llama-3.3-70b-versatile"
     groq_resume_parser_fallback_model: str = "openai/gpt-oss-120b"
     groq_resume_parser_timeout_seconds: float = Field(default=60.0, gt=0, le=180)
+    groq_tts_model: str = "canopylabs/orpheus-v1-english"
+    groq_tts_voice: str = "austin"
     groq_resume_parser_max_retries: int = Field(default=2, ge=0, le=5)
     groq_resume_parser_max_input_tokens: int = Field(default=110000, ge=1000, le=200000)
     groq_resume_parser_temperature: float = Field(default=0.0, ge=0.0, le=1.0)
@@ -97,7 +105,7 @@ class Settings(BaseSettings):
     freehire_timeout_seconds: float = Field(default=15.0, gt=0, le=60)
     freehire_results_per_page: int = Field(default=25, ge=1, le=50)
     freehire_max_days_old: int | None = Field(default=30, ge=1, le=365)
-    # Fish Audio TTS for mock-interview interviewer voice (server-side key only).
+    # Legacy Fish Audio fields. Interviewer voice now uses Groq Orpheus.
     fish_audio_api_key: str = ""
     fish_audio_base_url: str = "https://api.fish.audio"
     fish_audio_model: str = "s2.1-pro-free"
@@ -119,7 +127,7 @@ class Settings(BaseSettings):
         if isinstance(value, list):
             return [_normalize_origin(item) for item in value if _normalize_origin(item)]
         return value
-    @field_validator("nvidia_base_url", "groq_base_url", "fish_audio_base_url")
+    @field_validator("nvidia_base_url", "groq_base_url", "fish_audio_base_url", "nvidia_tts_url")
     @classmethod
     def validate_server_url(cls, value: str) -> str:
         if not value:
@@ -234,8 +242,22 @@ class Settings(BaseSettings):
         return "^(" + "|".join(hosts) + ")$"
 
     @property
+    def groq_tts_configured(self) -> bool:
+        return bool((self.groq_api_key or "").strip() and (self.groq_base_url or "").strip())
+
+    @property
+    def nvidia_tts_configured(self) -> bool:
+        return bool((self.nvidia_api_key or "").strip())
+
+    @property
     def fish_audio_configured(self) -> bool:
         return bool((self.fish_audio_api_key or "").strip())
+
+    @property
+    def interviewer_tts_configured(self) -> bool:
+        return self.groq_tts_configured or self.nvidia_tts_configured or self.fish_audio_configured
+
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()

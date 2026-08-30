@@ -290,7 +290,7 @@ export const DEFAULT_AUTO_ADVANCE_AFTER_FEEDBACK_MS = 150;
 export const DEFAULT_PROCEED_LISTEN_MS = 12000;
 /**
  * Max time to wait for interviewer audio to finish before listening.
- * Must be long enough for full questions + Fish Audio network; never cut mid-sentence.
+ * Must be long enough for full questions + Groq Orpheus network; never cut mid-sentence.
  */
 export const DEFAULT_TTS_MAX_WAIT_MS = 120_000;
 
@@ -406,7 +406,7 @@ export function scheduleListenAfterQuestionSpoken(
     delayMs?: number;
     maxWaitMs?: number;
     isCancelled?: () => boolean;
-    /** Optional external busy check (Fish Audio HTMLAudioElement, etc.). */
+    /** Optional external busy check (server TTS HTMLAudioElement, etc.). */
     isBusy?: () => boolean;
   },
 ): number {

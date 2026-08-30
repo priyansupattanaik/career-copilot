@@ -340,7 +340,7 @@ function NotFoundPage() {
   return (
     <SystemErrorPanel
       code="404"
-      eyebrow="404"
+      eyebrow=""
       title="Page not found"
       description="That Career Copilot page does not exist or may have been moved."
       buttonLabel="Return home"

@@ -350,7 +350,6 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
   return (
     <div className="feature-page jobs-radar-page">
       <PageHeader
-        eyebrow="Jobs"
         title={savedOnly ? "My job pipeline" : "Your next move, shortlisted"}
         description={
           savedOnly
@@ -373,7 +372,6 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
       {!savedOnly ? (
         <section className="jobs-radar-intro" aria-labelledby="jobs-radar-title">
           <div className="jobs-radar-copy">
-            <div className="jobs-radar-kicker"><span className="jobs-radar-pulse" /> AI job search</div>
             <h2 id="jobs-radar-title">Less scrolling. More signal.</h2>
             <p>Fresh roles are collected from the configured job-search sources, then the fit agent checks each one against the evidence in your profile.</p>
           </div>
@@ -557,7 +555,6 @@ export function JobDetail({ jobId }: { jobId: string }) {
   return (
     <>
       <PageHeader
-        eyebrow="Job record"
         title={job?.title || "Job details"}
         description={
           job ? `${job.company}${job.location ? `  ·  ${job.location}` : ""}` : "Loading job details"

@@ -17,7 +17,7 @@ import {
 } from "@/features/profile/model/profile-completion";
 import { isDemoSession } from "@/features/auth/demo-session";
 import { DEMO_COOKIE_NAME } from "@/shared/config";
-import { prefetchRoute } from "@/shared/route-prefetch";
+import { prefetchRoute, prefetchWorkspace } from "@/shared/route-prefetch";
 import {
   completionFromBootstrap,
   useWorkspaceBootstrap,
@@ -71,6 +71,10 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (bootstrap) setLiveCompletion(null);
   }, [bootstrap]);
+
+  useEffect(() => {
+    prefetchWorkspace();
+  }, []);
 
   useEffect(() => {
     if (!profileMenuOpen) return;

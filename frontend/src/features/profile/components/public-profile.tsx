@@ -102,7 +102,6 @@ export function PublicProfile({ username }: { username: string }) {
     return (
       <main className="public-profile-page">
         <div className="public-profile-container">
-          <p className="eyebrow">Career Copilot</p>
           <h1>{error}</h1>
           <Link className="button button-secondary" href="/">Return home</Link>
         </div>
@@ -112,7 +111,6 @@ export function PublicProfile({ username }: { username: string }) {
     return (
       <main className="public-profile-page">
         <div className="public-profile-container">
-          <p className="eyebrow">Career Copilot</p>
           <h1>Loading profile…</h1>
         </div>
       </main>
@@ -170,7 +168,6 @@ export function PublicProfile({ username }: { username: string }) {
               </span>
             </div>
             <div className="public-profile-hero-copy">
-              <p className="eyebrow">Public career profile</p>
               <h1>{String(profile.full_name || profile.username || "Career profile")}</h1>
               {profile.headline ? <p className="public-profile-headline">{String(profile.headline)}</p> : null}
               <p className="public-profile-handle">/{handle}</p>

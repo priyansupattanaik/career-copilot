@@ -116,7 +116,6 @@ export function InterviewPreparationHome() {
   return (
     <div className="feature-page interview-hub">
       <PageHeader
-        eyebrow="Mock interview"
         title="Prepare with your evidence"
         description="Generate practice material from the confirmed resume, job description, and ATS evidence you select. This does not claim unverified skills or predict hiring outcomes."
         action={<Link className="button button-primary" href="/mock-interview">Start a mock interview</Link>}
@@ -167,7 +166,6 @@ export function InterviewPreparationHome() {
           <Card className="stack">
             <div className="row">
               <div>
-                <p className="eyebrow">Preparation readiness</p>
                 <h2 style={{ margin: 0 }}>{data.interview_readiness.score}% evidence coverage</h2>
                 <p className="muted" style={{ marginBottom: 0 }}>{data.interview_readiness.summary}</p>
               </div>

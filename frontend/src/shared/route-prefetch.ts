@@ -18,6 +18,10 @@ const routeLoaders: Array<{ match: (path: string) => boolean; load: () => Promis
     load: () => import("@/features/learning/components/learning"),
   },
   {
+    match: (p) => p === "/mock-interview/preparation" || p.startsWith("/mock-interview/preparation"),
+    load: () => import("@/features/interview/components/interview-preparation"),
+  },
+  {
     match: (p) => p === "/mock-interview" || p.startsWith("/mock-interview/"),
     load: () => import("@/features/interview/components/interview-flow"),
   },
@@ -83,4 +87,27 @@ export function prefetchRoute(href: string): void {
     // Allow retry on next hover if chunk failed (offline, etc.).
     prefetched.delete(path);
   });
+}
+
+const WORKSPACE_PREFETCH_HREFS = [
+  "/dashboard",
+  "/resume-analysis",
+  "/mock-interview",
+  "/mock-interview/preparation",
+  "/learning",
+  "/jobs",
+  "/settings/profile",
+];
+
+/** Idle-load workspace chunks after first paint so later clicks skip the loading flash. */
+export function prefetchWorkspace(): void {
+  if (typeof window === "undefined") return;
+  warmUpBackend();
+  const run = () => {
+    for (const href of WORKSPACE_PREFETCH_HREFS) prefetchRoute(href);
+  };
+  const idle = (window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number })
+    .requestIdleCallback;
+  if (typeof idle === "function") idle(run, { timeout: 1800 });
+  else window.setTimeout(run, 180);
 }

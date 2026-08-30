@@ -174,7 +174,7 @@ class InterviewCommit(BaseModel):
 
 
 class InterviewTtsRequest(BaseModel):
-    """Spoken interviewer line for mock interview (Fish Audio, server-proxied)."""
+    """Spoken interviewer line for mock interview (Groq Orpheus, server-proxied)."""
 
     model_config = ConfigDict(extra="forbid")
     text: str = Field(min_length=1, max_length=1200)

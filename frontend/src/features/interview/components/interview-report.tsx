@@ -68,7 +68,6 @@ export function InterviewReport() {
     return (
       <div className="feature-page interview-report">
         <PageHeader
-          eyebrow="Interview report"
           title="Report unavailable"
           description="Finish a mock interview session to generate a debrief."
         />
@@ -86,9 +85,8 @@ export function InterviewReport() {
   return (
     <div className="feature-page interview-report">
       <PageHeader
-        eyebrow="Interview report"
         title={session?.target_role ? `${session.target_role} debrief` : "Mock interview debrief"}
-        description="Practice coaching from this session — scores, pace, and what to try next. Not a hiring decision."
+        description="Practice coaching from this session: scores, pace, and what to try next. Not a hiring decision."
         action={
           <Link className="button button-secondary" href="/mock-interview">
             All sessions

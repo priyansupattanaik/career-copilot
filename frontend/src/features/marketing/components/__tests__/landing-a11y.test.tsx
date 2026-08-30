@@ -52,6 +52,6 @@ describe("Landing page a11y & labelling", () => {
     renderLanding();
     const dashboard = screen.getByRole("img", { name: /video interview practice workspace/i });
     expect(dashboard.getAttribute("aria-label")?.toLowerCase()).not.toMatch(/undefined|null|\[object/i);
-    expect(screen.getByText(/Tell me about a time your plan changed/i)).toBeTruthy();
+    expect(screen.getByLabelText(/Candidate giving an interview/i)).toBeTruthy();
   });
 });

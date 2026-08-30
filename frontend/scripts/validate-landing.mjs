@@ -170,7 +170,7 @@ async function main() {
       document.documentElement.style.zoom = String(z);
     }, zoom);
     const ok = await page.locator("h1").first().isVisible();
-    const cta = await page.getByRole("link", { name: /Build my confidence|Create my profile/i }).first().isVisible();
+    const cta = await page.getByRole("link", { name: /Get started/i }).first().isVisible();
     if (ok && cta) {
       pass(`zoom-${Math.round(zoom * 100)}`, "hero + CTA visible");
     } else {

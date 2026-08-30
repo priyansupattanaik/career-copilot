@@ -102,7 +102,7 @@ Career Copilot is a **private career workspace for one candidate at a time**. It
 | **HTTP** | httpx | LLMs, YouTube, FreeHire, Supabase, Fish Audio |
 | **LLM** | Groq preferred, NVIDIA fallback | Chat completions |
 | **Crews** | Optional `crewai`; else built-in sequential orchestrators | Learning + resume improve |
-| **TTS** | Fish Audio (optional) | Interviewer voice |
+| **TTS** | Groq Orpheus (via `GROQ_API_KEY`) | Interviewer voice |
 
 ### Runtime
 
@@ -393,7 +393,7 @@ POST /interviews
 |-------|----------------|
 | Questions | Groq structured JSON, else local templates (`question_generator.py`) |
 | Preparation | Evidence packs from confirmed resume + JD (`preparation.py`) |
-| TTS | Optional Fish Audio server-side (`POST /interviews/tts`); browser speechSynthesis fallback |
+| TTS | Groq Orpheus, then NVIDIA Magpie, then Fish (`POST /interviews/tts`); browser speechSynthesis last |
 | STT | Browser Web Speech API (Chromium / secure context) |
 | Gaze | Client-side metrics; server normalizes without inventing camera data |
 | Evaluation | Practice feedback (score, strengths, improvements, fillers, pace) — coaching only |
@@ -702,7 +702,7 @@ Single root `.env` (template: `.env.example`). Only `VITE_*` reaches the browser
 | Storage | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (or `SUPABASE_SECRET_KEY`), `SUPABASE_STORAGE_BUCKET`, `DOCUMENT_BUCKET`, `AVATAR_BUCKET` |
 | LLM | `LLM_PROVIDER`, `GROQ_*`, `NVIDIA_*`, `LLM_RPM_LIMIT`, `LLM_ALLOW_REPAIR` |
 | YouTube / Jobs | `YOUTUBE_API_KEY`, `FREEHIRE_*` |
-| TTS | `FISH_AUDIO_*` |
+| TTS | `GROQ_TTS_MODEL`, `GROQ_TTS_VOICE` (uses `GROQ_API_KEY`) |
 | Browser | `VITE_FIREBASE_*` |
 
 `APP_ENV=test` forces in-memory object storage for automated tests.

@@ -1517,14 +1517,7 @@ p {
   line-height: 1.45;
 }
 .auth-aside-points li::before {
-  content: "";
-  width: 8px;
-  height: 8px;
-  margin-top: 0.45em;
-  border-radius: 2px;
-  flex-shrink: 0;
-  background: #3da2ff;
-  box-shadow: 0 0 0 3px color-mix(in srgb, #3da2ff 22%, transparent);
+  content: none;
 }
 .auth-aside-foot {
   position: relative;
@@ -1677,6 +1670,9 @@ p {
   display: grid;
   gap: 16px;
 }
+.public-profile-container > .button {
+  justify-self: start;
+}
 .public-profile-hero {
   display: flex;
   justify-content: space-between;
@@ -1732,7 +1728,7 @@ p {
   gap: 6px;
 }
 .public-profile-hero-copy h1 {
-  margin: 4px 0 2px;
+  margin: 0 0 2px;
   font-size: clamp(2rem, 5vw, 3rem);
   font-weight: 800;
   letter-spacing: -0.04em;
@@ -1749,7 +1745,7 @@ p {
 }
 .public-profile-handle {
   margin: 2px 0 0;
-  color: var(--primary);
+  color: var(--primary-strong);
   font: 700 0.82rem var(--font-code);
   letter-spacing: -0.01em;
 }
@@ -5984,7 +5980,7 @@ select option {
   overflow: visible;
 }
 
-/* Auth Ã¢â‚¬â€ frosted form, soft system material aside */
+/* Auth: frosted form, soft system material aside */
 .auth-shell {
   background: var(--background);
   min-height: 100dvh;
@@ -6023,9 +6019,7 @@ select option {
   color: color-mix(in srgb, #f5faff 72%, transparent);
 }
 .auth-shell .auth-aside-points li::before {
-  background: #3da2ff;
-  box-shadow: 0 0 0 3px color-mix(in srgb, #3da2ff 28%, transparent);
-  border-radius: 50%;
+  content: none;
 }
 .auth-shell .auth-aside::after {
   border-color: color-mix(in srgb, #3da2ff 30%, transparent);
@@ -8424,6 +8418,9 @@ select option {
 }
 .home-window {
   overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
   border: 1px solid #2c2c2c;
   border-radius: 18px;
   background: #171717;
@@ -8477,6 +8474,38 @@ select option {
   background:
     radial-gradient(circle at 18% 17%, #373934, transparent 32%), #191a18;
 }
+.home-window-stage {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  aspect-ratio: 16 / 10;
+  min-height: 0;
+  overflow: hidden;
+  background: #171817;
+}
+.home-window-stage .home-camera-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+}
+.home-window-stage .home-live-label {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #111 55%, transparent);
+  backdrop-filter: blur(10px);
+}
 .home-live-label {
   display: inline-flex;
   align-items: center;
@@ -8491,6 +8520,132 @@ select option {
   border-radius: 50%;
   background: var(--home-accent);
 }
+
+/* ── Interview demo: question card ─────────────────────── */
+.home-demo-question {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  padding: 18px 20px 20px;
+  background: linear-gradient(to top, rgb(10 10 10 / 92%) 60%, transparent);
+  backdrop-filter: blur(0px);
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 420ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 420ms cubic-bezier(0.32, 0.72, 0, 1);
+  pointer-events: none;
+}
+.home-demo-question--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.home-demo-question--out {
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease;
+}
+.home-demo-topic {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--home-accent) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--home-accent) 35%, transparent);
+  color: color-mix(in srgb, var(--home-accent) 90%, #fff);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.home-demo-question p {
+  margin: 0;
+  color: #f0f0ea;
+  font-size: clamp(0.82rem, 1.5vw, 0.96rem);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.015em;
+}
+
+/* ── Interview demo: answering bar ─────────────────────── */
+.home-demo-answer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 18px 16px;
+  background: linear-gradient(to top, rgb(10 10 10 / 85%) 50%, transparent);
+  opacity: 0;
+  transition: opacity 380ms cubic-bezier(0.32, 0.72, 0, 1);
+  pointer-events: none;
+}
+.home-demo-answer--visible {
+  opacity: 1;
+}
+.home-demo-answer--out {
+  opacity: 0;
+  transition: opacity 280ms ease;
+}
+.home-demo-answering-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #deded8;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.home-demo-answering-label i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: cc-soft-glow 1.4s ease-in-out infinite;
+}
+
+/* ── Interview demo: waveform ──────────────────────────── */
+.home-demo-waveform {
+  display: flex;
+  align-items: flex-end;
+  gap: 2.5px;
+  height: 24px;
+}
+.home-demo-waveform i {
+  display: block;
+  width: 3px;
+  border-radius: 99px;
+  background: var(--home-accent);
+  transform-origin: bottom center;
+  height: 6px;
+}
+.home-demo-answer--visible .home-demo-waveform i {
+  animation: cc-wave 1s ease-in-out infinite;
+}
+.home-demo-waveform i:nth-child(1)  { animation-delay: 0s;     height: 8px; }
+.home-demo-waveform i:nth-child(2)  { animation-delay: 0.07s;  height: 14px; }
+.home-demo-waveform i:nth-child(3)  { animation-delay: 0.14s;  height: 10px; }
+.home-demo-waveform i:nth-child(4)  { animation-delay: 0.21s;  height: 18px; }
+.home-demo-waveform i:nth-child(5)  { animation-delay: 0.05s;  height: 12px; }
+.home-demo-waveform i:nth-child(6)  { animation-delay: 0.18s;  height: 22px; }
+.home-demo-waveform i:nth-child(7)  { animation-delay: 0.1s;   height: 16px; }
+.home-demo-waveform i:nth-child(8)  { animation-delay: 0.25s;  height: 9px; }
+.home-demo-waveform i:nth-child(9)  { animation-delay: 0.03s;  height: 20px; }
+.home-demo-waveform i:nth-child(10) { animation-delay: 0.16s;  height: 13px; }
+.home-demo-waveform i:nth-child(11) { animation-delay: 0.22s;  height: 17px; }
+.home-demo-waveform i:nth-child(12) { animation-delay: 0.09s;  height: 10px; }
+.home-demo-waveform i:nth-child(13) { animation-delay: 0.19s;  height: 15px; }
+.home-demo-waveform i:nth-child(14) { animation-delay: 0.12s;  height: 8px; }
+
 .home-question-label {
   margin-top: 66px;
   color: #979891;
@@ -8628,12 +8783,12 @@ select option {
 }
 .home-practice {
   padding: 150px 0;
-  background: #0b0b0b;
+  background: var(--primary-deep);
   color: #f8f8f4;
 }
 .home-practice-grid {
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(360px, 0.78fr);
+  grid-template-columns: minmax(0, 0.9fr) minmax(min(360px, 100%), 0.78fr);
   gap: clamp(55px, 10vw, 150px);
   align-items: center;
 }
@@ -8777,6 +8932,54 @@ select option {
 .home-system {
   padding: 145px 0 155px;
   background: var(--home-paper);
+}
+.home-system-copy {
+  max-width: 38rem;
+  margin-bottom: 48px;
+}
+.home-system-copy h2 {
+  margin: 0;
+  font-size: clamp(3.2rem, 6vw, 6rem);
+}
+.home-system-copy p {
+  margin: 18px 0 0;
+  max-width: 58ch;
+  color: var(--home-muted);
+  line-height: 1.65;
+}
+.home-steps {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--home-line);
+}
+.home-step {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--home-line);
+}
+.home-step-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--surface-muted);
+  color: var(--home-accent);
+}
+.home-step-copy h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.home-step-copy p {
+  margin: 8px 0 0;
+  max-width: 58ch;
+  color: var(--home-muted);
+  line-height: 1.6;
 }
 .home-section-head {
   display: grid;
@@ -9115,7 +9318,7 @@ select option {
   .home-hero-grid,
   .home-practice-grid,
   .home-profile-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .home-hero-visual {
     max-width: 680px;
@@ -9145,6 +9348,10 @@ select option {
   }
   .home-feature-icon {
     margin-bottom: 24px;
+  }
+  .home-step {
+    grid-template-columns: 44px minmax(0, 1fr);
+    padding: 22px 0;
   }
   .home-feature h3 {
     max-width: 420px;
@@ -9555,8 +9762,8 @@ select option {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #3c873a;
-  box-shadow: 0 0 0 3px rgb(60 135 58 / 15%);
+  background: var(--home-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--home-accent) 20%, transparent);
   animation: cc-pulse 3s ease-in-out infinite;
 }
 
@@ -9720,7 +9927,8 @@ select option {
   color: #a7a8a0 !important;
 }
 .auth-shell .auth-aside-points li::before {
-  background: var(--app-accent) !important;
+  content: none !important;
+  display: none !important;
 }
 .auth-shell .auth-main {
   background: var(--app-paper) !important;
@@ -13125,6 +13333,10 @@ select option {
 .auth-shell .auth-aurora .auth-aside-points {
   margin-bottom: 0;
 }
+.auth-shell .auth-aurora .auth-aside-points li::before {
+  content: none !important;
+  display: none !important;
+}
 
 @keyframes auth-aurora-drift {
   from {
@@ -15365,6 +15577,8 @@ select option {
 .home-page[data-motion="paused"] .home-live-label i,
 .home-page[data-motion="paused"] .home-float-card,
 .home-page[data-motion="paused"] .home-status-dot,
+.home-page[data-motion="paused"] .home-demo-waveform i,
+.home-page[data-motion="paused"] .home-demo-answering-label i,
 .home-page[data-motion="paused"] .home-window {
   animation-play-state: paused !important;
 }
@@ -15379,6 +15593,8 @@ select option {
   .home-response-line i,
   .home-camera b,
   .home-window-dots i,
+  .home-demo-waveform i,
+  .home-demo-answering-label i,
   .home-window {
     animation: none !important;
   }
@@ -16579,6 +16795,518 @@ body,
   .team5-shade,
   .team5-meta {
     transition: none !important;
+  }
+}
+
+/* ===== Ethereal Glass (ice-blue + Outfit) ================================
+   Auth is an editorial split. Workspace chrome uses the same hairline glass
+   language without changing product IA or form fields. ===================== */
+.auth-shell {
+  min-height: 100dvh;
+}
+.auth-bezel {
+  padding: 6px;
+  border-radius: 32px;
+  border: 1px solid color-mix(in srgb, #fff 42%, var(--border));
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 28%), rgb(255 255 255 / 6%)),
+    color-mix(in srgb, var(--primary) 22%, transparent);
+}
+.auth-bezel > .auth-card {
+  border-radius: 26px !important;
+  border: 1px solid color-mix(in srgb, #fff 55%, var(--border)) !important;
+  background: color-mix(in srgb, var(--surface) 96%, transparent) !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.58) !important;
+  color: var(--text);
+}
+.auth-shell:has(.atlas-auth-signup-card) .auth-bezel {
+  padding: 3px;
+  border-radius: 22px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .auth-bezel {
+    animation: glass-rise 720ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+}
+@keyframes glass-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.auth-shell .auth-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  border-radius: 999px !important;
+  padding-inline: 16px 8px !important;
+  transition:
+    transform 480ms cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 480ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+.auth-shell .auth-cta:active {
+  transform: scale(0.98);
+}
+.auth-cta-orb {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.16);
+  flex: 0 0 auto;
+  transition: transform 480ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.auth-shell .auth-cta:hover .auth-cta-orb {
+  transform: translateX(2px) translateY(-1px) scale(1.05);
+}
+
+.auth-shell .auth-aurora {
+  background: #071635 !important;
+  color: #f5faff;
+}
+.auth-shell .aurora-background-field {
+  background:
+    radial-gradient(ellipse at 74% 18%, rgb(61 162 255 / 34%) 0%, transparent 36%),
+    radial-gradient(ellipse at 22% 86%, rgb(139 200 255 / 20%) 0%, transparent 40%),
+    repeating-linear-gradient(
+      118deg,
+      transparent 0 12%,
+      rgb(61 162 255 / 8%) 16%,
+      transparent 24% 38%
+    ) !important;
+}
+.auth-shell .aurora-background-radial .aurora-background-field::after {
+  background: radial-gradient(ellipse at 100% 0%, transparent 12%, #071635 74%) !important;
+}
+.auth-shell .auth-aurora::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.045;
+  background-image: radial-gradient(rgb(255 255 255 / 0.55) 0.6px, transparent 0.7px);
+  background-size: 3px 3px;
+}
+.auth-shell .auth-aurora .atlas-auth-brand,
+.auth-shell .auth-aurora .auth-aside-copy,
+.auth-shell .auth-aurora .auth-aside-copy h1,
+.auth-shell .auth-aurora .auth-aside-points li {
+  color: #f5faff !important;
+}
+.auth-shell .auth-aurora .auth-aside-copy > p:not(.eyebrow) {
+  color: color-mix(in srgb, #f5faff 72%, transparent) !important;
+}
+.auth-shell .auth-aurora .auth-aside-points li svg {
+  color: #8bc8ff !important;
+}
+
+.auth-shell .auth-card .button-primary {
+  background: var(--text) !important;
+  color: var(--background) !important;
+}
+.auth-shell .auth-card .button-primary:hover {
+  background: color-mix(in srgb, var(--text) 86%, var(--accent)) !important;
+  color: var(--background) !important;
+}
+[data-theme="dark"] .auth-shell .auth-card .button-primary {
+  background: var(--accent) !important;
+  color: #071635 !important;
+}
+[data-theme="dark"] .auth-shell .auth-card .button-primary:hover {
+  background: #8bc8ff !important;
+  color: #071635 !important;
+}
+
+@media (max-width: 900px) and (max-height: 760px) {
+  .auth-shell:has(.atlas-auth-signup-card) .auth-bezel {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    border-radius: 0;
+  }
+}
+
+/* Ethereal Glass workspace chrome. Ice-blue + Outfit. CSS-only hairlines.
+   Layouts, form fields, nav labels, interview studio, and ATS internals stay. */
+.workspace {
+  background:
+    radial-gradient(
+      ellipse 70% 42% at 0% 0%,
+      color-mix(in srgb, var(--accent) 14%, transparent),
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 46% 32% at 100% 0%,
+      color-mix(in srgb, var(--primary-strong) 8%, transparent),
+      transparent 48%
+    ),
+    var(--background) !important;
+}
+.workspace .workspace-main,
+.workspace .workspace-content {
+  background: transparent !important;
+}
+
+.workspace .sidebar {
+  border-right: 1px solid var(--border) !important;
+  background: color-mix(in srgb, var(--surface) 88%, transparent) !important;
+  box-shadow: none !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.workspace .app-header {
+  background: color-mix(in srgb, var(--background) 88%, transparent) !important;
+  border-bottom: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.workspace .sidebar-link {
+  border-radius: 14px !important;
+  transition:
+    transform 420ms cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 420ms cubic-bezier(0.32, 0.72, 0, 1),
+    color 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.workspace .sidebar-link:active {
+  transform: scale(0.98);
+}
+.workspace .sidebar-link,
+.workspace .sidebar-link.active,
+.workspace .sidebar-link.active:hover {
+  box-shadow: none !important;
+}
+.workspace .sidebar-profile-card,
+.workspace .sidebar-account-menu {
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+}
+
+.workspace .metric-card,
+.workspace .dashboard-panel,
+.workspace .activity-feed,
+.workspace .community-search-card,
+.workspace .community-result,
+.workspace .interview-start,
+.workspace .interview-history,
+.workspace .interview-report-panel,
+.workspace .interview-report-readiness,
+.workspace .interview-report-review,
+.workspace .jobs-radar-intro,
+.workspace .jobs-radar-page .job-card,
+.workspace .jobs-radar-page .filters-bar,
+.workspace .lp-run,
+.workspace .lp-path-card,
+.workspace .lp-empty,
+.workspace .ra-page .ra-empty,
+.workspace .feature-alert,
+.workspace .panel,
+.workspace .entity-card,
+.workspace .dropzone,
+.workspace .empty-state,
+.workspace .interview-progress-panel,
+.workspace .interview-chart-card,
+.workspace .feature-page > .panel,
+.workspace .feature-page > .grid-2 > .panel,
+.workspace .feature-page > .grid-3 > .metric-card,
+.workspace .feature-page > .entity-list > .entity-card,
+.workspace .path-card,
+.workspace .job-card,
+.workspace .filters-bar,
+.workspace .suggestion,
+.workspace .panel.community-search-card {
+  border: 1px solid var(--border) !important;
+  border-radius: 22px !important;
+  background: color-mix(in srgb, var(--surface) 96%, transparent) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition:
+    transform 520ms cubic-bezier(0.32, 0.72, 0, 1),
+    border-color 520ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.workspace .dashboard-page {
+  --dashboard-text: var(--text) !important;
+  --dashboard-muted: var(--muted) !important;
+  --dashboard-line: var(--border) !important;
+  --dashboard-paper: transparent !important;
+  --dashboard-surface: var(--surface) !important;
+  --dashboard-surface-soft: var(--surface-muted) !important;
+  --dashboard-accent: var(--accent) !important;
+  --dashboard-accent-dark: var(--primary-hover) !important;
+  --dashboard-success: var(--success) !important;
+  --dashboard-warning: var(--warning) !important;
+  --dashboard-blue: var(--accent) !important;
+  background: transparent !important;
+  color: var(--text);
+}
+.workspace:has(.dashboard-page),
+.workspace:has(.dashboard-page) .workspace-main,
+.workspace:has(.dashboard-page) .workspace-content,
+.workspace:has(.dashboard-page) .dashboard-page {
+  background: transparent !important;
+}
+.workspace:has(.dashboard-page) .app-header {
+  background: color-mix(in srgb, var(--background) 88%, transparent) !important;
+  border-bottom-color: var(--border) !important;
+  box-shadow: none !important;
+}
+.workspace:has(.dashboard-page) .sidebar {
+  background: color-mix(in srgb, var(--surface) 88%, transparent) !important;
+  border-right-color: var(--border) !important;
+  box-shadow: none !important;
+}
+.workspace:has(.dashboard-page) .sidebar-link.active,
+.workspace:has(.dashboard-page) .sidebar-link.active:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+}
+.workspace:has(.dashboard-page) .sidebar-link.active svg {
+  color: var(--accent) !important;
+}
+.workspace .dashboard-page .metric-card,
+.workspace .dashboard-page .dashboard-panel,
+.workspace .dashboard-page .activity-feed,
+.workspace .dashboard-page .feature-alert,
+.workspace .dashboard-page .interview-progress-panel,
+.workspace .dashboard-page .interview-chart-card {
+  background: color-mix(in srgb, var(--surface) 96%, transparent) !important;
+  box-shadow: none !important;
+}
+
+.workspace .jobs-radar-page .jobs-radar-intro,
+.workspace .jobs-radar-page .job-card,
+.workspace .jobs-radar-page .filters-bar,
+.workspace .jobs-radar-page .jobs-stat-rail .metric-card {
+  border-radius: 20px !important;
+  background: color-mix(in srgb, var(--surface) 96%, transparent) !important;
+  box-shadow: none !important;
+}
+.workspace .jobs-radar-page .job-score {
+  border-radius: 14px !important;
+}
+.workspace .jobs-radar-page .filters-bar input,
+.workspace .jobs-radar-page .filters-bar .field {
+  border-radius: 14px !important;
+}
+
+.workspace .metric-card:hover,
+.workspace .dashboard-panel:hover,
+.workspace .activity-feed:hover,
+.workspace .community-search-card:hover,
+.workspace .community-result:hover,
+.workspace .interview-start:hover,
+.workspace .jobs-radar-intro:hover,
+.workspace .jobs-radar-page .job-card:hover,
+.workspace .jobs-radar-page .job-card:focus-visible,
+.workspace .lp-run:hover,
+.workspace .lp-path-card:hover,
+.workspace .entity-card:hover,
+.workspace .dashboard-page .metric-card:hover,
+.workspace .dashboard-page .dashboard-panel:hover,
+.workspace .dashboard-page .activity-feed:hover {
+  transform: translateY(-2px);
+  box-shadow: none !important;
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border)) !important;
+}
+
+.workspace .button,
+.workspace a.button,
+.workspace .page-heading-actions .button,
+.workspace .page-heading-actions a.button,
+.workspace .lp-masthead-actions .button,
+.workspace .ra-masthead .button,
+.workspace .interview-start-actions .button {
+  border-radius: 999px !important;
+  transition:
+    transform 420ms cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 420ms cubic-bezier(0.32, 0.72, 0, 1),
+    border-color 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.workspace .metric-card:active,
+.workspace .button:active,
+.workspace a.button:active,
+.workspace .page-heading-actions .button:active,
+.workspace .page-heading-actions a.button:active {
+  transform: scale(0.98);
+}
+.workspace .button-primary,
+.workspace a.button-primary {
+  background: var(--text) !important;
+  color: var(--background) !important;
+  border-color: transparent !important;
+}
+.workspace .button-primary:hover,
+.workspace a.button-primary:hover {
+  background: color-mix(in srgb, var(--text) 86%, var(--accent)) !important;
+  color: var(--background) !important;
+}
+
+.workspace .page-heading {
+  border-bottom: 1px solid var(--border);
+}
+.workspace .page-heading::after {
+  display: none !important;
+}
+.workspace .lp-masthead,
+.workspace .ra-masthead {
+  border-bottom-color: color-mix(in srgb, #fff 20%, var(--border));
+}
+.workspace .settings-nav {
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--surface-muted) 88%, transparent) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+}
+.workspace .settings-nav .button,
+.workspace .settings-nav a.button,
+.workspace .feature-page .settings-nav a {
+  border-radius: 999px !important;
+}
+
+.workspace .interview-session-page .panel,
+.workspace .interview-session-page .interview-empty-session,
+.workspace .interview-session-page .interview-bubble,
+.workspace .interview-session-page .interview-presence,
+.workspace .interview-session-page .interview-dialog {
+  box-shadow: none !important;
+  transform: none !important;
+}
+.workspace .profile-toast,
+.workspace .modal-panel,
+.workspace .demo-banner {
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] .workspace,
+[data-theme="dark"] .workspace .workspace-main,
+[data-theme="dark"] .workspace .workspace-content,
+[data-theme="dark"] .workspace:has(.dashboard-page),
+[data-theme="dark"] .workspace:has(.dashboard-page) .workspace-main,
+[data-theme="dark"] .workspace:has(.dashboard-page) .workspace-content,
+[data-theme="dark"] .workspace:has(.dashboard-page) .dashboard-page {
+  background:
+    radial-gradient(
+      ellipse 70% 42% at 0% 0%,
+      color-mix(in srgb, var(--accent) 16%, transparent),
+      transparent 52%
+    ),
+    var(--background) !important;
+}
+[data-theme="dark"] .workspace .app-header,
+[data-theme="dark"] .workspace:has(.dashboard-page) .app-header {
+  background: color-mix(in srgb, var(--background) 88%, transparent) !important;
+  border-bottom-color: var(--border) !important;
+  box-shadow: none !important;
+}
+[data-theme="dark"] .workspace .sidebar,
+[data-theme="dark"] .workspace:has(.dashboard-page) .sidebar {
+  background: color-mix(in srgb, var(--surface) 88%, transparent) !important;
+  border-right-color: var(--border) !important;
+  box-shadow: none !important;
+}
+[data-theme="dark"] .workspace .metric-card,
+[data-theme="dark"] .workspace .dashboard-panel,
+[data-theme="dark"] .workspace .activity-feed,
+[data-theme="dark"] .workspace .panel,
+[data-theme="dark"] .workspace .entity-card,
+[data-theme="dark"] .workspace .community-search-card,
+[data-theme="dark"] .workspace .interview-start,
+[data-theme="dark"] .workspace .interview-history,
+[data-theme="dark"] .workspace .jobs-radar-intro,
+[data-theme="dark"] .workspace .jobs-radar-page .job-card,
+[data-theme="dark"] .workspace .lp-run,
+[data-theme="dark"] .workspace .lp-path-card,
+[data-theme="dark"] .workspace .ra-page .ra-empty,
+[data-theme="dark"] .workspace .feature-alert,
+[data-theme="dark"] .workspace .interview-progress-panel,
+[data-theme="dark"] .workspace .dashboard-page .metric-card,
+[data-theme="dark"] .workspace .dashboard-page .dashboard-panel,
+[data-theme="dark"] .workspace .dashboard-page .activity-feed,
+[data-theme="dark"] .workspace:has(.dashboard-page) .dashboard-page .metric-card,
+[data-theme="dark"] .workspace:has(.dashboard-page) .dashboard-page .dashboard-panel,
+[data-theme="dark"] .workspace:has(.dashboard-page) .dashboard-page .activity-feed,
+[data-theme="dark"] .workspace:has(.dashboard-page) .dashboard-page .feature-alert {
+  background: color-mix(in srgb, var(--surface) 94%, transparent) !important;
+  box-shadow: none !important;
+}
+[data-theme="dark"] .workspace .button-primary,
+[data-theme="dark"] .workspace a.button-primary,
+[data-theme="dark"] .workspace .dashboard-page .button-primary {
+  background: var(--accent) !important;
+  color: #071635 !important;
+}
+[data-theme="dark"] .workspace .button-primary:hover,
+[data-theme="dark"] .workspace a.button-primary:hover,
+[data-theme="dark"] .workspace .dashboard-page .button-primary:hover {
+  background: #8bc8ff !important;
+  color: #071635 !important;
+}
+
+@media (max-width: 768px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+  }
+  .auth-bezel {
+    border-radius: 24px;
+  }
+  .workspace .metric-card:hover,
+  .workspace .dashboard-panel:hover,
+  .workspace .activity-feed:hover,
+  .workspace .community-search-card:hover,
+  .workspace .community-result:hover,
+  .workspace .interview-start:hover,
+  .workspace .jobs-radar-intro:hover,
+  .workspace .jobs-radar-page .job-card:hover,
+  .workspace .lp-run:hover,
+  .workspace .lp-path-card:hover,
+  .workspace .entity-card:hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-bezel,
+  .auth-cta-orb,
+  .workspace .metric-card,
+  .workspace .dashboard-panel,
+  .workspace .activity-feed,
+  .workspace .community-search-card,
+  .workspace .community-result,
+  .workspace .interview-start,
+  .workspace .jobs-radar-intro,
+  .workspace .jobs-radar-page .job-card,
+  .workspace .lp-run,
+  .workspace .lp-path-card,
+  .workspace .entity-card,
+  .workspace .sidebar-link,
+  .workspace .button,
+  .workspace a.button {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .auth-bezel,
+  .auth-bezel > .auth-card,
+  .workspace .sidebar,
+  .workspace .app-header,
+  .workspace:has(.dashboard-page) .sidebar,
+  .workspace:has(.dashboard-page) .app-header {
+    background: var(--surface) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }
 

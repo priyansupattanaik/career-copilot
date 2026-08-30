@@ -100,7 +100,6 @@ export function Dashboard() {
   return (
     <div className="feature-page dashboard-page">
       <PageHeader
-        eyebrow="Career workspace"
         title={`Welcome, ${first}.`}
         description="A live snapshot of your profile, analyses, interview improvement, and recent activity."
         action={

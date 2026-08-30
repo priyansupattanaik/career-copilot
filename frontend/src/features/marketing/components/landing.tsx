@@ -121,7 +121,7 @@ function HeroCopy() {
           onFocus={() => prefetchRoute("/sign-up")}
         >
           <ButtonLink href="/sign-up" className="home-primary-cta">
-            Build my confidence
+            Get started
           </ButtonLink>
         </span>
         <a href="#practice" className="home-text-cta">
@@ -129,10 +129,6 @@ function HeroCopy() {
           See the practice room
         </a>
       </div>
-      <p className="home-note">
-        <AnimatedIcon icon={Check} size={14} aria-hidden /> Private by default ·
-        shaped around your work
-      </p>
     </div>
   );
 }
@@ -141,7 +137,6 @@ function PracticeCopy() {
   const ref = useReveal<HTMLDivElement>({ delay: 0 });
   return (
     <div ref={ref} className="home-practice-copy">
-      <p className="home-kicker">The part that changes everything</p>
       <h2 id="practice-title">
         Confidence is
         <br />
@@ -225,23 +220,22 @@ function PracticeCard() {
   );
 }
 
-function FeatureCard({
-  feature,
-  index,
-}: {
-  feature: (typeof features)[number];
-  index: number;
-}) {
-  const ref = useReveal<HTMLElement>({ delay: index * 110, y: 26 });
+function SystemSteps() {
+  const ref = useReveal<HTMLDivElement>({ delay: 80, y: 24 });
   return (
-    <article ref={ref as never} className="home-feature">
-      <div className="home-feature-icon">
-        <CareerIcon name={feature.icon} size={22} />
-      </div>
-      <p className="home-feature-label">{feature.label}</p>
-      <h3>{feature.title}</h3>
-      <p>{feature.text}</p>
-    </article>
+    <div ref={ref} className="home-steps">
+      {features.map((feature) => (
+        <article className="home-step" key={feature.label}>
+          <div className="home-step-icon">
+            <CareerIcon name={feature.icon} size={22} />
+          </div>
+          <div className="home-step-copy">
+            <h3>{feature.title}</h3>
+            <p>{feature.text}</p>
+          </div>
+        </article>
+      ))}
+    </div>
   );
 }
 
@@ -249,7 +243,6 @@ function ProfileIntro() {
   const ref = useReveal<HTMLDivElement>({ delay: 0 });
   return (
     <div ref={ref}>
-      <p className="home-kicker">One private profile</p>
       <h2 id="profile-title">
         Your progress,
         <br />
@@ -276,10 +269,10 @@ function ProfileSheet() {
         <b>sample data</b>
       </div>
       <div className="home-sheet-main">
-        <div className="home-avatar">AM</div>
+        <div className="home-avatar">YP</div>
         <div>
-          <h3>Alex Morgan</h3>
-          <p>Backend engineer · Bengaluru</p>
+          <h3>Your profile</h3>
+          <p>Backend engineer, Bengaluru</p>
         </div>
         <span className="home-sheet-status">78% ready</span>
       </div>
@@ -326,7 +319,7 @@ function FinalCard() {
         onFocus={() => prefetchRoute("/sign-up")}
       >
         <ButtonLink href="/sign-up" className="home-primary-cta">
-          Create my profile
+          Get started
         </ButtonLink>
       </span>
     </div>
@@ -339,6 +332,9 @@ function LandingInner() {
 
   useEffect(() => {
     warmUpBackend();
+    prefetchRoute("/sign-in");
+    prefetchRoute("/sign-up");
+    prefetchRoute("/teams");
   }, []);
 
   return (
@@ -368,16 +364,6 @@ function LandingInner() {
             <HeroCopy />
             <HeroVisual />
           </div>
-          <div className="home-frame home-hero-bottom">
-            <span>
-              For freshers, career changers, and anyone who wants one more good
-              practice run.
-            </span>
-            <a href="#system">
-              Explore the workspace{" "}
-              <AnimatedIcon icon={ArrowRight} size={14} aria-hidden />
-            </a>
-          </div>
         </section>
 
         <section
@@ -399,29 +385,18 @@ function LandingInner() {
           aria-labelledby="system-title"
         >
           <div className="home-frame">
-            <Reveal as="div" className="home-section-head" delay={0}>
-              <p className="home-kicker">
-                A workspace that remembers the thread
-              </p>
+            <Reveal as="div" className="home-system-copy" delay={0}>
               <h2 id="system-title">
                 From “I’m not sure”
                 <br />
                 <span>to “I know my next move.”</span>
               </h2>
               <p>
-                Every part of Career Copilot points back to the same question:
-                what would make you more ready for the role you want?
+                Every part of Career Copilot points back to one question: what
+                would make you more ready for the role you want?
               </p>
             </Reveal>
-            <div className="home-feature-grid">
-              {features.map((feature, index) => (
-                <FeatureCard
-                  key={feature.label}
-                  feature={feature}
-                  index={index}
-                />
-              ))}
-            </div>
+            <SystemSteps />
           </div>
         </section>
 
@@ -453,7 +428,7 @@ function LandingInner() {
             </span>
             <nav className="home-footer-nav" aria-label="Footer navigation">
               <Link href="/sign-in">Sign in</Link>
-              <Link href="/sign-up">Create account</Link>
+              <Link href="/sign-up">Get started</Link>
               <Link href="/teams">Team</Link>
               <a href="#practice">Video practice</a>
               <a href="#system">How it works</a>
@@ -473,11 +448,144 @@ function LandingInner() {
   );
 }
 
+// Interview demo questions — varied, never the same two in a row
+const INTERVIEW_QUESTIONS = [
+  { q: "Tell me about a time you led a project under a tight deadline.", topic: "Behavioural", duration: 7500 },
+  { q: "How do you prioritise when everything feels urgent?", topic: "Situational", duration: 7000 },
+  { q: "Walk me through a technical decision you'd make differently today.", topic: "Technical", duration: 8000 },
+  { q: "Describe a moment you received difficult feedback. What did you do?", topic: "Behavioural", duration: 7500 },
+  { q: "What does good collaboration look like to you?", topic: "Culture", duration: 6500 },
+  { q: "How do you keep up with fast-changing tools in your field?", topic: "Growth", duration: 7000 },
+];
+
+function buildSequence(len: number): number[] {
+  const arr = Array.from({ length: len }, (_, i) => i);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+type InterviewPhase = "question" | "answering";
+
+function useInterviewDemo(paused: boolean) {
+  const seqRef = useRef<number[]>(buildSequence(INTERVIEW_QUESTIONS.length));
+  const posRef = useRef(0);
+
+  const getNext = () => {
+    if (posRef.current >= seqRef.current.length) {
+      const last = seqRef.current[seqRef.current.length - 1];
+      const next = buildSequence(INTERVIEW_QUESTIONS.length);
+      if (next[0] === last && next.length > 1) {
+        [next[0], next[next.length - 1]] = [next[next.length - 1], next[0]];
+      }
+      seqRef.current = next;
+      posRef.current = 0;
+    }
+    return seqRef.current[posRef.current++];
+  };
+
+  const [idx, setIdx] = useState(() => {
+    posRef.current = 1;
+    return seqRef.current[0];
+  });
+  const [phase, setPhase] = useState<InterviewPhase>("question");
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    if (paused) return;
+    const QUESTION_SHOW = 2800;
+    let tid: ReturnType<typeof setTimeout>;
+
+    if (phase === "question") {
+      tid = setTimeout(() => setPhase("answering"), QUESTION_SHOW);
+    } else {
+      const answerDuration = INTERVIEW_QUESTIONS[idx].duration;
+      tid = setTimeout(() => {
+        setFading(true);
+        setTimeout(() => {
+          setIdx(getNext());
+          setPhase("question");
+          setFading(false);
+        }, 480);
+      }, answerDuration);
+    }
+    return () => clearTimeout(tid);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, idx, paused]);
+
+  return { question: INTERVIEW_QUESTIONS[idx], phase, fading };
+}
+
 function PracticeClock() {
   const { isMotionPaused } = useMotion();
   const reduce = useReducedMotion();
   const clock = usePracticeClock(isMotionPaused || Boolean(reduce));
   return <span>{clock}</span>;
+}
+
+function InterviewStage({
+  paused,
+  blockVideoInteraction,
+}: {
+  paused: boolean;
+  blockVideoInteraction: (e: SyntheticEvent) => void;
+}) {
+  const { question, phase, fading } = useInterviewDemo(paused);
+
+  return (
+    <div
+      className="home-window-stage"
+      onClick={blockVideoInteraction}
+      onContextMenu={blockVideoInteraction}
+      onDragStart={blockVideoInteraction}
+    >
+      <video
+        className="home-camera-video"
+        src="/media/interview-practice.mp4"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        controlsList="nodownload noplaybackrate"
+        disablePictureInPicture
+        draggable={false}
+        tabIndex={-1}
+        onClick={blockVideoInteraction}
+        onContextMenu={blockVideoInteraction}
+        onDragStart={blockVideoInteraction}
+        aria-label="Candidate giving an interview"
+      />
+
+      {/* Live pill */}
+      <div className="home-live-label">
+        <i /> live practice
+      </div>
+
+      {/* Question card — fades in on question phase */}
+      <div
+        className={`home-demo-question${phase === "question" && !fading ? " home-demo-question--visible" : ""}${fading ? " home-demo-question--out" : ""}`}
+        aria-live="polite"
+      >
+        <span className="home-demo-topic">{question.topic}</span>
+        <p>{question.q}</p>
+      </div>
+
+      {/* Answering overlay — shown during answer phase */}
+      <div
+        className={`home-demo-answer${phase === "answering" && !fading ? " home-demo-answer--visible" : ""}${fading ? " home-demo-answer--out" : ""}`}
+      >
+        <span className="home-demo-answering-label">
+          <i /> Answering
+        </span>
+        <div className="home-demo-waveform" aria-hidden>
+          {Array.from({ length: 14 }, (_, k) => <i key={k} />)}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function HeroVisual() {
@@ -514,75 +622,12 @@ function HeroVisual() {
             <span>practice room</span>
             <PracticeClock />
           </div>
-          <div className="home-window-body">
-            <div className="home-live-label">
-              <i /> live practice
-            </div>
-            <div className="home-question-label">Question 03 · behavioral</div>
-            <h2>“Tell me about a time your plan changed.”</h2>
-            <div className="home-response-line">
-              <span>your response</span>
-              <div>
-                <i />
-                <i />
-                <i />
-                <i />
-                <i />
-                <i />
-                <i />
-                <i />
-                <i />
-                <i />
-              </div>
-            </div>
-            <div
-              className="home-camera"
-              onClick={blockVideoInteraction}
-              onContextMenu={blockVideoInteraction}
-              onDragStart={blockVideoInteraction}
-            >
-              <span>camera preview</span>
-              <video
-                className="home-camera-video"
-                src="/media/interview-practice.mp4"
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="metadata"
-                controlsList="nodownload noplaybackrate"
-                disablePictureInPicture
-                draggable={false}
-                tabIndex={-1}
-                onClick={blockVideoInteraction}
-                onContextMenu={blockVideoInteraction}
-                onDragStart={blockVideoInteraction}
-                aria-label="Candidate giving an interview"
-              />
-              <b>ready</b>
-            </div>
-          </div>
-          <div className="home-window-bottom">
-            <span>
-              <CareerIcon name="signal" size={15} /> clarity <b>84</b>
-            </span>
-            <span>
-              <CareerIcon name="evidence" size={15} /> evidence <b>91</b>
-            </span>
-            <span>
-              <CareerIcon name="confidence" size={15} /> confidence{" "}
-              <b>growing</b>
-            </span>
-          </div>
+          <InterviewStage
+            paused={isMotionPaused || Boolean(reduce)}
+            blockVideoInteraction={blockVideoInteraction}
+          />
         </div>
       </motion.div>
-      <div className="home-float-card">
-        <CareerIcon name="confidence" size={17} />
-        <span>
-          <b>One useful note</b>
-          <small>Lead with the result, then the decision.</small>
-        </span>
-      </div>
     </div>
   );
 }

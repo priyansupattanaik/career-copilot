@@ -360,7 +360,7 @@ export function ScoreTrendChart({ history }: { history: InterviewHistoryPoint[] 
   if (points.length === 0) {
     return (
       <p className="muted" style={{ margin: 0, fontSize: "var(--text-sm)" }}>
-        No plotted scores yet — complete a session debrief to unlock the trend line.
+        No plotted scores yet. Complete a session debrief to unlock the trend line.
       </p>
     );
   }
@@ -603,9 +603,6 @@ export function InterviewProgressPanel({ progress }: { progress?: InterviewProgr
       <section className="interview-progress-panel is-empty" aria-label="Mock interview improvement">
         <div className="interview-progress-head">
           <div>
-            <p className="eyebrow" style={{ margin: 0 }}>
-              Mock interview progress
-            </p>
             <h2>See how your answers improve</h2>
             <p className="muted">
               Complete practice sessions to unlock score trends, dimension bars, and session-to-session
@@ -638,9 +635,6 @@ export function InterviewProgressPanel({ progress }: { progress?: InterviewProgr
       <section className="interview-progress-panel is-empty" aria-label="Mock interview improvement">
         <div className="interview-progress-head">
           <div>
-            <p className="eyebrow" style={{ margin: 0 }}>
-              Mock interview progress
-            </p>
             <h2>
               {progress.sessions_total || 0} session
               {(progress.sessions_total || 0) === 1 ? "" : "s"} · scores pending
@@ -661,12 +655,9 @@ export function InterviewProgressPanel({ progress }: { progress?: InterviewProgr
     <section className="interview-progress-panel" aria-label="Mock interview improvement">
       <div className="interview-progress-head">
         <div>
-          <p className="eyebrow" style={{ margin: 0 }}>
-            Mock interview progress
-          </p>
           <h2>How your interviews are improving</h2>
           <p className="muted">
-            Scores from completed debriefs — overall trend plus communication, structure, content, and
+            Scores from completed debriefs: overall trend plus communication, structure, content, and
             camera presence when measured.
           </p>
         </div>

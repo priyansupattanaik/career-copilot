@@ -346,11 +346,10 @@ export function AnalysisHistory() {
     <div className="ra-page">
       <header className="ra-masthead">
         <div>
-          <p className="ra-kicker">Resume · evidence workspace</p>
           <h1 className="ra-title">Resume analysis</h1>
           <p className="ra-sub">
-            Confirm what was extracted, then audit keyword coverage against each job — scored only
-            from lines your confirmed resume actually contains.
+            Confirm what was extracted, then audit keyword coverage against each job. Scores use only
+            lines your confirmed resume actually contains.
           </p>
         </div>
         <nav className="ra-segnav" aria-label="Resume analysis sections">
@@ -511,7 +510,7 @@ function ResumeLibrary() {
         <div className="ra-empty">
           <AnimatedIcon icon={FolderOpen} size={30} aria-hidden="true" />
           <h2>No resumes yet</h2>
-          <p>Upload a resume once and reuse it for every analysis — saved files appear here.</p>
+          <p>Upload a resume once and reuse it for every analysis. Saved files appear here.</p>
           <Link className="button button-primary" href="/resume-analysis?tab=upload">
             New upload
           </Link>
@@ -1185,7 +1184,6 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
       {!embedded && (
         <header className="ra-masthead">
           <div>
-            <p className="ra-kicker">Resume · new run</p>
             <h1 className="ra-title">Resume and JD analysis</h1>
             <p className="ra-sub">
               Reuse a stored resume or upload a new one, add the job description, then confirm the
@@ -1421,7 +1419,6 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
         <section className="ra-review" aria-label="Review extracted content">
           <div className="ra-section-head">
             <div>
-              <p className="ra-kicker">Step 2 · confirm before scoring</p>
               <h2 className="ra-section-title">Check the extracted content</h2>
               <p className="ra-sub" style={{ marginTop: 6 }}>
                 Your score will use only the confirmed text shown here. Fix anything the parser got
@@ -1507,7 +1504,6 @@ export function ExtractionReview() {
     <div className="ra-page">
       <header className="ra-masthead">
         <div>
-          <p className="ra-kicker">Candidate review</p>
           <h1 className="ra-title">Review extracted content</h1>
           <p className="ra-sub">
             Upload a resume and job description, then confirm the extraction before scoring.
@@ -1549,7 +1545,6 @@ export function AtsReport() {
       <div className="ra-page">
         <header className="ra-masthead">
           <div>
-            <p className="ra-kicker">ATS analysis</p>
             <h1 className="ra-title">Report unavailable</h1>
             <p className="ra-sub">This analysis report could not be loaded.</p>
           </div>

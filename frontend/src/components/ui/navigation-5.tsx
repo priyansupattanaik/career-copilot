@@ -12,6 +12,7 @@ import { AnimatedIcon } from "@/components/ui/animated-icon";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { prefetchRoute } from "@/shared/route-prefetch";
 import { cn } from "@/shared/utils";
+import { useMotionValueEvent, useScroll } from "motion/react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -38,12 +39,10 @@ export function Navigation5({ className }: { className?: string }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const solutionsRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 16);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  const { scrollY } = useScroll();
+  useMotionValueEvent(scrollY, "change", (value) => {
+    setScrolled(value > 16);
+  });
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";

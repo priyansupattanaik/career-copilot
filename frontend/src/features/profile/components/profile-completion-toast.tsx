@@ -53,13 +53,15 @@ export function ProfileCompletionToast({ completion, missing }: Props) {
     window.dispatchEvent(new Event(DISMISS_EVENT));
   }
 
-  // Settings and dashboard already expose completion inline. Mock interview
-  // can start without a completed profile, so the toast must not cover those.
+  // Dense studios already show completion elsewhere. Keep the toast off them
+  // so it cannot cover filters, report actions, or the job pipeline.
   if (
     pathname.startsWith("/settings/") ||
     pathname === "/dashboard" ||
     pathname.startsWith("/mock-interview") ||
     pathname.startsWith("/learning") ||
+    pathname.startsWith("/resume-analysis") ||
+    pathname.startsWith("/jobs") ||
     !open ||
     percent >= 100 ||
     safeMissing.length === 0

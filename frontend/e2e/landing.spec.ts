@@ -52,7 +52,7 @@ test.describe("Landing page audit acceptance", () => {
     const practiceVideo = page.locator(".home-camera-video");
     await expect(practiceVideo).toBeVisible();
     await expect(practiceVideo).toHaveAttribute("src", "/media/interview-practice.mp4");
-    expect(await practiceVideo.evaluate((element) => getComputedStyle(element).objectFit)).toBe("contain");
+    expect(await practiceVideo.evaluate((element) => getComputedStyle(element).objectFit)).toBe("cover");
     await expect.poll(() => practiceVideo.evaluate((element) => (element as HTMLVideoElement).videoWidth)).toBeGreaterThan(0);
     expect(await practiceVideo.evaluate((element) => {
       const video = element as HTMLVideoElement;
@@ -99,7 +99,7 @@ test.describe("Landing page audit acceptance", () => {
     expect(fonts).not.toMatch(/Satoshi/i);
 
     await page.locator("#system").scrollIntoViewIfNeeded();
-    await expect(page.locator(".home-feature-grid article")).toHaveCount(3);
+    await expect(page.locator(".home-steps .home-step")).toHaveCount(3);
 
     await expect(page.getByRole("link", { name: /Get started/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /See the practice room/i })).toBeVisible();
@@ -129,7 +129,7 @@ test.describe("Landing page audit acceptance", () => {
       Number(await page.locator(".home-final-card").evaluate((el) => getComputedStyle(el).opacity)),
     ).toBeGreaterThanOrEqual(0.99);
     await expect(page.getByRole("heading", { name: /Start with/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Create my profile/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Get started/i }).first()).toBeVisible();
 
     const hiddenReveals = await page.evaluate(() =>
       Array.from(document.querySelectorAll(".home-reveal:not(.home-revealed)")).map((el) => el.className),
@@ -166,7 +166,7 @@ test.describe("Landing page audit acceptance", () => {
     const contrast = await page.evaluate(() => {
       const root = document.documentElement;
       const practiceHeading = document.querySelector(".home-practice-copy h2");
-      const systemHeading = document.querySelector(".home-section-head h2");
+      const systemHeading = document.querySelector(".home-system-copy h2");
       return {
         theme: root.getAttribute("data-theme"),
         pageBackground: getComputedStyle(document.querySelector(".home-page")!).backgroundColor,

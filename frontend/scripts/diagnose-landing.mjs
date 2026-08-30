@@ -110,7 +110,7 @@ async function collectPageSignals(page, label) {
       ".home-kicker",
       ".home-practice-copy > p:not(.home-kicker)",
       ".home-practice-copy h2",
-      ".home-section-head h2",
+      ".home-system-copy h2",
       ".home-feature h3",
       ".home-feature > p:last-child",
       ".home-profile .home-sheet-main p",

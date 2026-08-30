@@ -125,7 +125,6 @@ export function InterviewStartForm() {
       }}
     >
       <div className="interview-start-copy">
-        <p className="interview-kicker">Your choice</p>
         <h2>Start a round</h2>
         <p>Choose a focus, then start.</p>
       </div>
@@ -342,7 +341,6 @@ export function InterviewHome() {
   return (
     <div className="feature-page interview-hub">
       <PageHeader
-        eyebrow="Mock interview"
         title="Practice out loud"
         description="Start a practice session and review past rounds."
       />
@@ -352,7 +350,6 @@ export function InterviewHome() {
         <section className="interview-history" aria-labelledby="interview-history-heading">
           <div className="interview-history-head">
             <div>
-              <p className="interview-kicker">History</p>
               <h2 id="interview-history-heading">Recent sessions</h2>
             </div>
             <Button type="button" variant="secondary" disabled={loading} onClick={() => void loadSessions()}>
@@ -428,7 +425,6 @@ export function InterviewSetup() {
   return (
     <div className="feature-page interview-hub">
       <PageHeader
-        eyebrow="Mock interview"
         title="Set the round, then begin"
         description="Choose a focus and start a practice session."
       />

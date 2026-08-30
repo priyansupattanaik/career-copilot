@@ -3044,15 +3044,41 @@ def interview_tts_status(
     user: CurrentUser | None = Depends(get_current_user_optional),
     settings: Settings = Depends(get_settings),
 ):
-    """Whether Fish Audio interviewer voice is available (no secrets leaked)."""
+    """Whether a server interviewer voice is available (no secrets leaked)."""
     _ = user
-    configured = bool((settings.fish_audio_api_key or "").strip())
+    from app.features.interview.tts import preferred_tts_provider
+
+    groq_ready = bool(settings.groq_tts_configured)
+    nvidia_ready = bool(settings.nvidia_tts_configured)
+    fish_ready = bool(settings.fish_audio_configured)
+    configured = groq_ready or nvidia_ready or fish_ready
     stt_configured = bool(settings.groq_configured)
+    chain: list[str] = []
+    if groq_ready:
+        chain.append("groq_orpheus")
+    if nvidia_ready:
+        chain.append("nvidia_magpie")
+    if fish_ready:
+        chain.append("fish_audio")
+    chain.append("browser_speech_synthesis")
+    provider = preferred_tts_provider(settings)
+    if groq_ready:
+        model = (settings.groq_tts_model or "").strip() or None
+        voice = (settings.groq_tts_voice or "").strip() or None
+    elif nvidia_ready:
+        model = "nvidia/magpie-tts-multilingual"
+        voice = (settings.nvidia_tts_voice or "").strip() or None
+    else:
+        model = (settings.fish_audio_model or "").strip() or None
+        voice = None
+    fallbacks = chain[1:]
     return {
-        "provider": "fish_audio" if configured else None,
+        "provider": provider,
         "configured": configured,
-        "model": (settings.fish_audio_model or "").strip() or None if configured else None,
-        "fallback": "browser_speech_synthesis",
+        "model": model,
+        "voice": voice,
+        "fallback": fallbacks[0] if fallbacks else "browser_speech_synthesis",
+        "fallbacks": fallbacks,
         "stt_provider": "groq_whisper" if stt_configured else None,
         "stt_configured": stt_configured,
     }
@@ -3065,20 +3091,20 @@ def interview_tts(
     settings: Settings = Depends(get_settings),
 ):
     """
-    Synthesize mock-interview interviewer speech via Fish Audio (server-side key).
-    Returns audio/mpeg (or wav/opus) bytes. Clients should fall back to browser TTS on 503.
+    Synthesize interviewer speech. Tries Groq Orpheus, then NVIDIA Magpie, then Fish.
+    Clients should fall back to browser TTS on 503 so the session never stalls silent.
     """
     _ = user
-    if not (settings.fish_audio_api_key or "").strip():
+    if not settings.interviewer_tts_configured:
         raise ApiError(
             503,
             "tts_unavailable",
-            "Fish Audio is not configured. Set FISH_AUDIO_API_KEY or use browser speech.",
+            "Interviewer voice is not configured. Set GROQ_API_KEY or NVIDIA_API_KEY, or use browser speech.",
         )
     from app.features.interview.tts import synthesize_speech
 
     try:
-        audio, media_type = synthesize_speech(settings, payload.text)
+        audio, media_type, provider = synthesize_speech(settings, payload.text)
     except ValueError as exc:
         raise ApiError(400, "tts_invalid_text", str(exc)) from exc
     except RuntimeError as exc:
@@ -3089,7 +3115,7 @@ def interview_tts(
         media_type=media_type,
         headers={
             "Cache-Control": "no-store",
-            "X-TTS-Provider": "fish_audio",
+            "X-TTS-Provider": provider,
             "X-TTS-Kind": payload.kind,
         },
     )

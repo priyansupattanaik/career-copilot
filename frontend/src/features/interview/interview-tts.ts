@@ -1,5 +1,5 @@
 /**
- * Mock-interview TTS: Fish Audio (server proxy) with browser speechSynthesis fallback.
+ * Mock-interview TTS: Groq Orpheus, then NVIDIA Magpie, then Fish, then browser.
  * Guarantees full utterance playback before resolving — never advances mid-sentence.
  */
 
@@ -13,7 +13,9 @@ export type SpeakOptions = {
   kind?: InterviewTtsKind;
   /** Called when playback is cancelled (navigation / next turn). */
   signal?: AbortSignal;
-  /** Prefer Fish Audio when available (default true). */
+  /** Prefer Groq Orpheus when available (default true). */
+  preferServer?: boolean;
+  /** @deprecated Use preferServer. Kept so existing callers still compile. */
   preferFish?: boolean;
 };
 
@@ -21,7 +23,9 @@ export type TtsStatus = {
   provider: string | null;
   configured: boolean;
   model?: string | null;
+  voice?: string | null;
   fallback?: string;
+  fallbacks?: string[];
   stt_provider?: string | null;
   stt_configured?: boolean;
 };
@@ -29,8 +33,8 @@ export type TtsStatus = {
 let cachedStatus: TtsStatus | null = null;
 let statusFetchedAt = 0;
 const STATUS_TTL_MS = 60_000;
-/** Don't stall the interview if Fish Audio is slow — fall back to the browser. */
-const FISH_FETCH_MS = 8_000;
+/** Server may try Groq then NVIDIA. Keep this long enough, then use the browser. */
+const SERVER_TTS_FETCH_MS = 28_000;
 
 /** Active HTMLAudioElement so we can cancel cleanly between turns. */
 let activeAudio: HTMLAudioElement | null = null;
@@ -112,7 +116,9 @@ export async function fetchInterviewTtsStatus(force = false): Promise<TtsStatus>
         provider: body.provider ?? null,
         configured: Boolean(body.configured),
         model: body.model ?? null,
+        voice: body.voice ?? null,
         fallback: body.fallback || "browser_speech_synthesis",
+        fallbacks: Array.isArray(body.fallbacks) ? body.fallbacks : undefined,
         stt_provider: body.stt_provider ?? null,
         stt_configured: Boolean(body.stt_configured),
       };
@@ -142,11 +148,11 @@ function mergeAbortSignals(signals: Array<AbortSignal | undefined>): AbortSignal
   return controller.signal;
 }
 
-async function fetchFishAudioBlob(text: string, kind: InterviewTtsKind, signal?: AbortSignal): Promise<Blob> {
+async function fetchServerTtsBlob(text: string, kind: InterviewTtsKind, signal?: AbortSignal): Promise<Blob> {
   const base = resolveApiBase();
   const headers = await interviewAuthHeaders();
   const timeout = new AbortController();
-  const timer = window.setTimeout(() => timeout.abort(), FISH_FETCH_MS);
+  const timer = window.setTimeout(() => timeout.abort(), SERVER_TTS_FETCH_MS);
   const combined = mergeAbortSignals([signal, timeout.signal]);
   try {
     const res = await fetch(`${base}/interviews/tts`, {
@@ -158,11 +164,11 @@ async function fetchFishAudioBlob(text: string, kind: InterviewTtsKind, signal?:
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
-      throw new Error(`Fish TTS failed (${res.status})${detail ? `: ${detail.slice(0, 120)}` : ""}`);
+      throw new Error(`Server TTS failed (${res.status})${detail ? `: ${detail.slice(0, 120)}` : ""}`);
     }
     const blob = await res.blob();
     if (!blob || blob.size < 32) {
-      throw new Error("Fish TTS returned empty audio");
+      throw new Error("Server TTS returned empty audio");
     }
     return blob;
   } finally {
@@ -413,7 +419,7 @@ function speakWithBrowser(text: string, signal?: AbortSignal): Promise<void> {
 
 /**
  * Speak interviewer text fully, then resolve.
- * Prefer Fish Audio when configured; fall back to browser speechSynthesis.
+ * Prefer server TTS (Groq, then NVIDIA, then Fish); fall back to browser speechSynthesis.
  * Does not resolve until playback ends (or abort / hard failure).
  */
 export async function speakInterviewLine(text: string, options?: SpeakOptions): Promise<void> {
@@ -427,14 +433,15 @@ export async function speakInterviewLine(text: string, options?: SpeakOptions): 
   // Demo sessions must remain deterministic and local. They use the browser
   // fallback so a configured remote provider cannot hold the interview in the
   // speaking state or make the answer controls appear permanently disabled.
-  const preferFish = options?.preferFish !== false && !isDemoSession();
+  const preferServer =
+    options?.preferServer !== false && options?.preferFish !== false && !isDemoSession();
   const kind = options?.kind ?? "general";
 
-  if (preferFish) {
+  if (preferServer) {
     try {
       const status = await fetchInterviewTtsStatus();
       if (status.configured) {
-        const blob = await fetchFishAudioBlob(line, kind, options?.signal);
+        const blob = await fetchServerTtsBlob(line, kind, options?.signal);
         if (options?.signal?.aborted) {
           throw new DOMException("Aborted", "AbortError");
         }
