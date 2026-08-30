@@ -448,37 +448,39 @@ function LandingInner() {
   );
 }
 
-// Interview demo questions — varied, never the same two in a row
+// Interview demo — questions with pre-written answers for the typewriter
+const TYPING_SPEED = 32; // ms per character
+
 const INTERVIEW_QUESTIONS = [
   {
+    topic: "Behavioural",
     q: "Tell me about a time you led a project under a tight deadline.",
-    topic: "Behavioural",
-    duration: 7500,
+    a: "Last quarter I led a database migration with three days to go-live. I broke the scope into daily checkpoints, ran a short sync every morning, and we shipped on time with zero rollbacks.",
   },
   {
-    q: "How do you prioritise when everything feels urgent?",
     topic: "Situational",
-    duration: 7000,
+    q: "How do you prioritise when everything feels urgent?",
+    a: "I ask what actually breaks if each task slips by a day. Most things that feel urgent can wait. The ones that truly can't get my full focus — everything else gets queued or delegated.",
   },
   {
-    q: "Walk me through a technical decision you'd make differently today.",
     topic: "Technical",
-    duration: 8000,
+    q: "Walk me through a technical decision you'd make differently today.",
+    a: "I once reached for NoSQL early in a project. The data turned out to be deeply relational. I'd validate the data model more carefully before committing to a storage choice now.",
   },
   {
-    q: "Describe a moment you received difficult feedback. What did you do?",
     topic: "Behavioural",
-    duration: 7500,
+    q: "Describe a moment you received difficult feedback. What did you do?",
+    a: "My manager said my code reviews were too critical in tone. I asked for specific examples, then shifted to leading with questions instead of corrections. The dynamic improved fast.",
   },
   {
-    q: "What does good collaboration look like to you?",
     topic: "Culture",
-    duration: 6500,
+    q: "What does good collaboration look like to you?",
+    a: "Being clear about what you own, asking early when you're stuck, and making it safe to disagree. A short uncomfortable conversation is always better than a long, expensive one.",
   },
   {
-    q: "How do you keep up with fast-changing tools in your field?",
     topic: "Growth",
-    duration: 7000,
+    q: "How do you keep up with fast-changing tools in your field?",
+    a: "I follow a few trusted sources, but mostly I stay current by building small things with new tools. Reading about them is one thing — actually using them reveals what matters.",
   },
 ];
 
@@ -491,15 +493,50 @@ function buildSequence(len: number): number[] {
   return arr;
 }
 
+// Typewriter hook — resets and starts when `active` flips to true
+function useTyping(text: string, active: boolean) {
+  const [count, setCount] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setCount(0);
+    if (!active) return;
+
+    // Small initial delay so the panel is fully visible before text starts
+    const startId = setTimeout(() => {
+      intervalRef.current = setInterval(() => {
+        setCount((c) => {
+          if (c >= text.length) {
+            clearInterval(intervalRef.current!);
+            return c;
+          }
+          return c + 1;
+        });
+      }, TYPING_SPEED);
+    }, 280);
+
+    return () => {
+      clearTimeout(startId);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [text, active]);
+
+  return {
+    typed: text.slice(0, count),
+    done: count >= text.length,
+  };
+}
+
 type InterviewPhase = "question" | "answering" | "transitioning";
 
 function useInterviewDemo() {
   const seqRef = useRef<number[]>(buildSequence(INTERVIEW_QUESTIONS.length));
-  const posRef = useRef(1); // start at 1 since idx = seqRef[0]
-  const timer1Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const posRef = useRef(1);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const clearTimers = () => {
-    if (timer1Ref.current) clearTimeout(timer1Ref.current);
+  const clearTimer = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
   };
 
   const getNext = () => {
@@ -519,26 +556,25 @@ function useInterviewDemo() {
   const [phase, setPhase] = useState<InterviewPhase>("question");
 
   useEffect(() => {
-    clearTimers();
+    clearTimer();
+    const q = INTERVIEW_QUESTIONS[idx];
 
     if (phase === "question") {
-      // Show question for 3s then move to answering
-      timer1Ref.current = setTimeout(() => setPhase("answering"), 3000);
+      // Show question for 3.2s, then start answering
+      timerRef.current = setTimeout(() => setPhase("answering"), 3200);
     } else if (phase === "answering") {
-      // Show answering for the question's duration, then transition
-      const duration = INTERVIEW_QUESTIONS[idx].duration;
-      timer1Ref.current = setTimeout(() => {
-        setPhase("transitioning");
-      }, duration);
+      // Duration = time to type the full answer + 1.2s pause at end
+      const typeDuration = 280 + q.a.length * TYPING_SPEED + 1200;
+      timerRef.current = setTimeout(() => setPhase("transitioning"), typeDuration);
     } else {
-      // transitioning — wait for fade out then swap question
-      timer1Ref.current = setTimeout(() => {
+      // Fade-out transition, then load next question
+      timerRef.current = setTimeout(() => {
         setIdx(getNext());
         setPhase("question");
-      }, 500);
+      }, 520);
     }
 
-    return clearTimers;
+    return clearTimer;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, idx]);
 
@@ -559,6 +595,9 @@ function InterviewStage({
 }) {
   const { question, phase } = useInterviewDemo();
   const isTransitioning = phase === "transitioning";
+  const isAnswering = phase === "answering";
+
+  const { typed, done } = useTyping(question.a, isAnswering);
 
   return (
     <div
@@ -590,34 +629,54 @@ function InterviewStage({
         <i /> live practice
       </div>
 
-      {/* Question card */}
+      {/* Question card — shown while question is being read */}
       <div
         className={[
           "home-demo-question",
-          phase === "question" && !isTransitioning ? "home-demo-question--visible" : "",
+          phase === "question" && !isTransitioning
+            ? "home-demo-question--visible"
+            : "",
           isTransitioning ? "home-demo-question--out" : "",
-        ].join(" ").trim()}
+        ]
+          .join(" ")
+          .trim()}
         aria-live="polite"
       >
         <span className="home-demo-topic">{question.topic}</span>
         <p>{question.q}</p>
       </div>
 
-      {/* Answering bar with waveform */}
+      {/* Answer panel — slides up during answering phase */}
       <div
         className={[
           "home-demo-answer",
-          phase === "answering" && !isTransitioning ? "home-demo-answer--visible" : "",
+          isAnswering && !isTransitioning ? "home-demo-answer--visible" : "",
           isTransitioning ? "home-demo-answer--out" : "",
-        ].join(" ").trim()}
+        ]
+          .join(" ")
+          .trim()}
       >
-        <span className="home-demo-answering-label">
-          <i /> Answering
-        </span>
-        <div className="home-demo-waveform" aria-hidden>
-          {Array.from({ length: 14 }, (_, k) => (
-            <i key={k} />
-          ))}
+        {/* Question context (small, muted) */}
+        <p className="home-demo-answer-q">{question.q}</p>
+
+        {/* Typed answer */}
+        <p className="home-demo-answer-text">
+          {typed}
+          <span
+            className={`home-demo-cursor${done ? " home-demo-cursor--blink" : ""}`}
+          />
+        </p>
+
+        {/* Status bar */}
+        <div className="home-demo-status">
+          <span className="home-demo-answering-label">
+            <i /> Answering
+          </span>
+          <div className="home-demo-waveform" aria-hidden>
+            {Array.from({ length: 12 }, (_, k) => (
+              <i key={k} />
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -658,9 +717,7 @@ function HeroVisual() {
             <span>practice room</span>
             <PracticeClock />
           </div>
-          <InterviewStage
-            blockVideoInteraction={blockVideoInteraction}
-          />
+          <InterviewStage blockVideoInteraction={blockVideoInteraction} />
         </div>
       </motion.div>
     </div>
