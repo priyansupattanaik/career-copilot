@@ -16,7 +16,6 @@ import { CareerIcon } from "@/components/ui/career-icons";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { Navigation5 } from "@/components/ui/navigation-5";
 import { BeamsBackground } from "@/components/ui/beams-background";
-import { ParticlesBackground } from "@/components/ui/particles-background";
 import { RuixenGradientFooter } from "@/components/ui/ruixen-gradient-footer";
 import { AnimatedIcon } from "@/components/ui/animated-icon";
 import { MotionProvider, useMotion } from "../motion-context";
@@ -347,11 +346,6 @@ function LandingInner() {
         paused={isMotionPaused}
         intensity="subtle"
         className="home-beams"
-      />
-      <ParticlesBackground
-        theme={resolvedTheme}
-        paused={isMotionPaused}
-        className="home-particles-layer"
       />
       <a href="#main-content" className="skip-link">
         Skip to main content

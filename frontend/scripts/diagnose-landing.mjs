@@ -69,8 +69,6 @@ async function collectPageSignals(page, label) {
       ".home-final-card",
       ".home-footer",
       ".home-beams",
-      ".home-particles",
-      ".home-particles canvas",
       ".home-beams canvas",
     ];
 
@@ -144,19 +142,6 @@ async function collectPageSignals(page, label) {
         }
       : null;
 
-    const particles = document.querySelector(".home-particles canvas");
-    let particlePixels = 0;
-    if (particles) {
-      const ctx = particles.getContext("2d");
-      if (ctx) {
-        const w = Math.min(particles.width, 800);
-        const h = Math.min(particles.height, 500);
-        const data = ctx.getImageData(0, 0, w, h).data;
-        for (let i = 3; i < data.length; i += 4)
-          if (data[i] > 20) particlePixels += 1;
-      }
-    }
-
     const beams = document.querySelector(".home-beams canvas");
     let beamPixels = 0;
     if (beams) {
@@ -205,16 +190,7 @@ async function collectPageSignals(page, label) {
       boxes,
       contrastChecks,
       videoState,
-      particlePixels,
       beamPixels,
-      particleCanvas: particles
-        ? {
-            width: particles.width,
-            height: particles.height,
-            styleWidth: particles.style.width,
-            styleHeight: particles.style.height,
-          }
-        : null,
       beamCanvas: beams ? { width: beams.width, height: beams.height } : null,
       featurePad,
       reveal,
@@ -311,13 +287,6 @@ async function main() {
     note("warn", "video-paused", JSON.stringify(hero.videoState));
   else note("info", "video", JSON.stringify(hero.videoState));
 
-  if (hero.particlePixels < 50)
-    note(
-      "error",
-      "particles-invisible",
-      `pixels=${hero.particlePixels} canvas=${JSON.stringify(hero.particleCanvas)}`,
-    );
-  else note("info", "particles", `pixels=${hero.particlePixels}`);
   if (hero.beamPixels < 20)
     note(
       "warn",

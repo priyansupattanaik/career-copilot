@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Team5 } from "@/components/ui/team-5";
 import { Navigation5 } from "@/components/ui/navigation-5";
 import { BeamsBackground } from "@/components/ui/beams-background";
-import { ParticlesBackground } from "@/components/ui/particles-background";
 import { RuixenGradientFooter } from "@/components/ui/ruixen-gradient-footer";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { MotionProvider, useMotion } from "../motion-context";
@@ -28,11 +27,6 @@ function TeamsInner() {
         paused={isMotionPaused}
         intensity="subtle"
         className="home-beams"
-      />
-      <ParticlesBackground
-        theme={resolvedTheme}
-        paused={isMotionPaused}
-        className="home-particles-layer"
       />
       <a href="#main-content" className="skip-link">
         Skip to main content

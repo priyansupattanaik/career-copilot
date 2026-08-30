@@ -446,7 +446,6 @@ export const AnimateIcon = forwardRef<HTMLSpanElement, AnimateIconProps>(
       className,
       style,
       size,
-      idle: _idle,
       ...props
     },
     forwardedRef,

@@ -9875,25 +9875,6 @@ select option {
   pointer-events: none;
   overflow: hidden;
 }
-.home-particles {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  overflow: hidden;
-  pointer-events: none;
-  opacity: 1;
-  mix-blend-mode: normal;
-}
-.home-particles canvas {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-}
-[data-theme="dark"] .home-particles {
-  mix-blend-mode: screen;
-}
 .home-page > main,
 .home-page > .home-footer {
   position: relative;

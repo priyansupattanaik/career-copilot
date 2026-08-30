@@ -18,7 +18,6 @@ import {
 import { isDemoSession } from "@/features/auth/demo-session";
 import { safeRedirectPath } from "@/features/auth/safe-path";
 import { ACCESS_TOKEN_STORAGE_KEY } from "@/shared/config";
-import { Link } from "@/shared/ui/router-link";
 import { PublicProfile } from "@/features/profile/components/public-profile";
 import { CommunityProfiles } from "@/features/community/components/community-profiles";
 import { useTheme } from "@/shared/theme";
