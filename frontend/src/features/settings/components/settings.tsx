@@ -2,12 +2,25 @@ import { usePathname } from "@/shared/router";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Link } from "@/shared/ui/router-link";
 import LoadingState from "@/components/ui/loading-state";
-import { PhoneField, parsePhone, composePhone, type PhoneValue } from "@/shared/ui/phone-field";
+import {
+  PhoneField,
+  parsePhone,
+  composePhone,
+  type PhoneValue,
+} from "@/shared/ui/phone-field";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "@/shared/api/client";
 import { createClient } from "@/features/auth/api/client";
-import { Button, Card, Input, PageHeader, Progress, Select, Textarea } from "@/shared/ui/primitives";
+import {
+  Button,
+  Card,
+  Input,
+  PageHeader,
+  Progress,
+  Select,
+  Textarea,
+} from "@/shared/ui/primitives";
 import { CareerIcon, type CareerIconName } from "@/components/ui/career-icons";
 import { AnimatedIcon } from "@/components/ui/animated-icon";
 import { Pencil, Plus, Trash2 } from "lucide-react";
@@ -26,21 +39,48 @@ const tabs = [
 ] as const;
 
 const PROFILE_NAV = [
-  { id: "profile-details", label: "Details", icon: "profile" as CareerIconName },
+  {
+    id: "profile-details",
+    label: "Details",
+    icon: "profile" as CareerIconName,
+  },
   { id: "profile-resume", label: "Resume", icon: "resume" as CareerIconName },
-  { id: "profile-preferences", label: "Preferences", icon: "opportunities" as CareerIconName },
+  {
+    id: "profile-preferences",
+    label: "Preferences",
+    icon: "opportunities" as CareerIconName,
+  },
   { id: "profile-skills", label: "Skills", icon: "signal" as CareerIconName },
-  { id: "profile-experience", label: "Experience", icon: "evidence" as CareerIconName },
-  { id: "profile-education", label: "Education", icon: "learning" as CareerIconName },
+  {
+    id: "profile-experience",
+    label: "Experience",
+    icon: "evidence" as CareerIconName,
+  },
+  {
+    id: "profile-education",
+    label: "Education",
+    icon: "learning" as CareerIconName,
+  },
   { id: "profile-links", label: "Links", icon: "confidence" as CareerIconName },
 ] as const;
 
 function sectionForMissingKey(key: string): string {
   const k = String(key || "").toLowerCase();
   if (k.includes("skill")) return "profile-skills";
-  if (k.includes("experience") || k.includes("employment")) return "profile-experience";
-  if (k.includes("education") || k.includes("degree") || k.includes("institution")) return "profile-education";
-  if (k.includes("link") || k.includes("linkedin") || k.includes("github") || k.includes("portfolio")) {
+  if (k.includes("experience") || k.includes("employment"))
+    return "profile-experience";
+  if (
+    k.includes("education") ||
+    k.includes("degree") ||
+    k.includes("institution")
+  )
+    return "profile-education";
+  if (
+    k.includes("link") ||
+    k.includes("linkedin") ||
+    k.includes("github") ||
+    k.includes("portfolio")
+  ) {
     return "profile-links";
   }
   if (k.includes("resume")) return "profile-resume";
@@ -60,6 +100,7 @@ function sectionForMissingKey(key: string): string {
 
 const PROFILE_EDITABLE_FIELDS = [
   "full_name",
+  "username",
   "headline",
   "bio",
   "phone",
@@ -80,7 +121,9 @@ const CAREER_LEVEL_OPTIONS = [
   { value: "executive", label: "Executive" },
 ] as const;
 
-const YEARS_OPTIONS = [0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30] as const;
+const YEARS_OPTIONS = [
+  0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30,
+] as const;
 
 const WORK_MODE_OPTIONS = [
   { value: "remote", label: "Remote" },
@@ -243,9 +286,10 @@ function experienceDateLabel(row: ProfileRecord): string {
     const text = String(value || "");
     if (!/^\d{4}-\d{2}/.test(text)) return text;
     const [year, month] = text.split("-");
-    return new Intl.DateTimeFormat("en", { month: "short", year: "numeric" }).format(
-      new Date(Number(year), Number(month) - 1, 1),
-    );
+    return new Intl.DateTimeFormat("en", {
+      month: "short",
+      year: "numeric",
+    }).format(new Date(Number(year), Number(month) - 1, 1));
   };
   return `${display(row.start_date) || "Unknown start"} – ${row.is_current ? "Present" : display(row.end_date) || "Unknown end"}`;
 }
@@ -385,7 +429,8 @@ function prefsToDraft(prefs: Record<string, any>): PrefDraft {
     preferred_locations: asStringArray(prefs.preferred_locations),
     work_modes: asStringArray(prefs.work_modes),
     employment_types: asStringArray(prefs.employment_types),
-    notice_period_days: prefs.notice_period_days == null ? "" : String(prefs.notice_period_days),
+    notice_period_days:
+      prefs.notice_period_days == null ? "" : String(prefs.notice_period_days),
     work_authorization: prefs.work_authorization || "",
     salary_min: prefs.salary_min == null ? "" : String(prefs.salary_min),
     salary_currency: prefs.salary_currency || "",
@@ -399,7 +444,9 @@ function normalizeOptions(
   options: readonly { value: string; label: string }[] | readonly string[],
 ): Array<{ value: string; label: string }> {
   return options.map((option) =>
-    typeof option === "string" ? { value: option, label: option } : { value: option.value, label: option.label },
+    typeof option === "string"
+      ? { value: option, label: option }
+      : { value: option.value, label: option.label },
   );
 }
 
@@ -441,7 +488,9 @@ function SelectWithOther({
   inputType?: "text" | "number";
   required?: boolean;
 }) {
-  const optionList = normalizeOptions(options).filter((option) => option.value !== "" && option.value !== OTHER_VALUE);
+  const optionList = normalizeOptions(options).filter(
+    (option) => option.value !== "" && option.value !== OTHER_VALUE,
+  );
   const knownKey = optionList.map((option) => option.value).join("\0");
   const known = useMemo(
     () => new Set(optionList.map((option) => option.value)),
@@ -538,12 +587,18 @@ function MultiOptionGroup({
   otherPlaceholder?: string;
   required?: boolean;
 }) {
-  const baseOptions = normalizeOptions(options).filter((option) => option.value !== OTHER_VALUE);
-  const labelByValue = new Map(baseOptions.map((option) => [option.value, option.label]));
+  const baseOptions = normalizeOptions(options).filter(
+    (option) => option.value !== OTHER_VALUE,
+  );
+  const labelByValue = new Map(
+    baseOptions.map((option) => [option.value, option.label]),
+  );
   for (const value of selected) {
     if (!labelByValue.has(value)) labelByValue.set(value, value);
   }
-  const available = baseOptions.filter((option) => !selected.includes(option.value));
+  const available = baseOptions.filter(
+    (option) => !selected.includes(option.value),
+  );
   const [pickerValue, setPickerValue] = useState("");
   const [otherText, setOtherText] = useState("");
   const [showOtherInput, setShowOtherInput] = useState(false);
@@ -629,7 +684,11 @@ function MultiOptionGroup({
             />
           </label>
           <div className="profile-composer-actions">
-            <Button type="button" onClick={addOtherValue} disabled={!otherText.trim()}>
+            <Button
+              type="button"
+              onClick={addOtherValue}
+              disabled={!otherText.trim()}
+            >
               Add
             </Button>
             <Button
@@ -648,14 +707,29 @@ function MultiOptionGroup({
       )}
 
       {selected.length > 0 ? (
-        <div className="cluster" role="list" aria-label={`Selected ${legend.toLowerCase()}`}>
+        <div
+          className="cluster"
+          role="list"
+          aria-label={`Selected ${legend.toLowerCase()}`}
+        >
           {selected.map((value) => (
-            <span key={value} className="badge badge-info" role="listitem" style={{ gap: 8 }}>
+            <span
+              key={value}
+              className="badge badge-info"
+              role="listitem"
+              style={{ gap: 8 }}
+            >
               {labelByValue.get(value) || value}
               <button
                 type="button"
                 className="button-quiet"
-                style={{ minHeight: "auto", padding: 0, boxShadow: "none", border: "none", fontWeight: 600 }}
+                style={{
+                  minHeight: "auto",
+                  padding: 0,
+                  boxShadow: "none",
+                  border: "none",
+                  fontWeight: 600,
+                }}
                 onClick={() => removeValue(value)}
                 aria-label={`Remove ${labelByValue.get(value) || value}`}
               >
@@ -677,7 +751,11 @@ type ResumeListItem = {
   id: string;
   title: string;
   is_active?: boolean;
-  latest_version?: { id: string; original_filename?: string; extraction_status?: string } | null;
+  latest_version?: {
+    id: string;
+    original_filename?: string;
+    extraction_status?: string;
+  } | null;
 };
 
 type ProfileDraft = {
@@ -689,7 +767,11 @@ type ProfileDraft = {
   certifications?: ProfileRecord[];
   languages?: ProfileRecord[];
   links: ProfileRecord[];
-  meta?: { warnings?: string[]; email_detected?: string | null; method?: string };
+  meta?: {
+    warnings?: string[];
+    email_detected?: string | null;
+    method?: string;
+  };
 };
 
 export function ProfileSettings() {
@@ -712,10 +794,18 @@ export function ProfileSettings() {
     summary: "",
   };
   const [experienceDraft, setExperienceDraft] = useState(emptyExperienceDraft);
-  const [editingExperienceId, setEditingExperienceId] = useState<string | null>(null);
-  const emptyEducationDraft = { institution: "", degree: "", field_of_study: "" };
+  const [editingExperienceId, setEditingExperienceId] = useState<string | null>(
+    null,
+  );
+  const emptyEducationDraft = {
+    institution: "",
+    degree: "",
+    field_of_study: "",
+  };
   const [educationDraft, setEducationDraft] = useState(emptyEducationDraft);
-  const [editingEducationId, setEditingEducationId] = useState<string | null>(null);
+  const [editingEducationId, setEditingEducationId] = useState<string | null>(
+    null,
+  );
   const emptyLinkDraft = { link_type: "linkedin", url: "", label: "" };
   const [linkDraft, setLinkDraft] = useState(emptyLinkDraft);
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
@@ -733,7 +823,13 @@ export function ProfileSettings() {
   const [fillBusy, setFillBusy] = useState(false);
   const [fillEmptyOnly, setFillEmptyOnly] = useState(true);
   const [draft, setDraft] = useState<ProfileDraft | null>(null);
-  const [phoneParts, setPhoneParts] = useState<PhoneValue>(() => parsePhone(""));
+  const [phoneParts, setPhoneParts] = useState<PhoneValue>(() =>
+    parsePhone(""),
+  );
+  const [usernameAvailability, setUsernameAvailability] = useState<{
+    available: boolean;
+    reason?: string | null;
+  } | null>(null);
 
   // Keep the structured phone editor in sync whenever the stored value
   // changes (profile load, draft apply) — avoid overwriting user typing.
@@ -750,23 +846,83 @@ export function ProfileSettings() {
       return prev;
     });
   }, [form.phone]);
+
+  useEffect(() => {
+    const value = String(form.username || "")
+      .trim()
+      .toLowerCase()
+      .replace(/^@/, "")
+      .replace(/\s+/g, "_");
+    if (!value) {
+      setUsernameAvailability(null);
+      return;
+    }
+    if (value.length < 3) {
+      setUsernameAvailability({
+        available: false,
+        reason: "Use at least 3 characters.",
+      });
+      return;
+    }
+    if (value.length > 30) {
+      setUsernameAvailability({
+        available: false,
+        reason: "Use at most 30 characters.",
+      });
+      return;
+    }
+    if (!/^[a-z0-9](?:[a-z0-9_]{1,28}[a-z0-9])?$/.test(value)) {
+      setUsernameAvailability({
+        available: false,
+        reason:
+          "Use only lowercase letters, numbers, and underscores (cannot start or end with _).",
+      });
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void apiRequest<{
+        available?: boolean;
+        reason?: string | null;
+        username?: string;
+      }>(`/profile/username/availability?username=${encodeURIComponent(value)}`)
+        .then((result) =>
+          setUsernameAvailability({
+            available: Boolean(result.available),
+            reason: result.reason,
+          }),
+        )
+        .catch(() => undefined);
+    }, 180);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [form.username]);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const AVATAR_MAX_BYTES = 3 * 1024 * 1024;
 
-  const [activeProfileSection, setActiveProfileSection] = useState<string>(() => {
-    if (typeof window === "undefined") return "profile-details";
-    const hash = window.location.hash.replace(/^#/, "");
-    return PROFILE_NAV.some((item) => item.id === hash) ? hash : "profile-details";
-  });
+  const [activeProfileSection, setActiveProfileSection] = useState<string>(
+    () => {
+      if (typeof window === "undefined") return "profile-details";
+      const hash = window.location.hash.replace(/^#/, "");
+      return PROFILE_NAV.some((item) => item.id === hash)
+        ? hash
+        : "profile-details";
+    },
+  );
 
   function openProfileSection(id: string) {
     setActiveProfileSection(id);
     history.replaceState(null, "", `#${id}`);
   }
 
-  const applyProfile = useCallback((profile: ProfileRecord | null | undefined) => {
-    setForm(profile || {});
-  }, []);
+  const applyProfile = useCallback(
+    (profile: ProfileRecord | null | undefined) => {
+      setForm(profile || {});
+    },
+    [],
+  );
 
   const applyLoaded = useCallback(
     (
@@ -777,7 +933,10 @@ export function ProfileSettings() {
       linkRows: ProfileRecord[],
     ) => {
       applyProfile(profilePayload.profile);
-      const prefs = { ...emptyPreferences(), ...(profilePayload.preferences || {}) };
+      const prefs = {
+        ...emptyPreferences(),
+        ...(profilePayload.preferences || {}),
+      };
       setPrefDraft(prefsToDraft(prefs));
       setSkills(skillRows || []);
       setExperiences(experienceRows || []);
@@ -788,14 +947,23 @@ export function ProfileSettings() {
   );
 
   const loadAll = useCallback(async () => {
-    const [profilePayload, skillRows, experienceRows, educationRows, linkRows] = await Promise.all([
-      apiRequest<{ profile: ProfileRecord; preferences: ProfileRecord }>("/profile"),
-      apiRequest<ProfileRecord[]>("/profile/skills"),
-      apiRequest<ProfileRecord[]>("/profile/experiences"),
-      apiRequest<ProfileRecord[]>("/profile/education"),
-      apiRequest<ProfileRecord[]>("/profile/links"),
-    ]);
-    applyLoaded(profilePayload, skillRows, experienceRows, educationRows, linkRows);
+    const [profilePayload, skillRows, experienceRows, educationRows, linkRows] =
+      await Promise.all([
+        apiRequest<{ profile: ProfileRecord; preferences: ProfileRecord }>(
+          "/profile",
+        ),
+        apiRequest<ProfileRecord[]>("/profile/skills"),
+        apiRequest<ProfileRecord[]>("/profile/experiences"),
+        apiRequest<ProfileRecord[]>("/profile/education"),
+        apiRequest<ProfileRecord[]>("/profile/links"),
+      ]);
+    applyLoaded(
+      profilePayload,
+      skillRows,
+      experienceRows,
+      educationRows,
+      linkRows,
+    );
     const profile = profilePayload?.profile || {};
     const details = profile.profile_completion_details as
       | { missing?: Array<{ key: string; label: string; points?: number }> }
@@ -814,7 +982,10 @@ export function ProfileSettings() {
       try {
         // The profile record controls the first paint. Secondary collections
         // must not keep the whole editor blank when one of them is slow.
-        const profilePayload = await apiRequest<{ profile: ProfileRecord; preferences: ProfileRecord }>("/profile");
+        const profilePayload = await apiRequest<{
+          profile: ProfileRecord;
+          preferences: ProfileRecord;
+        }>("/profile");
         if (!active) return;
         applyLoaded(profilePayload, [], [], [], []);
         setLoading(false);
@@ -828,13 +999,24 @@ export function ProfileSettings() {
           profile_missing: extractMissing(details, null),
         });
 
-        const [skillRows, experienceRows, educationRows, linkRows, resumeRows] = await Promise.all([
-          apiRequest<ProfileRecord[]>("/profile/skills").catch(() => [] as ProfileRecord[]),
-          apiRequest<ProfileRecord[]>("/profile/experiences").catch(() => [] as ProfileRecord[]),
-          apiRequest<ProfileRecord[]>("/profile/education").catch(() => [] as ProfileRecord[]),
-          apiRequest<ProfileRecord[]>("/profile/links").catch(() => [] as ProfileRecord[]),
-          apiRequest<ResumeListItem[]>("/resumes").catch(() => [] as ResumeListItem[]),
-        ]);
+        const [skillRows, experienceRows, educationRows, linkRows, resumeRows] =
+          await Promise.all([
+            apiRequest<ProfileRecord[]>("/profile/skills").catch(
+              () => [] as ProfileRecord[],
+            ),
+            apiRequest<ProfileRecord[]>("/profile/experiences").catch(
+              () => [] as ProfileRecord[],
+            ),
+            apiRequest<ProfileRecord[]>("/profile/education").catch(
+              () => [] as ProfileRecord[],
+            ),
+            apiRequest<ProfileRecord[]>("/profile/links").catch(
+              () => [] as ProfileRecord[],
+            ),
+            apiRequest<ResumeListItem[]>("/resumes").catch(
+              () => [] as ResumeListItem[],
+            ),
+          ]);
         if (!active) return;
         setSkills(skillRows || []);
         setExperiences(experienceRows || []);
@@ -861,7 +1043,9 @@ export function ProfileSettings() {
     setError("");
     setMessage("");
     try {
-      const body = selectedVersionId ? { resume_version_id: selectedVersionId } : {};
+      const body = selectedVersionId
+        ? { resume_version_id: selectedVersionId }
+        : {};
       const result = await apiRequest<{
         draft: ProfileDraft;
         counts?: Record<string, number>;
@@ -878,8 +1062,11 @@ export function ProfileSettings() {
             .map(([k, n]) => `${n} ${k}`)
             .join(", ")
         : "";
-      const fields = (result as { fields_extracted?: Record<string, unknown> }).fields_extracted;
-      const profileFields = Array.isArray(fields?.profile) ? (fields.profile as string[]).join(", ") : "";
+      const fields = (result as { fields_extracted?: Record<string, unknown> })
+        .fields_extracted;
+      const profileFields = Array.isArray(fields?.profile)
+        ? (fields.profile as string[]).join(", ")
+        : "";
       setMessage(
         [
           countText ? `Draft ready: ${countText}.` : "Draft ready.",
@@ -934,7 +1121,10 @@ export function ProfileSettings() {
           source?: string | null;
           title?: string | null;
         };
-      }>("/profile/from-resume/preview-upload", { method: "POST", body: formData });
+      }>("/profile/from-resume/preview-upload", {
+        method: "POST",
+        body: formData,
+      });
       setDraft(result.draft);
       const storedVersionId = result.resume?.id || "";
       if (storedVersionId) {
@@ -976,7 +1166,10 @@ export function ProfileSettings() {
       if (!current) return current;
       const rows = [...((current[section] as ProfileRecord[]) || [])];
       if (!rows[index]) return current;
-      rows[index] = { ...rows[index], selected: rows[index].selected === false };
+      rows[index] = {
+        ...rows[index],
+        selected: rows[index].selected === false,
+      };
       return { ...current, [section]: rows };
     });
   }
@@ -997,7 +1190,10 @@ export function ProfileSettings() {
         method: "POST",
         body: JSON.stringify({
           fill_empty_only: fillEmptyOnly,
-          profile: candidateDraft.profile?.selected === false ? {} : candidateDraft.profile || {},
+          profile:
+            candidateDraft.profile?.selected === false
+              ? {}
+              : candidateDraft.profile || {},
           skills: pick(candidateDraft.skills),
           experiences: pick(candidateDraft.experiences),
           education: pick(candidateDraft.education),
@@ -1036,16 +1232,40 @@ export function ProfileSettings() {
     try {
       const yearsRaw = form.years_experience;
       const years =
-        yearsRaw === "" || yearsRaw === null || yearsRaw === undefined ? undefined : Number(yearsRaw);
+        yearsRaw === "" || yearsRaw === null || yearsRaw === undefined
+          ? undefined
+          : Number(yearsRaw);
       if (years !== undefined && Number.isNaN(years)) {
         throw new Error("Years of experience must be a number.");
+      }
+      const username = String(form.username || "")
+        .trim()
+        .toLowerCase()
+        .replace(/^@/, "")
+        .replace(/\s+/g, "_");
+      if (username) {
+        if (username.length < 3 || username.length > 30) {
+          throw new Error("Username must be between 3 and 30 characters.");
+        }
+        if (!/^[a-z0-9](?:[a-z0-9_]{1,28}[a-z0-9])?$/.test(username)) {
+          throw new Error(
+            "Username must use only lowercase letters, numbers, and underscores (cannot start or end with _).",
+          );
+        }
+        if (usernameAvailability && usernameAvailability.available === false) {
+          throw new Error(
+            usernameAvailability.reason || "That username is not available.",
+          );
+        }
       }
       const editable = Object.fromEntries(
         PROFILE_EDITABLE_FIELDS.map((key) => {
           if (key === "years_experience") return [key, years];
+          if (key === "username") return [key, username || undefined];
           const value = form[key];
           if (value === undefined || value === null) return [key, undefined];
-          if (typeof value === "string" && value.trim() === "" && key !== "bio") return [key, undefined];
+          if (typeof value === "string" && value.trim() === "" && key !== "bio")
+            return [key, undefined];
           return [key, typeof value === "string" ? value.trim() : value];
         }).filter(([, value]) => value !== undefined),
       );
@@ -1061,10 +1281,24 @@ export function ProfileSettings() {
         | { missing?: Array<{ key: string; label: string; points?: number }> }
         | undefined;
       notifyProfileUpdated({
-        profile_completion: Number(savedProfile?.profile_completion ?? form.profile_completion ?? 0),
+        profile_completion: Number(
+          savedProfile?.profile_completion ?? form.profile_completion ?? 0,
+        ),
         profile_completion_details: details || null,
         profile_missing: extractMissing(details, null),
       });
+      if (savedProfile) {
+        setForm((current) => ({
+          ...current,
+          ...editable,
+          username: savedProfile.username ?? (username || current.username),
+          profile_completion:
+            savedProfile.profile_completion ?? current.profile_completion,
+          profile_completion_details:
+            savedProfile.profile_completion_details ??
+            current.profile_completion_details,
+        }));
+      }
       setMessage("Profile saved to your account.");
     } catch (e) {
       setError((e as Error).message);
@@ -1084,22 +1318,37 @@ export function ProfileSettings() {
         preferred_locations: prefDraft.preferred_locations,
         work_modes: prefDraft.work_modes,
         employment_types: prefDraft.employment_types,
-        notice_period_days: prefDraft.notice_period_days === "" ? null : Number(prefDraft.notice_period_days),
+        notice_period_days:
+          prefDraft.notice_period_days === ""
+            ? null
+            : Number(prefDraft.notice_period_days),
         willing_to_relocate: Boolean(prefDraft.willing_to_relocate),
         work_authorization: prefDraft.work_authorization || null,
-        salary_min: prefDraft.salary_min === "" ? null : Number(prefDraft.salary_min),
-        salary_currency: prefDraft.salary_currency ? prefDraft.salary_currency.toUpperCase() : null,
+        salary_min:
+          prefDraft.salary_min === "" ? null : Number(prefDraft.salary_min),
+        salary_currency: prefDraft.salary_currency
+          ? prefDraft.salary_currency.toUpperCase()
+          : null,
       };
-      if (payload.notice_period_days !== null && Number.isNaN(payload.notice_period_days)) {
+      if (
+        payload.notice_period_days !== null &&
+        Number.isNaN(payload.notice_period_days)
+      ) {
         throw new Error("Notice period must be a number.");
       }
       if (payload.salary_min !== null && Number.isNaN(payload.salary_min)) {
         throw new Error("Minimum salary must be a number.");
       }
-      if (payload.salary_currency && !/^[A-Z]{3}$/.test(payload.salary_currency)) {
+      if (
+        payload.salary_currency &&
+        !/^[A-Z]{3}$/.test(payload.salary_currency)
+      ) {
         throw new Error("Currency must be a 3-letter code such as INR or USD.");
       }
-      await apiRequest("/profile/preferences", { method: "PUT", body: JSON.stringify(payload) });
+      await apiRequest("/profile/preferences", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
       // Keep the edited draft visible immediately. The PUT above is the single
       // persistence request; a full profile reload here caused stale fields to
       // replace edits made in the meantime.
@@ -1130,11 +1379,18 @@ export function ProfileSettings() {
     setRecordBusy(true);
     try {
       if (editingSkillId) {
-        const savedSkill = await apiRequest<ProfileRecord>(`/profile/skills/${editingSkillId}`, {
-          method: "PATCH",
-          body: JSON.stringify({ name: skillName.trim() }),
-        });
-        setSkills((current) => current.map((item) => (String(item.id) === editingSkillId ? savedSkill : item)));
+        const savedSkill = await apiRequest<ProfileRecord>(
+          `/profile/skills/${editingSkillId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ name: skillName.trim() }),
+          },
+        );
+        setSkills((current) =>
+          current.map((item) =>
+            String(item.id) === editingSkillId ? savedSkill : item,
+          ),
+        );
         setMessage("Skill updated.");
       } else {
         const savedSkill = await apiRequest<ProfileRecord>("/profile/skills", {
@@ -1165,7 +1421,8 @@ export function ProfileSettings() {
         method: "POST",
       });
       const importedSkills = result.created || [];
-      if (importedSkills.length) setSkills((current) => [...current, ...importedSkills]);
+      if (importedSkills.length)
+        setSkills((current) => [...current, ...importedSkills]);
       setMessage(
         result.created_count
           ? `Imported ${result.created_count} skill(s) from your confirmed resume.`
@@ -1195,7 +1452,10 @@ export function ProfileSettings() {
     try {
       const body = new FormData();
       body.append("file", file);
-      const result = await apiRequest<{ profile: ProfileRecord; avatar_url?: string }>("/profile/avatar", {
+      const result = await apiRequest<{
+        profile: ProfileRecord;
+        avatar_url?: string;
+      }>("/profile/avatar", {
         method: "POST",
         body,
       });
@@ -1214,7 +1474,11 @@ export function ProfileSettings() {
     setAvatarBusy(true);
     try {
       await apiRequest("/profile/avatar", { method: "DELETE" });
-      setForm((current) => ({ ...current, avatar_path: null, avatar_url: null }));
+      setForm((current) => ({
+        ...current,
+        avatar_path: null,
+        avatar_url: null,
+      }));
       setMessage("Profile picture removed.");
     } catch (e) {
       setError((e as Error).message);
@@ -1247,13 +1511,23 @@ export function ProfileSettings() {
 
     // Remove from the visible collection before waiting for the network. The
     // API call remains authoritative; the original row is restored on failure at same index.
-    if (resource === "skills") setSkills((current) => current.filter((item) => String(item.id) !== id));
-    if (resource === "experiences") setExperiences((current) => current.filter((item) => String(item.id) !== id));
-    if (resource === "education") setEducation((current) => current.filter((item) => String(item.id) !== id));
-    if (resource === "links") setLinks((current) => current.filter((item) => String(item.id) !== id));
+    if (resource === "skills")
+      setSkills((current) => current.filter((item) => String(item.id) !== id));
+    if (resource === "experiences")
+      setExperiences((current) =>
+        current.filter((item) => String(item.id) !== id),
+      );
+    if (resource === "education")
+      setEducation((current) =>
+        current.filter((item) => String(item.id) !== id),
+      );
+    if (resource === "links")
+      setLinks((current) => current.filter((item) => String(item.id) !== id));
     if (resource === "skills" && editingSkillId === id) cancelEditSkill();
-    if (resource === "experiences" && editingExperienceId === id) cancelEditExperience();
-    if (resource === "education" && editingEducationId === id) cancelEditEducation();
+    if (resource === "experiences" && editingExperienceId === id)
+      cancelEditExperience();
+    if (resource === "education" && editingEducationId === id)
+      cancelEditEducation();
     if (resource === "links" && editingLinkId === id) cancelEditLink();
 
     try {
@@ -1320,7 +1594,11 @@ export function ProfileSettings() {
   }
 
   async function saveExperience() {
-    if (!experienceDraft.company_name.trim() || !experienceDraft.role_title.trim()) return;
+    if (
+      !experienceDraft.company_name.trim() ||
+      !experienceDraft.role_title.trim()
+    )
+      return;
     setError("");
     setMessage("");
     setRecordBusy(true);
@@ -1330,25 +1608,35 @@ export function ProfileSettings() {
       location: experienceDraft.location.trim() || null,
       employment_type: experienceDraft.employment_type || null,
       start_date: experienceDraft.start_date || null,
-      end_date: experienceDraft.is_current ? null : experienceDraft.end_date || null,
+      end_date: experienceDraft.is_current
+        ? null
+        : experienceDraft.end_date || null,
       is_current: experienceDraft.is_current,
       summary: experienceDraft.summary.trim() || null,
     };
     try {
       if (editingExperienceId) {
-        const savedExperience = await apiRequest<ProfileRecord>(`/profile/experiences/${editingExperienceId}`, {
-          method: "PATCH",
-          body: JSON.stringify(body),
-        });
+        const savedExperience = await apiRequest<ProfileRecord>(
+          `/profile/experiences/${editingExperienceId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(body),
+          },
+        );
         setExperiences((current) =>
-          current.map((item) => (String(item.id) === editingExperienceId ? savedExperience : item)),
+          current.map((item) =>
+            String(item.id) === editingExperienceId ? savedExperience : item,
+          ),
         );
         setMessage("Experience updated.");
       } else {
-        const savedExperience = await apiRequest<ProfileRecord>("/profile/experiences", {
-          method: "POST",
-          body: JSON.stringify(body),
-        });
+        const savedExperience = await apiRequest<ProfileRecord>(
+          "/profile/experiences",
+          {
+            method: "POST",
+            body: JSON.stringify(body),
+          },
+        );
         setExperiences((current) => [...current, savedExperience]);
         setMessage("Experience saved to your account.");
       }
@@ -1388,19 +1676,27 @@ export function ProfileSettings() {
     };
     try {
       if (editingEducationId) {
-        const savedEducation = await apiRequest<ProfileRecord>(`/profile/education/${editingEducationId}`, {
-          method: "PATCH",
-          body: JSON.stringify(body),
-        });
+        const savedEducation = await apiRequest<ProfileRecord>(
+          `/profile/education/${editingEducationId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(body),
+          },
+        );
         setEducation((current) =>
-          current.map((item) => (String(item.id) === editingEducationId ? savedEducation : item)),
+          current.map((item) =>
+            String(item.id) === editingEducationId ? savedEducation : item,
+          ),
         );
         setMessage("Education updated.");
       } else {
-        const savedEducation = await apiRequest<ProfileRecord>("/profile/education", {
-          method: "POST",
-          body: JSON.stringify(body),
-        });
+        const savedEducation = await apiRequest<ProfileRecord>(
+          "/profile/education",
+          {
+            method: "POST",
+            body: JSON.stringify(body),
+          },
+        );
         setEducation((current) => [...current, savedEducation]);
         setMessage("Education saved to your account.");
       }
@@ -1440,11 +1736,18 @@ export function ProfileSettings() {
     };
     try {
       if (editingLinkId) {
-        const savedLink = await apiRequest<ProfileRecord>(`/profile/links/${editingLinkId}`, {
-          method: "PATCH",
-          body: JSON.stringify(body),
-        });
-        setLinks((current) => current.map((item) => (String(item.id) === editingLinkId ? savedLink : item)));
+        const savedLink = await apiRequest<ProfileRecord>(
+          `/profile/links/${editingLinkId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(body),
+          },
+        );
+        setLinks((current) =>
+          current.map((item) =>
+            String(item.id) === editingLinkId ? savedLink : item,
+          ),
+        );
         setMessage("Link updated.");
       } else {
         const savedLink = await apiRequest<ProfileRecord>("/profile/links", {
@@ -1471,7 +1774,9 @@ export function ProfileSettings() {
     null,
   );
   const yearsValue =
-    form.years_experience === null || form.years_experience === undefined || form.years_experience === ""
+    form.years_experience === null ||
+    form.years_experience === undefined ||
+    form.years_experience === ""
       ? ""
       : String(form.years_experience);
 
@@ -1489,9 +1794,15 @@ export function ProfileSettings() {
         </div>
       ) : (
         <div className="profile-studio">
-          <header className="profile-masthead" aria-label="Profile summary">
+          <header
+            className={`profile-masthead${profileComplete ? " is-complete" : ""}`}
+            aria-label="Profile summary"
+          >
             <div className="profile-masthead-photo">
-              <div className="profile-avatar-preview" aria-hidden={!form.avatar_url}>
+              <div
+                className="profile-avatar-preview"
+                aria-hidden={!form.avatar_url}
+              >
                 {form.avatar_url ? (
                   <img
                     src={form.avatar_url}
@@ -1499,27 +1810,71 @@ export function ProfileSettings() {
                     width={72}
                     height={72}
                     onError={() =>
-                      setForm((current) => ({ ...current, avatar_path: null, avatar_url: null }))
+                      setForm((current) => ({
+                        ...current,
+                        avatar_path: null,
+                        avatar_url: null,
+                      }))
                     }
                   />
                 ) : (
-                  <span className="profile-avatar-fallback">{profileInitials(form.full_name)}</span>
+                  <span className="profile-avatar-fallback">
+                    {profileInitials(form.full_name)}
+                  </span>
                 )}
               </div>
             </div>
             <div className="profile-masthead-copy">
-              <h2 id="profile-overview-title">{form.full_name || "Your profile"}</h2>
+              <h2 id="profile-overview-title">
+                {form.full_name || "Your profile"}
+              </h2>
+              {form.username ? (
+                <p className="profile-masthead-handle">
+                  <Link href={`/${encodeURIComponent(String(form.username))}`}>
+                    @{String(form.username)}
+                  </Link>
+                </p>
+              ) : (
+                <p className="profile-masthead-handle is-missing">
+                  <button
+                    type="button"
+                    className="profile-missing-link"
+                    style={{
+                      padding: 0,
+                      border: "none",
+                      background: "none",
+                      cursor: "pointer",
+                      font: "inherit",
+                      color: "var(--ps-accent)",
+                      textDecoration: "underline",
+                    }}
+                    onClick={() => {
+                      openProfileSection("profile-details");
+                      window.setTimeout(() => {
+                        document
+                          .getElementById("profile-username-input")
+                          ?.focus();
+                      }, 60);
+                    }}
+                  >
+                    + Set username
+                  </button>
+                </p>
+              )}
               <p className="profile-masthead-headline">
-                {form.headline || "Add a headline to tell employers what you do."}
+                {form.headline ||
+                  "Add a headline to tell employers what you do."}
               </p>
-              {(form.location ||
-                form.current_role ||
-                (form.years_experience !== null && form.years_experience !== undefined)) ? (
+              {form.location ||
+              form.current_role ||
+              (form.years_experience !== null &&
+                form.years_experience !== undefined) ? (
                 <p className="profile-masthead-facts">
                   {[
                     form.location,
                     form.current_role,
-                    form.years_experience !== null && form.years_experience !== undefined
+                    form.years_experience !== null &&
+                    form.years_experience !== undefined
                       ? `${form.years_experience} years experience`
                       : null,
                   ]
@@ -1544,15 +1899,25 @@ export function ProfileSettings() {
                   />
                 </label>
                 {form.avatar_path || form.avatar_url ? (
-                  <Button type="button" variant="secondary" disabled={avatarBusy} onClick={() => void removeAvatar()}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={avatarBusy}
+                    onClick={() => void removeAvatar()}
+                  >
                     {avatarBusy ? "Working…" : "Remove"}
                   </Button>
                 ) : (
-                  <p className="muted profile-photo-hint">JPEG, PNG, or WebP · 3 MB</p>
+                  <p className="muted profile-photo-hint">
+                    JPEG, PNG, or WebP · 3 MB
+                  </p>
                 )}
               </div>
             </div>
-            <div className="profile-masthead-meter">
+            <div
+              className={`profile-masthead-meter${profileComplete ? " is-complete" : ""}`}
+              aria-hidden={profileComplete}
+            >
               <div className="profile-masthead-meter-head">
                 <strong>{completion}%</strong>
                 <span>complete</span>
@@ -1567,7 +1932,9 @@ export function ProfileSettings() {
                     key={item.key}
                     type="button"
                     className="profile-missing-link"
-                    onClick={() => openProfileSection(sectionForMissingKey(item.key))}
+                    onClick={() =>
+                      openProfileSection(sectionForMissingKey(item.key))
+                    }
                   >
                     {item.label}
                   </button>
@@ -1583,7 +1950,9 @@ export function ProfileSettings() {
                   key={item.id}
                   href={`#${item.id}`}
                   className={`profile-tab ${activeProfileSection === item.id ? "is-active" : ""}`}
-                  aria-current={activeProfileSection === item.id ? "page" : undefined}
+                  aria-current={
+                    activeProfileSection === item.id ? "page" : undefined
+                  }
                   onClick={(event) => {
                     event.preventDefault();
                     openProfileSection(item.id);
@@ -1597,768 +1966,1116 @@ export function ProfileSettings() {
           </nav>
 
           <div className="profile-editor">
-          <Card
-            id="profile-resume"
-            className="profile-resume-studio profile-card"
-            hidden={activeProfileSection !== "profile-resume"}
-          >
-            <div className="profile-resume-studio-head">
-              <div>
-                <ProfileSectionHead
-                  icon="resume"
-                  title="Resume workspace"
-                  lede="Keep named versions of your resume here. Select the source you want to use, preview the draft, and review every change before it is applied."
-                />
-              </div>
-              <div className="profile-resume-studio-count">
-                <strong>{resumes.length}</strong>
-                <span>saved resume{resumes.length === 1 ? "" : "s"}</span>
-              </div>
-            </div>
-            <div className="profile-resume-studio-grid">
-              <section className="profile-resume-library" aria-labelledby="saved-resumes-title">
-                <div className="profile-resume-section-head">
-                  <div>
-                    <p className="eyebrow" id="saved-resumes-title">Your library</p>
-                    <p className="muted" style={{ margin: 0 }}>Choose the resume that best fits this profile.</p>
-                  </div>
-                  <span className="profile-resume-count">{resumes.filter((resume) => resume.latest_version?.id).length} ready</span>
-                </div>
-                {resumes.some((resume) => resume.latest_version?.id) ? (
-                  <div className="profile-resume-list" role="listbox" aria-label="Saved resumes">
-                    {resumes.map((resume) => resume.latest_version?.id ? (
-                      <div
-                        className={`profile-resume-row ${selectedVersionId === resume.latest_version.id ? "is-selected" : ""}`}
-                        key={resume.id}
-                        role="option"
-                        aria-selected={selectedVersionId === resume.latest_version.id}
-                      >
-                        <button
-                          type="button"
-                          className="profile-resume-select"
-                          onClick={() => setSelectedVersionId(resume.latest_version?.id || "")}
-                        >
-                          <span className="profile-resume-file-icon" aria-hidden="true">PDF</span>
-                          <span className="profile-resume-row-copy">
-                            <strong>{resume.title}</strong>
-                            <small>{resume.latest_version.original_filename || "Stored resume"} · {resume.latest_version.extraction_status || "ready"}</small>
-                          </span>
-                          {resume.is_active ? <span className="profile-resume-active">Active</span> : null}
-                        </button>
-                        <button
-                          type="button"
-                          className="profile-resume-rename"
-                          onClick={() => { setRenamingResumeId(resume.id); setRenameValue(resume.title); }}
-                        >
-                          Rename
-                        </button>
-                        {renamingResumeId === resume.id ? (
-                          <form
-                            className="profile-resume-rename-form"
-                            onSubmit={(event) => { event.preventDefault(); void renameResume(resume.id); }}
-                          >
-                            <Input
-                              aria-label={`New name for ${resume.title}`}
-                              value={renameValue}
-                              maxLength={200}
-                              onChange={(event) => setRenameValue(event.target.value)}
-                              autoFocus
-                            />
-                            <Button type="submit" disabled={fillBusy || !renameValue.trim()}>Save name</Button>
-                            <Button type="button" variant="secondary" onClick={() => setRenamingResumeId(null)}>Cancel</Button>
-                          </form>
-                        ) : null}
-                      </div>
-                    ) : null)}
-                  </div>
-                ) : (
-                  <div className="profile-resume-empty">
-                    <strong>No saved resumes yet.</strong>
-                    <span>Upload one on the right and give it a name you will recognize later.</span>
-                  </div>
-                )}
-              </section>
-              <section className="profile-resume-upload" aria-labelledby="upload-resume-title">
-                <p className="eyebrow" id="upload-resume-title">Add a source</p>
-                <h3>Upload a new resume</h3>
-                <p className="muted">Name it by role, company, or version before it enters your private library.</p>
-                <label className="field-label">
-                  Resume name
-                  <Input
-                    value={resumeTitle}
-                    maxLength={200}
-                    placeholder="e.g. Backend roles · August 2026"
-                    onChange={(event) => setResumeTitle(event.target.value)}
+            <Card
+              id="profile-resume"
+              className="profile-resume-studio profile-card"
+              hidden={activeProfileSection !== "profile-resume"}
+            >
+              <div className="profile-resume-studio-head">
+                <div>
+                  <ProfileSectionHead
+                    icon="resume"
+                    title="Resume workspace"
+                    lede="Keep named versions of your resume here. Select the source you want to use, preview the draft, and review every change before it is applied."
                   />
-                </label>
-                <label className="profile-resume-upload-control">
-                  <span className="profile-resume-upload-button">Choose PDF or DOCX</span>
-                  <span className="profile-resume-upload-hint">Saved privately and available across the workspace</span>
-                  <Input
-                    className="file-picker-input"
-                    type="file"
-                    aria-label="Upload PDF or DOCX"
-                    accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    disabled={fillBusy}
-                    onChange={(event: any) => {
-                      const file = event.target.files?.[0] || null;
-                      void previewFromUpload(file);
-                      event.target.value = "";
-                    }}
-                  />
-                </label>
-              </section>
-            </div>
-            <div className="profile-resume-actions">
-              <label className="profile-check-row">
-                <input type="checkbox" checked={fillEmptyOnly} onChange={(e: any) => setFillEmptyOnly(e.target.checked)} />
-                <span>Only fill empty profile fields (recommended)</span>
-              </label>
-              <Select value={selectedVersionId} onChange={(e: any) => setSelectedVersionId(e.target.value)} aria-label="Selected resume version">
-                <option value="">Choose a saved resume</option>
-                {resumes.map((resume) => resume.latest_version?.id ? (
-                  <option key={resume.latest_version.id} value={resume.latest_version.id}>{resume.title}</option>
-                ) : null)}
-              </Select>
-            </div>
-            <div className="profile-section-actions">
-              <Button type="button" disabled={fillBusy} onClick={() => void previewFromStoredResume()}>
-                {fillBusy ? "Working…" : "Preview from saved resume"}
-              </Button>
-              {draft ? (
-                <>
-                  <Button type="button" disabled={fillBusy} onClick={() => void applyResumeDraft()}>
-                    {fillBusy ? "Applying…" : "Apply selected draft"}
-                  </Button>
-                  <Button type="button" variant="secondary" disabled={fillBusy} onClick={() => setDraft(null)}>
-                    Discard draft
-                  </Button>
-                </>
-              ) : null}
-            </div>
-            {fillBusy && !draft ? (
-              <LoadingState label="Extracting profile from resume" variant="Dots" />
-            ) : null}
-            {draft ? (
-              <div className="profile-draft">
-                <div className="profile-draft-group">
-                  <strong>Profile fields</strong>
-                  <label className="profile-check-row">
-                    <input
-                      type="checkbox"
-                      checked={draft.profile?.selected !== false}
-                      onChange={() =>
-                        setDraft((current) =>
-                          current
-                            ? {
-                                ...current,
-                                profile: {
-                                  ...current.profile,
-                                  selected: current.profile?.selected === false,
-                                },
-                              }
-                            : current,
-                        )
-                      }
-                    />
-                    <span>
-                      {[
-                        draft.profile?.full_name,
-                        draft.profile?.current_role,
-                        draft.profile?.location,
-                        draft.profile?.phone,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ") || "No core profile fields detected"}
-                    </span>
-                  </label>
-                  {draft.profile?.headline ? (
-                    <p className="profile-draft-note">{draft.profile.headline}</p>
-                  ) : null}
                 </div>
-                {(
-                  [
-                    ["skills", "Skills", (row: ProfileRecord) => row.name],
-                    [
-                      "experiences",
-                      "Experience",
-                      (row: ProfileRecord) =>
-                        [row.role_title || "Role", row.company_name || "", experienceDateLabel(row)]
-                          .filter(Boolean)
-                          .join(" · "),
-                    ],
-                    [
-                      "education",
-                      "Education",
-                      (row: ProfileRecord) =>
-                        [row.degree, row.institution].filter(Boolean).join(" · ") || row.institution,
-                    ],
-                    ["projects", "Projects", (row: ProfileRecord) => row.title],
-                    ["certifications", "Certifications", (row: ProfileRecord) => row.name],
-                    ["languages", "Languages", (row: ProfileRecord) => row.language],
-                    ["links", "Links", (row: ProfileRecord) => `${row.link_type}: ${row.url}`],
-                  ] as Array<[keyof ProfileDraft, string, (row: ProfileRecord) => string]>
-                ).map(([key, label, render]) => {
-                  const rows = (draft[key] as ProfileRecord[] | undefined) || [];
-                  if (!rows.length) return null;
-                  return (
-                    <div key={key} className="profile-draft-group">
-                      <strong>
-                        {label} ({rows.length})
-                      </strong>
-                      {rows.map((row, index) => (
-                        <label key={`${key}-${index}`} className="profile-check-row">
-                          <input
-                            type="checkbox"
-                            checked={row.selected !== false}
-                            onChange={() => toggleDraftItem(key, index)}
-                          />
-                          <span>{render(row)}</span>
-                        </label>
-                      ))}
+                <div className="profile-resume-studio-count">
+                  <strong>{resumes.length}</strong>
+                  <span>saved resume{resumes.length === 1 ? "" : "s"}</span>
+                </div>
+              </div>
+              <div className="profile-resume-studio-grid">
+                <section
+                  className="profile-resume-library"
+                  aria-labelledby="saved-resumes-title"
+                >
+                  <div className="profile-resume-section-head">
+                    <div>
+                      <p className="eyebrow" id="saved-resumes-title">
+                        Your library
+                      </p>
+                      <p className="muted" style={{ margin: 0 }}>
+                        Choose the resume that best fits this profile.
+                      </p>
                     </div>
-                  );
-                })}
+                    <span className="profile-resume-count">
+                      {
+                        resumes.filter((resume) => resume.latest_version?.id)
+                          .length
+                      }{" "}
+                      ready
+                    </span>
+                  </div>
+                  {resumes.some((resume) => resume.latest_version?.id) ? (
+                    <div
+                      className="profile-resume-list"
+                      role="listbox"
+                      aria-label="Saved resumes"
+                    >
+                      {resumes.map((resume) =>
+                        resume.latest_version?.id ? (
+                          <div
+                            className={`profile-resume-row ${selectedVersionId === resume.latest_version.id ? "is-selected" : ""}`}
+                            key={resume.id}
+                            role="option"
+                            aria-selected={
+                              selectedVersionId === resume.latest_version.id
+                            }
+                          >
+                            <button
+                              type="button"
+                              className="profile-resume-select"
+                              onClick={() =>
+                                setSelectedVersionId(
+                                  resume.latest_version?.id || "",
+                                )
+                              }
+                            >
+                              <span
+                                className="profile-resume-file-icon"
+                                aria-hidden="true"
+                              >
+                                PDF
+                              </span>
+                              <span className="profile-resume-row-copy">
+                                <strong>{resume.title}</strong>
+                                <small>
+                                  {resume.latest_version.original_filename ||
+                                    "Stored resume"}{" "}
+                                  ·{" "}
+                                  {resume.latest_version.extraction_status ||
+                                    "ready"}
+                                </small>
+                              </span>
+                              {resume.is_active ? (
+                                <span className="profile-resume-active">
+                                  Active
+                                </span>
+                              ) : null}
+                            </button>
+                            <button
+                              type="button"
+                              className="profile-resume-rename"
+                              onClick={() => {
+                                setRenamingResumeId(resume.id);
+                                setRenameValue(resume.title);
+                              }}
+                            >
+                              Rename
+                            </button>
+                            {renamingResumeId === resume.id ? (
+                              <form
+                                className="profile-resume-rename-form"
+                                onSubmit={(event) => {
+                                  event.preventDefault();
+                                  void renameResume(resume.id);
+                                }}
+                              >
+                                <Input
+                                  aria-label={`New name for ${resume.title}`}
+                                  value={renameValue}
+                                  maxLength={200}
+                                  onChange={(event) =>
+                                    setRenameValue(event.target.value)
+                                  }
+                                  autoFocus
+                                />
+                                <Button
+                                  type="submit"
+                                  disabled={fillBusy || !renameValue.trim()}
+                                >
+                                  Save name
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  onClick={() => setRenamingResumeId(null)}
+                                >
+                                  Cancel
+                                </Button>
+                              </form>
+                            ) : null}
+                          </div>
+                        ) : null,
+                      )}
+                    </div>
+                  ) : (
+                    <div className="profile-resume-empty">
+                      <strong>No saved resumes yet.</strong>
+                      <span>
+                        Upload one on the right and give it a name you will
+                        recognize later.
+                      </span>
+                    </div>
+                  )}
+                </section>
+                <section
+                  className="profile-resume-upload"
+                  aria-labelledby="upload-resume-title"
+                >
+                  <p className="eyebrow" id="upload-resume-title">
+                    Add a source
+                  </p>
+                  <h3>Upload a new resume</h3>
+                  <p className="muted">
+                    Name it by role, company, or version before it enters your
+                    private library.
+                  </p>
+                  <label className="field-label">
+                    Resume name
+                    <Input
+                      value={resumeTitle}
+                      maxLength={200}
+                      placeholder="e.g. Backend roles · August 2026"
+                      onChange={(event) => setResumeTitle(event.target.value)}
+                    />
+                  </label>
+                  <label className="profile-resume-upload-control">
+                    <span className="profile-resume-upload-button">
+                      Choose PDF or DOCX
+                    </span>
+                    <span className="profile-resume-upload-hint">
+                      Saved privately and available across the workspace
+                    </span>
+                    <Input
+                      className="file-picker-input"
+                      type="file"
+                      aria-label="Upload PDF or DOCX"
+                      accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      disabled={fillBusy}
+                      onChange={(event: any) => {
+                        const file = event.target.files?.[0] || null;
+                        void previewFromUpload(file);
+                        event.target.value = "";
+                      }}
+                    />
+                  </label>
+                </section>
               </div>
-            ) : null}
-          </Card>
-
-          {(message || error) && (
-            <Card className="stack profile-feedback-card">
-              {error ? (
-                <p role="alert" className="field-error">
-                  {error}
-                </p>
+              <div className="profile-resume-actions">
+                <label className="profile-check-row">
+                  <input
+                    type="checkbox"
+                    checked={fillEmptyOnly}
+                    onChange={(e: any) => setFillEmptyOnly(e.target.checked)}
+                  />
+                  <span>Only fill empty profile fields (recommended)</span>
+                </label>
+                <Select
+                  value={selectedVersionId}
+                  onChange={(e: any) => setSelectedVersionId(e.target.value)}
+                  aria-label="Selected resume version"
+                >
+                  <option value="">Choose a saved resume</option>
+                  {resumes.map((resume) =>
+                    resume.latest_version?.id ? (
+                      <option
+                        key={resume.latest_version.id}
+                        value={resume.latest_version.id}
+                      >
+                        {resume.title}
+                      </option>
+                    ) : null,
+                  )}
+                </Select>
+              </div>
+              <div className="profile-section-actions">
+                <Button
+                  type="button"
+                  disabled={fillBusy}
+                  onClick={() => void previewFromStoredResume()}
+                >
+                  {fillBusy ? "Working…" : "Preview from saved resume"}
+                </Button>
+                {draft ? (
+                  <>
+                    <Button
+                      type="button"
+                      disabled={fillBusy}
+                      onClick={() => void applyResumeDraft()}
+                    >
+                      {fillBusy ? "Applying…" : "Apply selected draft"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={fillBusy}
+                      onClick={() => setDraft(null)}
+                    >
+                      Discard draft
+                    </Button>
+                  </>
+                ) : null}
+              </div>
+              {fillBusy && !draft ? (
+                <LoadingState
+                  label="Extracting profile from resume"
+                  variant="Dots"
+                />
               ) : null}
-              {message ? (
-                <p role="status">
-                  {message}
-                </p>
+              {draft ? (
+                <div className="profile-draft">
+                  <div className="profile-draft-group">
+                    <strong>Profile fields</strong>
+                    <label className="profile-check-row">
+                      <input
+                        type="checkbox"
+                        checked={draft.profile?.selected !== false}
+                        onChange={() =>
+                          setDraft((current) =>
+                            current
+                              ? {
+                                  ...current,
+                                  profile: {
+                                    ...current.profile,
+                                    selected:
+                                      current.profile?.selected === false,
+                                  },
+                                }
+                              : current,
+                          )
+                        }
+                      />
+                      <span>
+                        {[
+                          draft.profile?.full_name,
+                          draft.profile?.current_role,
+                          draft.profile?.location,
+                          draft.profile?.phone,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ") || "No core profile fields detected"}
+                      </span>
+                    </label>
+                    {draft.profile?.headline ? (
+                      <p className="profile-draft-note">
+                        {draft.profile.headline}
+                      </p>
+                    ) : null}
+                  </div>
+                  {(
+                    [
+                      ["skills", "Skills", (row: ProfileRecord) => row.name],
+                      [
+                        "experiences",
+                        "Experience",
+                        (row: ProfileRecord) =>
+                          [
+                            row.role_title || "Role",
+                            row.company_name || "",
+                            experienceDateLabel(row),
+                          ]
+                            .filter(Boolean)
+                            .join(" · "),
+                      ],
+                      [
+                        "education",
+                        "Education",
+                        (row: ProfileRecord) =>
+                          [row.degree, row.institution]
+                            .filter(Boolean)
+                            .join(" · ") || row.institution,
+                      ],
+                      [
+                        "projects",
+                        "Projects",
+                        (row: ProfileRecord) => row.title,
+                      ],
+                      [
+                        "certifications",
+                        "Certifications",
+                        (row: ProfileRecord) => row.name,
+                      ],
+                      [
+                        "languages",
+                        "Languages",
+                        (row: ProfileRecord) => row.language,
+                      ],
+                      [
+                        "links",
+                        "Links",
+                        (row: ProfileRecord) => `${row.link_type}: ${row.url}`,
+                      ],
+                    ] as Array<
+                      [
+                        keyof ProfileDraft,
+                        string,
+                        (row: ProfileRecord) => string,
+                      ]
+                    >
+                  ).map(([key, label, render]) => {
+                    const rows =
+                      (draft[key] as ProfileRecord[] | undefined) || [];
+                    if (!rows.length) return null;
+                    return (
+                      <div key={key} className="profile-draft-group">
+                        <strong>
+                          {label} ({rows.length})
+                        </strong>
+                        {rows.map((row, index) => (
+                          <label
+                            key={`${key}-${index}`}
+                            className="profile-check-row"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={row.selected !== false}
+                              onChange={() => toggleDraftItem(key, index)}
+                            />
+                            <span>{render(row)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
               ) : null}
             </Card>
-          )}
 
-          <Card id="profile-details" className="stack profile-card profile-details-card" hidden={activeProfileSection !== "profile-details"}>
-            <ProfileSectionHead
-              icon="profile"
-              title="Basic details"
-              lede="Name, location, and career context used across interviews and job matching."
-            />
-            <div className="profile-fields">
-              <label className="field-label">
-                <span>
-                  Full name
-                  <RequiredMark />
-                </span>
-                <Input value={form.full_name || ""} onChange={(e: any) => updateField("full_name", e.target.value)} />
-              </label>
-              <label className="field-label">
-                Headline
-                <Input value={form.headline || ""} onChange={(e: any) => updateField("headline", e.target.value)} />
-              </label>
-              <div className="profile-field">
-                <PhoneField
-                  label="Phone"
-                  value={phoneParts}
-                  onChange={(next) => {
-                    setPhoneParts(next);
-                    updateField("phone", composePhone(next));
-                  }}
+            {(message || error) && (
+              <Card className="stack profile-feedback-card">
+                {error ? (
+                  <p role="alert" className="field-error">
+                    {error}
+                  </p>
+                ) : null}
+                {message ? <p role="status">{message}</p> : null}
+              </Card>
+            )}
+
+            <Card
+              id="profile-details"
+              className="stack profile-card profile-details-card"
+              hidden={activeProfileSection !== "profile-details"}
+            >
+              <ProfileSectionHead
+                icon="profile"
+                title="Basic details"
+                lede="Name, location, and career context used across interviews and job matching."
+              />
+              <div className="profile-fields">
+                <label className="field-label">
+                  <span>
+                    Full name
+                    <RequiredMark />
+                  </span>
+                  <Input
+                    value={form.full_name || ""}
+                    onChange={(e: any) =>
+                      updateField("full_name", e.target.value)
+                    }
+                  />
+                </label>
+                <label className="field-label">
+                  <span>Username</span>
+                  <Input
+                    id="profile-username-input"
+                    autoComplete="username"
+                    minLength={3}
+                    maxLength={30}
+                    value={form.username || ""}
+                    onChange={(e: any) =>
+                      updateField("username", e.target.value)
+                    }
+                    placeholder="your_name"
+                    aria-describedby="profile-username-hint"
+                  />
+                  <span
+                    id="profile-username-hint"
+                    className={
+                      usernameAvailability && !usernameAvailability.available
+                        ? "field-error"
+                        : "field-hint"
+                    }
+                  >
+                    {usernameAvailability
+                      ? usernameAvailability.available
+                        ? `Available. Public profile: /${String(
+                            form.username || "",
+                          )
+                            .trim()
+                            .replace(/^@/, "")
+                            .toLowerCase()}`
+                        : usernameAvailability.reason ||
+                          "That username is not available."
+                      : form.username
+                        ? `Public profile: /${String(form.username).replace(/^@/, "")}`
+                        : "Google and existing accounts can set a username here. 3–30 letters, numbers, underscores."}
+                  </span>
+                </label>
+                <label className="field-label">
+                  Headline
+                  <Input
+                    value={form.headline || ""}
+                    onChange={(e: any) =>
+                      updateField("headline", e.target.value)
+                    }
+                  />
+                </label>
+                <div className="profile-field">
+                  <PhoneField
+                    label="Phone"
+                    value={phoneParts}
+                    onChange={(next) => {
+                      setPhoneParts(next);
+                      updateField("phone", composePhone(next));
+                    }}
+                  />
+                </div>
+                <SelectWithOther
+                  label="Location"
+                  options={LOCATION_OPTIONS}
+                  value={form.location || ""}
+                  onChange={(value) => updateField("location", value)}
+                  emptyLabel="Select location"
+                  otherPlaceholder="Enter your location"
+                  required
                 />
+                <SelectWithOther
+                  label="Current role"
+                  options={TARGET_ROLE_OPTIONS}
+                  value={form.current_role || ""}
+                  onChange={(value) => updateField("current_role", value)}
+                  emptyLabel="Select current role"
+                  otherPlaceholder="Enter your current role"
+                  required
+                />
+                <SelectWithOther
+                  label="Years of experience"
+                  options={YEARS_OPTIONS.map((years) => ({
+                    value: String(years),
+                    label: years === 0 ? "0 (Fresher)" : String(years),
+                  }))}
+                  value={yearsValue}
+                  onChange={(value) => updateField("years_experience", value)}
+                  emptyLabel="Select years"
+                  otherPlaceholder="Enter years of experience"
+                  inputType="number"
+                  required
+                />
+                <SelectWithOther
+                  label="Career level"
+                  options={CAREER_LEVEL_OPTIONS}
+                  value={form.career_level || ""}
+                  onChange={(value) => updateField("career_level", value)}
+                  emptyLabel="Select career level"
+                  otherPlaceholder="Enter career level"
+                />
+                <SelectWithOther
+                  label="Career goal"
+                  options={CAREER_GOAL_OPTIONS}
+                  value={form.career_goal || ""}
+                  onChange={(value) => updateField("career_goal", value)}
+                  emptyLabel="Select career goal"
+                  otherPlaceholder="Describe your career goal"
+                />
+                <label className="field-label profile-field-span">
+                  Bio
+                  <Textarea
+                    value={form.bio || ""}
+                    onChange={(e: any) => updateField("bio", e.target.value)}
+                  />
+                </label>
               </div>
-              <SelectWithOther
-                label="Location"
-                options={LOCATION_OPTIONS}
-                value={form.location || ""}
-                onChange={(value) => updateField("location", value)}
-                emptyLabel="Select location"
-                otherPlaceholder="Enter your location"
-                required
-              />
-              <SelectWithOther
-                label="Current role"
-                options={TARGET_ROLE_OPTIONS}
-                value={form.current_role || ""}
-                onChange={(value) => updateField("current_role", value)}
-                emptyLabel="Select current role"
-                otherPlaceholder="Enter your current role"
-                required
-              />
-              <SelectWithOther
-                label="Years of experience"
-                options={YEARS_OPTIONS.map((years) => ({
-                  value: String(years),
-                  label: years === 0 ? "0 (Fresher)" : String(years),
-                }))}
-                value={yearsValue}
-                onChange={(value) => updateField("years_experience", value)}
-                emptyLabel="Select years"
-                otherPlaceholder="Enter years of experience"
-                inputType="number"
-                required
-              />
-              <SelectWithOther
-                label="Career level"
-                options={CAREER_LEVEL_OPTIONS}
-                value={form.career_level || ""}
-                onChange={(value) => updateField("career_level", value)}
-                emptyLabel="Select career level"
-                otherPlaceholder="Enter career level"
-              />
-              <SelectWithOther
-                label="Career goal"
-                options={CAREER_GOAL_OPTIONS}
-                value={form.career_goal || ""}
-                onChange={(value) => updateField("career_goal", value)}
-                emptyLabel="Select career goal"
-                otherPlaceholder="Describe your career goal"
-              />
-              <label className="field-label profile-field-span">
-                Bio
-                <Textarea value={form.bio || ""} onChange={(e: any) => updateField("bio", e.target.value)} />
-              </label>
-            </div>
-            <p className="profile-hint">
-              Tip: choose 0 years if you are a fresher with no work history yet.
-            </p>
-            <div className="profile-section-actions">
-              <Button onClick={saveProfile} disabled={profileSaving}>
-                {profileSaving ? "Saving profile…" : "Save profile"}
-              </Button>
-            </div>
-          </Card>
-
-          <Card id="profile-preferences" className="stack profile-card profile-preferences-card" hidden={activeProfileSection !== "profile-preferences"}>
-            <ProfileSectionHead
-              icon="opportunities"
-              title="Career preferences"
-              lede="These preferences are saved to your account. Use each dropdown to add options; remove tags with ×."
-            />
-            <div className="profile-fields">
-              <MultiOptionGroup
-                legend="Target roles"
-                options={TARGET_ROLE_OPTIONS}
-                selected={prefDraft.target_roles}
-                onChange={(target_roles) => setPrefDraft({ ...prefDraft, target_roles })}
-                allowOther
-                otherPlaceholder="Enter another target role"
-                required
-              />
-              <MultiOptionGroup
-                legend="Preferred industries"
-                options={INDUSTRY_OPTIONS}
-                selected={prefDraft.preferred_industries}
-                onChange={(preferred_industries) => setPrefDraft({ ...prefDraft, preferred_industries })}
-                allowOther
-                otherPlaceholder="Enter another industry"
-              />
-              <MultiOptionGroup
-                legend="Preferred locations"
-                options={LOCATION_OPTIONS}
-                selected={prefDraft.preferred_locations}
-                onChange={(preferred_locations) => setPrefDraft({ ...prefDraft, preferred_locations })}
-                allowOther
-                otherPlaceholder="Enter another location"
-                required
-              />
-              <MultiOptionGroup
-                legend="Work modes"
-                options={WORK_MODE_OPTIONS}
-                selected={prefDraft.work_modes}
-                onChange={(work_modes) => setPrefDraft({ ...prefDraft, work_modes })}
-                required
-              />
-              <MultiOptionGroup
-                legend="Employment types"
-                options={EMPLOYMENT_TYPE_OPTIONS}
-                selected={prefDraft.employment_types}
-                onChange={(employment_types) => setPrefDraft({ ...prefDraft, employment_types })}
-                allowOther
-                otherPlaceholder="Enter another employment type"
-              />
-            </div>
-            <div className="profile-fields">
-              <SelectWithOther
-                label="Work authorization"
-                options={WORK_AUTHORIZATION_OPTIONS}
-                value={prefDraft.work_authorization}
-                onChange={(work_authorization) => setPrefDraft({ ...prefDraft, work_authorization })}
-                emptyLabel="Select work authorization"
-                otherPlaceholder="Describe work authorization"
-              />
-              <SelectWithOther
-                label="Notice period"
-                options={NOTICE_PERIOD_OPTIONS.filter((option) => option.value !== "")}
-                value={prefDraft.notice_period_days}
-                onChange={(notice_period_days) => setPrefDraft({ ...prefDraft, notice_period_days })}
-                emptyLabel="Select notice period"
-                otherPlaceholder="Enter notice period in days"
-                inputType="number"
-              />
-              <SelectWithOther
-                label="Salary currency"
-                options={CURRENCY_OPTIONS}
-                value={prefDraft.salary_currency}
-                onChange={(salary_currency) => setPrefDraft({ ...prefDraft, salary_currency: salary_currency.toUpperCase() })}
-                emptyLabel="Select currency"
-                otherPlaceholder="Enter 3-letter currency code"
-              />
-              <label className="field-label">
-                Minimum salary
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  autoComplete="off"
-                  value={prefDraft.salary_min}
-                  onChange={(e: any) => setPrefDraft({ ...prefDraft, salary_min: e.target.value })}
-                  placeholder="e.g. 600000"
-                />
-              </label>
-            </div>
-            <label className="profile-check-row">
-              <input
-                type="checkbox"
-                checked={prefDraft.willing_to_relocate}
-                onChange={(e: any) => setPrefDraft({ ...prefDraft, willing_to_relocate: e.target.checked })}
-              />
-              <span>Willing to relocate</span>
-            </label>
-            <div className="profile-section-actions">
-              <Button onClick={savePreferences} disabled={preferencesSaving}>
-                {preferencesSaving ? "Saving preferences…" : "Save career preferences"}
-              </Button>
-            </div>
-          </Card>
-
-          <Card id="profile-skills" className="stack profile-card profile-skills-card" hidden={activeProfileSection !== "profile-skills"}>
-            <ProfileSectionHead icon="signal" title="Skills" required />
-            <div className="profile-composer">
-              <SelectWithOther
-                label={editingSkillId ? "Edit skill" : "Skill"}
-                options={SKILL_OPTIONS}
-                value={skillName}
-                onChange={setSkillName}
-                emptyLabel="Select a skill"
-                otherPlaceholder="Enter skill name"
-              />
-              <div className="profile-composer-actions">
-                <Button onClick={() => void saveSkill()} disabled={!skillName.trim() || recordBusy}>
-                  <AnimatedIcon icon={Plus} size={16} aria-hidden />
-                  {editingSkillId ? "Save skill" : "Add skill"}
+              <p className="profile-hint">
+                Tip: choose 0 years if you are a fresher with no work history
+                yet.
+              </p>
+              <div className="profile-section-actions">
+                <Button onClick={saveProfile} disabled={profileSaving}>
+                  {profileSaving ? "Saving profile…" : "Save profile"}
                 </Button>
-                {editingSkillId ? (
-                  <Button variant="secondary" onClick={cancelEditSkill} disabled={recordBusy}>
-                    Cancel
-                  </Button>
-                ) : (
-                  <Button variant="secondary" onClick={importSkillsFromResume} disabled={recordBusy}>
-                    Import from resume
-                  </Button>
-                )}
               </div>
-            </div>
-            <div className="profile-chip-list">
-              {skills.length === 0 && <p className="profile-empty">No skills saved yet.</p>}
-              {skills.map((skill) => (
-                <span
-                  key={skill.id}
-                  className={`badge ${editingSkillId === skill.id ? "badge-warning" : "badge-info"}`}
-                  style={{ gap: 8 }}
-                >
-                  {skill.name}
-                  <button
-                    type="button"
-                    className="button-quiet profile-chip-action"
-                    onClick={() => startEditSkill(skill)}
-                    aria-label={`Edit ${skill.name}`}
-                  >
-                    <AnimatedIcon icon={Pencil} size={13} aria-hidden />
-                  </button>
-                  <button
-                    type="button"
-                    className="button-quiet profile-chip-action"
-                    onClick={() => removeRecord("skills", skill.id, "Skill")}
-                    aria-label={`Remove ${skill.name}`}
-                  >
-                    <AnimatedIcon icon={Trash2} size={13} aria-hidden />
-                  </button>
-                </span>
-              ))}
-            </div>
-          </Card>
+            </Card>
 
-          <Card id="profile-experience" className="stack profile-card profile-experience-card" hidden={activeProfileSection !== "profile-experience"}>
-            <ProfileSectionHead
-              icon="evidence"
-              title="Work experience"
-              lede="Add at least one experience, or set years of experience to 0 for fresher credit."
-              required
-            />
-            <div className="profile-fields">
-              <label className="field-label">
-                Company
-                <Input
-                  value={experienceDraft.company_name}
-                  onChange={(e: any) => setExperienceDraft({ ...experienceDraft, company_name: e.target.value })}
-                />
-              </label>
-              <SelectWithOther
-                label="Role title"
-                options={TARGET_ROLE_OPTIONS}
-                value={experienceDraft.role_title}
-                onChange={(role_title) => setExperienceDraft({ ...experienceDraft, role_title })}
-                emptyLabel="Select role title"
-                otherPlaceholder="Enter role title"
+            <Card
+              id="profile-preferences"
+              className="stack profile-card profile-preferences-card"
+              hidden={activeProfileSection !== "profile-preferences"}
+            >
+              <ProfileSectionHead
+                icon="opportunities"
+                title="Career preferences"
+                lede="These preferences are saved to your account. Use each dropdown to add options; remove tags with ×."
               />
-              <SelectWithOther
-                label="Location"
-                options={LOCATION_OPTIONS}
-                value={experienceDraft.location}
-                onChange={(location) => setExperienceDraft({ ...experienceDraft, location })}
-                emptyLabel="Select location"
-                otherPlaceholder="Enter location"
-              />
-              <SelectWithOther
-                label="Employment type"
-                options={EMPLOYMENT_TYPE_OPTIONS}
-                value={experienceDraft.employment_type}
-                onChange={(employment_type) => setExperienceDraft({ ...experienceDraft, employment_type })}
-                emptyLabel="Select employment type"
-                otherPlaceholder="Enter employment type"
-              />
-              <label className="field-label">
-                Start date
-                <Input
-                  type="date"
-                  value={experienceDraft.start_date}
-                  onChange={(e: any) => setExperienceDraft({ ...experienceDraft, start_date: e.target.value })}
+              <div className="profile-fields">
+                <MultiOptionGroup
+                  legend="Target roles"
+                  options={TARGET_ROLE_OPTIONS}
+                  selected={prefDraft.target_roles}
+                  onChange={(target_roles) =>
+                    setPrefDraft({ ...prefDraft, target_roles })
+                  }
+                  allowOther
+                  otherPlaceholder="Enter another target role"
+                  required
                 />
-              </label>
-              <label className="field-label">
-                End date
-                <Input
-                  type="date"
-                  value={experienceDraft.end_date}
-                  disabled={experienceDraft.is_current}
-                  onChange={(e: any) => setExperienceDraft({ ...experienceDraft, end_date: e.target.value })}
+                <MultiOptionGroup
+                  legend="Preferred industries"
+                  options={INDUSTRY_OPTIONS}
+                  selected={prefDraft.preferred_industries}
+                  onChange={(preferred_industries) =>
+                    setPrefDraft({ ...prefDraft, preferred_industries })
+                  }
+                  allowOther
+                  otherPlaceholder="Enter another industry"
                 />
-              </label>
-              <label className="profile-check-row profile-field-span">
+                <MultiOptionGroup
+                  legend="Preferred locations"
+                  options={LOCATION_OPTIONS}
+                  selected={prefDraft.preferred_locations}
+                  onChange={(preferred_locations) =>
+                    setPrefDraft({ ...prefDraft, preferred_locations })
+                  }
+                  allowOther
+                  otherPlaceholder="Enter another location"
+                  required
+                />
+                <MultiOptionGroup
+                  legend="Work modes"
+                  options={WORK_MODE_OPTIONS}
+                  selected={prefDraft.work_modes}
+                  onChange={(work_modes) =>
+                    setPrefDraft({ ...prefDraft, work_modes })
+                  }
+                  required
+                />
+                <MultiOptionGroup
+                  legend="Employment types"
+                  options={EMPLOYMENT_TYPE_OPTIONS}
+                  selected={prefDraft.employment_types}
+                  onChange={(employment_types) =>
+                    setPrefDraft({ ...prefDraft, employment_types })
+                  }
+                  allowOther
+                  otherPlaceholder="Enter another employment type"
+                />
+              </div>
+              <div className="profile-fields">
+                <SelectWithOther
+                  label="Work authorization"
+                  options={WORK_AUTHORIZATION_OPTIONS}
+                  value={prefDraft.work_authorization}
+                  onChange={(work_authorization) =>
+                    setPrefDraft({ ...prefDraft, work_authorization })
+                  }
+                  emptyLabel="Select work authorization"
+                  otherPlaceholder="Describe work authorization"
+                />
+                <SelectWithOther
+                  label="Notice period"
+                  options={NOTICE_PERIOD_OPTIONS.filter(
+                    (option) => option.value !== "",
+                  )}
+                  value={prefDraft.notice_period_days}
+                  onChange={(notice_period_days) =>
+                    setPrefDraft({ ...prefDraft, notice_period_days })
+                  }
+                  emptyLabel="Select notice period"
+                  otherPlaceholder="Enter notice period in days"
+                  inputType="number"
+                />
+                <SelectWithOther
+                  label="Salary currency"
+                  options={CURRENCY_OPTIONS}
+                  value={prefDraft.salary_currency}
+                  onChange={(salary_currency) =>
+                    setPrefDraft({
+                      ...prefDraft,
+                      salary_currency: salary_currency.toUpperCase(),
+                    })
+                  }
+                  emptyLabel="Select currency"
+                  otherPlaceholder="Enter 3-letter currency code"
+                />
+                <label className="field-label">
+                  Minimum salary
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    value={prefDraft.salary_min}
+                    onChange={(e: any) =>
+                      setPrefDraft({ ...prefDraft, salary_min: e.target.value })
+                    }
+                    placeholder="e.g. 600000"
+                  />
+                </label>
+              </div>
+              <label className="profile-check-row">
                 <input
                   type="checkbox"
-                  checked={experienceDraft.is_current}
-                  onChange={(e: any) => setExperienceDraft({ ...experienceDraft, is_current: e.target.checked, end_date: e.target.checked ? "" : experienceDraft.end_date })}
+                  checked={prefDraft.willing_to_relocate}
+                  onChange={(e: any) =>
+                    setPrefDraft({
+                      ...prefDraft,
+                      willing_to_relocate: e.target.checked,
+                    })
+                  }
                 />
-                <span>Currently working here</span>
+                <span>Willing to relocate</span>
               </label>
-              <label className="field-label profile-field-span">
-                Summary
-                <Input
-                  value={experienceDraft.summary}
-                  onChange={(e: any) => setExperienceDraft({ ...experienceDraft, summary: e.target.value })}
-                />
-              </label>
-            </div>
-            <div className="profile-section-actions">
-              <Button
-                onClick={() => void saveExperience()}
-                disabled={
-                  !experienceDraft.company_name.trim() || !experienceDraft.role_title.trim() || recordBusy
-                }
-              >
-                {editingExperienceId ? "Save experience" : "Add experience"}
-              </Button>
-              {editingExperienceId ? (
-                <Button variant="secondary" onClick={cancelEditExperience} disabled={recordBusy}>
-                  Cancel edit
+              <div className="profile-section-actions">
+                <Button onClick={savePreferences} disabled={preferencesSaving}>
+                  {preferencesSaving
+                    ? "Saving preferences…"
+                    : "Save career preferences"}
                 </Button>
-              ) : null}
-            </div>
-            {experiences.length === 0 ? (
-              <p className="profile-empty">
-                No experience records yet. Add one, or set years of experience to 0 for fresher credit.
-              </p>
-            ) : (
-              experiences.map((item) => (
-                <div key={item.id} className="profile-record-row">
-                  <div>
-                    <strong>
-                      {item.role_title} · {item.company_name}
-                      {editingExperienceId === item.id ? " · editing" : ""}
-                    </strong>
-                    <p>
-                      {[experienceDateLabel(item), item.employment_type, item.location, item.summary]
-                        .filter(Boolean)
-                        .join(" · ") || "Saved experience"}
-                    </p>
-                  </div>
-                  <div className="profile-record-actions">
-                    <Button variant="secondary" onClick={() => startEditExperience(item)} disabled={recordBusy}>
-                      <AnimatedIcon icon={Pencil} size={15} aria-hidden />
-                      Edit
-                    </Button>
+              </div>
+            </Card>
+
+            <Card
+              id="profile-skills"
+              className="stack profile-card profile-skills-card"
+              hidden={activeProfileSection !== "profile-skills"}
+            >
+              <ProfileSectionHead icon="signal" title="Skills" required />
+              <div className="profile-composer">
+                <SelectWithOther
+                  label={editingSkillId ? "Edit skill" : "Skill"}
+                  options={SKILL_OPTIONS}
+                  value={skillName}
+                  onChange={setSkillName}
+                  emptyLabel="Select a skill"
+                  otherPlaceholder="Enter skill name"
+                />
+                <div className="profile-composer-actions">
+                  <Button
+                    onClick={() => void saveSkill()}
+                    disabled={!skillName.trim() || recordBusy}
+                  >
+                    <AnimatedIcon icon={Plus} size={16} aria-hidden />
+                    {editingSkillId ? "Save skill" : "Add skill"}
+                  </Button>
+                  {editingSkillId ? (
                     <Button
                       variant="secondary"
-                      onClick={() => removeRecord("experiences", item.id, "Experience")}
+                      onClick={cancelEditSkill}
                       disabled={recordBusy}
                     >
-                      <AnimatedIcon icon={Trash2} size={15} aria-hidden />
-                      Remove
+                      Cancel
                     </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </Card>
-
-          <Card id="profile-education" className="stack profile-card profile-education-card" hidden={activeProfileSection !== "profile-education"}>
-            <ProfileSectionHead icon="learning" title="Education" required />
-            <div className="profile-fields">
-              <label className="field-label profile-field-span">
-                Institution
-                <Input
-                  value={educationDraft.institution}
-                  onChange={(e: any) => setEducationDraft({ ...educationDraft, institution: e.target.value })}
-                />
-              </label>
-              <SelectWithOther
-                label="Degree"
-                options={DEGREE_OPTIONS}
-                value={educationDraft.degree}
-                onChange={(degree) => setEducationDraft({ ...educationDraft, degree })}
-                emptyLabel="Select degree"
-                otherPlaceholder="Enter degree"
-              />
-              <SelectWithOther
-                label="Field of study"
-                options={FIELD_OF_STUDY_OPTIONS}
-                value={educationDraft.field_of_study}
-                onChange={(field_of_study) => setEducationDraft({ ...educationDraft, field_of_study })}
-                emptyLabel="Select field of study"
-                otherPlaceholder="Enter field of study"
-              />
-            </div>
-            <div className="profile-section-actions">
-              <Button
-                onClick={() => void saveEducation()}
-                disabled={!educationDraft.institution.trim() || recordBusy}
-              >
-                {editingEducationId ? "Save education" : "Add education"}
-              </Button>
-              {editingEducationId ? (
-                <Button variant="secondary" onClick={cancelEditEducation} disabled={recordBusy}>
-                  Cancel edit
-                </Button>
-              ) : null}
-            </div>
-            {education.length === 0 ? (
-              <p className="profile-empty">No education records yet.</p>
-            ) : (
-              education.map((item) => (
-                <div key={item.id} className="profile-record-row">
-                  <div>
-                    <strong>
-                      {item.institution}
-                      {editingEducationId === item.id ? " · editing" : ""}
-                    </strong>
-                    <p>
-                      {[item.degree, item.field_of_study].filter(Boolean).join(" · ") || "Saved education"}
-                    </p>
-                  </div>
-                  <div className="profile-record-actions">
-                    <Button variant="secondary" onClick={() => startEditEducation(item)} disabled={recordBusy}>
-                      <AnimatedIcon icon={Pencil} size={15} aria-hidden />
-                      Edit
-                    </Button>
+                  ) : (
                     <Button
                       variant="secondary"
-                      onClick={() => removeRecord("education", item.id, "Education")}
+                      onClick={importSkillsFromResume}
                       disabled={recordBusy}
                     >
-                      <AnimatedIcon icon={Trash2} size={15} aria-hidden />
-                      Remove
+                      Import from resume
                     </Button>
-                  </div>
+                  )}
                 </div>
-              ))
-            )}
-          </Card>
+              </div>
+              <div className="profile-chip-list">
+                {skills.length === 0 && (
+                  <p className="profile-empty">No skills saved yet.</p>
+                )}
+                {skills.map((skill) => (
+                  <span
+                    key={skill.id}
+                    className={`badge ${editingSkillId === skill.id ? "badge-warning" : "badge-info"}`}
+                    style={{ gap: 8 }}
+                  >
+                    {skill.name}
+                    <button
+                      type="button"
+                      className="button-quiet profile-chip-action"
+                      onClick={() => startEditSkill(skill)}
+                      aria-label={`Edit ${skill.name}`}
+                    >
+                      <AnimatedIcon icon={Pencil} size={13} aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      className="button-quiet profile-chip-action"
+                      onClick={() => removeRecord("skills", skill.id, "Skill")}
+                      aria-label={`Remove ${skill.name}`}
+                    >
+                      <AnimatedIcon icon={Trash2} size={13} aria-hidden />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </Card>
 
-          <Card id="profile-links" className="stack profile-card profile-links-card" hidden={activeProfileSection !== "profile-links"}>
-            <ProfileSectionHead icon="confidence" title="Professional links" required />
-            <div className="profile-fields">
-              <label className="field-label">
-                Link type
-                <Select
-                  value={linkDraft.link_type}
-                  onChange={(e: any) => setLinkDraft({ ...linkDraft, link_type: e.target.value })}
+            <Card
+              id="profile-experience"
+              className="stack profile-card profile-experience-card"
+              hidden={activeProfileSection !== "profile-experience"}
+            >
+              <ProfileSectionHead
+                icon="evidence"
+                title="Work experience"
+                lede="Add at least one experience, or set years of experience to 0 for fresher credit."
+                required
+              />
+              <div className="profile-fields">
+                <label className="field-label">
+                  Company
+                  <Input
+                    value={experienceDraft.company_name}
+                    onChange={(e: any) =>
+                      setExperienceDraft({
+                        ...experienceDraft,
+                        company_name: e.target.value,
+                      })
+                    }
+                  />
+                </label>
+                <SelectWithOther
+                  label="Role title"
+                  options={TARGET_ROLE_OPTIONS}
+                  value={experienceDraft.role_title}
+                  onChange={(role_title) =>
+                    setExperienceDraft({ ...experienceDraft, role_title })
+                  }
+                  emptyLabel="Select role title"
+                  otherPlaceholder="Enter role title"
+                />
+                <SelectWithOther
+                  label="Location"
+                  options={LOCATION_OPTIONS}
+                  value={experienceDraft.location}
+                  onChange={(location) =>
+                    setExperienceDraft({ ...experienceDraft, location })
+                  }
+                  emptyLabel="Select location"
+                  otherPlaceholder="Enter location"
+                />
+                <SelectWithOther
+                  label="Employment type"
+                  options={EMPLOYMENT_TYPE_OPTIONS}
+                  value={experienceDraft.employment_type}
+                  onChange={(employment_type) =>
+                    setExperienceDraft({ ...experienceDraft, employment_type })
+                  }
+                  emptyLabel="Select employment type"
+                  otherPlaceholder="Enter employment type"
+                />
+                <label className="field-label">
+                  Start date
+                  <Input
+                    type="date"
+                    value={experienceDraft.start_date}
+                    onChange={(e: any) =>
+                      setExperienceDraft({
+                        ...experienceDraft,
+                        start_date: e.target.value,
+                      })
+                    }
+                  />
+                </label>
+                <label className="field-label">
+                  End date
+                  <Input
+                    type="date"
+                    value={experienceDraft.end_date}
+                    disabled={experienceDraft.is_current}
+                    onChange={(e: any) =>
+                      setExperienceDraft({
+                        ...experienceDraft,
+                        end_date: e.target.value,
+                      })
+                    }
+                  />
+                </label>
+                <label className="profile-check-row profile-field-span">
+                  <input
+                    type="checkbox"
+                    checked={experienceDraft.is_current}
+                    onChange={(e: any) =>
+                      setExperienceDraft({
+                        ...experienceDraft,
+                        is_current: e.target.checked,
+                        end_date: e.target.checked
+                          ? ""
+                          : experienceDraft.end_date,
+                      })
+                    }
+                  />
+                  <span>Currently working here</span>
+                </label>
+                <label className="field-label profile-field-span">
+                  Summary
+                  <Input
+                    value={experienceDraft.summary}
+                    onChange={(e: any) =>
+                      setExperienceDraft({
+                        ...experienceDraft,
+                        summary: e.target.value,
+                      })
+                    }
+                  />
+                </label>
+              </div>
+              <div className="profile-section-actions">
+                <Button
+                  onClick={() => void saveExperience()}
+                  disabled={
+                    !experienceDraft.company_name.trim() ||
+                    !experienceDraft.role_title.trim() ||
+                    recordBusy
+                  }
                 >
-                  {LINK_TYPE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </Select>
-              </label>
-              <label className="field-label">
-                URL
-                <Input
-                  value={linkDraft.url}
-                  onChange={(e: any) => setLinkDraft({ ...linkDraft, url: e.target.value })}
-                  placeholder="https://"
-                />
-              </label>
-              <label className="field-label profile-field-span">
-                Label
-                <Input
-                  value={linkDraft.label}
-                  onChange={(e: any) => setLinkDraft({ ...linkDraft, label: e.target.value })}
-                  placeholder="Optional label"
-                />
-              </label>
-            </div>
-            <div className="profile-section-actions">
-              <Button onClick={() => void saveLink()} disabled={!linkDraft.url.trim() || recordBusy}>
-                {editingLinkId ? "Save link" : "Add link"}
-              </Button>
-              {editingLinkId ? (
-                <Button variant="secondary" onClick={cancelEditLink} disabled={recordBusy}>
-                  Cancel edit
+                  {editingExperienceId ? "Save experience" : "Add experience"}
                 </Button>
-              ) : null}
-            </div>
-            {links.length === 0 ? (
-              <p className="profile-empty">No links saved yet.</p>
-            ) : (
-              links.map((item) => (
-                <div key={item.id} className="profile-record-row">
-                  <div>
-                    <strong>
-                      {item.label || item.link_type}
-                      {editingLinkId === item.id ? " · editing" : ""}
-                    </strong>
-                    <p>{item.url}</p>
+                {editingExperienceId ? (
+                  <Button
+                    variant="secondary"
+                    onClick={cancelEditExperience}
+                    disabled={recordBusy}
+                  >
+                    Cancel edit
+                  </Button>
+                ) : null}
+              </div>
+              {experiences.length === 0 ? (
+                <p className="profile-empty">
+                  No experience records yet. Add one, or set years of experience
+                  to 0 for fresher credit.
+                </p>
+              ) : (
+                experiences.map((item) => (
+                  <div key={item.id} className="profile-record-row">
+                    <div>
+                      <strong>
+                        {item.role_title} · {item.company_name}
+                        {editingExperienceId === item.id ? " · editing" : ""}
+                      </strong>
+                      <p>
+                        {[
+                          experienceDateLabel(item),
+                          item.employment_type,
+                          item.location,
+                          item.summary,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ") || "Saved experience"}
+                      </p>
+                    </div>
+                    <div className="profile-record-actions">
+                      <Button
+                        variant="secondary"
+                        onClick={() => startEditExperience(item)}
+                        disabled={recordBusy}
+                      >
+                        <AnimatedIcon icon={Pencil} size={15} aria-hidden />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() =>
+                          removeRecord("experiences", item.id, "Experience")
+                        }
+                        disabled={recordBusy}
+                      >
+                        <AnimatedIcon icon={Trash2} size={15} aria-hidden />
+                        Remove
+                      </Button>
+                    </div>
                   </div>
-                  <div className="profile-record-actions">
-                    <Button variant="secondary" onClick={() => startEditLink(item)} disabled={recordBusy}>
-                      <AnimatedIcon icon={Pencil} size={15} aria-hidden />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={() => removeRecord("links", item.id, "Link")}
-                      disabled={recordBusy}
-                    >
-                      <AnimatedIcon icon={Trash2} size={15} aria-hidden />
-                      Remove
-                    </Button>
+                ))
+              )}
+            </Card>
+
+            <Card
+              id="profile-education"
+              className="stack profile-card profile-education-card"
+              hidden={activeProfileSection !== "profile-education"}
+            >
+              <ProfileSectionHead icon="learning" title="Education" required />
+              <div className="profile-fields">
+                <label className="field-label profile-field-span">
+                  Institution
+                  <Input
+                    value={educationDraft.institution}
+                    onChange={(e: any) =>
+                      setEducationDraft({
+                        ...educationDraft,
+                        institution: e.target.value,
+                      })
+                    }
+                  />
+                </label>
+                <SelectWithOther
+                  label="Degree"
+                  options={DEGREE_OPTIONS}
+                  value={educationDraft.degree}
+                  onChange={(degree) =>
+                    setEducationDraft({ ...educationDraft, degree })
+                  }
+                  emptyLabel="Select degree"
+                  otherPlaceholder="Enter degree"
+                />
+                <SelectWithOther
+                  label="Field of study"
+                  options={FIELD_OF_STUDY_OPTIONS}
+                  value={educationDraft.field_of_study}
+                  onChange={(field_of_study) =>
+                    setEducationDraft({ ...educationDraft, field_of_study })
+                  }
+                  emptyLabel="Select field of study"
+                  otherPlaceholder="Enter field of study"
+                />
+              </div>
+              <div className="profile-section-actions">
+                <Button
+                  onClick={() => void saveEducation()}
+                  disabled={!educationDraft.institution.trim() || recordBusy}
+                >
+                  {editingEducationId ? "Save education" : "Add education"}
+                </Button>
+                {editingEducationId ? (
+                  <Button
+                    variant="secondary"
+                    onClick={cancelEditEducation}
+                    disabled={recordBusy}
+                  >
+                    Cancel edit
+                  </Button>
+                ) : null}
+              </div>
+              {education.length === 0 ? (
+                <p className="profile-empty">No education records yet.</p>
+              ) : (
+                education.map((item) => (
+                  <div key={item.id} className="profile-record-row">
+                    <div>
+                      <strong>
+                        {item.institution}
+                        {editingEducationId === item.id ? " · editing" : ""}
+                      </strong>
+                      <p>
+                        {[item.degree, item.field_of_study]
+                          .filter(Boolean)
+                          .join(" · ") || "Saved education"}
+                      </p>
+                    </div>
+                    <div className="profile-record-actions">
+                      <Button
+                        variant="secondary"
+                        onClick={() => startEditEducation(item)}
+                        disabled={recordBusy}
+                      >
+                        <AnimatedIcon icon={Pencil} size={15} aria-hidden />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() =>
+                          removeRecord("education", item.id, "Education")
+                        }
+                        disabled={recordBusy}
+                      >
+                        <AnimatedIcon icon={Trash2} size={15} aria-hidden />
+                        Remove
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
-          </Card>
+                ))
+              )}
+            </Card>
+
+            <Card
+              id="profile-links"
+              className="stack profile-card profile-links-card"
+              hidden={activeProfileSection !== "profile-links"}
+            >
+              <ProfileSectionHead
+                icon="confidence"
+                title="Professional links"
+                required
+              />
+              <div className="profile-fields">
+                <label className="field-label">
+                  Link type
+                  <Select
+                    value={linkDraft.link_type}
+                    onChange={(e: any) =>
+                      setLinkDraft({ ...linkDraft, link_type: e.target.value })
+                    }
+                  >
+                    {LINK_TYPE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+                <label className="field-label">
+                  URL
+                  <Input
+                    value={linkDraft.url}
+                    onChange={(e: any) =>
+                      setLinkDraft({ ...linkDraft, url: e.target.value })
+                    }
+                    placeholder="https://"
+                  />
+                </label>
+                <label className="field-label profile-field-span">
+                  Label
+                  <Input
+                    value={linkDraft.label}
+                    onChange={(e: any) =>
+                      setLinkDraft({ ...linkDraft, label: e.target.value })
+                    }
+                    placeholder="Optional label"
+                  />
+                </label>
+              </div>
+              <div className="profile-section-actions">
+                <Button
+                  onClick={() => void saveLink()}
+                  disabled={!linkDraft.url.trim() || recordBusy}
+                >
+                  {editingLinkId ? "Save link" : "Add link"}
+                </Button>
+                {editingLinkId ? (
+                  <Button
+                    variant="secondary"
+                    onClick={cancelEditLink}
+                    disabled={recordBusy}
+                  >
+                    Cancel edit
+                  </Button>
+                ) : null}
+              </div>
+              {links.length === 0 ? (
+                <p className="profile-empty">No links saved yet.</p>
+              ) : (
+                links.map((item) => (
+                  <div key={item.id} className="profile-record-row">
+                    <div>
+                      <strong>
+                        {item.label || item.link_type}
+                        {editingLinkId === item.id ? " · editing" : ""}
+                      </strong>
+                      <p>{item.url}</p>
+                    </div>
+                    <div className="profile-record-actions">
+                      <Button
+                        variant="secondary"
+                        onClick={() => startEditLink(item)}
+                        disabled={recordBusy}
+                      >
+                        <AnimatedIcon icon={Pencil} size={15} aria-hidden />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() => removeRecord("links", item.id, "Link")}
+                        disabled={recordBusy}
+                      >
+                        <AnimatedIcon icon={Trash2} size={15} aria-hidden />
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </Card>
+          </div>
         </div>
-      </div>
       )}
     </Frame>
   );
@@ -2371,7 +3088,9 @@ export function AccountSettings() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
-  const [authProvider, setAuthProvider] = useState<"email" | "google" | "unknown">("unknown");
+  const [authProvider, setAuthProvider] = useState<
+    "email" | "google" | "unknown"
+  >("unknown");
   const [confirmEmail, setConfirmEmail] = useState("");
   const [confirmPhrase, setConfirmPhrase] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -2398,7 +3117,6 @@ export function AccountSettings() {
   async function logout() {
     await createClient()?.auth.signOut();
     navigate("/");
-
   }
 
   async function deleteAccount() {
@@ -2408,7 +3126,10 @@ export function AccountSettings() {
       setError(`Type exactly ${DELETE_ACCOUNT_PHRASE} to confirm.`);
       return;
     }
-    if (accountEmail && confirmEmail.trim().toLowerCase() !== accountEmail.toLowerCase()) {
+    if (
+      accountEmail &&
+      confirmEmail.trim().toLowerCase() !== accountEmail.toLowerCase()
+    ) {
       setError("Email does not match your signed-in account.");
       return;
     }
@@ -2424,7 +3145,6 @@ export function AccountSettings() {
       });
       await createClient()?.auth.signOut();
       navigate("/");
-
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -2434,107 +3154,135 @@ export function AccountSettings() {
 
   const canDelete =
     confirmPhrase.trim() === DELETE_ACCOUNT_PHRASE &&
-    (!accountEmail || confirmEmail.trim().toLowerCase() === accountEmail.toLowerCase());
+    (!accountEmail ||
+      confirmEmail.trim().toLowerCase() === accountEmail.toLowerCase());
 
   const providerLabel =
-    authProvider === "google" ? "Google" : authProvider === "email" ? "Email and password" : "Account session";
+    authProvider === "google"
+      ? "Google"
+      : authProvider === "email"
+        ? "Email and password"
+        : "Account session";
 
   return (
-    <Frame title="Account & access" description="Manage your active session securely.">
+    <Frame
+      title="Account & access"
+      description="Manage your active session securely."
+    >
       <div className="settings-canvas">
-      <Card className="stack settings-card settings-session-card">
-        <h2 style={{ margin: 0 }}>Session</h2>
-        <div className="settings-session-identity">
-          <span className="settings-session-mark" aria-hidden="true">
-            {profileInitials(accountEmail.split("@")[0] || "A")}
-          </span>
-          <div>
-            <strong>{providerLabel}</strong>
-            {accountEmail ? <p className="muted">{accountEmail}</p> : <p className="muted">Email is still loading.</p>}
-          </div>
-        </div>
-        <div className="cluster">
-          <Button variant="secondary" onClick={logout}>
-            Logout
-          </Button>
-        </div>
-        {message && (
-          <p role="status" style={{ margin: 0 }}>
-            {message}
-          </p>
-        )}
-        {error && !showDeletePanel && (
-          <p role="alert" className="field-error" style={{ margin: 0 }}>
-            {error}
-          </p>
-        )}
-      </Card>
-
-      <Card className="stack settings-card settings-danger-card">
-        <p className="eyebrow">Danger zone</p>
-        <h2 style={{ margin: 0 }}>Delete account</h2>
-        <p className="muted" style={{ margin: 0, fontSize: "var(--text-sm)" }}>
-          Permanently removes your account and all candidate data stored with us: profile, skills, experience,
-          education, resumes and files, job descriptions, ATS analyses, interviews, learning paths, saved jobs,
-          activity, and preferences. This cannot be undone.
-        </p>
-        {!showDeletePanel ? (
-          <Button variant="destructive" onClick={() => setShowDeletePanel(true)}>
-            I want to delete my account
-          </Button>
-        ) : (
-          <div className="stack">
-            <label className="field-label">
-              Confirm your account email
-              <Input
-                type="email"
-                autoComplete="email"
-                value={confirmEmail}
-                onChange={(e: any) => setConfirmEmail(e.target.value)}
-                placeholder={accountEmail || "you@example.com"}
-                disabled={deleting}
-              />
-            </label>
-            <label className="field-label">
-              <span>
-                Type <span className="mono">{DELETE_ACCOUNT_PHRASE}</span> to confirm
-              </span>
-              <Input
-                value={confirmPhrase}
-                onChange={(e: any) => setConfirmPhrase(e.target.value)}
-                placeholder={DELETE_ACCOUNT_PHRASE}
-                disabled={deleting}
-                autoComplete="off"
-              />
-            </label>
-            <div className="cluster">
-              <Button variant="destructive" disabled={deleting || !canDelete} onClick={() => void deleteAccount()}>
-                {deleting ? "Deleting…" : "Permanently delete account"}
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={deleting}
-                onClick={() => {
-                  setShowDeletePanel(false);
-                  setConfirmPhrase("");
-                  setConfirmEmail("");
-                  setError("");
-                }}
-              >
-                Cancel
-              </Button>
+        <Card className="stack settings-card settings-session-card">
+          <h2 style={{ margin: 0 }}>Session</h2>
+          <div className="settings-session-identity">
+            <span className="settings-session-mark" aria-hidden="true">
+              {profileInitials(accountEmail.split("@")[0] || "A")}
+            </span>
+            <div>
+              <strong>{providerLabel}</strong>
+              {accountEmail ? (
+                <p className="muted">{accountEmail}</p>
+              ) : (
+                <p className="muted">Email is still loading.</p>
+              )}
             </div>
-            {error && (
-              <p role="alert" className="field-error" style={{ margin: 0 }}>
-                {error}
-              </p>
-            )}
-            <p className="muted" style={{ margin: 0, fontSize: "var(--text-xs)" }}>
-              Account deletion is permanent. Make sure you really want to remove everything.
-            </p>
           </div>
-        )}
-      </Card>
+          <div className="cluster">
+            <Button variant="secondary" onClick={logout}>
+              Logout
+            </Button>
+          </div>
+          {message && (
+            <p role="status" style={{ margin: 0 }}>
+              {message}
+            </p>
+          )}
+          {error && !showDeletePanel && (
+            <p role="alert" className="field-error" style={{ margin: 0 }}>
+              {error}
+            </p>
+          )}
+        </Card>
+
+        <Card className="stack settings-card settings-danger-card">
+          <p className="eyebrow">Danger zone</p>
+          <h2 style={{ margin: 0 }}>Delete account</h2>
+          <p
+            className="muted"
+            style={{ margin: 0, fontSize: "var(--text-sm)" }}
+          >
+            Permanently removes your account and all candidate data stored with
+            us: profile, skills, experience, education, resumes and files, job
+            descriptions, ATS analyses, interviews, learning paths, saved jobs,
+            activity, and preferences. This cannot be undone.
+          </p>
+          {!showDeletePanel ? (
+            <Button
+              variant="destructive"
+              onClick={() => setShowDeletePanel(true)}
+            >
+              I want to delete my account
+            </Button>
+          ) : (
+            <div className="stack">
+              <label className="field-label">
+                Confirm your account email
+                <Input
+                  type="email"
+                  autoComplete="email"
+                  value={confirmEmail}
+                  onChange={(e: any) => setConfirmEmail(e.target.value)}
+                  placeholder={accountEmail || "you@example.com"}
+                  disabled={deleting}
+                />
+              </label>
+              <label className="field-label">
+                <span>
+                  Type <span className="mono">{DELETE_ACCOUNT_PHRASE}</span> to
+                  confirm
+                </span>
+                <Input
+                  value={confirmPhrase}
+                  onChange={(e: any) => setConfirmPhrase(e.target.value)}
+                  placeholder={DELETE_ACCOUNT_PHRASE}
+                  disabled={deleting}
+                  autoComplete="off"
+                />
+              </label>
+              <div className="cluster">
+                <Button
+                  variant="destructive"
+                  disabled={deleting || !canDelete}
+                  onClick={() => void deleteAccount()}
+                >
+                  {deleting ? "Deleting…" : "Permanently delete account"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={deleting}
+                  onClick={() => {
+                    setShowDeletePanel(false);
+                    setConfirmPhrase("");
+                    setConfirmEmail("");
+                    setError("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+              {error && (
+                <p role="alert" className="field-error" style={{ margin: 0 }}>
+                  {error}
+                </p>
+              )}
+              <p
+                className="muted"
+                style={{ margin: 0, fontSize: "var(--text-xs)" }}
+              >
+                Account deletion is permanent. Make sure you really want to
+                remove everything.
+              </p>
+            </div>
+          )}
+        </Card>
       </div>
     </Frame>
   );
@@ -2583,18 +3331,29 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
           : {
               camera_permission: data.camera_permission || "ask",
               microphone_permission: data.microphone_permission || "ask",
-              recording_retention_days: Number(data.recording_retention_days || 0),
-              resume_processing_consent: Boolean(data.resume_processing_consent),
-              job_recommendation_consent: Boolean(data.job_recommendation_consent),
+              recording_retention_days: Number(
+                data.recording_retention_days || 0,
+              ),
+              resume_processing_consent: Boolean(
+                data.resume_processing_consent,
+              ),
+              job_recommendation_consent: Boolean(
+                data.job_recommendation_consent,
+              ),
               profile_visibility: data.profile_visibility || "private",
             };
       if (kind === "privacy") {
         const days = Number(payload.recording_retention_days ?? 0);
         if (Number.isNaN(days) || days < 0 || days > 365) {
-          throw new Error("Recording retention must be between 0 and 365 days.");
+          throw new Error(
+            "Recording retention must be between 0 and 365 days.",
+          );
         }
       }
-      await apiRequest(`/settings/${kind}`, { method: "PUT", body: JSON.stringify(payload) });
+      await apiRequest(`/settings/${kind}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
       setMessage("Settings saved.");
     } catch (e) {
       setError((e as Error).message);
@@ -2604,10 +3363,26 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
   }
 
   const notificationToggles = [
-    { key: "job_alerts", label: "Job alerts", hint: "Email when new matching roles are available." },
-    { key: "learning_reminders", label: "Learning reminders", hint: "Reminders for paths generated from ATS gaps." },
-    { key: "interview_reminders", label: "Interview reminders", hint: "Reminders for unfinished practice sessions." },
-    { key: "product_updates", label: "Product updates", hint: "Occasional notes about Career Copilot itself." },
+    {
+      key: "job_alerts",
+      label: "Job alerts",
+      hint: "Email when new matching roles are available.",
+    },
+    {
+      key: "learning_reminders",
+      label: "Learning reminders",
+      hint: "Reminders for paths generated from ATS gaps.",
+    },
+    {
+      key: "interview_reminders",
+      label: "Interview reminders",
+      hint: "Reminders for unfinished practice sessions.",
+    },
+    {
+      key: "product_updates",
+      label: "Product updates",
+      hint: "Occasional notes about Career Copilot itself.",
+    },
   ] as const;
 
   const consentToggles = [
@@ -2645,7 +3420,9 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
             Email frequency
             <Select
               value={data.email_frequency || "weekly"}
-              onChange={(e: any) => setData({ ...data, email_frequency: e.target.value })}
+              onChange={(e: any) =>
+                setData({ ...data, email_frequency: e.target.value })
+              }
             >
               <option value="never">Never</option>
               <option value="daily">Daily</option>
@@ -2662,7 +3439,9 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
                 <input
                   type="checkbox"
                   checked={Boolean(data[item.key])}
-                  onChange={(e: any) => setData({ ...data, [item.key]: e.target.checked })}
+                  onChange={(e: any) =>
+                    setData({ ...data, [item.key]: e.target.checked })
+                  }
                 />
               </label>
             ))}
@@ -2689,10 +3468,14 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
               Who can see your profile
               <Select
                 value={data.profile_visibility || "private"}
-                onChange={(e: any) => setData({ ...data, profile_visibility: e.target.value })}
+                onChange={(e: any) =>
+                  setData({ ...data, profile_visibility: e.target.value })
+                }
               >
                 <option value="private">Private — only this account</option>
-                <option value="limited">Limited — only features you enable</option>
+                <option value="limited">
+                  Limited — only features you enable
+                </option>
               </Select>
             </label>
             <div className="settings-toggle-list">
@@ -2705,7 +3488,9 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
                   <input
                     type="checkbox"
                     checked={Boolean(data[item.key])}
-                    onChange={(e: any) => setData({ ...data, [item.key]: e.target.checked })}
+                    onChange={(e: any) =>
+                      setData({ ...data, [item.key]: e.target.checked })
+                    }
                   />
                 </label>
               ))}
@@ -2714,14 +3499,17 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
           <Card className="stack settings-card">
             <h2 style={{ margin: 0 }}>Camera and microphone</h2>
             <p className="muted" style={{ margin: 0 }}>
-              These apply to mock-interview practice. The server does not invent camera data.
+              These apply to mock-interview practice. The server does not invent
+              camera data.
             </p>
             <div className="grid-2">
               <label className="field-label">
                 Camera
                 <Select
                   value={data.camera_permission || "ask"}
-                  onChange={(e: any) => setData({ ...data, camera_permission: e.target.value })}
+                  onChange={(e: any) =>
+                    setData({ ...data, camera_permission: e.target.value })
+                  }
                 >
                   <option value="ask">Ask each session</option>
                   <option value="allowed">Allowed</option>
@@ -2732,7 +3520,9 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
                 Microphone
                 <Select
                   value={data.microphone_permission || "ask"}
-                  onChange={(e: any) => setData({ ...data, microphone_permission: e.target.value })}
+                  onChange={(e: any) =>
+                    setData({ ...data, microphone_permission: e.target.value })
+                  }
                 >
                   <option value="ask">Ask each session</option>
                   <option value="allowed">Allowed</option>
@@ -2743,14 +3533,34 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
                 Recording retention (days)
                 <Select
                   value={String(data.recording_retention_days ?? 0)}
-                  onChange={(e: any) => setData({ ...data, recording_retention_days: Number(e.target.value) })}
+                  onChange={(e: any) =>
+                    setData({
+                      ...data,
+                      recording_retention_days: Number(e.target.value),
+                    })
+                  }
                 >
-                  {Array.from(new Set([0, 7, 30, 90, 180, 365, Number(data.recording_retention_days ?? 0)]))
-                    .filter((days) => Number.isFinite(days) && days >= 0 && days <= 365)
+                  {Array.from(
+                    new Set([
+                      0,
+                      7,
+                      30,
+                      90,
+                      180,
+                      365,
+                      Number(data.recording_retention_days ?? 0),
+                    ]),
+                  )
+                    .filter(
+                      (days) =>
+                        Number.isFinite(days) && days >= 0 && days <= 365,
+                    )
                     .sort((a, b) => a - b)
                     .map((days) => (
                       <option key={days} value={days}>
-                        {days === 0 ? "0 — do not keep recordings" : `${days} days`}
+                        {days === 0
+                          ? "0 — do not keep recordings"
+                          : `${days} days`}
                       </option>
                     ))}
                 </Select>
@@ -2780,7 +3590,10 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
 
 export function PreferenceSettings() {
   return (
-    <Frame title="Notification preferences" description="Stored in your account, not in browser storage.">
+    <Frame
+      title="Notification preferences"
+      description="Stored in your account, not in browser storage."
+    >
       <StoredSettings kind="notifications" />
     </Frame>
   );
@@ -2788,7 +3601,10 @@ export function PreferenceSettings() {
 
 export function PrivacySettings() {
   return (
-    <Frame title="Privacy controls" description="Consent and visibility choices are saved to your private account.">
+    <Frame
+      title="Privacy controls"
+      description="Consent and visibility choices are saved to your private account."
+    >
       <StoredSettings kind="privacy" />
     </Frame>
   );

@@ -756,6 +756,21 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
 
   if (parts[0] === "me" && parts[1] === "bootstrap") return bootstrap() as T;
   if (path === "/profile" && method === "GET") return profileResponse() as T;
+  if (parts[0] === "profile" && parts[1] === "username" && parts[2] === "availability" && method === "GET") {
+    const raw = String(new URLSearchParams(path.split("?")[1] || "").get("username") || "")
+      .trim()
+      .toLowerCase()
+      .replace(/^@/, "");
+    const own = String(state.profile.username || "").trim().toLowerCase();
+    const taken = Boolean(raw) && raw !== own && DEMO_PUBLIC_PROFILES.some(
+      (row) => String(row.username || "").toLowerCase() === raw,
+    );
+    return {
+      username: raw,
+      available: Boolean(raw) && raw.length >= 3 && !taken,
+      reason: !raw || raw.length < 3 ? "Use at least 3 characters." : taken ? "Username is already taken." : null,
+    } as T;
+  }
   if (path === "/profile" && method === "PATCH") {
     state.profile = { ...state.profile, ...body };
     return state.profile as T;

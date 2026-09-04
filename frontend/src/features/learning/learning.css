@@ -3,8 +3,7 @@
 
 .lp-page {
   display: grid;
-  gap: clamp(22px, 3vw, 32px);
-  color: var(--text);
+  gap: 24px;
   font-family: var(--font-ui);
 }
 
@@ -19,15 +18,10 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 24px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  gap: 16px 24px;
 }
 
 .lp-kicker {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   margin: 0 0 10px;
   font-family: var(--font-code);
   font-size: 0.72rem;
@@ -128,7 +122,11 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background:
-    linear-gradient(160deg, color-mix(in srgb, var(--surface-blue) 26%, transparent), transparent 46%),
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--surface-blue) 26%, transparent),
+      transparent 46%
+    ),
     var(--surface);
   box-shadow: var(--shadow-sm);
   color: inherit;
@@ -230,24 +228,21 @@
 .lp-path-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 
 .lp-path-card {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   min-height: 100%;
   padding: 20px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: 18px;
   background: var(--surface);
-  box-shadow: var(--shadow-sm);
 }
 
 .lp-path-card-head {
   display: flex;
-  justify-content: space-between;
   gap: 12px;
   align-items: flex-start;
 }
@@ -353,7 +348,9 @@
   color: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 180ms var(--ease-out), background 180ms var(--ease-out);
+  transition:
+    border-color 180ms var(--ease-out),
+    background 180ms var(--ease-out);
 }
 
 .lp-step:hover {
@@ -561,7 +558,12 @@
 .lp-skeleton {
   height: 72px;
   border-radius: 16px;
-  background: linear-gradient(90deg, var(--surface-muted), color-mix(in srgb, var(--surface) 40%, var(--surface-muted)), var(--surface-muted));
+  background: linear-gradient(
+    90deg,
+    var(--surface-muted),
+    color-mix(in srgb, var(--surface) 40%, var(--surface-muted)),
+    var(--surface-muted)
+  );
   background-size: 180% 100%;
   animation: lp-shimmer 1.4s ease-in-out infinite;
 }
@@ -577,8 +579,12 @@
 }
 
 @keyframes lp-shimmer {
-  from { background-position: 100% 0; }
-  to { background-position: -80% 0; }
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -80% 0;
+  }
 }
 
 @media (max-width: 1180px) {

@@ -1,5 +1,5 @@
 import { Link } from "@/shared/ui/router-link";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 export type InterviewHistoryPoint = {
   session_id: string;
@@ -101,15 +101,38 @@ function prefersReducedMotion() {
 
 function useDrawn(delay = 40) {
   const [drawn, setDrawn] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     if (prefersReducedMotion()) {
       setDrawn(true);
       return;
     }
-    const timer = window.setTimeout(() => setDrawn(true), delay);
-    return () => window.clearTimeout(timer);
+
+    const node = ref.current;
+    if (!node || typeof IntersectionObserver === "undefined") {
+      const timer = window.setTimeout(() => setDrawn(true), delay);
+      return () => window.clearTimeout(timer);
+    }
+
+    let timer = 0;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        timer = window.setTimeout(() => setDrawn(true), delay);
+        observer.disconnect();
+      },
+      { threshold: 0.12, rootMargin: "40px 0px 20% 0px" },
+    );
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+      if (timer) window.clearTimeout(timer);
+    };
   }, [delay]);
-  return drawn;
+
+  return { drawn, ref };
 }
 
 export function AnimatedNumber({
@@ -166,7 +189,7 @@ export function AnimatedPie({
   centerValue?: string | number | null;
   ariaLabel: string;
 }) {
-  const drawn = useDrawn(80);
+  const { drawn, ref } = useDrawn(80);
   const total = slices.reduce((sum, slice) => sum + Math.max(0, slice.value), 0);
   const cx = size / 2;
   const radius = (size - thickness) / 2;
@@ -176,7 +199,7 @@ export function AnimatedPie({
   let offset = 0;
 
   return (
-    <div className={`dash-pie ${drawn ? "is-drawn" : ""}`} style={{ width: size, height: size }}>
+    <div ref={ref} className={`dash-pie ${drawn ? "is-drawn" : ""}`} style={{ width: size, height: size }}>
       <svg
         className="dash-pie-svg"
         width={size}
@@ -297,26 +320,94 @@ export function WorkspaceMixChart({
   );
 }
 
+/** Compact circular meter for top-level metric cards */
+export function MiniMetricRing({
+  value,
+  max = 100,
+  size = 42,
+  stroke = 4,
+  tone = "accent",
+}: {
+  value: number | null | undefined;
+  max?: number;
+  size?: number;
+  stroke?: number;
+  tone?: "default" | "accent" | "success" | "warning";
+}) {
+  const { drawn, ref } = useDrawn(50);
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const safe = value == null ? 0 : Math.max(0, Math.min(max, value));
+  const progress = safe / max;
+  const offset = circumference * (1 - (drawn ? progress : 0));
+
+  const strokeColor =
+    tone === "success"
+      ? "var(--success, #22c55e)"
+      : tone === "warning"
+      ? "var(--warning, #eab308)"
+      : "var(--accent, #526bff)";
+
+  return (
+    <div ref={ref} className="mini-metric-ring" style={{ width: size, height: size }} aria-hidden="true">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle
+          className="mini-ring-track"
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          strokeWidth={stroke}
+        />
+        <circle
+          className="mini-ring-progress"
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={stroke}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </svg>
+    </div>
+  );
+}
+
 /** Circular readiness ring for the latest overall score. */
 export function ScoreRing({
   score,
   label = "Latest overall",
   size = 128,
+  tone = "accent",
+  unit,
 }: {
   score: number | null | undefined;
   label?: string;
   size?: number;
+  tone?: "accent" | "success" | "warning";
+  unit?: string;
 }) {
-  const drawn = useDrawn(60);
+  const { drawn, ref } = useDrawn(60);
   const safe = score == null ? null : clampScore(score);
   const stroke = 8;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = safe == null ? 0 : safe / 100;
   const offset = circumference * (1 - (drawn ? progress : 0));
+  const sheenLength = Math.max(12, circumference * 0.08);
 
   return (
-    <div className="score-ring" style={{ width: size, height: size }}>
+    <div
+      ref={ref}
+      className="score-ring"
+      data-tone={tone}
+      data-drawn={drawn ? "true" : "false"}
+      style={{ width: size, height: size }}
+    >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
         <circle
           className="score-ring-track"
@@ -338,10 +429,26 @@ export function ScoreRing({
           strokeLinecap="round"
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
+        {safe != null ? (
+          <g className="score-ring-sheen-spin">
+            <circle
+              className="score-ring-sheen"
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              strokeWidth={stroke}
+              strokeDasharray={`${sheenLength} ${circumference}`}
+              strokeLinecap="round"
+              transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            />
+          </g>
+        ) : null}
       </svg>
       <div className="score-ring-center">
         <span className="score-ring-value metric-value">
           {safe == null ? "—" : <AnimatedNumber value={safe} />}
+          {safe != null && unit ? <small className="score-ring-unit">{unit}</small> : null}
         </span>
         <span className="score-ring-label">{label}</span>
       </div>
@@ -352,7 +459,7 @@ export function ScoreRing({
 /** Area + line chart of overall scores across sessions (oldest → newest). */
 export function ScoreTrendChart({ history }: { history: InterviewHistoryPoint[] }) {
   const gradientId = useId();
-  const drawn = useDrawn(120);
+  const { drawn, ref } = useDrawn(120);
   const points = history.filter((h) => {
     const n = Number(h.overall_score);
     return Number.isFinite(n) && h.session_id;
@@ -398,6 +505,7 @@ export function ScoreTrendChart({ history }: { history: InterviewHistoryPoint[] 
 
   return (
     <div
+      ref={ref}
       className={`trend-chart ${drawn ? "is-drawn" : ""}`}
       role="img"
       aria-label="Mock interview score trend over sessions"
@@ -454,7 +562,7 @@ export function DimensionBars({
 }: {
   dimensions?: InterviewProgress["dimensions"];
 }) {
-  const drawn = useDrawn(160);
+  const { drawn, ref } = useDrawn(160);
   const rows: Array<{ key: string; label: string; stats?: DimensionStats }> = [
     { key: "communication", label: "Communication", stats: dimensions?.communication },
     { key: "structure", label: "Structure", stats: dimensions?.structure },
@@ -466,7 +574,7 @@ export function DimensionBars({
   if (!hasAny) return null;
 
   return (
-    <div className={`dimension-bars ${drawn ? "is-drawn" : ""}`} aria-label="Skill dimension scores">
+    <div ref={ref} className={`dimension-bars ${drawn ? "is-drawn" : ""}`} aria-label="Skill dimension scores">
       {rows.map((row, index) => {
         const latest = row.stats?.latest;
         const previous = row.stats?.previous;

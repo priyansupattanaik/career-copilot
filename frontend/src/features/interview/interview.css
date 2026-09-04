@@ -14,11 +14,15 @@
 .interview-session-page,
 .interview-report {
   --interview-paper: var(--surface);
-  --interview-wash: color-mix(in srgb, var(--surface-blue, var(--surface)) 70%, var(--background));
+  --interview-wash: color-mix(
+    in srgb,
+    var(--surface-blue, var(--surface)) 70%,
+    var(--background)
+  );
   --interview-line: var(--border);
   --interview-accent: var(--primary-strong);
   --interview-you: var(--accent);
-  --interview-gap: 28px;
+  --interview-gap: 24px;
   display: grid;
   gap: var(--interview-gap);
   min-width: 0;
@@ -38,7 +42,7 @@
 .interview-hub-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
-  gap: 24px;
+  gap: 20px;
   align-items: start;
   min-width: 0;
 }
@@ -54,7 +58,7 @@
 .interview-report-review,
 .interview-empty-session {
   min-width: 0;
-  padding: 28px 28px 32px;
+  padding: 24px;
   border: 1px solid var(--interview-line);
   border-radius: 20px;
   background: var(--interview-paper);
@@ -62,14 +66,14 @@
 
 .interview-start {
   display: grid;
-  gap: 22px;
+  gap: 20px;
   align-content: start;
 }
 
 .interview-start-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 22px;
+  gap: 20px;
   align-items: start;
   min-width: 0;
 }
@@ -97,7 +101,7 @@
 .interview-focus,
 .interview-length {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -148,7 +152,10 @@
   border-radius: 16px;
   background: var(--background);
   cursor: pointer;
-  transition: border-color 180ms var(--ease-out), background 180ms var(--ease-out), transform 100ms var(--ease-press);
+  transition:
+    border-color 180ms var(--ease-out),
+    background 180ms var(--ease-out),
+    transform 100ms var(--ease-press);
 }
 .interview-focus-tile:has(:focus-visible) {
   outline: 3px solid var(--primary-strong);
@@ -354,9 +361,16 @@
   padding-bottom: 4px;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
-.interview-session-bar-copy { grid-area: copy; }
-.interview-pips { grid-area: pips; }
-.interview-leave { grid-area: leave; flex-shrink: 0; }
+.interview-session-bar-copy {
+  grid-area: copy;
+}
+.interview-pips {
+  grid-area: pips;
+}
+.interview-leave {
+  grid-area: leave;
+  flex-shrink: 0;
+}
 
 .interview-session-bar h1 {
   margin: 0;
@@ -399,9 +413,16 @@
   gap: var(--interview-gap);
   align-items: start;
 }
-.interview-room > .interview-bubble { grid-area: question; min-width: 0; }
-.interview-presence { grid-area: presence; }
-.interview-dialog { grid-area: dialog; }
+.interview-room > .interview-bubble {
+  grid-area: question;
+  min-width: 0;
+}
+.interview-presence {
+  grid-area: presence;
+}
+.interview-dialog {
+  grid-area: dialog;
+}
 
 .interview-presence {
   position: sticky;
@@ -506,7 +527,8 @@
 
 .interview-live-dot[data-active="true"] {
   background: var(--interview-you);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--interview-you) 22%, transparent);
+  box-shadow: 0 0 0 4px
+    color-mix(in srgb, var(--interview-you) 22%, transparent);
 }
 
 .interview-dialog {
@@ -521,7 +543,8 @@
   padding: 18px 20px;
   border-radius: 18px 18px 18px 6px;
   background: color-mix(in srgb, var(--interview-accent) 8%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--interview-accent) 18%, var(--border));
+  border: 1px solid
+    color-mix(in srgb, var(--interview-accent) 18%, var(--border));
 }
 
 .interview-bubble.is-you {
@@ -575,9 +598,15 @@
   bottom: 12px;
   z-index: 4;
 }
-.interview-composer > .interview-field { grid-area: field; }
-.interview-composer-hint { grid-area: hint; }
-.interview-composer-actions { grid-area: actions; }
+.interview-composer > .interview-field {
+  grid-area: field;
+}
+.interview-composer-hint {
+  grid-area: hint;
+}
+.interview-composer-actions {
+  grid-area: actions;
+}
 
 .interview-composer textarea {
   min-height: 120px;
@@ -646,7 +675,11 @@
   height: 8px;
   overflow: hidden;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--interview-accent) 10%, var(--background));
+  background: color-mix(
+    in srgb,
+    var(--interview-accent) 10%,
+    var(--background)
+  );
 }
 
 .interview-score-fill {

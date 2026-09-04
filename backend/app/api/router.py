@@ -321,13 +321,13 @@ def bootstrap(
             if snap.exists:
                 data = snap.to_dict() or {}
                 data["id"] = snap.id
-                filtered = {k: data.get(k) for k in ("id","full_name","avatar_url","avatar_path","profile_completion","profile_completion_details")}
+                filtered = {k: data.get(k) for k in ("id","username","full_name","avatar_url","avatar_path","profile_completion","profile_completion_details")}
                 return FirestoreResult([filtered])
             return FirestoreResult([])
         except Exception:
             return (
                 client.table("profiles")
-                .select("id,full_name,avatar_url,avatar_path,profile_completion,profile_completion_details")
+                .select("id,username,full_name,avatar_url,avatar_path,profile_completion,profile_completion_details")
                 .eq("id", uid)
                 .limit(1)
                 .execute()
@@ -444,25 +444,6 @@ def bootstrap(
         _bootstrap_cache[cache_key] = (time.time(), result)
         return result
 
-    with ThreadPoolExecutor(max_workers=8, thread_name_prefix="bootstrap") as executor:
-        futures = {
-            "profile": executor.submit(_read_profile),
-            "active_resume": executor.submit(_read_active_resume),
-            "confirmed_resume": executor.submit(_read_confirmed_resume),
-            "latest_jd": executor.submit(_read_latest_jd),
-            "latest_analysis": executor.submit(_read_latest_analysis),
-            "recent_activity": executor.submit(list_recent_activity, client, user),
-            "latest_actions": executor.submit(_latest_actions, client, user),
-            "interview_progress": executor.submit(_interview_progress, client, user),
-        }
-        profile = (futures["profile"].result().data or [{}])[0]
-        active_resume = futures["active_resume"].result().data or []
-        confirmed_resume_count = futures["confirmed_resume"].result()
-        latest_jd = futures["latest_jd"].result() or []
-        latest_analysis = futures["latest_analysis"].result() or []
-        recent_activity = futures["recent_activity"].result()
-        latest_actions = futures["latest_actions"].result()
-        interview_progress = futures["interview_progress"].result()
     def _count(table: str, *, deleted_only: bool = False, failed_only: bool = False) -> int:
         query = client.table(table).select("*", count="exact", head=True).eq("user_id", uid)
         if deleted_only:
@@ -479,12 +460,34 @@ def bootstrap(
         "saved_jobs": ("saved_jobs", False, False),
         "failed_ats": ("ats_analyses", False, True),
     }
-    with ThreadPoolExecutor(max_workers=len(count_jobs), thread_name_prefix="bootstrap-count") as executor:
+
+    with ThreadPoolExecutor(max_workers=14, thread_name_prefix="bootstrap") as executor:
+        futures = {
+            "profile": executor.submit(_read_profile),
+            "active_resume": executor.submit(_read_active_resume),
+            "confirmed_resume": executor.submit(_read_confirmed_resume),
+            "latest_jd": executor.submit(_read_latest_jd),
+            "latest_analysis": executor.submit(_read_latest_analysis),
+            "recent_activity": executor.submit(list_recent_activity, client, user),
+            "latest_actions": executor.submit(_latest_actions, client, user),
+            "interview_progress": executor.submit(_interview_progress, client, user),
+        }
         count_futures = {
             key: executor.submit(_count, table, deleted_only=deleted_only, failed_only=failed_only)
             for key, (table, deleted_only, failed_only) in count_jobs.items()
         }
-        counts = {key: count_futures[key].result() for key in ("resumes", "ats_analyses", "interviews", "learning_paths", "saved_jobs")}
+        profile = (futures["profile"].result().data or [{}])[0]
+        active_resume = futures["active_resume"].result().data or []
+        confirmed_resume_count = futures["confirmed_resume"].result()
+        latest_jd = futures["latest_jd"].result() or []
+        latest_analysis = futures["latest_analysis"].result() or []
+        recent_activity = futures["recent_activity"].result()
+        latest_actions = futures["latest_actions"].result()
+        interview_progress = futures["interview_progress"].result()
+        counts = {
+            key: count_futures[key].result()
+            for key in ("resumes", "ats_analyses", "interviews", "learning_paths", "saved_jobs")
+        }
         failed_ats = count_futures["failed_ats"].result()
     result = {
         "profile": attach_avatar_url(profile, client, settings),
@@ -1111,18 +1114,25 @@ def public_profile(username: str, settings: Settings = Depends(get_settings)):
     return {"profile": profile, "sections": public_rows}
 
 
+def ensure_profile_row(client, user: CurrentUser) -> dict[str, Any]:
+    """Return the candidate profile row, auto-creating default for legacy or OAuth accounts."""
+    uid = str(user.id)
+    rows = client.table("profiles").select("*").eq("id", uid).limit(1).execute().data or []
+    if rows and rows[0]:
+        return rows[0]
+    profile_data: dict[str, Any] = {
+        "id": uid,
+        "full_name": (user.full_name or "").strip()[:120] or None,
+        "profile_completion": 0,
+    }
+    client.table("profiles").upsert(profile_data).execute()
+    return profile_data
+
+
 @router.get("/profile")
 def get_profile(user: CurrentUser = Depends(get_current_user), settings: Settings = Depends(get_settings)):
     client = client_for(settings, user)
-    profile = (
-        client.table("profiles")
-        .select("*")
-        .eq("id", str(user.id))
-        .limit(1)
-        .execute()
-        .data
-        or [{}]
-    )[0]
+    profile = ensure_profile_row(client, user)
     return {
         "profile": attach_avatar_url(profile, client, settings),
         "preferences": ensure_preference_row(client, "candidate_preferences", str(user.id)),
@@ -1136,6 +1146,7 @@ def update_profile(
     settings: Settings = Depends(get_settings),
 ):
     client = client_for(settings, user)
+    ensure_profile_row(client, user)
     values = payload.model_dump(exclude_none=True)
     if "username" in values:
         try:
@@ -1145,6 +1156,10 @@ def update_profile(
         existing = client.table("profiles").select("id").ilike("username", values["username"]).limit(1).execute().data or []
         if existing and str(existing[0].get("id")) != str(user.id):
             raise ApiError(409, "username_taken", "That username is already taken.")
+        try:
+            client.table("users").update({"username": values["username"]}).eq("id", str(user.id)).execute()
+        except Exception:
+            logger.debug("users_username_sync_failed user_id=%s", user.id)
     client.table("profiles").update(values).eq("id", str(user.id)).execute()
     profile = recalculate_completion(client, user)
     write_activity(client, user, "profile_updated", "Candidate profile updated", "profile", str(user.id))

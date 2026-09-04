@@ -96,3 +96,18 @@ async def request_context(request: Request, call_next):
 
 app.include_router(router, prefix=settings.api_v1_prefix)
 app.include_router(ats_scoring_router, prefix=settings.api_v1_prefix)
+
+
+def _unversioned_health_live() -> dict[str, object]:
+    """Liveness for probes that hit /health or /api/health instead of /api/v1/health/live."""
+    return {
+        "status": "ok",
+        "service": settings.app_name,
+        "live": True,
+    }
+
+
+app.add_api_route("/health", _unversioned_health_live, methods=["GET"])
+app.add_api_route("/health/live", _unversioned_health_live, methods=["GET"])
+app.add_api_route("/api/health", _unversioned_health_live, methods=["GET"])
+app.add_api_route("/api/health/live", _unversioned_health_live, methods=["GET"])

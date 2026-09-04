@@ -20,16 +20,24 @@ import {
 /** Full `/me/bootstrap` payload used by shell + dashboard (and future pages). */
 export type WorkspaceBootstrap = {
   profile: {
+    username?: string | null;
     full_name?: string;
     avatar_url?: string | null;
     avatar_path?: string | null;
     profile_completion?: number;
-    profile_completion_details?: { missing?: ProfileMissingItem[]; total?: number };
+    profile_completion_details?: {
+      missing?: ProfileMissingItem[];
+      total?: number;
+    };
   } | null;
   active_resume: { id: string } | null;
   counts?: Record<string, number>;
   active_job_description?: { title: string; role_title?: string | null } | null;
-  latest_ats_analysis?: { id: string; overall_score: number | null; status: string } | null;
+  latest_ats_analysis?: {
+    id: string;
+    overall_score: number | null;
+    status: string;
+  } | null;
   latest_actions?: {
     last_resume_upload?: {
       resume_id?: string | null;
@@ -76,7 +84,10 @@ export type WorkspaceBootstrap = {
   workspace?: {
     profile_completion?: number;
     profile_missing?: ProfileMissingItem[];
-    profile_completion_details?: { missing?: ProfileMissingItem[]; total?: number };
+    profile_completion_details?: {
+      missing?: ProfileMissingItem[];
+      total?: number;
+    };
     has_active_resume?: boolean;
     has_confirmed_resume?: boolean;
     failed_ats_count?: number;
@@ -103,11 +114,19 @@ type BootstrapContextValue = {
   refresh: () => void;
 };
 
-const WorkspaceBootstrapContext = createContext<BootstrapContextValue | null>(null);
+const WorkspaceBootstrapContext = createContext<BootstrapContextValue | null>(
+  null,
+);
 
-export function WorkspaceBootstrapProvider({ children }: { children: ReactNode }) {
+export function WorkspaceBootstrapProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const { pathname } = useLocation();
-  const [data, setData] = useState<WorkspaceBootstrap | null>(() => readCachedBootstrap());
+  const [data, setData] = useState<WorkspaceBootstrap | null>(() =>
+    readCachedBootstrap(),
+  );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(() => !readCachedBootstrap());
   const fetchGen = useRef(0);
@@ -126,7 +145,10 @@ export function WorkspaceBootstrapProvider({ children }: { children: ReactNode }
         setData(payload);
         setError("");
         try {
-          window.sessionStorage.setItem(BOOTSTRAP_STORAGE_KEY, JSON.stringify(payload));
+          window.sessionStorage.setItem(
+            BOOTSTRAP_STORAGE_KEY,
+            JSON.stringify(payload),
+          );
         } catch {
           // Ignore quota errors
         }
@@ -189,14 +211,18 @@ export function WorkspaceBootstrapProvider({ children }: { children: ReactNode }
   );
 
   return (
-    <WorkspaceBootstrapContext.Provider value={value}>{children}</WorkspaceBootstrapContext.Provider>
+    <WorkspaceBootstrapContext.Provider value={value}>
+      {children}
+    </WorkspaceBootstrapContext.Provider>
   );
 }
 
 export function useWorkspaceBootstrap(): BootstrapContextValue {
   const ctx = useContext(WorkspaceBootstrapContext);
   if (!ctx) {
-    throw new Error("useWorkspaceBootstrap must be used within WorkspaceBootstrapProvider");
+    throw new Error(
+      "useWorkspaceBootstrap must be used within WorkspaceBootstrapProvider",
+    );
   }
   return ctx;
 }
@@ -212,7 +238,9 @@ export function completionFromBootstrap(data: WorkspaceBootstrap | null): {
 } {
   if (!data) return { completion: 0, missing: [] };
   const details =
-    data.workspace?.profile_completion_details || data.profile?.profile_completion_details || null;
+    data.workspace?.profile_completion_details ||
+    data.profile?.profile_completion_details ||
+    null;
   const missing = extractMissing(details, data.workspace?.profile_missing);
   const completion = resolveCompletion(
     data.workspace?.profile_completion ?? data.profile?.profile_completion,

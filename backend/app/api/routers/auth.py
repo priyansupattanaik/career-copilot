@@ -20,6 +20,12 @@ from app.features.auth.username import validate_username
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Auth"])
 
+
+def identifier_uses_email_lookup(identifier: str) -> bool:
+    """Email collection scans are only worth it when the identifier has an @."""
+    return "@" in (identifier or "").strip()
+
+
 def _password_hash(password: str, salt: bytes | None = None) -> str:
     salt = salt or secrets.token_bytes(16)
     digest = hashlib.scrypt(password.encode(), salt=salt, n=2**14, r=8, p=1)
@@ -188,7 +194,7 @@ def auth_sign_in(payload: dict[str, Any] = Body(...), settings: Settings = Depen
     # Fast-path: legacy app accounts use deterministic uuid5 id; a direct doc get
     # avoids a full collection query and is measurably faster on cold Firestore
     # (measured ~0.4s vs ~3.7s for where(email==) in diagnosis).
-    if "@" in email:
+    if identifier_uses_email_lookup(email):
         try:
             direct_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"career-copilot:{email}"))
             snap = client.db.collection("users").document(direct_id).get()
@@ -200,13 +206,16 @@ def auth_sign_in(payload: dict[str, Any] = Body(...), settings: Settings = Depen
                     lookup = "direct_uuid5"
         except Exception:
             logger.debug("sign_in_direct_lookup_failed identifier=%s", email[:40])
-    if rows is None:
-        q0 = time.perf_counter()
-        rows = client.table("users").select("*").eq("email", email).limit(1).execute().data
-        q_ms = (time.perf_counter() - q0) * 1000
-        lookup = "query_email"
-        if q_ms > 1000:
-            logger.warning("sign_in_slow_query lookup=%s email=%s ms=%.0f", lookup, email[:40], q_ms)
+        # Only scan the users collection by email when the identifier actually
+        # looks like one. Usernames (e.g. "priyansu") used to pay a multi-second
+        # Firestore where(email==) miss before the username path ran.
+        if rows is None:
+            q0 = time.perf_counter()
+            rows = client.table("users").select("*").eq("email", email).limit(1).execute().data
+            q_ms = (time.perf_counter() - q0) * 1000
+            lookup = "query_email"
+            if q_ms > 1000:
+                logger.warning("sign_in_slow_query lookup=%s email=%s ms=%.0f", lookup, email[:40], q_ms)
     if not rows:
         phone_identifier = sanitize_signup_phone(identifier)
         if phone_identifier:

@@ -259,9 +259,20 @@ export function createClient() {
           };
         }
       },
-      async resend({ email }: { type: string; email: string; options?: unknown }) {
+      async resend({
+        email,
+        options,
+      }: {
+        type: string;
+        email: string;
+        options?: { emailRedirectTo?: string };
+      }) {
         try {
-          const result = await supabaseAuthClient().auth.resend({ type: "signup", email });
+          const result = await supabaseAuthClient().auth.resend({
+            type: "signup",
+            email,
+            options: options?.emailRedirectTo ? { emailRedirectTo: options.emailRedirectTo } : undefined,
+          });
           return result.error ? { error: { message: result.error.message } } : { error: null as AuthError };
         } catch (error) {
           return { error: { message: error instanceof SupabaseWebConfigError ? error.message : (error as Error).message } };

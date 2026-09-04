@@ -58,6 +58,7 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       proxy: apiProxy(apiOrigin),
     },
+
     // Production-like local serve (npm run start / vite preview) must not rely only on `server.proxy`.
     preview: {
       host: "127.0.0.1",

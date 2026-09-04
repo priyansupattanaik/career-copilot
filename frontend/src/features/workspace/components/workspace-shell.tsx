@@ -1,6 +1,12 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Link } from "@/shared/ui/router-link";
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { ChevronUp, LogOut, Settings, UserRound } from "lucide-react";
 import { CareerIcon, type CareerIconName } from "@/components/ui/career-icons";
 import { AnimatedIcon } from "@/components/ui/animated-icon";
@@ -25,12 +31,42 @@ import {
 
 /** Primary nav only — Settings lives in the profile account menu. */
 const navigation = [
-  { href: routes.dashboard, label: "Dashboard", shortLabel: "Home", icon: "dashboard" as CareerIconName },
-  { href: routes.resume, label: "Resume Analysis", shortLabel: "Resume", icon: "resume" as CareerIconName },
-  { href: routes.interview, label: "Mock Interview", shortLabel: "Interview", icon: "interview" as CareerIconName },
-  { href: routes.learning, label: "Learning Path", shortLabel: "Learn", icon: "learning" as CareerIconName },
-  { href: routes.jobs, label: "Recommended Jobs", shortLabel: "Jobs", icon: "opportunities" as CareerIconName },
-  { href: routes.community, label: "Community", shortLabel: "People", icon: "profile" as CareerIconName },
+  {
+    href: routes.dashboard,
+    label: "Dashboard",
+    shortLabel: "Home",
+    icon: "dashboard" as CareerIconName,
+  },
+  {
+    href: routes.resume,
+    label: "Resume Analysis",
+    shortLabel: "Resume",
+    icon: "resume" as CareerIconName,
+  },
+  {
+    href: routes.interview,
+    label: "Mock Interview",
+    shortLabel: "Interview",
+    icon: "interview" as CareerIconName,
+  },
+  {
+    href: routes.learning,
+    label: "Learning Path",
+    shortLabel: "Learn",
+    icon: "learning" as CareerIconName,
+  },
+  {
+    href: routes.jobs,
+    label: "Recommended Jobs",
+    shortLabel: "Jobs",
+    icon: "opportunities" as CareerIconName,
+  },
+  {
+    href: routes.community,
+    label: "Community",
+    shortLabel: "People",
+    icon: "profile" as CareerIconName,
+  },
 ];
 
 function readDemoMode() {
@@ -48,7 +84,11 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
-  const demoMode = useSyncExternalStore(subscribeDemoMode, readDemoMode, () => false);
+  const demoMode = useSyncExternalStore(
+    subscribeDemoMode,
+    readDemoMode,
+    () => false,
+  );
   const [liveCompletion, setLiveCompletion] = useState<{
     completion: number;
     missing: ProfileMissingItem[];
@@ -64,7 +104,8 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
       if (live) setLiveCompletion(live);
     }
     window.addEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
-    return () => window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
+    return () =>
+      window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
   }, []);
 
   // Clear optimistic overlay when shared bootstrap catches up.
@@ -123,14 +164,19 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
     .slice(0, 2)
     .toUpperCase();
   const profileAvatarUrl = bootstrap?.profile?.avatar_url || null;
-  const avatarUrl = profileAvatarUrl && profileAvatarUrl !== failedAvatarUrl ? profileAvatarUrl : null;
+  const avatarUrl =
+    profileAvatarUrl && profileAvatarUrl !== failedAvatarUrl
+      ? profileAvatarUrl
+      : null;
   const fromBootstrap = completionFromBootstrap(bootstrap);
   const completion = liveCompletion?.completion ?? fromBootstrap.completion;
-  const missing: ProfileMissingItem[] = liveCompletion?.missing ?? fromBootstrap.missing;
+  const missing: ProfileMissingItem[] =
+    liveCompletion?.missing ?? fromBootstrap.missing;
   const showCompletionPercent = completion < 100;
   const activeNav =
-    navigation.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))?.label ||
-    (pathname.startsWith("/settings") ? "Settings" : "Workspace");
+    navigation.find(
+      (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+    )?.label || (pathname.startsWith("/settings") ? "Settings" : "Workspace");
 
   function closeMenus() {
     setProfileMenuOpen(false);
@@ -169,7 +215,8 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
 
           <nav className="sidebar-nav">
             {navigation.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const active =
+                pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
                   key={item.href}
@@ -201,7 +248,10 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
                 aria-label="Account options"
               >
                 <div className="sidebar-account-menu-head">
-                  <span className="sidebar-profile-avatar sidebar-account-menu-avatar" aria-hidden>
+                  <span
+                    className="sidebar-profile-avatar sidebar-account-menu-avatar"
+                    aria-hidden
+                  >
                     {avatarUrl ? (
                       <img
                         src={avatarUrl}
@@ -217,7 +267,9 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
                     <p className="sidebar-account-menu-name">{fullName}</p>
                     {showCompletionPercent ? (
                       <>
-                        <p className="sidebar-account-menu-sub">{completion}% complete</p>
+                        <p className="sidebar-account-menu-sub">
+                          {completion}% complete
+                        </p>
                         <div
                           className="sidebar-account-menu-progress"
                           role="progressbar"
@@ -226,17 +278,26 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
                           aria-valuemax={100}
                           aria-label="Profile completion"
                         >
-                          <span style={{ width: `${Math.max(0, Math.min(100, completion))}%` }} />
+                          <span
+                            style={{
+                              width: `${Math.max(0, Math.min(100, completion))}%`,
+                            }}
+                          />
                         </div>
                       </>
                     ) : (
-                      <p className="sidebar-account-menu-sub">Profile complete</p>
+                      <p className="sidebar-account-menu-sub">
+                        Profile complete
+                      </p>
                     )}
                   </div>
                 </div>
 
                 <div className="sidebar-account-menu-actions" role="none">
-                  <div className="sidebar-account-menu-item theme-menu-item" role="none">
+                  <div
+                    className="sidebar-account-menu-item theme-menu-item"
+                    role="none"
+                  >
                     <ThemeToggle />
                   </div>
                   <Link
@@ -302,14 +363,15 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
               <span className="sidebar-profile-meta">
                 <span className="sidebar-profile-name">{firstName}</span>
                 {showCompletionPercent ? (
-                  <span className="sidebar-profile-sub">{completion}% complete</span>
+                  <span className="sidebar-profile-sub">
+                    {completion}% complete
+                  </span>
                 ) : (
                   <span className="sidebar-profile-sub">Account</span>
                 )}
               </span>
               <AnimatedIcon
                 icon={ChevronUp}
-                idle={false}
                 className={`sidebar-profile-caret ${profileMenuOpen ? "is-open" : ""}`}
                 size={16}
                 aria-hidden
@@ -329,7 +391,9 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="app-header-actions">
-            {demoMode ? <span className="demo-banner">Demo · no account data</span> : null}
+            {demoMode ? (
+              <span className="demo-banner">Demo · no account data</span>
+            ) : null}
           </div>
         </header>
 
@@ -341,7 +405,8 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
 
       <nav className="mobile-bottom-nav" aria-label="Primary">
         {navigation.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const active =
+            pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
             <Link
               key={item.href}
