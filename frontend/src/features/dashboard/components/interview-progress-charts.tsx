@@ -47,10 +47,10 @@ export type PieSlice = {
 };
 
 const PIE_PALETTE = [
-  "var(--app-blue, #526bff)",
-  "var(--app-text, #111111)",
-  "var(--app-muted, #686863)",
-  "color-mix(in srgb, var(--app-blue, #526bff) 55%, var(--app-text, #111111))",
+  "var(--primary-strong, var(--app-blue, #1769aa))",
+  "var(--text, var(--app-text, #0b2942))",
+  "var(--muted, var(--app-muted, #526b80))",
+  "color-mix(in srgb, var(--primary-strong, var(--app-blue, #1769aa)) 55%, var(--text, #0b2942))",
 ];
 
 function clampScore(value: number) {
@@ -346,7 +346,7 @@ export function MiniMetricRing({
       ? "var(--success, #22c55e)"
       : tone === "warning"
       ? "var(--warning, #eab308)"
-      : "var(--accent, #526bff)";
+      : "var(--primary-strong, var(--accent, #1769aa))";
 
   return (
     <div ref={ref} className="mini-metric-ring" style={{ width: size, height: size }} aria-hidden="true">

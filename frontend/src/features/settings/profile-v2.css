@@ -661,8 +661,9 @@
 .workspace .feature-page.settings-page.profile-v2 .field:focus {
   border-color: var(--ps-accent) !important;
   background: var(--ps-panel) !important;
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ps-accent) 14%, transparent) !important;
-  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ps-accent) 35%, transparent) !important;
+  outline: 2px solid var(--focus, var(--primary-strong)) !important;
+  outline-offset: 1px !important;
 }
 .workspace .feature-page.settings-page.profile-v2 .phone-field {
   width: 100%;
@@ -1041,7 +1042,7 @@
   .workspace
   .feature-page.settings-page.profile-v2
   .profile-masthead-meter {
-  border-color: #1e293b;
+  border-color: var(--border);
 }
 [data-theme="dark"] .workspace .feature-page.settings-page.profile-v2::before {
   opacity: 0.35;
@@ -1050,14 +1051,17 @@
   .workspace
   .feature-page.settings-page.profile-v2
   .profile-editor
-  .button-primary,
+  .button-primary {
+  background: var(--ps-accent) !important;
+  color: var(--text-on-primary, #071635) !important;
+}
 [data-theme="dark"]
   .workspace
   .feature-page.settings-page.profile-v2
   .profile-editor
   .button-primary:hover {
-  background: var(--ps-accent) !important;
-  color: white !important;
+  background: var(--primary-hover, var(--ps-accent)) !important;
+  color: var(--text-on-primary, #071635) !important;
 }
 
 /* —— Reduced motion —— */

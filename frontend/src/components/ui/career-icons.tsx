@@ -40,7 +40,14 @@ const paths: Record<CareerIconName, ReactNode> = {
     <>
       <rect x="3.5" y="5" width="17" height="13" rx="3.5" />
       <path d="m8 18 1.8 2.5L12 18M9 9.5h6M9 13h3" />
-      <circle data-live="true" cx="17" cy="9.5" r="1.3" fill="currentColor" stroke="none" />
+      <circle
+        data-live="true"
+        cx="17"
+        cy="9.5"
+        r="1.3"
+        fill="currentColor"
+        stroke="none"
+      />
     </>
   ),
   learning: (
@@ -53,7 +60,10 @@ const paths: Record<CareerIconName, ReactNode> = {
     <>
       <circle cx="12" cy="12" r="8.5" />
       <path d="M12 3.5v4M20.5 12h-4M12 20.5v-4M3.5 12h4" />
-      <path data-star="true" d="m12 8.2 1.2 2.6 2.8.3-2.1 1.9.6 2.8-2.5-1.5-2.5 1.5.6-2.8-2.1-1.9 2.8-.3L12 8.2Z" />
+      <path
+        data-star="true"
+        d="m12 8.2 1.2 2.6 2.8.3-2.1 1.9.6 2.8-2.5-1.5-2.5 1.5.6-2.8-2.1-1.9 2.8-.3L12 8.2Z"
+      />
     </>
   ),
   profile: (
@@ -93,9 +103,19 @@ const paths: Record<CareerIconName, ReactNode> = {
   ),
 };
 
-const hoverSpring = { type: "spring" as const, stiffness: 420, damping: 22, mass: 0.6 };
+const hoverSpring = {
+  type: "spring" as const,
+  stiffness: 420,
+  damping: 22,
+  mass: 0.6,
+};
 
-export function CareerIcon({ name, size = 22, className, ...props }: CareerIconProps) {
+export function CareerIcon({
+  name,
+  size = 22,
+  className,
+  ...props
+}: CareerIconProps) {
   const reducedMotion = useReducedMotion();
   const svgProps = props as unknown as SVGProps<SVGSVGElement>;
 
@@ -117,7 +137,11 @@ export function CareerIcon({ name, size = 22, className, ...props }: CareerIconP
       className="career-icon"
       data-icon={name}
       initial={false}
-      whileHover={reducedMotion ? undefined : hoverVariants[name] || { scale: 1.12, y: -2 }}
+      whileHover={
+        reducedMotion
+          ? undefined
+          : hoverVariants[name] || { scale: 1.12, y: -2 }
+      }
       whileTap={reducedMotion ? undefined : { scale: 0.92, y: 1 }}
       transition={hoverSpring}
       style={{
@@ -140,7 +164,11 @@ export function CareerIcon({ name, size = 22, className, ...props }: CareerIconP
           strokeWidth="1.7"
           strokeLinecap="round"
           strokeLinejoin="round"
-          aria-hidden={(svgProps as { "aria-label"?: string })["aria-label"] ? undefined : true}
+          aria-hidden={
+            (svgProps as { "aria-label"?: string })["aria-label"]
+              ? undefined
+              : true
+          }
         >
           {paths[name]}
         </svg>

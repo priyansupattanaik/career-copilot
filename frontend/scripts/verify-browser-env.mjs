@@ -1,7 +1,14 @@
 import process from "node:process";
-import { loadRootEnv } from "../../scripts/shared/load-env.mjs";
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-loadRootEnv();
+const scriptDir = dirname(fileURLToPath(import.meta.url));
+const rootLoadEnv = resolve(scriptDir, "../../scripts/shared/load-env.mjs");
+if (existsSync(rootLoadEnv)) {
+  const { loadRootEnv } = await import(pathToFileURL(rootLoadEnv).href);
+  loadRootEnv();
+}
 
 const required = ["VITE_SUPABASE_URL", "VITE_SUPABASE_PUBLISHABLE_KEY"];
 const missing = required.filter((name) => !String(process.env[name] || "").trim());
