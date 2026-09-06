@@ -19,6 +19,7 @@ import { isDemoSession } from "@/features/auth/demo-session";
 import { safeRedirectPath } from "@/features/auth/safe-path";
 import { ACCESS_TOKEN_STORAGE_KEY } from "@/shared/config";
 import { PublicProfile } from "@/features/profile/components/public-profile";
+import { isPublicProfileUsername } from "@/features/profile/model/public-profile-username";
 import { CommunityProfiles } from "@/features/community/components/community-profiles";
 import { useTheme } from "@/shared/theme";
 import {
@@ -325,11 +326,6 @@ function JobDetailRoute() {
   return <JobDetail jobId={jobId || ""} />;
 }
 
-function PublicProfileRoute() {
-  const { username } = useParams<{ username: string }>();
-  return <PublicProfile username={username || ""} />;
-}
-
 function LearningPathRoute() {
   const { pathId } = useParams<{ pathId: string }>();
   return <LearningPath pathId={pathId || ""} />;
@@ -348,6 +344,12 @@ function NotFoundPage() {
       secondaryHref="/dashboard"
     />
   );
+}
+
+function PublicProfileRoute() {
+  const { username } = useParams<{ username: string }>();
+  if (!isPublicProfileUsername(username)) return <NotFoundPage />;
+  return <PublicProfile username={username || ""} />;
 }
 
 export function App() {

@@ -31,6 +31,15 @@ def test_validate_username_invalid():
         validate_username("username_")  # cannot end with underscore
 
 
+def test_validate_username_reserved():
+    with pytest.raises(ValueError, match="reserved"):
+        validate_username("about")
+    with pytest.raises(ValueError, match="reserved"):
+        validate_username("careers")
+    with pytest.raises(ValueError, match="reserved"):
+        validate_username("dashboard")
+
+
 def test_profile_patch_username():
     patch = ProfilePatch(username="priyansu_test")
     assert patch.username == "priyansu_test"

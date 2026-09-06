@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Search, Users } from "lucide-react";
-import { PageHeader, Button, Card } from "@/shared/ui/primitives";
+import { motion, useReducedMotion } from "motion/react";
+import { Search, Users, MapPin, Layers, Compass } from "lucide-react";
+import { Button, Card, Badge } from "@/shared/ui/primitives";
 import { Link } from "@/shared/ui/router-link";
 import { resolveApiBase } from "@/shared/config";
 import { AnimatedIcon } from "@/components/ui/animated-icon";
@@ -16,6 +17,14 @@ type PublicProfileResult = {
   location?: string | null;
 };
 
+const SUGGESTION_CHIPS = [
+  "AI engineer",
+  "fresher",
+  "designer",
+  "data scientist",
+  "backend",
+] as const;
+
 function normalizeSearchQuery(raw: string) {
   let value = raw.trim();
   if (value.startsWith("@")) value = value.slice(1).trim();
@@ -23,17 +32,28 @@ function normalizeSearchQuery(raw: string) {
 }
 
 function searchPath(query: string) {
-  const params = new URLSearchParams({ q: normalizeSearchQuery(query), limit: "20" });
+  const params = new URLSearchParams({
+    q: normalizeSearchQuery(query),
+    limit: "20",
+  });
   return `/public/profiles/search?${params.toString()}`;
 }
 
-async function fetchPublicProfiles(query: string, signal: AbortSignal): Promise<PublicProfileResult[]> {
+async function fetchPublicProfiles(
+  query: string,
+  signal: AbortSignal,
+): Promise<PublicProfileResult[]> {
   if (isDemoSession()) {
-    const rows = await demoApiRequest<PublicProfileResult[]>(searchPath(query), { signal });
+    const rows = await demoApiRequest<PublicProfileResult[]>(
+      searchPath(query),
+      { signal },
+    );
     if (signal.aborted) throw new DOMException("Aborted", "AbortError");
     return Array.isArray(rows) ? rows : [];
   }
-  const response = await fetch(`${resolveApiBase()}${searchPath(query)}`, { signal });
+  const response = await fetch(`${resolveApiBase()}${searchPath(query)}`, {
+    signal,
+  });
   if (!response.ok) throw new Error("Could not search public profiles.");
   const payload = await response.json();
   return Array.isArray(payload) ? payload : [];
@@ -44,6 +64,7 @@ export function CommunityProfiles() {
   const [results, setResults] = useState<PublicProfileResult[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const reduceMotion = useReducedMotion();
 
   const needle = normalizeSearchQuery(query);
   const searching = needle.length >= 2;
@@ -85,76 +106,185 @@ export function CommunityProfiles() {
     setError("Enter at least 2 characters.");
   }
 
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: reduceMotion ? 0 : 0.07,
+        delayChildren: 0.02,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 14 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: "spring" as const, bounce: 0, duration: 0.48 },
+    },
+  };
+
   return (
-    <main className="feature-page community-page">
-      <PageHeader
-        title="Find people worth learning from"
-        description="Search public profiles by name, username, profession, career level, goal, or location. Use real journeys as inspiration without exposing resumes."
-      />
-      <Card className="community-search-card">
-        <div className="community-search-heading">
-          <span className="community-search-mark">
-            <AnimatedIcon icon={Users} size={18} aria-hidden />
-          </span>
-          <div>
-            <h2>Explore the community</h2>
-            <p className="muted">Try “AI engineer”, “fresher”, or a username. Matches appear as you type. Nothing is listed until you search.</p>
-          </div>
+    <motion.main
+      className="feature-page community-page"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      {/* Hero masthead */}
+      <motion.header className="community-hero" variants={itemVariants}>
+        <div className="community-hero-icon">
+          <AnimatedIcon icon={Users} size={22} aria-hidden />
         </div>
-        <form className="community-search-form" role="search" onSubmit={onSubmit}>
-          <input
-            aria-label="Search community profiles"
-            value={query}
-            onChange={(event) => {
-              setError("");
-              setQuery(event.target.value);
-            }}
-            placeholder="Name, @username, AI engineer, fresher…"
-          />
-          <Button type="submit" disabled={busy}>
-            <AnimatedIcon icon={Search} size={16} aria-hidden />
-            {busy ? "Searching…" : "Search profiles"}
-          </Button>
-        </form>
-        {error ? (
-          <p className="field-error" role="alert">
-            {error}
+        <div className="community-hero-copy">
+          <h1>Find people worth learning from</h1>
+          <p>
+            Search public profiles by name, username, profession, career level,
+            goal, or location. Use real journeys as inspiration without exposing
+            resumes.
           </p>
-        ) : null}
-        {results.length ? (
-          <div className="community-results" aria-label="Community profile results" aria-busy={busy}>
-            {results.map((person) => (
-              <Link
-                className="community-result"
-                key={person.username}
-                href={`/${encodeURIComponent(person.username)}`}
+        </div>
+      </motion.header>
+
+      {/* Search card */}
+      <motion.div variants={itemVariants}>
+        <Card className="community-search-card">
+          <div className="community-search-heading">
+            <span className="community-search-mark">
+              <AnimatedIcon icon={Search} size={18} aria-hidden />
+            </span>
+            <div>
+              <h2>Explore the community</h2>
+              <p className="muted">
+                Matches appear as you type. Nothing is listed until you search.
+              </p>
+            </div>
+          </div>
+          <form
+            className="community-search-form"
+            role="search"
+            onSubmit={onSubmit}
+          >
+            <input
+              aria-label="Search community profiles"
+              value={query}
+              onChange={(event) => {
+                setError("");
+                setQuery(event.target.value);
+              }}
+              placeholder="Name, @username, AI engineer, fresher..."
+            />
+            <Button type="submit" disabled={busy}>
+              <AnimatedIcon icon={Search} size={16} aria-hidden />
+              {busy ? "Searching..." : "Search"}
+            </Button>
+          </form>
+
+          {/* Suggestion chips */}
+          <div className="community-chips" aria-label="Quick searches">
+            <span className="community-chips-label">Try:</span>
+            {SUGGESTION_CHIPS.map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                className="community-chip"
+                onClick={() => {
+                  setError("");
+                  setQuery(chip);
+                }}
               >
-                <span className="community-avatar">
-                  {String(person.full_name || person.username).slice(0, 1).toUpperCase()}
-                </span>
-                <span className="community-result-copy">
-                  <strong>{person.full_name || `@${person.username}`}</strong>
-                  <small>
-                    @{person.username}
-                    {person.current_role ? ` · ${person.current_role}` : person.headline ? ` · ${person.headline}` : ""}
-                  </small>
-                  {person.location || person.career_level ? (
-                    <small>{[person.career_level, person.location].filter(Boolean).join(" · ")}</small>
-                  ) : null}
-                </span>
-              </Link>
+                {chip}
+              </button>
             ))}
           </div>
-        ) : busy ? (
-          <p className="community-empty">Searching…</p>
-        ) : error ? null : (
-          <p className="community-empty">
-            {searching
-              ? "No public profiles matched that search."
-              : "Search by a real username or career term to discover public profiles."}
-          </p>
-        )}
-      </Card>
-    </main>
+
+          {error ? (
+            <p className="field-error" role="alert">
+              {error}
+            </p>
+          ) : null}
+
+          {results.length ? (
+            <div
+              className="community-results"
+              aria-label="Community profile results"
+              aria-busy={busy}
+            >
+              {results.map((person, index) => (
+                <motion.div
+                  key={person.username}
+                  initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    type: "spring",
+                    bounce: 0,
+                    duration: 0.36,
+                    delay: reduceMotion ? 0 : index * 0.04,
+                  }}
+                >
+                  <Link
+                    className="community-result"
+                    href={`/${encodeURIComponent(person.username)}`}
+                  >
+                    <span className="community-avatar">
+                      {String(person.full_name || person.username)
+                        .slice(0, 1)
+                        .toUpperCase()}
+                    </span>
+                    <span className="community-result-copy">
+                      <strong>
+                        {person.full_name || `@${person.username}`}
+                      </strong>
+                      <small>
+                        @{person.username}
+                        {person.current_role
+                          ? ` · ${person.current_role}`
+                          : person.headline
+                            ? ` · ${person.headline}`
+                            : ""}
+                      </small>
+                      {person.location || person.career_level ? (
+                        <span className="community-result-meta">
+                          {person.career_level ? (
+                            <Badge
+                              tone="info"
+                              className="community-level-badge"
+                            >
+                              <Layers size={11} />
+                              {person.career_level}
+                            </Badge>
+                          ) : null}
+                          {person.location ? (
+                            <span className="community-location">
+                              <MapPin size={12} />
+                              {person.location}
+                            </span>
+                          ) : null}
+                        </span>
+                      ) : null}
+                    </span>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          ) : busy ? (
+            <div className="community-idle">
+              <div className="community-idle-spinner" />
+              <p>Searching profiles...</p>
+            </div>
+          ) : error ? null : (
+            <div className="community-idle">
+              <AnimatedIcon icon={Compass} size={28} aria-hidden />
+              <p>
+                {searching
+                  ? "No public profiles matched that search."
+                  : "Search by a real username or career term to discover public profiles."}
+              </p>
+            </div>
+          )}
+        </Card>
+      </motion.div>
+    </motion.main>
   );
 }
