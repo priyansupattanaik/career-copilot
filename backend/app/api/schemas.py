@@ -12,6 +12,7 @@ class ProfilePatch(BaseModel):
     phone: str | None = Field(default=None, max_length=40)
     location: str | None = Field(default=None, max_length=160)
     current_role: str | None = Field(default=None, max_length=160)
+    target_role: str | None = Field(default=None, max_length=160)
     years_experience: float | None = Field(default=None, ge=0, le=80)
     career_level: str | None = Field(default=None, max_length=80)
     career_goal: str | None = Field(default=None, max_length=2000)

@@ -1617,6 +1617,7 @@ def apply_profile_from_resume(
         "phone",
         "location",
         "current_role",
+        "target_role",
         "years_experience",
         "career_level",
         "career_goal",
@@ -2318,6 +2319,7 @@ async def create_jd(
         "user_id": str(user.id),
         "input_type": "text",
         "structured_content": structured,
+        "extracted_keywords": list(structured.get("keywords") or structured.get("extracted_keywords") or structured.get("required_skills") or []),
         "extraction_status": "review_required",
         "extraction_warnings": list(structured.get("warnings") or []),
         "created_at": utc_now(),
@@ -2371,6 +2373,7 @@ async def upload_jd(
             "sha256": sha256_bytes(content),
             "raw_text": text,
             "structured_content": structured,
+            "extracted_keywords": list(structured.get("keywords") or structured.get("extracted_keywords") or structured.get("required_skills") or []),
             "extraction_status": "review_required",
             "extraction_warnings": list(structured.get("warnings") or []),
             "created_at": utc_now(),
@@ -2451,9 +2454,17 @@ def patch_jd_extraction(
 ):
     client = client_for(settings, user)
     owned_row(client, "job_descriptions", jd_id, user)
+    updates: dict[str, Any] = {
+        "structured_content": payload.structured_content,
+        "extraction_status": "review_required",
+    }
+    sc = payload.structured_content or {}
+    kws = sc.get("keywords") or sc.get("extracted_keywords") or sc.get("required_skills")
+    if kws is not None:
+        updates["extracted_keywords"] = list(kws)
     return (
         client.table("job_descriptions")
-        .update({"structured_content": payload.structured_content, "extraction_status": "review_required"})
+        .update(updates)
         .eq("id", str(jd_id))
         .eq("user_id", str(user.id))
         .execute()
@@ -4735,7 +4746,17 @@ def list_saved_jobs(
         else []
     )
     by_id = {str(job["id"]): job for job in (jobs or [])}
-    return [{**row, "jobs": by_id.get(str(row.get("job_id")))} for row in rows]
+    output = []
+    for row in rows:
+        job = by_id.get(str(row.get("job_id")))
+        item = dict(row)
+        item["jobs"] = job
+        if job:
+            for key in ("title", "company", "location", "work_mode", "url", "source"):
+                if not item.get(key) and job.get(key):
+                    item[key] = job.get(key)
+        output.append(item)
+    return output
 
 
 @router.post("/saved-jobs/{job_id}", status_code=201)
@@ -4745,11 +4766,17 @@ def save_job(
     """Bookmark a job as saved without downgrading applied/interview/offer tracking."""
     client = client_for(settings, user)
     job = (
-        client.table("jobs").select("id").eq("id", str(job_id)).limit(1).execute().data
+        client.table("jobs")
+        .select("id,title,company,location,work_mode,url,source")
+        .eq("id", str(job_id))
+        .limit(1)
+        .execute()
+        .data
         or []
     )
     if not job:
         raise ApiError(404, "job_not_found", "The job was not found.")
+    job_info = job[0]
     existing = (
         client.table("saved_jobs")
         .select("*")
@@ -4768,9 +4795,17 @@ def save_job(
     payload = {
         "user_id": str(user.id),
         "job_id": str(job_id),
+        "title": job_info.get("title"),
+        "company": job_info.get("company"),
+        "location": job_info.get("location"),
+        "work_mode": job_info.get("work_mode"),
+        "url": job_info.get("url"),
+        "source": job_info.get("source"),
         "status": "saved",
-        "saved_at": stamp,
+        "saved_at": (existing[0].get("saved_at") if existing else None) or stamp,
     }
+    if existing and existing[0].get("id"):
+        payload["id"] = existing[0]["id"]
     result = client.table("saved_jobs").upsert(payload).execute().data[0]
     write_activity(client, user, "job_saved", "Job saved", "job", str(job_id))
     return result
@@ -4786,22 +4821,22 @@ def patch_saved_job(
     """Update tracking status (saved / applied / rejected / dismissed / …). Creates the row if needed."""
     client = client_for(settings, user)
     job = (
-        client.table("jobs").select("id").eq("id", str(job_id)).limit(1).execute().data
+        client.table("jobs")
+        .select("id,title,company,location,work_mode,url,source")
+        .eq("id", str(job_id))
+        .limit(1)
+        .execute()
+        .data
         or []
     )
     if not job:
         raise ApiError(404, "job_not_found", "The job was not found.")
+    job_info = job[0]
     stamp = utc_now()
-    body = payload.model_dump()
-    row = {
-        "user_id": str(user.id),
-        "job_id": str(job_id),
-        **body,
-        "saved_at": stamp,
-    }
+    body = payload.model_dump(exclude_unset=True)
     existing = (
         client.table("saved_jobs")
-        .select("id,saved_at,status")
+        .select("id,saved_at,status,title,company,location,work_mode,url,source")
         .eq("user_id", str(user.id))
         .eq("job_id", str(job_id))
         .limit(1)
@@ -4809,8 +4844,21 @@ def patch_saved_job(
         .data
         or []
     )
-    if not existing:
-        row["saved_at"] = stamp
+    prev = existing[0] if existing else {}
+    row = {
+        "user_id": str(user.id),
+        "job_id": str(job_id),
+        "title": prev.get("title") or job_info.get("title"),
+        "company": prev.get("company") or job_info.get("company"),
+        "location": prev.get("location") or job_info.get("location"),
+        "work_mode": prev.get("work_mode") or job_info.get("work_mode"),
+        "url": prev.get("url") or job_info.get("url"),
+        "source": prev.get("source") or job_info.get("source"),
+        **body,
+        "saved_at": prev.get("saved_at") or stamp,
+    }
+    if prev and prev.get("id"):
+        row["id"] = prev["id"]
     result = client.table("saved_jobs").upsert(row).execute().data or []
     if not result:
         raise ApiError(404, "saved_job_not_found", "The job could not be tracked on your account.")

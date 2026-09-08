@@ -193,9 +193,13 @@ _WRITE_ALIASES: dict[str, tuple[tuple[str, str], ...]] = {
     "candidate_links": (
         ("link_type", "label"),
     ),
+    "profiles": (
+        ("current_role", "target_role"),
+    ),
 }
 
 _ORDER_ALIASES: dict[str, dict[str, str]] = {
+    "profiles": {"current_role": "target_role"},
     "saved_jobs": {"updated_at": "saved_at"},
     "interview_questions": {"position": "question_index"},
     "learning_items": {"position": "item_order"},
@@ -206,6 +210,7 @@ _ORDER_ALIASES: dict[str, dict[str, str]] = {
 }
 
 _FILTER_ALIASES: dict[str, dict[str, str]] = {
+    "profiles": {"current_role": "target_role"},
     "interview_questions": {"position": "question_index", "question": "question_text", "question_type": "category"},
     "learning_items": {"position": "item_order"},
     "candidate_projects": {"title": "name"},
@@ -772,13 +777,18 @@ class SupabaseQuery:
 
             elif self.operation == "upsert":
                 headers["Prefer"] = "resolution=merge-duplicates,return=representation"
+                params = {}
+                if self.table_name == "saved_jobs":
+                    params["on_conflict"] = "user_id,job_id"
+                elif self.table_name in {"candidate_preferences", "notification_preferences", "privacy_preferences"}:
+                    params["on_conflict"] = "user_id"
                 rows = _apply_write_aliases(
                     self.table_name, self.payload if isinstance(self.payload, list) else [self.payload]
                 )
                 rows = _sanitize_payload_for_table(self.table_name, rows)
                 resp = None
                 for _ in range(12):
-                    resp = self.client.http.post(base_url, headers=headers, json=rows)
+                    resp = self.client.http.post(base_url, headers=headers, params=params, json=rows)
                     if resp.status_code != 400:
                         break
                     missing = _unknown_column_name(resp.text)
