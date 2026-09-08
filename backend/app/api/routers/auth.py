@@ -192,30 +192,15 @@ def auth_sign_in(payload: dict[str, Any] = Body(...), settings: Settings = Depen
     lookup = "none"
     t_start = time.perf_counter()
     # Fast-path: legacy app accounts use deterministic uuid5 id; a direct doc get
-    # avoids a full collection query and is measurably faster on cold Firestore
+    # avoids a full collection query and is measurably faster on cold database
     # (measured ~0.4s vs ~3.7s for where(email==) in diagnosis).
     if identifier_uses_email_lookup(email):
-        try:
-            direct_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"career-copilot:{email}"))
-            snap = client.db.collection("users").document(direct_id).get()
-            if snap.exists:
-                data = snap.to_dict() or {}
-                data["id"] = snap.id
-                if str(data.get("email") or "").strip().lower() == email:
-                    rows = [data]
-                    lookup = "direct_uuid5"
-        except Exception:
-            logger.debug("sign_in_direct_lookup_failed identifier=%s", email[:40])
-        # Only scan the users collection by email when the identifier actually
-        # looks like one. Usernames (e.g. "priyansu") used to pay a multi-second
-        # Firestore where(email==) miss before the username path ran.
-        if rows is None:
-            q0 = time.perf_counter()
-            rows = client.table("users").select("*").eq("email", email).limit(1).execute().data
-            q_ms = (time.perf_counter() - q0) * 1000
-            lookup = "query_email"
-            if q_ms > 1000:
-                logger.warning("sign_in_slow_query lookup=%s email=%s ms=%.0f", lookup, email[:40], q_ms)
+        q0 = time.perf_counter()
+        rows = client.table("users").select("*").eq("email", email).limit(1).execute().data or []
+        lookup = "query_email"
+        q_ms = (time.perf_counter() - q0) * 1000
+        if q_ms > 1000:
+            logger.warning("sign_in_slow_query lookup=%s email=%s ms=%.0f", lookup, email[:40], q_ms)
     if not rows:
         phone_identifier = sanitize_signup_phone(identifier)
         if phone_identifier:
@@ -281,97 +266,6 @@ def auth_sign_out(request: Request, response: Response):
     )
 
 
-@router.post("/auth/firebase")
-def auth_firebase(payload: dict[str, Any] = Body(...), settings: Settings = Depends(get_settings)):
-    """Exchange a verified Firebase ID token for an app JWT."""
-    from firebase_admin import auth as firebase_auth
-
-    from app.database.client import firebase_admin_app
-
-    id_token = str(payload.get("id_token") or "").strip()
-    if not id_token:
-        raise ApiError(400, "invalid_firebase_token", "A Firebase ID token is required.")
-    try:
-        admin_app = firebase_admin_app(settings)
-        decoded = firebase_auth.verify_id_token(
-            id_token,
-            app=admin_app,
-            check_revoked=settings.effective_firebase_check_revoked,
-            clock_skew_seconds=getattr(settings, "firebase_clock_skew_seconds", 10),
-        )
-    except ApiError:
-        raise
-    except RuntimeError as exc:
-        # Producer is misconfigured Admin/credentials â€” not an invalid user token.
-        detail = str(exc)[:200]
-        raise ApiError(
-            503,
-            "firebase_admin_unavailable",
-            f"Firebase Admin is not available: {detail}",
-        ) from exc
-    except Exception as exc:
-        detail = f"{type(exc).__name__}: {str(exc)[:120]}"
-        raise ApiError(
-            401,
-            "invalid_firebase_token",
-            f"The Firebase session is invalid or expired ({detail}).",
-        ) from exc
-    email = str(decoded.get("email") or "").strip().lower()
-    uid = str(decoded.get("uid") or "").strip()
-    if not uid:
-        raise ApiError(401, "invalid_firebase_token", "Firebase identity is missing a UID.")
-    if not email or "@" not in email:
-        raise ApiError(401, "firebase_email_required", "A verified Firebase email is required.")
-    if decoded.get("email_verified") is not True:
-        raise ApiError(
-            401,
-            "firebase_email_unverified",
-            "Verify your email with the identity provider before signing in.",
-        )
-    client = database_client(settings)
-    rows = client.table("users").select("*").eq("email", email).limit(1).execute().data or []
-    if rows:
-        user = rows[0]
-        existing_fb = str(user.get("firebase_uid") or "").strip()
-        if existing_fb and existing_fb != uid:
-            raise ApiError(
-                409,
-                "firebase_uid_conflict",
-                "This email is already linked to a different identity provider account.",
-            )
-        if not existing_fb:
-            # Refuse silent link when a local password account already owns this email.
-            # Otherwise an attacker can sign-up with the victim's email, then the real
-            # Google owner inherits (or shares) that attacker-owned account graph.
-            if str(user.get("password_hash") or "").strip():
-                raise ApiError(
-                    409,
-                    "account_exists_password",
-                    "An account with this email already exists. Sign in with email and password.",
-                )
-            client.table("users").update({"firebase_uid": uid}).eq("id", str(user["id"])).execute()
-            user["firebase_uid"] = uid
-        _sync_profile_identity(
-            client,
-            str(user["id"]),
-            full_name=str(decoded.get("name") or "").strip() or None,
-            phone=sanitize_signup_phone(decoded.get("phone")),
-            username=str(decoded.get("username") or "").strip() or None,
-        )
-    else:
-        user_id = str(uuid.uuid4())
-        full_name = str(decoded.get("name") or "").strip()[:120] or None
-        user = _create_user_records(
-            client,
-            {
-                "id": user_id,
-                "email": email,
-                "full_name": full_name,
-                "firebase_uid": uid,
-                "password_hash": "",
-            },
-        )
-    return _auth_payload(user, settings)
 
 
 @router.post("/auth/supabase")
@@ -388,37 +282,13 @@ def auth_supabase(payload: dict[str, Any] = Body(...), settings: Settings = Depe
     client = database_client(settings)
     rows: list[dict[str, Any]] | None = None
     t0 = time.perf_counter()
-    # Fast-path: Supabase-created accounts use supabase_uid as document id
-    try:
-        snap = client.db.collection("users").document(supabase_uid).get()
-        if snap.exists:
-            data = snap.to_dict() or {}
-            data["id"] = snap.id
-            if str(data.get("email") or "").strip().lower() == email:
-                rows = [data]
-    except Exception:
-        logger.debug("supabase_direct_lookup_failed uid=%s", supabase_uid[:8])
-    if rows is None:
-        # Legacy fallback: deterministic uuid5 for app-created accounts
-        try:
-            direct_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"career-copilot:{email}"))
-            snap = client.db.collection("users").document(direct_id).get()
-            if snap.exists:
-                data = snap.to_dict() or {}
-                data["id"] = snap.id
-                if str(data.get("email") or "").strip().lower() == email:
-                    rows = [data]
-        except Exception:
-            pass
-    if rows is None:
-        q0 = time.perf_counter()
+    q0 = time.perf_counter()
+    rows = client.table("users").select("*").eq("supabase_uid", supabase_uid).limit(1).execute().data or []
+    if not rows and email:
         rows = client.table("users").select("*").eq("email", email).limit(1).execute().data or []
-        q_ms = (time.perf_counter() - q0) * 1000
-        if q_ms > 1000:
-            logger.warning("supabase_query_slow email=%s ms=%.0f", email[:40], q_ms)
-    else:
-        # rows already from direct lookup
-        pass
+    q_ms = (time.perf_counter() - q0) * 1000
+    if q_ms > 1000:
+        logger.warning("supabase_query_slow email=%s ms=%.0f", email[:40], q_ms)
     if (time.perf_counter() - t0) * 1000 > 1500:
         logger.warning("supabase_lookup_slow email=%s total_ms=%.0f", email[:40], (time.perf_counter() - t0) * 1000)
     if rows:
@@ -496,7 +366,7 @@ def auth_update_password(payload: dict[str, Any] = Body(...), user: CurrentUser 
         raise ApiError(401, "invalid_user_identity", "The authentication identity is invalid.")
     stored_hash = str(rows[0].get("password_hash") or "")
     # Password accounts must prove knowledge of the current password before rotation
-    # (stolen JWT alone must not lock out the owner). Firebase-only accounts (empty
+    # (stolen JWT alone must not lock out the owner). Provider-only accounts (empty
     # hash) may set a password without a prior local password.
     if stored_hash:
         if not current_password or not _password_matches(current_password, stored_hash):
@@ -508,3 +378,4 @@ def auth_update_password(payload: dict[str, Any] = Body(...), user: CurrentUser 
     next_version = int(rows[0].get("token_version") or 0) + 1
     client.table("users").update({"password_hash": _password_hash(password), "token_version": next_version}).eq("id", str(user.id)).execute()
     return {"updated": True, "access_token": create_access_token(user.id, str(rows[0].get("email") or user.email or ""), settings, next_version), "token_type": "bearer"}
+

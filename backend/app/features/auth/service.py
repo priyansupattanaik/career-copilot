@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
@@ -52,9 +52,9 @@ def create_access_token(user_id: UUID, email: str, settings: Settings, token_ver
 
 def auth_provider_from_user_row(row: dict) -> str:
     """Return the persisted authentication method without trusting browser state."""
-    if str(row.get("firebase_uid") or "").strip():
-        return "google"
-    if str(row.get("password_hash") or "").strip() or str(row.get("supabase_uid") or "").strip():
+    if str(row.get("supabase_uid") or "").strip():
+        return "supabase"
+    if str(row.get("password_hash") or "").strip():
         return "email"
     return "unknown"
 
@@ -132,7 +132,7 @@ def _user_from_token(token: str, settings: Settings) -> CurrentUser:
     rows = (
         database_client(settings)
         .table("users")
-        .select("id,email,full_name,token_version,password_hash,supabase_uid,firebase_uid")
+        .select("id,email,full_name,token_version,password_hash,supabase_uid")
         .eq("id", str(user_id))
         .limit(1)
         .execute()
@@ -161,7 +161,7 @@ async def get_current_user(
     token = parse_bearer_header(authorization) if authorization else career_copilot_session
     if not token:
         raise ApiError(401, "authentication_required", "Authentication is required.")
-    # Firestore identity verification is synchronous network I/O. Keep it off
+    # Database identity verification is synchronous network I/O. Keep it off
     # the async event loop so auth/session cannot stall unrelated requests.
     return await asyncio.to_thread(_user_from_token, token, settings)
 
@@ -179,3 +179,4 @@ async def get_current_user_optional(
     if not token:
         return None
     return await asyncio.to_thread(_user_from_token, token, settings)
+

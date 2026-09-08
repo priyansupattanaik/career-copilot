@@ -384,7 +384,7 @@ def apply_suggestions(
     for suggestion in suggestions:
         block = block_map.get(suggestion["source_block_id"])
         if not block or is_source_stale(suggestion["source_text_hash"], block.text):
-            client.table("resume_suggestions").update({"validation_status": "stale"}).eq(
+            client.table("resume_suggestions").update({"status": "stale"}).eq(
                 "id", suggestion["id"]
             ).eq("user_id", str(user.id)).execute()
             raise ApiError(409, "stale_resume_version", "The source resume changed. Regenerate suggestions.")

@@ -1,22 +1,22 @@
-"""Verify Firebase Firestore + Supabase Storage connectivity."""
+"""Verify Supabase PostgreSQL (PostgREST) + Supabase Storage connectivity."""
 
 import uuid
 
 from app.core.config import get_settings
+from app.core.errors import ApiError
 from app.database.client import database_client
 
 
 def main() -> None:
     settings = get_settings()
-    if not settings.firebase_configured:
+    if not settings.database_configured:
         raise SystemExit(
-            "Firestore is not configured. Set FIREBASE_PROJECT_ID and FIREBASE_CREDENTIALS_PATH."
+            "Supabase database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
         )
     try:
         client = database_client(settings)
         check_id = str(uuid.uuid4())
         client.table("_setup_checks").insert({"id": check_id, "kind": "startup"}).execute()
-        # .single() always returns Result.data as a list of 0..1 rows (stable type).
         rows = (
             client.table("_setup_checks")
             .select("id,kind")
@@ -28,7 +28,7 @@ def main() -> None:
         )
         row = rows[0] if rows else None
         if not row or row.get("id") != check_id:
-            raise RuntimeError("Firestore read-after-write verification returned the wrong document")
+            raise RuntimeError("Supabase read-after-write verification returned the wrong document")
         client.table("_setup_checks").delete().eq("id", check_id).execute()
 
         storage_path = f"_setup_checks/{check_id}.txt"
@@ -42,11 +42,23 @@ def main() -> None:
             raise RuntimeError("Supabase Storage read-after-write returned unexpected bytes")
         client.storage.from_(settings.document_bucket).remove([storage_path])
     except Exception as exc:
-        message = str(exc)
-        if "SERVICE_DISABLED" in message or "Cloud Firestore API has not been used" in message:
+        message = str(exc).strip() or type(exc).__name__
+        if isinstance(exc, ApiError) and exc.code == "database_privileges_missing":
             raise SystemExit(
-                "Cloud Firestore is disabled for this Firebase project. Enable the Firestore API, "
-                "create the Firestore database, then rerun npm run setup."
+                f"Supabase tables exist, but the API role cannot read or write them ({message}).\n"
+                "Please execute 'docs/database/supabase-grants.sql' in your Supabase SQL Editor, "
+                "then retry. This grants SELECT/INSERT/UPDATE/DELETE on public tables to service_role."
+            ) from exc
+        if "pgrst205" in message.lower() or "could not find the table" in message.lower():
+            raise SystemExit(
+                f"Supabase database reached successfully, but schema tables have not been initialized yet ({message}).\n"
+                "Please execute 'docs/database/supabase-schema.sql' in your Supabase SQL Editor to initialize the 31 tables, foreign keys, and RLS policies."
+            ) from exc
+        if "42501" in message or "permission denied" in message.lower():
+            raise SystemExit(
+                f"Supabase tables exist, but the API role cannot read or write them ({message}).\n"
+                "Please execute 'docs/database/supabase-grants.sql' in your Supabase SQL Editor, "
+                "then retry. This grants SELECT/INSERT/UPDATE/DELETE on public tables to service_role."
             ) from exc
         if "storage" in message.lower() or "bucket" in message.lower():
             raise SystemExit(
@@ -56,12 +68,12 @@ def main() -> None:
                 "copy the bucket name into SUPABASE_STORAGE_BUCKET, then retry. Detail: "
                 f"{message}"
             ) from exc
-        raise SystemExit(f"Firebase connectivity check failed: {message}") from exc
+        raise SystemExit(f"Supabase connectivity check failed: {message}") from exc
     print(
-        f"firestore_project={settings.firebase_project_id} "
-        f"database={settings.firebase_database_id} "
+        f"supabase_url={settings.resolved_supabase_url} "
+        f"project_ref={settings.supabase_project_ref} "
         f"storage_bucket={settings.supabase_storage_bucket} "
-        "engine=firestore storage_engine=supabase_storage "
+        "engine=supabase storage_engine=supabase_storage "
         "write_read=passed cleanup=passed"
     )
 

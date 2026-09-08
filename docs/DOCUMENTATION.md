@@ -5,7 +5,7 @@
 **Source of truth:** this file (generated from the repository)  
 **Scope:** product purpose, architecture, how every subsystem works, data model, APIs, agents, code map, frontend, operations, and diagrams
 
-> **Golden rule:** Do not invent the candidate’s career. Only text the user types, uploads, **confirms**, or explicitly accepts is used for ATS, learning gaps, interview evidence, and job matching. LLM / YouTube / storage service keys stay on the server. The browser never talks to Firestore directly.
+> **Golden rule:** Do not invent the candidate’s career. Only text the user types, uploads, **confirms**, or explicitly accepts is used for ATS, learning gaps, interview evidence, and job matching. LLM / YouTube / storage service keys stay on the server. The browser never accesses the database directly.
 
 ---
 
@@ -19,7 +19,7 @@
 6. [How the project works (end-to-end)](#6-how-the-project-works-end-to-end)
 7. [How each feature works](#7-how-each-feature-works)
 8. [Agents and LLM providers](#8-agents-and-llm-providers)
-9. [Data model](#9-data-model-firestore--supabase-storage)
+9. [Data model](#9-data-model-supabase-postgresql--supabase-storage)
 10. [API surface](#10-api-surface)
 11. [Code map](#11-code-map--application-layout)
 12. [Frontend architecture](#12-frontend-architecture)
@@ -51,7 +51,7 @@ Career Copilot is a **private career workspace for one candidate at a time**. It
 | ATS scores with no proof                        | Deterministic keyword coverage + exact resume quotes (`evidence-keyword-coverage-v4`)    |
 | OCR/LLM extraction errors feed scoring silently | **Confirm gate** — only `confirmed` resume/JD text powers ATS, learning, prep, job match |
 | Invented YouTube videos / fake IDs              | YouTube Data API or search-page URLs only; articles are allowlisted search URLs          |
-| Client-side DB access bypasses ownership        | FastAPI + Admin SDK only; Firestore rules deny all client access                         |
+| Client-side DB access bypasses ownership        | FastAPI + service key only; Supabase RLS guards direct client access                      |
 | Secrets in the browser                          | Only `VITE_*` keys reach the frontend                                                    |
 | Over-promising “hireability AI”                 | No hiring-decision scores; interview feedback is **practice coaching**                   |
 
@@ -63,7 +63,7 @@ Career Copilot is a **private career workspace for one candidate at a time**. It
 
 | Area                   | What you get                                                                                                                  |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **Auth**               | Supabase email/password + app JWT; Firebase Google exchange to app JWT; legacy Firebase/local email fallback during migration |
+| **Auth**               | Supabase Auth (email/password & Google OAuth) + native scrypt hashing; issues app JWT                                        |
 | **Profile**            | Structured fields, avatar, completion 0–100, fill-from-resume preview → apply                                                 |
 | **Resume / JD**        | Upload or paste → review → **confirm**                                                                                        |
 | **ATS**                | Deterministic keyword coverage (`evidence-keyword-coverage-v4`); history shows resume + JD used                               |
@@ -79,7 +79,7 @@ Career Copilot is a **private career workspace for one candidate at a time**. It
 - Invented skills, employers, metrics, or YouTube video IDs
 - AI hiring decisions or “you will get the job” prediction scores
 - Product-path embedding / cosine-similarity ATS
-- Direct browser access to Firestore or storage service keys
+- Direct browser access to database or storage service keys
 - Multi-tenant recruiter portal
 - Background Celery workers (all product paths are request/response synchronous; long work runs in-process with timeouts)
 
@@ -92,10 +92,10 @@ Career Copilot is a **private career workspace for one candidate at a time**. It
 | **Frontend**       | Vite 8, React 19, TypeScript, React Router 7, Tailwind CSS 4 | SPA UI                                           |
 | **UI**             | Base UI, Lucide, Motion, CVA                                 | Components / icons / motion                      |
 | **3D / globe**     | Three.js, R3F/Drei, Cobe                                     | Jobs globe                                       |
-| **Auth client**    | Supabase Web SDK + Firebase Web SDK                          | Email/password via Supabase; Google via Firebase |
+| **Auth client**    | Supabase Web SDK                                             | Email/password and Google OAuth via Supabase     |
 | **Backend**        | FastAPI, Uvicorn, Pydantic v2                                | HTTP API                                         |
 | **Auth server**    | PyJWT (HS256), scrypt                                        | App JWT + password hashes                        |
-| **Database**       | Cloud Firestore (`firebase-admin`)                           | Structured candidate data                        |
+| **Database**       | Supabase PostgreSQL (PostgREST)                              | Structured candidate data (31 relational tables) |
 | **Object storage** | Supabase Storage (service role HTTP)                         | Resumes, avatars, exports                        |
 | **Documents**      | pypdf, python-docx; optional pymupdf, pdfplumber             | Text extract                                     |
 | **PDF export**     | reportlab                                                    | Resume export                                    |
@@ -118,7 +118,7 @@ career-copilot/
 ├── frontend/          # Vite + React SPA
 ├── backend/           # FastAPI package career-copilot-api
 ├── docs/              # Documentation (this file is canonical)
-├── firebase/          # Deny-all client rules
+├── docs/database/     # Supabase PostgreSQL schema DDL
 ├── scripts/           # setup, dev, diagnostics
 ├── secrets/           # local service-account JSON (gitignored)
 ├── package.json       # root scripts
@@ -175,7 +175,7 @@ backend/app/
 ├── main.py                 # ASGI: CORS, request ID, exception handlers, routers
 ├── core/                   # settings, constants, ApiError
 ├── api/                    # HTTP surface (router, schemas, auth router)
-├── database/               # Firestore + Supabase Storage adapters, ownership helpers
+├── database/               # Supabase PostgREST + Storage adapters, ownership helpers
 ├── agents/                 # provider clients, prompts, registry, preferred routing
 └── features/               # domain modules
 ```
@@ -187,7 +187,7 @@ backend/app/
 | Browser         | Untrusted; never holds service keys                              |
 | Vite BFF        | Dev/preview proxy only; not a second auth system                 |
 | FastAPI         | Authenticates JWT; owns multi-tenant isolation                   |
-| Firestore rules | Deny all client SDK access                                       |
+| Supabase RLS | Enforces row ownership policies                                   |
 | Storage         | Private Supabase bucket; bytes only via authenticated file route |
 
 ### Local request path
@@ -201,7 +201,7 @@ Browser (Vite + React)
                 │
                 ▼
            FastAPI (ownership enforced)
-                ├─ Firestore      (rows)
+                ├─ Supabase DB   (rows)
                 ├─ Supabase Storage (files under {user_id}/…)
                 └─ Groq / NVIDIA / YouTube / FreeHire / Fish Audio  (server .env)
 ```
@@ -214,7 +214,7 @@ Browser (Vite + React)
 
 ### 6.1 Boot
 
-1. Root `npm run dev` → `scripts/dev/preflight.mjs` (env/Firestore checks) → spawns frontend + backend.
+1. Root `npm run dev` → `scripts/dev/preflight.mjs` (env/Supabase checks) → spawns frontend + backend.
 2. Backend: `uvicorn app.main:app` loads `Settings` from root `.env`.
 3. Frontend: Vite on `127.0.0.1:3000` proxies API to `PUBLIC_API_BASE_URL` (default `http://127.0.0.1:8000`).
 
@@ -274,7 +274,7 @@ Profile fill may use any version with extractable text (its own preview/apply ga
 | Pattern     | Behavior                                                                                                  |
 | ----------- | --------------------------------------------------------------------------------------------------------- |
 | Ownership   | Nearly all queries filter `user_id` via `owned_row` / `owned_rows`                                        |
-| Recency     | In-process `sort_rows_by_recency` — Firestore `order_by(created_at)` drops docs missing the field         |
+| Recency     | In-process `sort_rows_by_recency` or PostgREST `order=created_at.desc`                                    |
 | Soft delete | Resumes set `deleted_at`; live lists use `is_("deleted_at", "null")` (client-side null-or-missing filter) |
 | Counts      | `count="exact", head=True` materializes matching docs and counts them                                     |
 | Storage     | Logical prefixes `DOCUMENT_BUCKET` / `AVATAR_BUCKET` inside one Supabase bucket                           |
@@ -282,7 +282,7 @@ Profile fill may use any version with extractable text (its own preview/apply ga
 
 ### 6.7 Bootstrap
 
-`GET /me/bootstrap` fans out parallel Firestore reads (profile, active resume, confirmed resume count, latest JD/ATS, activity, interview progress, counts) and returns:
+`GET /me/bootstrap` fans out parallel database reads (profile, active resume, confirmed resume count, latest JD/ATS, activity, interview progress, counts) and returns:
 
 - Profile + avatar URL
 - Workspace readiness flags (`has_active_resume`, `has_confirmed_resume`, `ready_for_ats`, …)
@@ -301,17 +301,15 @@ Bootstrap is **read-only** (no completion recalculation or cleanup writes).
 
 1. Sign-up: validate email/password → scrypt hash → create `users` + `profiles` + preference rows (rollback on partial failure).
 2. Sign-in: verify scrypt → issue app JWT.
-3. Password update: require current password when a hash exists; Firebase-only accounts (empty hash) may set a first password.
+3. Password update: require current password when a hash exists; OAuth-only accounts (empty hash) may set a first password.
 
-**Firebase path (frontend primary for email + Google):**
+**Supabase path (frontend primary for email + Google):**
 
-1. Firebase Web SDK signs in (email/password or Google popup/redirect).
-2. Client obtains Firebase ID token.
-3. `POST /auth/firebase` verifies with Admin SDK (`check_revoked` configurable).
-4. Server upserts user by verified email + `firebase_uid` (refuses silent link onto existing password accounts).
-5. Issues **app JWT** — all product APIs use the app JWT, not long-lived Firebase tokens.
-
-**Frontend compatibility:** if Firebase email sign-in fails with user-not-found / invalid-credential, the client falls back to `POST /auth/sign-in` for legacy backend-only accounts.
+1. Supabase Web SDK signs in (email/password or Google OAuth via `signInWithOAuth`).
+2. Client obtains Supabase access token.
+3. `POST /auth/supabase` verifies with Supabase / JWKS.
+4. Server upserts user by verified email + `supabase_uid`.
+5. Issues **app JWT** — all product APIs use the app JWT, not long-lived external tokens.
 
 **Session storage:**
 
@@ -477,16 +475,16 @@ Inventory: `backend/app/agents/registry.py` → `GET /api/v1/agents/status` and 
 
 ---
 
-## 9. Data model (Firestore + Supabase Storage)
+## 9. Data model (Supabase PostgreSQL + Supabase Storage)
 
 ### Stores
 
 | Store            | Role                      |
 | ---------------- | ------------------------- |
-| Cloud Firestore  | Structured candidate data |
+| Supabase PostgreSQL (PostgREST) | Structured candidate data |
 | Supabase Storage | Binary objects            |
 
-Access path: **FastAPI only**. Browser Firestore rules: deny all.
+Access path: **FastAPI only** via PostgREST with RLS.
 
 ### Collections (summary)
 
@@ -542,7 +540,7 @@ Browser download: `GET /api/v1/files/{bucket}/{path}` with JWT; path must start 
 
 | Area            | Methods / paths                                                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Auth**        | `POST /auth/sign-up`, `/sign-in`, `/session`, `/supabase`, `/firebase`, `/sign-out`, `/update-password`; stubs `/resend`, `/reset-password` |
+| **Auth**        | `POST /auth/sign-up`, `/sign-in`, `/session`, `/supabase`, `/sign-out`, `/update-password`; stubs `/resend`, `/reset-password` |
 | **Health**      | `GET /health/live`, `/health`, `/health/ready`, `/health/database`, `/agents/status`                                                        |
 | **Me**          | `GET /me/bootstrap`, `/me/activity`                                                                                                         |
 | **Profile**     | `GET/PATCH /profile`, avatar upload/delete, preferences, skills import, from-resume preview/apply/upload, CRUD `/profile/{resource}`        |
@@ -599,10 +597,10 @@ Paths relative to repository root.
 | `.env.example`             | Env template (single file for FE+BE) |
 | `README.md`                | Product quick start                  |
 | `docs/DOCUMENTATION.md`    | **This file (canonical)**            |
-| `firebase/firestore.rules` | Deny all client access               |
+| `docs/database/supabase-schema.sql` | Supabase 31-table schema DDL + RLS |
 | `scripts/setup/*`          | Install orchestration                |
 | `scripts/dev/*`            | Preflight + process spawn            |
-| `scripts/diagnostics/*`    | Env/secrets/API/Firestore audits     |
+| `scripts/diagnostics/*`    | Env/secrets/API/Supabase audits      |
 
 ### Backend
 
@@ -614,7 +612,7 @@ Paths relative to repository root.
 | `backend/app/api/router.py`                 | Primary HTTP product surface              |
 | `backend/app/api/routers/auth.py`           | Auth endpoints                            |
 | `backend/app/api/schemas.py`                | Request/response models                   |
-| `backend/app/database/client.py`            | Firestore query adapter + storage facades |
+| `backend/app/database/client.py`            | Supabase PostgREST query client + storage facades |
 | `backend/app/database/repository.py`        | Ownership, recency, activity, completion  |
 | `backend/app/agents/*`                      | Registry, providers, prompts              |
 | `backend/app/features/auth/*`               | JWT user, account deletion                |
@@ -639,7 +637,7 @@ Paths relative to repository root.
 | `frontend/src/shared/config.ts`         | API base, token keys                             |
 | `frontend/src/shared/theme.tsx`         | Light/dark/system theme                          |
 | `frontend/src/shared/route-prefetch.ts` | Prefetch helpers                                 |
-| `frontend/src/features/auth/*`          | Firebase + app JWT client, screens, demo session |
+| `frontend/src/features/auth/*`          | Supabase + app JWT client, screens, demo session |
 | `frontend/src/features/workspace/*`     | Shell + bootstrap context                        |
 | `frontend/src/features/dashboard/*`     | Metrics, interview charts                        |
 | `frontend/src/features/resume/*`        | Library, ATS history, report                     |
@@ -698,20 +696,20 @@ Single root `.env` (template: `.env.example`). Only `VITE_*` reaches the browser
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | App / CORS     | `APP_ENV`, `API_V1_PREFIX`, `PUBLIC_API_BASE_URL`, `FRONTEND_ORIGINS`                                                                 |
 | Auth           | `AUTH_SECRET`, `JWT_TTL_SECONDS`                                                                                                      |
-| Firestore      | `FIREBASE_PROJECT_ID`, `FIREBASE_CREDENTIALS_PATH`, `FIREBASE_DATABASE_ID`, `FIREBASE_CHECK_REVOKED`                                  |
+| Database       | `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`                                                                     |
 | Storage        | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (or `SUPABASE_SECRET_KEY`), `SUPABASE_STORAGE_BUCKET`, `DOCUMENT_BUCKET`, `AVATAR_BUCKET` |
 | LLM            | `LLM_PROVIDER`, `GROQ_*`, `NVIDIA_*`, `LLM_RPM_LIMIT`, `LLM_ALLOW_REPAIR`                                                             |
 | YouTube / Jobs | `YOUTUBE_API_KEY`, `FREEHIRE_*`                                                                                                       |
 | TTS            | `GROQ_TTS_MODEL`, `GROQ_TTS_VOICE` (uses `GROQ_API_KEY`)                                                                              |
-| Browser        | `VITE_FIREBASE_*`                                                                                                                     |
+| Browser        | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`                                                                                  |
 
 `APP_ENV=test` forces in-memory object storage for automated tests.
 
-### Current Firebase and deployment state
+### Current Supabase and deployment state
 
-The active Firebase project is `career-copilot05`. The server uses the `(default)` Firestore database and the Firebase Admin service-account JSON configured by `FIREBASE_CREDENTIALS_PATH`. The browser uses the Web SDK values in `VITE_FIREBASE_*`; these are build-time values and must be configured independently in Vercel.
+Supabase is the sole provider for PostgreSQL database, authentication, and object storage. The backend connects via PostgREST and the Supabase Storage API using `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. The browser connects using `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
 
-Email/Password and Google are intended sign-in providers. Firebase Authorized Domains must include the deployed frontend hostname as well as `localhost` and `127.0.0.1` for local development. A Firebase Console provider toggle is not a substitute for a production browser smoke test: after changing a provider or client value, rebuild and deploy the frontend, then verify the actual sign-in flow.
+Email/Password and Google OAuth are enabled under Supabase Authentication -> Providers. Redirect URLs in Supabase Authentication configuration must include the deployed frontend origin as well as `http://localhost:3000` for local development.
 
 The Vercel frontend and Render backend are separate services. The Vercel build must use the Render origin in `VITE_API_BASE_URL`; the Render service must allow the Vercel origin in `FRONTEND_ORIGINS`. See [deployment.md](./deployment.md) for the release checklist. The `deployment/` directory is local-only and ignored by Git.
 
@@ -723,7 +721,7 @@ The Vercel frontend and Render backend are separate services. The Vercel build m
 
 ```bash
 cp .env.example .env   # Windows: copy .env.example .env
-# Set AUTH_SECRET, FIREBASE_*, SUPABASE_*, VITE_FIREBASE_* as needed
+# Set AUTH_SECRET, SUPABASE_*, VITE_SUPABASE_* as needed
 npm run setup
 npm run dev
 ```
@@ -765,7 +763,7 @@ cd frontend && npm run e2e:landing
 Diagnostics (examples):
 
 ```bash
-backend\.venv\Scripts\python.exe scripts/diagnostics/check-firestore.py
+backend\.venv\Scripts\python.exe scripts/diagnostics/check-supabase.py
 backend\.venv\Scripts\python.exe scripts/diagnostics/full-bugs-audit.py
 backend\.venv\Scripts\python.exe scripts/diagnostics/connection-bugs-audit.py
 ```
@@ -826,7 +824,7 @@ flowchart TB
   end
 
   subgraph DATA["Server only"]
-    FS[("Firestore")]
+    DB[("Supabase Postgres")]
     ST[("Supabase Storage")]
   end
 
@@ -878,7 +876,7 @@ sequenceDiagram
   participant FA as FastAPI
   participant Auth as get_current_user
   participant Feat as features
-  participant DB as Firestore/Storage
+  participant DB as Supabase DB/Storage
 
   User->>UI: action
   UI->>API: apiRequest
@@ -964,7 +962,7 @@ flowchart LR
     OWN[user_id ownership]
   end
   subgraph STORE["Server stores"]
-    FS[(Firestore Admin)]
+    DB[(Supabase PostgREST)]
     ST[(Supabase)]
     DENY[client rules deny all]
   end
@@ -991,7 +989,7 @@ flowchart LR
 | ------------------------------- | ----------------------------------------------- |
 | Confirm before ATS              | Extra step; prevents scoring unreviewed garbage |
 | Deterministic product ATS       | Less “smart,” more auditable                    |
-| Supabase files + Firestore rows | Two clouds; clear ownership                     |
+| Supabase files + Supabase Postgres rows | Unified cloud; clear ownership                     |
 | Groq-first agents               | Faster/cheaper default; NVIDIA fallback         |
 | Synchronous API work            | Simpler ops; long requests need timeouts        |
 | Relative `/api/files` URLs      | Requires same-origin proxy for media            |
@@ -1000,7 +998,7 @@ flowchart LR
 
 - Multi-tenant recruiter portal
 - AI hiring decisions
-- Client-side Firestore access
+- Direct client database access
 - Product-path embedding/cosine ATS
 - Invented media IDs or career facts
 
@@ -1014,9 +1012,9 @@ Documented so operators and contributors know real system behavior (not product 
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | File URLs                 | Relative `/api/files/...` require a rewrite to `/api/v1/files/...` on the **page origin**                                            |
 | Soft-deleted resumes      | Parent soft-delete does not cascade-unconfirm versions; some paths still see confirmed versions unless they join parent `deleted_at` |
-| Numeric ordering          | Firestore adapter client-sorts with `str()` for `.order()` — positions/version numbers ≥10 can lexicographically mis-order           |
+| Numeric ordering          | Supabase PostgREST handles numeric order clauses natively in PostgreSQL                                                               |
 | JWT after password change | Existing tokens remain valid until `exp` (no server-side revocation list)                                                            |
-| Upsert races              | Preference/saved-job uniqueness is app-level, not a Firestore unique constraint                                                      |
+| Upsert races              | Handled by PostgreSQL UNIQUE constraints and ON CONFLICT handling                                                                     |
 | Bootstrap capability      | `capabilities.job_recommendations` may be hard-coded `false` even though generate endpoints exist                                    |
 | FreeHire sync             | Per-user cooldown + process-global lock; page 1 search                                                                               |
 | Split deploy              | `vercel.json` SPA rewrite alone does not proxy API/files — configure reverse proxy or absolute API + file proxy                      |

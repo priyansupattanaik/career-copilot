@@ -10,7 +10,7 @@ frontend/src/shared/     # api client, theme, config, routes
 backend/app/api/         # HTTP routes + schemas
 backend/app/features/    # domain logic per feature
 backend/app/agents/      # LLM providers + prompts + registry
-backend/app/database/    # Firestore + Supabase adapters
+backend/app/database/    # Supabase PostgREST + Storage adapters
 backend/app/core/        # settings, errors
 scripts/                 # setup, dev, diagnostics
 docs/                    # this documentation set

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import logging
 from typing import Any
@@ -162,7 +162,7 @@ def _list_prefix_recursive(admin_client, bucket: str, prefix: str) -> list[str]:
             entries = admin_client.storage.from_(bucket).list(current) or []
         except Exception as exc:
             logger.exception("account_delete_storage_list_failed bucket=%s prefix=%s", bucket, current)
-            raise RuntimeError(f"Could not enumerate Firebase Storage bucket {bucket}") from exc
+            raise RuntimeError(f"Could not enumerate Supabase Storage bucket {bucket}") from exc
         for entry in entries:
             name = (entry or {}).get("name")
             if not name:
@@ -214,3 +214,4 @@ def purge_user_storage(
                 )
                 raise ApiError(500, "account_deletion_incomplete", "Could not remove all stored account files.") from exc
     return removed
+

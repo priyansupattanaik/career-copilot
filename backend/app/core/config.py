@@ -1,4 +1,4 @@
-import json
+﻿import json
 import re
 from functools import lru_cache
 from pathlib import Path
@@ -35,21 +35,13 @@ class Settings(BaseSettings):
     public_api_base_url: str
     log_level: str
     frontend_origins: Annotated[list[str], NoDecode]
-    firebase_project_id: str = ""
-    firebase_database_id: str = "(default)"
-    firebase_credentials_path: str = ""
-    # Supabase Storage is the only production object-storage provider.
+    # Supabase is the sole provider for database, authentication, and object storage.
     supabase_url: str = ""
     supabase_publishable_key: str = ""
     supabase_secret_key: str = ""
     supabase_service_role_key: str = ""
     supabase_storage_bucket: str = "career-copilot-files"
     supabase_jwks_url: str = ""
-    firebase_clock_skew_seconds: int = Field(default=60, ge=0, le=300)
-    # Revocation checks call Firebase Auth after signature verification.
-    # Default False for local Admin setups that lack Auth lookup; production
-    # forces True via model_validator unless explicitly overridden.
-    firebase_check_revoked: bool = False
     auth_secret: str
     jwt_ttl_seconds: int = Field(default=60 * 60 * 24 * 7, ge=60, le=60 * 60 * 24 * 30)
     llm_allow_repair: bool = True
@@ -160,18 +152,19 @@ class Settings(BaseSettings):
         return self
     @property
     def database_configured(self) -> bool:
-        return self.firebase_configured
+        return self.supabase_configured
 
     @property
-    def firebase_configured(self) -> bool:
-        return bool(self.firebase_project_id and self.firebase_credentials_path)
+    def supabase_configured(self) -> bool:
+        return bool(self.resolved_supabase_url and self.supabase_server_key)
 
     @property
-    def effective_firebase_check_revoked(self) -> bool:
-        """Production always checks revocation; development uses the env flag."""
-        if str(self.app_env).lower() == "production":
-            return True
-        return bool(self.firebase_check_revoked)
+    def supabase_project_ref(self) -> str:
+        try:
+            host = urlparse(self.resolved_supabase_url).hostname or ""
+            return host.split(".")[0] if host else ""
+        except Exception:
+            return ""
 
     @property
     def resolved_supabase_url(self) -> str:
@@ -261,3 +254,4 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+

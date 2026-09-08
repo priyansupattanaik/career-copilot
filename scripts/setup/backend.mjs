@@ -1,5 +1,5 @@
-/**
- * Create backend/.venv on a CrewAI-compatible Python (3.11–3.13) and install deps.
+﻿/**
+ * Create backend/.venv on a CrewAI-compatible Python (3.11â€“3.13) and install deps.
  * Rejects Python 3.14+ (official crewai and many wheels require <3.14).
  */
 import { spawnSync } from "node:child_process";
@@ -94,7 +94,7 @@ function findPython() {
     }
   }
 
-  // PATH fallback last (often 3.14 on this machine — filtered by isSupported)
+  // PATH fallback last (often 3.14 on this machine â€” filtered by isSupported)
   candidates.push(probePython(isWin ? "python" : "python3"));
 
   for (const info of candidates) {
@@ -130,7 +130,7 @@ const pipCheck = current
 const runtimeCheck = current
   ? spawnSync(
       venvPython,
-      ["-c", "import dotenv, docx, firebase_admin, fastapi, jwt, pydantic_settings, pypdf, reportlab"],
+      ["-c", "import dotenv, docx, fastapi, jwt, pydantic_settings, pypdf, reportlab"],
       { stdio: "ignore", shell: false },
     ).status === 0
   : false;
@@ -143,7 +143,7 @@ const needsRecreate =
 
 if (needsRecreate) {
   if (existsSync(venvDir)) {
-    console.log("Removing existing backend/.venv …");
+    console.log("Removing existing backend/.venv â€¦");
     try {
       rmSync(venvDir, { recursive: true, force: true });
     } catch (error) {
@@ -152,7 +152,7 @@ if (needsRecreate) {
       process.exit(1);
     }
   }
-  console.log("Creating backend/.venv …");
+  console.log("Creating backend/.venv â€¦");
   const created = run(selected.executable, ["-m", "venv", venvDir]);
   if (created !== 0) {
     console.error("Failed to create virtual environment.");
@@ -186,11 +186,11 @@ if (dotenvRepair !== 0) {
   process.exit(dotenvRepair);
 }
 
-// Install API package + optional CrewAI (supported on 3.11–3.13)
-console.log("Installing backend package + development and crewai extras …");
+// Install API package + optional CrewAI (supported on 3.11â€“3.13)
+console.log("Installing backend package + development and crewai extras â€¦");
 const installStatus = run(venvPython, ["-m", "pip", "install", "-e", "backend[dev,crewai]"]);
 if (installStatus !== 0) {
-  console.warn("Install with [dev,crewai] failed; installing package with development dependencies …");
+  console.warn("Install with [dev,crewai] failed; installing package with development dependencies â€¦");
   const development = run(venvPython, ["-m", "pip", "install", "-e", "backend[dev]"]);
   if (development !== 0) process.exit(development);
   console.warn("Core backend installed. CrewAI extra unavailable; compatible orchestrator still works.");
@@ -212,3 +212,4 @@ if (smoke.status !== 0) {
 console.log((smoke.stdout || "").trim());
 console.log("Backend setup complete.");
 process.exit(0);
+

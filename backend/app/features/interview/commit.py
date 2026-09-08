@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import logging
 from typing import Any
@@ -36,7 +36,7 @@ async def commit_live_interview(
     """Persist a finished live interview in one shot: session, questions, answers, report.
 
     The live round never writes to the database. Agents run here, after the
-    candidate is done, so the conversation is not blocked on LLM or Firestore.
+    candidate is done, so the conversation is not blocked on LLM or database.
     """
     if not questions_in:
         raise ApiError(422, "empty_interview_session", "The session has no questions to save.")
@@ -174,3 +174,4 @@ async def commit_live_interview(
         "questions": question_rows,
         "message": "Session saved. Review your detailed debrief report.",
     }
+

@@ -81,7 +81,7 @@ def _candidate_skills(resume: dict[str, Any], profile_skills: list[dict[str, Any
     return _unique([*explicit, *structured, *plain])
 def _job_terms(job: dict[str, Any]) -> list[str]:
     structured = _section_values(job.get("structured_content"), ("requirement", "qualification", "skill", "technolog", "tool"))
-    # Prefer list/label-style extraction — never bare short-line sweeps of the whole JD.
+    # Prefer list/label-style extraction â€” never bare short-line sweeps of the whole JD.
     plain = extract_skill_candidates(str(job.get("raw_text") or ""), limit=40, allow_bare_short_lines=False)
     return _unique([*structured, *plain])
 def _question(question: str, skill: str | None, difficulty: str | None, source: str) -> dict[str, Any]:
@@ -205,11 +205,11 @@ async def generate_interview_preparation(
     resume, job = resume_rows[0], job_rows[0]
     if resume.get("extraction_status") != "confirmed" or job.get("extraction_status") != "confirmed":
         raise ApiError(409, "confirmed_sources_required", "Confirm both the resume and job description before preparing for an interview.")
-    skills_rows = client.table("candidate_skills").select("name,normalized_name").eq("user_id", user_id).execute().data or []
-    project_rows = client.table("candidate_projects").select("title,description").eq("user_id", user_id).order("display_order").execute().data or []
+    skills_rows = client.table("candidate_skills").select("name").eq("user_id", user_id).execute().data or []
+    project_rows = client.table("candidate_projects").select("name,description").eq("user_id", user_id).order("created_at").execute().data or []
     candidate_skills = _candidate_skills(resume, skills_rows)
     job_skills = _job_terms(job)
-    # Avoid order_by(created_at): Firestore drops docs missing that field.
+    # Avoid order_by(created_at): Some rows may drop docs missing that field.
     analyses = (
         client.table("ats_analyses")
         .select("id,overall_score,created_at,completed_at,started_at")
@@ -228,9 +228,9 @@ async def generate_interview_preparation(
     matched: list[str] = []
     missing: list[str] = []
     if analysis:
-        evidence = client.table("ats_evidence").select("requirement_text,match_status").eq("user_id", user_id).eq("analysis_id", str(analysis["id"])).execute().data or []
-        matched = _unique(row.get("requirement_text") for row in evidence if row.get("match_status") in {"strong_match", "partial_match"})
-        missing = _unique(row.get("requirement_text") for row in evidence if row.get("match_status") == "not_found")
+        evidence = client.table("ats_evidence").select("finding,match_status").eq("user_id", user_id).eq("analysis_id", str(analysis["id"])).execute().data or []
+        matched = _unique((row.get("finding") or row.get("requirement_text")) for row in evidence if row.get("match_status") in {"strong_match", "partial_match"})
+        missing = _unique((row.get("finding") or row.get("requirement_text")) for row in evidence if row.get("match_status") == "not_found")
     if not matched and not missing:
         candidate_keys = {normalize_skill(skill) for skill in candidate_skills}
         matched = [skill for skill in job_skills if normalize_skill(skill) in candidate_keys]
@@ -307,3 +307,4 @@ async def generate_interview_preparation(
             "source_analysis_id": str(analysis["id"]) if analysis else None,
         },
     }
+

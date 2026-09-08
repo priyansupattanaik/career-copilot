@@ -15,7 +15,7 @@
 ![Version](https://img.shields.io/badge/version-1.0.0-0f3b82?style=flat-square)
 ![Node](https://img.shields.io/badge/Node.js-20%2B-3c873a?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.11–3.13-3776ab?style=flat-square)
-![Stack](https://img.shields.io/badge/Vite%20%2B%20FastAPI%20%2B%20Firestore-111827?style=flat-square)
+![Stack](https://img.shields.io/badge/Vite%20%2B%20FastAPI%20%2B%20Supabase-111827?style=flat-square)
 
 </div>
 
@@ -35,13 +35,13 @@ Career Copilot is a monorepo web app where a candidate can:
 > [!IMPORTANT]
 > **Do not invent the candidate’s career.**  
 > Only text the user types, uploads, **confirms**, or explicitly accepts is used.  
-> LLM / YouTube / service keys stay on the server. The browser never talks to Firestore directly.
+> LLM / YouTube / service keys stay on the server. The browser never accesses the database directly.
 
 | Layer | Technology |
 |-------|------------|
 | Frontend | Vite, React 19, TypeScript, Tailwind CSS 4, React Router 7 |
 | Backend | FastAPI, Pydantic v2, Uvicorn |
-| Data | Cloud Firestore (Admin SDK) |
+| Data | Supabase PostgreSQL (PostgREST) |
 | Files | Supabase Storage (private; streamed via authenticated API) |
 | LLMs | Groq preferred (`LLM_PROVIDER=groq`), NVIDIA fallback; deterministic fallbacks |
 | Crews | Official `crewai` when installed; otherwise built-in sequential orchestrators |
@@ -52,7 +52,7 @@ Career Copilot is a monorepo web app where a candidate can:
 
 | Area | What you get |
 |------|----------------|
-| **Auth** | Email/password (scrypt) + app JWT; optional Google via Firebase ID-token exchange |
+| **Auth** | Supabase Auth (email/password & Google OAuth) + native scrypt hash; app JWT |
 | **Profile** | Structured fields, avatar, completion checklist (0–100), fill-from-resume preview → apply |
 | **Resume / JD** | Upload or paste → review → **confirm** |
 | **ATS** | Deterministic keyword coverage (`evidence-keyword-coverage-v4`); history shows resume + JD used |
@@ -67,7 +67,7 @@ Career Copilot is a monorepo web app where a candidate can:
 - Invented skills, employers, metrics, or YouTube video IDs  
 - AI **hiring** decisions or “you will get the job” prediction scores (practice coaching feedback may still exist)  
 - Product-path embedding / cosine-similarity ATS  
-- Direct browser access to Firestore or storage service keys  
+- Direct browser access to database or storage service keys  
 
 ---
 
@@ -77,8 +77,7 @@ Career Copilot is a monorepo web app where a candidate can:
 
 - Node.js **20+**
 - Python **3.11–3.13** (repo pin: 3.12)
-- Firebase project with **Firestore** + service-account JSON  
-- Supabase project with a **private Storage** bucket  
+- Supabase project (**PostgreSQL Database**, **Auth**, and private **Storage** bucket)  
 
 ### 1. Configure environment
 
@@ -93,13 +92,11 @@ Set at least:
 | Variable | Role |
 |----------|------|
 | `AUTH_SECRET` | JWT signing secret |
-| `FIREBASE_PROJECT_ID` | Firestore project |
-| `FIREBASE_CREDENTIALS_PATH` | Service-account JSON path |
-| `FIREBASE_DATABASE_ID` | e.g. `(default)` or a named DB |
 | `SUPABASE_URL` | Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server-only service role |
+| `SUPABASE_SECRET_KEY` | Server-only secret / service role key |
 | `SUPABASE_STORAGE_BUCKET` | Private bucket name |
-| `VITE_FIREBASE_*` | Web client config (Google sign-in) |
+| `VITE_SUPABASE_URL` | Browser Supabase URL |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Browser Supabase publishable key |
 
 Optional: `GROQ_*`, `NVIDIA_*`, `YOUTUBE_API_KEY`, `FREEHIRE_*`, `LLM_PROVIDER` (default `groq`).
 
@@ -113,7 +110,7 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"
 npm run setup
 ```
 
-Creates the backend venv, installs the API package, installs frontend deps, and checks Firestore.
+Creates the backend venv, installs the API package, installs frontend deps, and checks Supabase.
 
 Optional:
 
@@ -164,7 +161,7 @@ Browser (Vite + React)
                 │
                 ▼
            FastAPI (ownership enforced)
-                ├─ Firestore      (rows)
+                ├─ Supabase DB   (rows)
                 ├─ Supabase Storage (files under {user_id}/…)
                 └─ Groq / NVIDIA / YouTube / FreeHire  (server .env)
 ```
@@ -174,7 +171,7 @@ Browser (Vite + React)
 | `frontend/src/` | UI features: auth, dashboard, resume, interview, learning, jobs, settings |
 | `backend/app/main.py` | FastAPI app, CORS, request IDs |
 | `backend/app/api/` | HTTP routes and schemas |
-| `backend/app/database/` | Firestore + storage adapters, ownership helpers |
+| `backend/app/database/` | Supabase PostgREST + storage adapters, ownership helpers |
 | `backend/app/agents/` | Provider clients, prompts, preferred-provider routing |
 | `backend/app/features/` | Domain logic (auth, parsing, ATS, interview, …) |
 | `docs/DOCUMENTATION.md` | Unified technical documentation |
@@ -223,7 +220,7 @@ One root `.env` (template: [`.env.example`](./.env.example)). Only `VITE_*` keys
 |-------|----------|
 | App / CORS | `APP_ENV`, `API_V1_PREFIX`, `PUBLIC_API_BASE_URL`, `FRONTEND_ORIGINS` |
 | Auth | `AUTH_SECRET`, `JWT_TTL_SECONDS` |
-| Firestore | `FIREBASE_PROJECT_ID`, `FIREBASE_CREDENTIALS_PATH`, `FIREBASE_DATABASE_ID` |
+| Database & Storage | `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SUPABASE_STORAGE_BUCKET` |
 | Storage | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`, `DOCUMENT_BUCKET`, `AVATAR_BUCKET` |
 | LLM | `LLM_PROVIDER`, `GROQ_*`, `NVIDIA_*`, `LLM_RPM_LIMIT` |
 | Optional | `YOUTUBE_API_KEY`, `FREEHIRE_*`, `GROQ_TTS_*` |
@@ -236,7 +233,7 @@ Browser base in local dev: **`/api/backend`** → FastAPI **`/api/v1`**.
 
 | Area | Endpoints (prefix `/api/v1`) |
 |------|------------------------------|
-| Auth | `POST /auth/sign-up`, `/sign-in`, `/session`, `/firebase`, `/sign-out`, `/update-password` |
+| Auth | `POST /auth/sign-up`, `/sign-in`, `/session`, `/supabase`, `/sign-out`, `/update-password` |
 | Health | `GET /health/live`, `/health`, `/health/ready`, `/health/database`, `/agents/status` |
 | Me | `GET /me/bootstrap`, `/me/activity` |
 | Profile | `/profile`, avatar, preferences, child resources, from-resume |
@@ -273,7 +270,7 @@ cd frontend && npm run test && npm run typecheck
 |-------|---------|
 | Env keys present | `npm run check:env` |
 | Secret scan | `npm run check:secrets` |
-| Firestore probe | `backend\.venv\Scripts\python.exe scripts/diagnostics/check-firestore.py` |
+| Supabase probe | `backend\.venv\Scripts\python.exe scripts/diagnostics/check-supabase.py` |
 | Offline stack audit | `backend\.venv\Scripts\python.exe scripts/diagnostics/_audit_once.py` |
 | API smoke (server up) | `backend\.venv\Scripts\python.exe scripts/diagnostics/e2e-smoke.py` |
 

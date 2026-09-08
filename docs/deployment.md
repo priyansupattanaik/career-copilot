@@ -4,66 +4,59 @@ Career Copilot is deployed as a split application: the Vite frontend is served b
 
 ## Frontend on Vercel
 
-Configure the Vercel project with `frontend` as the root directory, `npm run build` as the build command, and `dist` as the output directory. Set these client-safe variables in both Preview and Production environments:
+Configure the Vercel project with rontend as the root directory, 
+pm run build as the build command, and dist as the output directory. Set these client-safe variables in both Preview and Production environments:
 
-```text
+`	ext
 VITE_API_BASE_URL=<Render backend origin>
 VITE_API_V1_PREFIX=/api/v1
-VITE_FIREBASE_API_KEY=<Firebase web app API key>
-VITE_FIREBASE_AUTH_DOMAIN=career-copilot05.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=career-copilot05
-VITE_FIREBASE_STORAGE_BUCKET=career-copilot05.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=<Firebase web app sender id>
-VITE_FIREBASE_APP_ID=<Firebase web app id>
 VITE_SUPABASE_URL=<Supabase project URL>
 VITE_SUPABASE_PUBLISHABLE_KEY=<Supabase publishable key>
-```
+`
 
-`VITE_API_BASE_URL` must be the backend origin only; do not append `/api/v1`. The frontend adds the API prefix. After changing any `VITE_*` value, create a new Vercel deployment because Vite embeds these values at build time.
+VITE_API_BASE_URL must be the backend origin only; do not append /api/v1. The frontend adds the API prefix. After changing any VITE_* value, create a new Vercel deployment because Vite embeds these values at build time.
 
-Firebase Authentication must have Email/Password and Google enabled. Authorized domains must include `careercopilotai.vercel.app`, `localhost`, and `127.0.0.1`. Do not include protocols or ports in Firebase authorized domains.
-
-Supabase Authentication must have Email enabled. Add the local and deployed frontend callback origins to Supabase Authentication URL Configuration. The current email flow signs in with Supabase, exchanges the Supabase access token at `POST /api/v1/auth/supabase`, and then uses the existing Career Copilot API session. The Supabase OAuth Server settings shown in the dashboard are not required for this email/password flow.
+Supabase Authentication must have Email/Password and Google OAuth enabled under Authentication -> Providers. Add the local and deployed frontend callback origins (e.g. https://careercopilotai.vercel.app, http://localhost:3000) to Supabase Authentication URL Configuration (Redirect URLs and Site URL). The frontend signs in with Supabase, exchanges the Supabase access token at POST /api/v1/auth/supabase, and receives the Career Copilot API session.
 
 ## Backend on Render
 
-Create a Render Web Service with `backend` as the root directory:
+Create a Render Web Service with ackend as the root directory:
 
-```text
+`	ext
 Build Command: pip install -e .
-Start Command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+Start Command: uvicorn app.main:app --host 0.0.0.0 --port 
 Health Check Path: /api/v1/health/live
-```
+`
 
 Required backend configuration includes:
 
-```text
+`	ext
 APP_ENV=production
 API_V1_PREFIX=/api/v1
 PUBLIC_API_BASE_URL=<Render backend origin>
 FRONTEND_ORIGINS=https://careercopilotai.vercel.app
-FIREBASE_PROJECT_ID=career-copilot05
-FIREBASE_DATABASE_ID=(default)
-FIREBASE_CREDENTIALS_PATH=/etc/secrets/firebase-admin.json
+AUTH_SECRET=<random-secret>
 SUPABASE_URL=<Supabase project URL>
+SUPABASE_SECRET_KEY=<Supabase secret / service role key>
+SUPABASE_SERVICE_ROLE_KEY=<Supabase service role key>
 SUPABASE_STORAGE_BUCKET=career-copilot-files
-```
+`
 
-Upload the Firebase Admin service-account JSON as a Render secret file at `/etc/secrets/firebase-admin.json`. Add `AUTH_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, and provider keys as Render secret environment variables. Never place those values in frontend variables or Git.
+Add AUTH_SECRET, SUPABASE_SECRET_KEY, and LLM provider keys (GROQ_API_KEY, NVIDIA_API_KEY) as Render secret environment variables. Never place secret values in frontend variables or Git. Run database migrations from docs/database/supabase-schema.sql via Supabase SQL Editor.
 
 ## Verification
 
 Run these checks from the repository before release:
 
-```powershell
+`powershell
 npm.cmd run check:env
-npm.cmd run firebase:check
+npm.cmd run supabase:check
 npm.cmd run check:frontend
 backend\.venv\Scripts\python.exe -m pytest
-```
+`
 
-Then verify the deployed service with `GET /api/v1/health/live`, open the frontend, complete email/password sign-in, complete Google sign-in, and test an authenticated API request. A successful local build does not prove that the Vercel and Render dashboards contain the same values.
+Then verify the deployed service with GET /api/v1/health/live, open the frontend, complete email/password sign-in, complete Google sign-in, and test an authenticated API request. A successful local build does not prove that the Vercel and Render dashboards contain the same values.
 
 ## Rollback
 
-If a deployment fails, roll back to the previous Vercel and Render deployment pair. Do not change Firebase or Supabase data to recover from a frontend configuration error. Correct the provider environment variables, redeploy, and repeat the verification checks.
+If a deployment fails, roll back to the previous Vercel and Render deployment pair. Do not manually mutate database data to recover from a configuration error. Correct the provider environment variables, redeploy, and repeat the verification checks.

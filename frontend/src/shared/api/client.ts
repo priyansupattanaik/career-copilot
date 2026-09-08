@@ -1,4 +1,4 @@
-import { createClient as createAuthClient } from "@/features/auth/api/client";
+﻿import { createClient as createAuthClient } from "@/features/auth/api/client";
 import { demoApiRequest, isDemoSession } from "@/features/auth/demo-session";
 import { ACCESS_TOKEN_STORAGE_KEY, resolveApiBase } from "@/shared/config";
 
@@ -25,7 +25,7 @@ function networkUnreachableMessage(base: string): string {
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (isDemoSession()) return demoApiRequest<T>(path, init);
   // The backend accepts the application token returned by the auth exchange.
-  // Prefer it over the provider session token so Supabase/Firebase refresh
+  // Prefer it over the provider session token so Supabase refresh
   // state cannot make an otherwise valid app session look unauthorized.
   let accessToken = window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) || "";
   if (!accessToken) {

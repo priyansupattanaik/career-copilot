@@ -4,7 +4,7 @@
 
 ## Stack
 
-Vite 8 · React 19 · TypeScript · React Router 7 · Tailwind CSS 4 · Firebase Web SDK (auth only)
+Vite 8 · React 19 · TypeScript · React Router 7 · Tailwind CSS 4 · Supabase Web SDK (auth only)
 
 ## How the SPA talks to the API
 
@@ -36,7 +36,7 @@ Demo mode: non-production cookie `career_copilot_demo` routes all calls through 
 
 | Module | Role |
 |--------|------|
-| `features/auth/*` | Firebase + app JWT, demo session |
+| `features/auth/*` | Supabase + app JWT, demo session |
 | `features/workspace/*` | shell + bootstrap context |
 | `shared/theme.tsx` | light/dark/system |
 | `features/jobs/job-recs-cache.ts` | sessionStorage SWR for job feed |
@@ -51,4 +51,4 @@ Demo mode: non-production cookie `career_copilot_demo` routes all calls through 
 - reverse-proxy `/api/backend` and `/api/files` to the API, or  
 - set `VITE_API_BASE_URL` **and** still serve a same-origin `/api/files` proxy so cookie-authenticated media works.
 
-Firebase Web SDK configuration is injected at Vite build time through VITE_FIREBASE_*. The current project is career-copilot05; changing Firebase settings in local .env does not change an existing Vercel deployment. Rebuild the frontend after updating Vercel variables. See deployment.md.
+Supabase Web SDK configuration is injected at Vite build time through VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY. Rebuild the frontend after updating Vercel variables. See deployment.md.

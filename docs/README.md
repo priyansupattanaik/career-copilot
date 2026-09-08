@@ -9,7 +9,7 @@ That file is the single source of truth for:
 - Architecture and trust boundaries
 - **How everything works** end-to-end and per feature
 - Agents and LLM routing
-- Data model (Firestore + Supabase Storage)
+- Data model (Supabase PostgreSQL + Supabase Storage)
 - Full API map
 - Code map
 - Frontend routes and systems
@@ -23,7 +23,7 @@ That file is the single source of truth for:
 |-----|----------|
 | [architecture.md](./architecture.md) | Layered design pointer |
 | [api-reference.md](./api-reference.md) | Endpoint map summary |
-| [data-model.md](./data-model.md) | Collections and storage layout |
+| [data-model.md](./data-model.md) | Schema tables and storage layout |
 | [frontend.md](./frontend.md) | SPA routes and BFF |
 | [flows.md](./flows.md) | Confirm gate and product journey |
 | [operations.md](./operations.md) | Setup, scripts, troubleshooting |

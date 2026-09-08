@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+﻿import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -12,7 +12,7 @@ function canRunPython(pythonExecutable) {
       pythonExecutable,
       [
         "-c",
-        "import sys; import dotenv; import docx; import firebase_admin; import fastapi; import jwt; import pydantic_settings; import pypdf; import reportlab; print(sys.version)",
+        "import sys; import dotenv; import docx; import fastapi; import jwt; import pydantic_settings; import pypdf; import reportlab; print(sys.version)",
       ],
       {
       cwd: process.cwd(),
@@ -47,3 +47,4 @@ export function ensureBackendVenv() {
 
   return backendVenvPython;
 }
+

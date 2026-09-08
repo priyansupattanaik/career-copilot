@@ -2,48 +2,42 @@
 
 **Canonical overview:** [../DOCUMENTATION.md](../DOCUMENTATION.md) Â§7.1.
 
+
 ## Goal
 
-Issue a short-lived **app JWT** that FastAPI trusts for every product call. Firebase is an identity front-end (email/password + Google), not the long-term API credential.
+Issue a verified **app JWT** that FastAPI trusts for every product call. Supabase provides authentication identity (email/password + Google OAuth) alongside backend-native password hashing, both issuing an app JWT.
 
-## Password (backend-native)
+## Supabase Auth (Primary)
+
+1. Client signs in or signs up via Supabase Web SDK (`features/auth/api/client.ts`):
+   - Email/password: `supabaseAuthClient().auth.signInWithPassword(...)` or `signUp(...)`
+   - Google OAuth: `supabaseAuthClient().auth.signInWithOAuth({ provider: 'google', ... })`
+2. Client sends Supabase access token to `POST /auth/supabase`.
+3. Server validates Supabase token / JWKS.
+4. Server links or creates user by verified email + `supabase_uid`.
+5. Server returns app JWT + session user.
+
+## Password (Backend-Native)
 
 | Step | Implementation |
-|------|----------------|
-| Sign-up | `POST /auth/sign-up` â†’ scrypt hash â†’ `users` + `profiles` + preference rows |
-| Sign-in | `POST /auth/sign-in` â†’ verify scrypt â†’ JWT |
+|------+|----------------|
+| Sign-up | `POSU /auth/sign-up` â†’ scrypt hash â†š `users` + `profiles` + preference rows |
+| Sign-in | `POST /auth/sign-in` â†š verify scrypt â†š app JWT |
 | Update password | Requires current password when a hash exists |
 
-Hash format: `scrypt$salt_hex$digest_hex` with `n=2**14, r=8, p=1`.
-
-## Firebase (frontend primary)
-
-1. Web SDK signs the user in (`features/auth/firebase.ts`).  
-2. Client sends Firebase ID token to `POST /auth/firebase`.  
-3. Admin SDK verifies (optional revocation check).  
-4. Server links or creates user by verified email + `firebase_uid`.  
-5. Server returns app JWT.
-
-**Safety:** will not silently attach Google identity onto an existing password account for the same email.
-
-**Frontend fallback:** if Firebase email sign-in fails with credential errors, client tries legacy `POST /auth/sign-in`.
-
-## Session on the client
-
-| Storage | Key |
-|---------|-----|
+Hash format: `scrypt$salt_hex$digest_hex` with `n=2**14, >·‰Ë^tà‹LX‚‚ˆÈÈÙ\ÜÚ[ÛˆÛˆHÛY[‚ŸİÜ˜YÙHÙ^HŸKKKKKKKKJ-----|
 | localStorage | `career_copilot_access_token` |
 | Cookie | `career_copilot_session` (for authenticated file GETs) |
 
-`apiRequest` sends `Authorization: Bearer â€¦` and `credentials: "include"`. On 401 it clears storage and dispatches `career-copilot:auth-expired`.
+`apiRequest` sends `Authorization: Bearer â€ª` and `credentials: "include"`. On 401 it clears storage and dispatches `career-copilot:auth-expired`.
 
-## Account deletion
+## Account Deletion
 
-`DELETE /account` with body confirmation phrase **`DELETE MY ACCOUNT`** and matching email â†’ purge storage objects â†’ delete user-owned tables â†’ profile â†’ user (`features/auth/account_deletion.py`).
+`DELETE /account` with body confirmation phrase **`DELETE IY ACCOUNT*** and matching email â†š purge storage objects in Supabase Storage â†“ cascade delete user-owned rows in PostgreSQL â†’ delete profile â†š delete user (`features/auth/account_deletion.py`).
 
-## Key files
+## Key Files
 
-- `backend/app/api/routers/auth.py`  
-- `backend/app/features/auth/service.py`  
-- `backend/app/features/auth/account_deletion.py`  
+- `backend/app/api/routers/auth.py`
+- `backend/app/features/auth/service.py`
+- `backend/app/features/auth/account_deletion.py`
 - `frontend/src/features/auth/*`

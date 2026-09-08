@@ -20,7 +20,7 @@ CANDIDATE_TABLES = {
     "links": "candidate_links",
 }
 
-# Firestore omits documents that lack the order_by field. Prefer client-side
+# Database rows may omit fields that lack the order_by field. Prefer client-side
 # recency sort with fallbacks so legacy rows without created_at still appear.
 _TIME_FALLBACKS = (
     "created_at",
@@ -73,7 +73,7 @@ def owned_rows(
     """List user-owned rows.
 
     Ordering is applied in-process. Server-side ``order_by(created_at)`` is unsafe
-    on Firestore when some legacy documents omit ``created_at`` (they vanish).
+    when some legacy documents omit ``created_at`` (they vanish).
 
     When ``order`` is set, default is newest-first (``desc=True``) so list pages
     stay in sync with dashboard "latest" cards that also use recency sort.
@@ -116,7 +116,7 @@ def prune_activity_events(
     try:
         rows = (
             client.table("activity_events")
-            .select("id,created_at,started_at")
+            .select("id,created_at")
             .eq("user_id", str(user.id))
             .execute()
             .data
@@ -240,3 +240,4 @@ def recalculate_completion(client, user: CurrentUser) -> dict[str, Any]:
             "profile_completion_details": details,
         }
     return updated[0]
+

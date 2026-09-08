@@ -175,7 +175,7 @@ def ensure_preference_row(client, table: str, user_id: str) -> dict[str, Any]:
 
 @router.get("/health/live")
 def health_live(settings: Settings = Depends(get_settings)) -> dict[str, Any]:
-    """Process liveness only — no Firestore/Storage network I/O.
+    """Process liveness only — no database/storage network I/O.
 
     Used by local ``npm run dev`` readiness waits so a slow remote probe cannot
     block starting the frontend after uvicorn is already up.
@@ -198,12 +198,12 @@ def health(settings: Settings = Depends(get_settings)) -> dict[str, Any]:
     return {
         "status": overall,
         "service": settings.app_name,
-        "database_engine": "firestore",
+        "database_engine": "supabase",
         "storage_engine": probe.get("storage_engine")
         or ("supabase_storage" if settings.supabase_storage_configured else "unconfigured"),
         "database_configured": settings.database_configured,
         "storage_configured": settings.storage_configured,
-        "firebase_project_id": settings.firebase_project_id or None,
+        "supabase_url": settings.resolved_supabase_url or None,
         "nvidia_configured": settings.nvidia_configured,
         "groq_configured": settings.groq_configured,
         "agent_count": status["agent_count"],
@@ -306,7 +306,7 @@ def bootstrap(
     # Bootstrap is a read endpoint. Completion is recalculated after mutations;
     # never perform cleanup or writes while loading a page.
     uid = str(user.id)
-    # Cache per user/scope for 5s to avoid hammering Firestore on every navigation
+    # Cache per user/scope for 5s to avoid hammering the database on every navigation
     cache_key = f"{uid}:{scope}"
     now = time.time()
     if cache_key in _bootstrap_cache:
@@ -315,23 +315,13 @@ def bootstrap(
             return cached
 
     def _read_profile():
-        from app.database.client import FirestoreResult
-        try:
-            snap = client.db.collection("profiles").document(uid).get()
-            if snap.exists:
-                data = snap.to_dict() or {}
-                data["id"] = snap.id
-                filtered = {k: data.get(k) for k in ("id","username","full_name","avatar_url","avatar_path","profile_completion","profile_completion_details")}
-                return FirestoreResult([filtered])
-            return FirestoreResult([])
-        except Exception:
-            return (
-                client.table("profiles")
-                .select("id,username,full_name,avatar_url,avatar_path,profile_completion,profile_completion_details")
-                .eq("id", uid)
-                .limit(1)
-                .execute()
-            )
+        return (
+            client.table("profiles")
+            .select("id,username,full_name,avatar_url,avatar_path,profile_completion,profile_completion_details")
+            .eq("id", uid)
+            .limit(1)
+            .execute()
+        )
 
     def _read_active_resume():
         return (
@@ -374,7 +364,7 @@ def bootstrap(
             .select("id,title,company,role_title,created_at")
             .eq("user_id", uid)
             # Keep ordering client-side: this user-scoped query must also work
-            # before the optional Firestore composite index is provisioned.
+            # before the optional composite index is provisioned.
             .order("created_at", desc=True)
             .limit(1)
             .execute()
@@ -802,10 +792,10 @@ def _latest_actions(client, user: CurrentUser) -> dict[str, Any]:
     try:
         applied = (
             client.table("saved_jobs")
-            .select("job_id,status,saved_at,updated_at")
+            .select("job_id,status,saved_at")
             .eq("user_id", uid)
             .eq("status", "applied")
-            .order("updated_at", desc=True)
+            .order("saved_at", desc=True)
             .limit(1)
             .execute()
             .data
@@ -813,7 +803,7 @@ def _latest_actions(client, user: CurrentUser) -> dict[str, Any]:
         )
         rows = applied or (
             client.table("saved_jobs")
-            .select("job_id,status,saved_at,updated_at")
+            .select("job_id,status,saved_at")
             .eq("user_id", uid)
             .order("saved_at", desc=True)
             .limit(1)
@@ -1092,13 +1082,15 @@ def public_profile(username: str, settings: Settings = Depends(get_settings)):
     if not rows:
         raise ApiError(404, "profile_not_found", "Public profile not found.")
     profile = rows[0]
+    if not profile.get("current_role") and profile.get("target_role"):
+        profile["current_role"] = profile.get("target_role")
     owner = str(profile["id"])
     public_rows: dict[str, list[dict[str, Any]]] = {}
     for resource in ("skills", "experiences", "education", "projects", "certifications", "languages", "links"):
         table = CANDIDATE_TABLES.get(resource)
         if not table:
             continue
-        fields = "*" if resource != "links" else "id,link_type,label,url,display_order"
+        fields = "*"
         public_rows[resource] = client.table(table).select(fields).eq("user_id", owner).limit(100).execute().data or []
     # Public page should show the avatar like private bootstrap does.
     # Generate a fresh signed URL with token so <img> works without Authorization.
@@ -1899,7 +1891,7 @@ def list_candidate_records(
     rows = owned_rows(client_for(settings, user), table, user)
     if resource not in {"skills", "certifications"}:
         # Sort after reading so legacy rows without display_order are not
-        # silently excluded by Firestore's order_by behavior.
+        # silently excluded by order_by behavior.
         rows.sort(key=lambda row: (row.get("display_order") is None, row.get("display_order") or 0))
     return rows
 
@@ -2024,7 +2016,7 @@ async def _upload_resume_version(
 @router.get("/resumes")
 def list_resumes(user: CurrentUser = Depends(get_current_user), settings: Settings = Depends(get_settings)):
     client = client_for(settings, user)
-    # Never order by created_at server-side: docs missing that field are dropped by Firestore.
+    # Never order by created_at server-side: docs missing that field are dropped by ordering.
     rows = (
         client.table("resumes")
         .select("*")
@@ -2179,7 +2171,11 @@ def preview_resume(
             "id": version.get("id"),
             "version_number": version.get("version_number"),
             "original_filename": version.get("original_filename"),
-            "mime_type": version.get("mime_type"),
+            "mime_type": version.get("mime_type") or (
+                "application/pdf"
+                if str(version.get("original_filename") or "").lower().endswith(".pdf")
+                else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            ),
             "extraction_status": version.get("extraction_status"),
             "created_at": version.get("created_at"),
             "size_bytes": version.get("size_bytes"),
@@ -2530,6 +2526,10 @@ def _enrich_ats_analysis(
     a linked resume/JD was deleted or a legacy analysis row is incomplete.
     """
     enriched = dict(analysis or {})
+    if not enriched.get("summary") and isinstance(enriched.get("breakdown"), dict):
+        enriched["summary"] = enriched["breakdown"].get("summary")
+    if not enriched.get("score_breakdown") and isinstance(enriched.get("breakdown"), dict):
+        enriched["score_breakdown"] = enriched["breakdown"]
     version_id = enriched.get("resume_version_id")
     job_id = enriched.get("job_description_id")
 
@@ -2633,7 +2633,7 @@ def list_ats(user: CurrentUser = Depends(get_current_user), settings: Settings =
         .data
         or []
     )
-    # Client-side recency: Firestore order_by(created_at) hides docs missing created_at.
+    # Client-side recency: order_by(created_at) hides docs missing created_at.
     analyses = sort_rows_by_recency(analyses, desc=True, preferred="started_at")
     # Keep every candidate-owned run visible; never drop the list on a single bad row.
     output: list[dict[str, Any]] = []
@@ -2675,21 +2675,6 @@ def delete_ats(
     client = client_for(settings, user)
     owned_row(client, "ats_analyses", analysis_id, user)
     try:
-        # These nullable reference cleanups are independent. Running them in
-        # parallel removes two avoidable network round trips from deletion.
-        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="ats-delete") as executor:
-            detach_runs = executor.submit(
-                lambda: client.table("resume_improvement_runs").update({"ats_analysis_id": None}).eq(
-                    "ats_analysis_id", str(analysis_id)
-                ).eq("user_id", str(user.id)).execute()
-            )
-            detach_suggestions = executor.submit(
-                lambda: client.table("resume_suggestions").update({"analysis_id": None}).eq(
-                    "analysis_id", str(analysis_id)
-                ).eq("user_id", str(user.id)).execute()
-            )
-            detach_runs.result()
-            detach_suggestions.result()
         client.table("ats_evidence").delete().eq("analysis_id", str(analysis_id)).eq(
             "user_id", str(user.id)
         ).execute()
@@ -2761,7 +2746,6 @@ async def create_ats(
         .eq("user_id", str(user.id))
         .eq("resume_version_id", str(payload.resume_version_id))
         .eq("job_description_id", str(payload.job_description_id))
-        .eq("algorithm_version", SCORING_ALGORITHM_VERSION)
         .eq("status", "completed")
         .execute()
         .data
@@ -2835,7 +2819,6 @@ async def create_ats(
                 "resume_version_id": str(payload.resume_version_id),
                 "job_description_id": str(payload.job_description_id),
                 "status": "processing",
-                "algorithm_version": SCORING_ALGORITHM_VERSION,
                 "created_at": now_iso,
                 "started_at": now_iso,
             }
@@ -2890,48 +2873,50 @@ async def create_ats(
             generation_id=str(analysis.get("id")),
         )
 
+        summary_payload = {
+            "method": scoring_method,
+            "matched": len(score.matched_terms),
+            "missing": len(score.missing_terms),
+            "total": len(score.evidence),
+            "missing_terms": score.missing_terms,
+            "partial_terms": score.partial_terms or [],
+            "critical_missing": [
+                item.requirement
+                for item in score.evidence
+                if item.priority == "critical" and not item.matched
+            ],
+            "preferred_missing": [
+                item.requirement
+                for item in score.evidence
+                if item.priority == "preferred" and not item.matched
+            ],
+            "required_score": score.required_score,
+            "preferred_score": score.preferred_score,
+            "section_summary": score.section_summary or {},
+            "domain_gate": domain_gate,
+            "overall_inference": brief.get("overall_inference"),
+            "focus_areas": brief.get("focus_areas") or [],
+            "priority_actions": brief.get("priority_actions") or [],
+            "section_guidance": brief.get("section_guidance") or [],
+            "do_not_claim": brief.get("do_not_claim") or [],
+            "inference_provider": brief.get("provider"),
+            "inference_model": brief.get("model"),
+            "report_status": brief.get("report_status", "unavailable"),
+            "report_generation_id": brief.get("generation_id"),
+            "disclaimer": (
+                "The score is evidence-backed keyword coverage. The narrative report is LLM-generated only. "
+                "This is not a hiring prediction; never add experience that is not in the resume."
+            ),
+        }
+        score_breakdown["summary"] = summary_payload
+
         completed_rows = (
             client.table("ats_analyses")
             .update(
                 {
                     "status": "completed",
                     "overall_score": persisted_score,
-                    "score_breakdown": score_breakdown,
-                    "summary": {
-                        "method": scoring_method,
-                        "matched": len(score.matched_terms),
-                        "missing": len(score.missing_terms),
-                        "total": len(score.evidence),
-                        "missing_terms": score.missing_terms,
-                        "partial_terms": score.partial_terms or [],
-                        "critical_missing": [
-                            item.requirement
-                            for item in score.evidence
-                            if item.priority == "critical" and not item.matched
-                        ],
-                        "preferred_missing": [
-                            item.requirement
-                            for item in score.evidence
-                            if item.priority == "preferred" and not item.matched
-                        ],
-                        "required_score": score.required_score,
-                        "preferred_score": score.preferred_score,
-                        "section_summary": score.section_summary or {},
-                        "domain_gate": domain_gate,
-                        "overall_inference": brief.get("overall_inference"),
-                        "focus_areas": brief.get("focus_areas") or [],
-                        "priority_actions": brief.get("priority_actions") or [],
-                        "section_guidance": brief.get("section_guidance") or [],
-                        "do_not_claim": brief.get("do_not_claim") or [],
-                        "inference_provider": brief.get("provider"),
-                        "inference_model": brief.get("model"),
-                        "report_status": brief.get("report_status", "unavailable"),
-                        "report_generation_id": brief.get("generation_id"),
-                        "disclaimer": (
-                            "The score is evidence-backed keyword coverage. The narrative report is LLM-generated only. "
-                            "This is not a hiring prediction; never add experience that is not in the resume."
-                        ),
-                    },
+                    "breakdown": score_breakdown,
                     "completed_at": utc_now(),
                 }
             )
@@ -2947,6 +2932,8 @@ async def create_ats(
                 f"ats_analysis_update_returned_empty analysis_id={analysis.get('id')}"
             )
         completed = completed_rows[0]
+        completed.setdefault("summary", summary_payload)
+        completed.setdefault("score_breakdown", score_breakdown)
     except Exception as exc:
         logger.exception(
             "ats_persistence_failed analysis_id=%s type=%s",
@@ -2957,8 +2944,10 @@ async def create_ats(
             client.table("ats_analyses").update(
                 {
                     "status": "failed",
-                    "error_code": "ats_persistence_failed",
-                    "error_message": "Scoring could not be persisted.",
+                    "breakdown": {
+                        "error_code": "ats_persistence_failed",
+                        "error_message": "Scoring could not be persisted.",
+                    },
                 }
             ).eq("id", analysis["id"]).eq("user_id", str(user.id)).execute()
         except Exception:
@@ -3025,7 +3014,7 @@ def list_interviews(
 ):
     """Return all interview sessions for the signed-in user, newest first.
 
-    Uses the same Firestore collection and user filter as dashboard bootstrap
+    Uses the same collection and user filter as dashboard bootstrap
     (`_latest_actions` / interview counts) so the mock-interview list stays
     aligned with "Last mock interview" on the dashboard.
     """
@@ -3222,7 +3211,7 @@ def create_interview(
     """Create a draft mock-interview session (mode, role, optional pasted JD text)."""
     client = client_for(settings, user)
     body = payload.model_dump(mode="json")
-    # Normalize empty strings so Firestore does not store noise fields.
+    # Normalize empty strings so the database does not store noise fields.
     for key in ("target_role", "target_company", "topic", "difficulty", "job_description_text"):
         value = body.get(key)
         if isinstance(value, str):
@@ -3281,7 +3270,7 @@ def delete_interview(
     owned_row(client, "interview_sessions", session_id, user)
 
     # Media is no longer stored, so no storage cleanup is needed.
-    # Firestore has no FK cascade — delete children first (same pattern as learning paths).
+    # Cascade delete children first — delete children first (same pattern as learning paths).
     sid = str(session_id)
     uid = str(user.id)
     client.table("interview_reports").delete().eq("session_id", sid).eq("user_id", uid).execute()
@@ -4148,7 +4137,7 @@ async def generate_learning_path(
     stored_items = []
     for item in items:
         resources = item.pop("resources", [])
-        # Ensure metadata remains a plain JSON-serializable mapping for Firestore.
+        # Ensure metadata remains a plain JSON-serializable mapping for the database.
         metadata = item.get("metadata")
         if isinstance(metadata, dict):
             item = {**item, "metadata": metadata}
@@ -4366,11 +4355,10 @@ def update_learning_resource_progress(
 def list_jobs(user: CurrentUser = Depends(get_current_user), settings: Settings = Depends(get_settings)):
     client = client_for(settings, user)
     jobs = (
-        client_for(settings, user)
+        client
         .table("jobs")
         .select("*")
-        .eq("is_active", True)
-        .order("published_at", desc=True)
+        .order("created_at", desc=True)
         .execute()
         .data
         or []
@@ -4425,7 +4413,7 @@ def sync_external_jobs(
         client = client_for(settings, user)
         prefs_rows = (
             client.table("candidate_preferences")
-            .select("target_roles,preferred_locations")
+            .select("target_roles,locations")
             .eq("user_id", str(user.id))
             .limit(1)
             .execute()
@@ -4434,7 +4422,7 @@ def sync_external_jobs(
         )
         prefs = prefs_rows[0] if prefs_rows else {}
         target_roles = [str(r).strip() for r in (prefs.get("target_roles") or []) if str(r).strip()]
-        locations = [str(loc).strip() for loc in (prefs.get("preferred_locations") or []) if str(loc).strip()]
+        locations = [str(loc).strip() for loc in (prefs.get("preferred_locations") or prefs.get("locations") or []) if str(loc).strip()]
         fetched_by_source: list[tuple[str, list[dict[str, Any]]]] = []
         if getattr(settings, "freehire_enabled", True):
             job_search = AiJobSearchClient(
@@ -4545,7 +4533,6 @@ def list_job_recommendations(
         client.table("jobs")
         .select("*")
         .in_("id", [row["job_id"] for row in rows])
-        .eq("is_active", True)
         .execute()
         .data
         if rows
@@ -4600,8 +4587,7 @@ async def generate_job_recommendations(
     jobs = (
         client.table("jobs")
         .select("*")
-        .eq("is_active", True)
-        .order("published_at", desc=True)
+        .order("created_at", desc=True)
         .limit(500)
         .execute()
         .data
@@ -4638,7 +4624,7 @@ async def generate_job_recommendations(
         reverse=True,
     )
     profile_rows = client.table("profiles").select(
-        "full_name,headline,bio,location,current_role,years_experience,career_level,career_goal"
+        "full_name,bio,location,target_role,years_experience"
     ).eq("id", str(user.id)).limit(1).execute().data or []
     preference_rows = client.table("candidate_preferences").select("*").eq(
         "user_id", str(user.id)
@@ -4743,7 +4729,6 @@ def list_saved_jobs(
         client.table("jobs")
         .select("*")
         .in_("id", job_ids)
-        .eq("is_active", True)
         .execute()
         .data
         if job_ids
@@ -4760,7 +4745,7 @@ def save_job(
     """Bookmark a job as saved without downgrading applied/interview/offer tracking."""
     client = client_for(settings, user)
     job = (
-        client.table("jobs").select("id").eq("id", str(job_id)).eq("is_active", True).limit(1).execute().data
+        client.table("jobs").select("id").eq("id", str(job_id)).limit(1).execute().data
         or []
     )
     if not job:
@@ -4784,10 +4769,8 @@ def save_job(
         "user_id": str(user.id),
         "job_id": str(job_id),
         "status": "saved",
-        "updated_at": stamp,
+        "saved_at": stamp,
     }
-    if not existing:
-        payload["saved_at"] = stamp
     result = client.table("saved_jobs").upsert(payload).execute().data[0]
     write_activity(client, user, "job_saved", "Job saved", "job", str(job_id))
     return result
@@ -4803,7 +4786,7 @@ def patch_saved_job(
     """Update tracking status (saved / applied / rejected / dismissed / …). Creates the row if needed."""
     client = client_for(settings, user)
     job = (
-        client.table("jobs").select("id").eq("id", str(job_id)).eq("is_active", True).limit(1).execute().data
+        client.table("jobs").select("id").eq("id", str(job_id)).limit(1).execute().data
         or []
     )
     if not job:
@@ -4814,7 +4797,7 @@ def patch_saved_job(
         "user_id": str(user.id),
         "job_id": str(job_id),
         **body,
-        "updated_at": stamp,
+        "saved_at": stamp,
     }
     existing = (
         client.table("saved_jobs")
@@ -4935,13 +4918,12 @@ def delete_account(
     user_client = client_for(settings, user)
     storage_paths = collect_user_storage_paths(user_client, user)
 
-    # Capture provider identities before we delete the users document.
-    firebase_uid = ""
+    # Capture provider identity before we delete the users document.
     supabase_uid = ""
     try:
         user_rows = (
             user_client.table("users")
-            .select("firebase_uid, supabase_uid")
+            .select("supabase_uid")
             .eq("id", str(user.id))
             .limit(1)
             .execute()
@@ -4949,10 +4931,9 @@ def delete_account(
             or []
         )
         if user_rows:
-            firebase_uid = str(user_rows[0].get("firebase_uid") or "").strip()
             supabase_uid = str(user_rows[0].get("supabase_uid") or "").strip()
     except Exception as exc:
-        logger.exception("account_delete_firebase_uid_lookup_failed user_id=%s", user.id)
+        logger.exception("account_delete_identity_lookup_failed user_id=%s", user.id)
         raise ApiError(
             500,
             "account_deletion_incomplete",
@@ -4960,27 +4941,9 @@ def delete_account(
         ) from exc
 
     admin = database_client(settings)
-    # Remove the provider identity before deleting local records. If this fails,
-    # stop before destructive local deletion so the identity cannot resurrect a
-    # new account after a partial purge.
-    if firebase_uid and settings.firebase_configured:
-        try:
-            from firebase_admin import auth as firebase_auth
-
-            from app.database.client import firebase_admin_app
-
-            firebase_auth.delete_user(firebase_uid, app=firebase_admin_app(settings))
-        except Exception as exc:
-            logger.exception("account_delete_firebase_auth_failed user_id=%s", user.id)
-            raise ApiError(
-                500,
-                "account_deletion_incomplete",
-                "The linked identity provider account could not be deleted. No local data was removed.",
-            ) from exc
-
     # The Supabase Auth identity (email + credentials) must die with the
     # account too, or the address stays "already registered" and can never
-    # sign up again. Same fail-closed contract as Firebase above.
+    # sign up again.
     if supabase_uid:
         if not (settings.resolved_supabase_url and settings.supabase_server_key):
             logger.error(
@@ -5003,7 +4966,7 @@ def delete_account(
                 "The Supabase identity could not be deleted. No local data was removed. Please retry.",
             ) from exc
 
-    # Fail closed: do not erase Firestore identity while storage blobs may remain.
+    # Fail closed: do not erase database identity while storage blobs may remain.
     try:
         purge_user_storage(admin, settings, user, storage_paths)
     except Exception as exc:

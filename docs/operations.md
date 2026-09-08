@@ -6,17 +6,16 @@
 
 - Node.js 20+  
 - Python 3.11–3.13  
-- Firebase project (Firestore + service account JSON)  
-- Supabase project (private Storage bucket)  
+- Supabase project (PostgreSQL Database + Auth + Storage bucket)  
 
 ## Setup
 
-```bash
+`ash
 cp .env.example .env   # Windows: copy .env.example .env
-# Fill AUTH_SECRET, FIREBASE_*, SUPABASE_*, VITE_FIREBASE_*
+# Fill AUTH_SECRET, SUPABASE_*, VITE_SUPABASE_*
 npm run setup
 npm run dev
-```
+`
 
 | Service | URL |
 |---------|-----|
@@ -30,32 +29,38 @@ There is **no** Celery worker process. All product work is synchronous request/r
 
 | Command | Purpose |
 |---------|---------|
-| `npm run dev` | Preflight + FE + BE |
-| `npm run check:env` | Required env keys |
-| `npm run check:secrets` | Secret scan |
-| `npm run test:backend` | pytest |
-| `cd frontend && npm run test` | Vitest |
-| `scripts/diagnostics/*` | API/Firestore/connection audits |
+| 
+pm run dev | Preflight + FE + BE |
+| 
+pm run check:env | Required env keys |
+| 
+pm run check:secrets | Secret scan |
+| 
+pm run test:backend | pytest |
+| 
+pm run supabase:check | Supabase DB/Storage verification |
+| cd frontend && npm run test | Vitest |
+| scripts/diagnostics/* | API/Supabase/connection audits |
 
 ## Health endpoints
 
 | Path | Meaning |
 |------|---------|
-| `GET /api/v1/health/live` | Process up (no network probes) |
-| `GET /api/v1/health` | Agents + bounded DB/storage probes |
-| `GET /api/v1/health/database` | Deeper dependency probe |
-| `GET /api/v1/agents/status` | Agent inventory |
+| GET /api/v1/health/live | Process up (no network probes) |
+| GET /api/v1/health | Agents + bounded DB/storage probes |
+| GET /api/v1/health/database | Deeper dependency probe |
+| GET /api/v1/agents/status | Agent inventory |
 
 ## Production checklist
 
-1. Strong `AUTH_SECRET`, restricted `FRONTEND_ORIGINS`.  
-2. `APP_ENV=production` (docs disabled).  
-3. Proxy `/api/backend` (or build with `VITE_API_BASE_URL`) **and** `/api/files` → API `/api/v1/files`.  
-4. Firestore rules remain deny-all for clients.  
-5. Supabase bucket private; only service role on server.  
-6. Firebase project is career-copilot05 and FIREBASE_DATABASE_ID=(default).
-7. Email/Password and Google providers are enabled, and the exact Vercel hostname is in Firebase Authorized Domains.
-8. Vercel was rebuilt after changing any VITE_* value; those values are embedded at build time.
+1. Strong AUTH_SECRET, restricted FRONTEND_ORIGINS.  
+2. APP_ENV=production (docs disabled).  
+3. Proxy /api/backend (or build with VITE_API_BASE_URL) **and** /api/files → API /api/v1/files.  
+4. Supabase tables created from docs/database/supabase-schema.sql with RLS enabled.  
+5. Supabase storage bucket private; only service role on server.  
+6. Supabase URL and secret keys configured (SUPABASE_URL, SUPABASE_SECRET_KEY).  
+7. Email/Password and Google OAuth providers enabled in Supabase, with Vercel and local hostnames in Supabase Redirect URLs.  
+8. Vercel was rebuilt after changing any VITE_* value; those values are embedded at build time.  
 
 The full split-host Vercel/Render procedure is in deployment.md.
 
@@ -63,8 +68,8 @@ The full split-host Vercel/Render procedure is in deployment.md.
 
 | Symptom | Check |
 |---------|-------|
-| Bootstrap empty / `—` | API health, JWT, CORS origin |
-| File/avatar 404 | `/api/files` rewrite present on page origin |
-| Storage 503 | Supabase env trio configured |
-| LLM features weak | `GROQ_*` / `NVIDIA_*` / `LLM_PROVIDER` |
-| Demo data | Clear `career_copilot_demo` cookie |
+| Bootstrap empty / — | API health, JWT, CORS origin |
+| File/avatar 404 | /api/files rewrite present on page origin |
+| Storage / DB 503 | Supabase env keys configured (SUPABASE_URL, SUPABASE_SECRET_KEY) |
+| LLM features weak | GROQ_* / NVIDIA_* / LLM_PROVIDER |
+| Demo data | Clear career_copilot_demo cookie |

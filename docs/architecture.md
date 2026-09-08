@@ -13,8 +13,8 @@ Browser (React + Vite)
     FastAPI (ownership, JWT, ApiError)
          ├─ features/*   domain logic
          ├─ agents/*     Groq / NVIDIA / prompts / crews
-         ├─ Firestore    structured data (Admin SDK)
-         └─ Supabase     private object storage
+         ├─ Supabase     PostgreSQL database (PostgREST)
+         └─ Supabase     private object storage & Auth
 ```
 
 ### Layers
@@ -26,11 +26,11 @@ Browser (React + Vite)
 | HTTP | `backend/app/api` | Routes, schemas, auth router |
 | Domain | `backend/app/features` | Parsing, ATS, interview, learning, jobs, … |
 | Agents | `backend/app/agents` | LLM clients, routing, registry |
-| Data | `backend/app/database` | Firestore adapter, storage, ownership |
+| Data | `backend/app/database` | Supabase PostgREST adapter, storage, ownership |
 
 ### Trust rules
 
-1. Browser never holds service keys or talks to Firestore.  
+1. Browser never holds service keys or accesses the database directly.  
 2. Every row and file path is scoped to the signed-in user.  
 3. Product ATS score is deterministic; LLMs enrich, they do not invent experience.  
 4. Confirm gate: only `confirmed` resume/JD drive ATS, learning, prep, job match.

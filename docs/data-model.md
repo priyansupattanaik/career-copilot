@@ -6,18 +6,18 @@
 
 | Store | Role | Access |
 |-------|------|--------|
-| Cloud Firestore | Structured candidate data | FastAPI Admin SDK only |
+| Supabase PostgreSQL (PostgREST) | Structured candidate data (31 relational tables) | FastAPI service role / PostgREST |
 | Supabase Storage | Resumes, avatars, exports | FastAPI service role only |
 
-Firestore client rules (`firebase/firestore.rules`) deny all browser access.
+Row Level Security (RLS) is configured across all candidate tables (`docs/database/supabase-schema.sql`). Direct client access is guarded; all product API access flows through the FastAPI backend.
 
 ## Ownership
 
 Almost every candidate document includes `user_id` (profiles use `id` = user id). Handlers use `owned_row` / `owned_rows` from `database/repository.py`.
 
-## Collection groups
+## Table / Entity groups
 
-| Group | Collections |
+| Group | Tables |
 |-------|-------------|
 | Identity | `users`, `profiles` |
 | Preferences | `candidate_preferences`, `notification_preferences`, `privacy_preferences` |

@@ -14,7 +14,6 @@ const frontendDirectory = resolve(process.cwd(), "frontend");
 // that local browsers use. FRONTEND_HOST remains available for overrides.
 const frontendHost = process.env.FRONTEND_HOST || "127.0.0.1";
 const configuredFrontendPort = frontendPort(process.env);
-const frontendEnvironment = { ...process.env };
 const viteBinary = resolve(frontendDirectory, "node_modules", "vite", "bin", "vite.js");
 
 function isPortOpen(port, host = "127.0.0.1") {
@@ -74,29 +73,78 @@ async function prepareFrontend() {
   return true;
 }
 
-const commands = [
-  {
-    name: "backend",
-    command: backendPython,
-    args: ["-m", "uvicorn", "app.main:app", "--reload", "--reload-dir", "backend", "--access-log", "--log-level", "info", "--port", backendPort(process.env), "--app-dir", "backend"],
-    cwd: process.cwd(),
-    env: process.env,
-  },
-  {
-    name: "frontend",
-    command: process.execPath,
-    args: [
-      viteBinary,
-      "--host",
-      frontendHost,
-      "--port",
-      configuredFrontendPort,
-      "--force",
-    ],
-    cwd: frontendDirectory,
-    env: frontendEnvironment,
-  },
-];
+async function isCareerCopilotBackend(port) {
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/api/v1/health/live`, {
+      signal: AbortSignal.timeout(1500),
+    });
+    if (!response.ok) return false;
+    const body = await response.json();
+    return body?.service === "Career Copilot API" && body?.live === true;
+  } catch {
+    return false;
+  }
+}
+
+function bindBackendPort(port) {
+  const value = String(port);
+  process.env.BACKEND_PORT = value;
+  process.env.PUBLIC_API_BASE_URL = `http://127.0.0.1:${value}`;
+  return value;
+}
+
+async function claimBackendPort() {
+  const requested = Number(backendPort(process.env));
+  if (!(await isPortOpen(requested))) return bindBackendPort(requested);
+  if (await isCareerCopilotBackend(requested)) {
+    const pid = listeningPid(requested);
+    if (pid) {
+      console.log(`[dev] Restarting existing Career Copilot backend ${pid} on port ${requested}.`);
+      spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore" });
+      const deadline = Date.now() + 5_000;
+      while (Date.now() < deadline && (await isPortOpen(requested))) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
+    return bindBackendPort(requested);
+  }
+  for (let candidate = requested + 1; candidate <= requested + 20; candidate += 1) {
+    if (await isPortOpen(candidate)) continue;
+    console.warn(
+      `[dev] Port ${requested} is in use by another process. Using ${candidate} for the Career Copilot API.`,
+    );
+    return bindBackendPort(candidate);
+  }
+  throw new Error(
+    `Backend port ${requested} is in use and no fallback port was free. Stop the other process or set BACKEND_PORT.`,
+  );
+}
+
+function buildCommands() {
+  return [
+    {
+      name: "backend",
+      command: backendPython,
+      args: ["-m", "uvicorn", "app.main:app", "--reload", "--reload-dir", "backend", "--access-log", "--log-level", "info", "--port", backendPort(process.env), "--app-dir", "backend"],
+      cwd: process.cwd(),
+      env: process.env,
+    },
+    {
+      name: "frontend",
+      command: process.execPath,
+      args: [
+        viteBinary,
+        "--host",
+        frontendHost,
+        "--port",
+        configuredFrontendPort,
+        "--force",
+      ],
+      cwd: frontendDirectory,
+      env: { ...process.env },
+    },
+  ];
+}
 
 const children = new Map();
 let stopping = false;
@@ -149,7 +197,7 @@ process.on("exit", () => {
 });
 
 async function waitForBackend() {
-  // Prefer the liveness endpoint: process is up without waiting on Firestore/Storage.
+  // Prefer the liveness endpoint: process is up without waiting on Supabase/Storage.
   // Full /health still probes dependencies and can exceed short AbortSignal timeouts
   // on cold networks — that was aborting npm run dev after uvicorn was already ready.
   const port = backendPort(process.env);
@@ -185,6 +233,8 @@ async function waitForBackend() {
 }
 
 try {
+  await claimBackendPort();
+  const commands = buildCommands();
   const existingFrontend = await prepareFrontend();
   start(commands[0]);
   await waitForBackend();

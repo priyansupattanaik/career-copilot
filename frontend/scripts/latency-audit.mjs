@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Latency anti-pattern detector for Career Copilot UI.
  * Red when known page-transition latency bugs are present in source.
  * Usage: node scripts/latency-audit.mjs
@@ -163,7 +163,7 @@ if (fs.existsSync(assetsDir)) {
         severity: "P1",
         symptom: `Initial JS ${kb.toFixed(0)}KB still heavy`,
         evidence: `dist/assets/${f} is ${kb.toFixed(1)} KB (gate: 400KB)`,
-        fix: "Further split firebase / marketing if needed",
+        fix: "Further split auth / marketing if needed",
       });
     } else {
       pass.push(`main-chunk-heavy: ${f} ${kb.toFixed(0)}KB under 400KB`);
@@ -183,3 +183,4 @@ for (const f of findings) {
 for (const p of pass) console.log(`[GREEN] ${p}`);
 console.log(`\nSummary: ${findings.length} red, ${pass.length} green`);
 process.exit(findings.some((f) => f.severity === "P0") ? 1 : findings.length ? 1 : 0);
+

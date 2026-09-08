@@ -1,6 +1,7 @@
-
 from __future__ import annotations
 
+import copy
+import json
 import logging
 import re
 import secrets
@@ -13,6 +14,7 @@ from urllib.parse import quote
 import httpx
 
 from app.core.config import Settings
+from app.core.errors import ApiError
 
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _BUCKET = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
@@ -24,10 +26,271 @@ _TABLES = {
     "interview_sessions", "interview_questions", "interview_responses", "interview_reports",
     "learning_paths", "learning_items", "learning_resources", "jobs", "job_recommendations",
     "saved_jobs", "notification_preferences", "privacy_preferences", "activity_events",
-    "user_notifications",
+    "user_notifications", "_setup_checks",
 }
-_ID_TABLES = _TABLES - {"candidate_preferences", "notification_preferences", "privacy_preferences", "saved_jobs"}
+
+# Real column sets from the live Supabase PostgreSQL schema to prevent 400 Bad Request
+# when queries ask for non-existent columns.
+TABLE_COLUMNS: dict[str, set[str]] = {
+    "user_notifications": {"id", "user_id", "title", "message", "is_read", "created_at"},
+    "users": {"id", "email", "full_name", "password_hash", "token_version", "phone", "username", "supabase_uid", "auth_provider", "created_at", "updated_at"},
+    "saved_jobs": {"id", "user_id", "job_id", "title", "company", "location", "work_mode", "url", "source", "status", "saved_at", "created_at"},
+    "resume_suggestions": {"id", "run_id", "user_id", "section", "original_text", "suggested_text", "rationale", "status", "created_at"},
+    "candidate_links": {"id", "user_id", "label", "url", "created_at"},
+    "learning_paths": {"id", "user_id", "title", "target_skill", "status", "progress_percent", "created_at"},
+    "job_recommendations": {"id", "user_id", "job_id", "match_score", "score_breakdown", "status", "created_at"},
+    "candidate_preferences": {"id", "user_id", "target_roles", "locations", "work_modes", "salary_currency", "salary_min", "salary_max", "created_at", "updated_at"},
+    "ats_evidence": {"id", "analysis_id", "user_id", "category", "finding", "match_status", "source_reference", "created_at"},
+    "resume_improvement_runs": {"id", "user_id", "resume_version_id", "status", "created_at"},
+    "resumes": {"id", "user_id", "title", "is_active", "deleted_at", "created_at", "updated_at"},
+    "interview_responses": {"id", "question_id", "session_id", "user_id", "audio_path", "transcript", "evaluation", "created_at"},
+    "jobs": {"id", "external_id", "title", "company", "location", "work_mode", "description", "url", "source", "created_at"},
+    "candidate_certifications": {"id", "user_id", "name", "issuer", "issue_date", "expiry_date", "credential_id", "credential_url", "created_at"},
+    "profiles": {"id", "username", "full_name", "phone", "avatar_url", "avatar_path", "target_role", "years_experience", "profile_completion", "profile_completion_details", "bio", "location", "created_at", "updated_at"},
+    "learning_items": {"id", "learning_path_id", "user_id", "title", "status", "progress_percent", "item_order", "created_at"},
+    "candidate_education": {"id", "user_id", "institution", "degree", "field_of_study", "start_date", "end_date", "created_at"},
+    "candidate_experiences": {"id", "user_id", "company", "role", "start_date", "end_date", "is_current", "description", "highlights", "created_at"},
+    "activity_events": {"id", "user_id", "event_type", "summary", "entity_type", "entity_id", "created_at"},
+    "notification_preferences": {"id", "user_id", "email_alerts", "job_recommendations", "interview_reminders", "created_at", "updated_at"},
+    "candidate_projects": {"id", "user_id", "name", "description", "role", "technologies", "url", "created_at"},
+    "interview_questions": {"id", "session_id", "user_id", "question_index", "question_text", "category", "created_at"},
+    "learning_resources": {"id", "learning_item_id", "user_id", "title", "url", "resource_type", "duration_minutes", "is_completed", "created_at"},
+    "job_descriptions": {"id", "user_id", "title", "company", "role_title", "storage_path", "raw_text", "extracted_keywords", "extraction_status", "candidate_confirmed_at", "created_at"},
+    "_setup_checks": {"id", "kind", "created_at"},
+    "ats_analyses": {"id", "user_id", "resume_version_id", "job_description_id", "overall_score", "breakdown", "status", "started_at", "completed_at", "created_at"},
+    "resume_exports": {"id", "user_id", "resume_version_id", "format", "storage_path", "created_at"},
+    "interview_sessions": {"id", "user_id", "mode", "target_role", "target_company", "status", "started_at", "completed_at", "created_at"},
+    "interview_reports": {"id", "session_id", "user_id", "overall_score", "communication_score", "structure_score", "content_score", "report", "status", "created_at"},
+    "privacy_preferences": {"id", "user_id", "public_profile", "analytics_sharing", "created_at", "updated_at"},
+    "resume_versions": {"id", "resume_id", "user_id", "version_number", "source_type", "original_filename", "storage_path", "raw_text", "structured_sections", "extraction_status", "candidate_confirmed_at", "created_at"},
+    "candidate_languages": {"id", "user_id", "language", "proficiency", "created_at"},
+    "candidate_skills": {"id", "user_id", "name", "category", "level", "created_at"},
+}
+
 logger = logging.getLogger(__name__)
+
+# Reads copy real schema names onto expected app fields.
+_READ_ALIASES: dict[str, tuple[tuple[str, str], ...]] = {
+    "resume_versions": (
+        ("raw_text", "plain_text"),
+        ("structured_sections", "structured_content"),
+    ),
+    "job_descriptions": (
+        ("raw_text", "plain_text"),
+        ("structured_sections", "structured_content"),
+    ),
+    "interview_questions": (
+        ("question_index", "position"),
+        ("question_text", "question"),
+        ("category", "question_type"),
+    ),
+    "interview_responses": (
+        ("transcript", "typed_response"),
+    ),
+    "learning_items": (
+        ("item_order", "position"),
+        ("progress_percent", "watch_percent"),
+        ("progress_percent", "progress_percentage"),
+    ),
+    "learning_paths": (
+        ("progress_percent", "progress_percentage"),
+    ),
+    "ats_analyses": (
+        ("breakdown", "score_breakdown"),
+    ),
+    "ats_evidence": (
+        ("finding", "requirement_text"),
+        ("finding", "explanation"),
+        ("source_reference", "resume_evidence_text"),
+    ),
+    "candidate_projects": (
+        ("name", "title"),
+        ("technologies", "skills"),
+    ),
+    "candidate_preferences": (
+        ("locations", "preferred_locations"),
+    ),
+    "candidate_experiences": (
+        ("company", "company_name"),
+        ("role", "role_title"),
+        ("description", "summary"),
+    ),
+    "candidate_skills": (
+        ("name", "normalized_name"),
+    ),
+    "candidate_languages": (
+        ("language", "normalized_language"),
+    ),
+    "saved_jobs": (
+        ("saved_at", "updated_at"),
+    ),
+    "profiles": (
+        ("target_role", "current_role"),
+    ),
+    "candidate_links": (
+        ("label", "link_type"),
+    ),
+    "jobs": (
+        ("url", "application_url"),
+    ),
+}
+
+# Writes translate app fields to real schema names.
+_WRITE_ALIASES: dict[str, tuple[tuple[str, str], ...]] = {
+    "resume_versions": (
+        ("plain_text", "raw_text"),
+        ("structured_content", "structured_sections"),
+    ),
+    "job_descriptions": (
+        ("plain_text", "raw_text"),
+        ("structured_content", "structured_sections"),
+    ),
+    "interview_questions": (
+        ("position", "question_index"),
+        ("question", "question_text"),
+        ("question_type", "category"),
+    ),
+    "learning_items": (
+        ("position", "item_order"),
+        ("watch_percent", "progress_percent"),
+        ("progress_percentage", "progress_percent"),
+    ),
+    "learning_paths": (
+        ("progress_percentage", "progress_percent"),
+    ),
+    "ats_analyses": (
+        ("score_breakdown", "breakdown"),
+    ),
+    "ats_evidence": (
+        ("requirement_text", "finding"),
+        ("explanation", "finding"),
+        ("resume_evidence_text", "source_reference"),
+    ),
+    "candidate_projects": (
+        ("title", "name"),
+        ("skills", "technologies"),
+    ),
+    "candidate_preferences": (
+        ("preferred_locations", "locations"),
+    ),
+    "candidate_experiences": (
+        ("company_name", "company"),
+        ("role_title", "role"),
+        ("summary", "description"),
+    ),
+    "saved_jobs": (
+        ("updated_at", "saved_at"),
+    ),
+    "resume_suggestions": (
+        ("section_key", "section"),
+        ("reason", "rationale"),
+        ("decision", "status"),
+        ("validation_status", "status"),
+    ),
+    "jobs": (
+        ("application_url", "url"),
+    ),
+    "candidate_links": (
+        ("link_type", "label"),
+    ),
+}
+
+_ORDER_ALIASES: dict[str, dict[str, str]] = {
+    "saved_jobs": {"updated_at": "saved_at"},
+    "interview_questions": {"position": "question_index"},
+    "learning_items": {"position": "item_order"},
+    "jobs": {"published_at": "created_at"},
+    "candidate_projects": {"display_order": "created_at"},
+    "candidate_experiences": {"display_order": "created_at"},
+    "candidate_education": {"display_order": "created_at"},
+}
+
+_FILTER_ALIASES: dict[str, dict[str, str]] = {
+    "interview_questions": {"position": "question_index", "question": "question_text", "question_type": "category"},
+    "learning_items": {"position": "item_order"},
+    "candidate_projects": {"title": "name"},
+    "resume_suggestions": {"analysis_id": "run_id"},
+}
+
+# Filters on columns that don't exist in the database that should be skipped cleanly
+_FILTER_IGNORES: dict[str, set[str]] = {
+    "jobs": {"is_active"},
+    "resume_improvement_runs": {"ats_analysis_id"},
+    "job_recommendations": {"resume_version_id"},
+    "ats_analyses": {"algorithm_version"},
+    "saved_jobs": {"is_active"},
+}
+
+_UNKNOWN_COLUMN = re.compile(
+    r"(?:Could not find the '([^']+)' column|column (?:[a-zA-Z0-9_]+\.)?([a-zA-Z0-9_]+) does not exist)",
+    re.IGNORECASE,
+)
+
+
+def _apply_read_aliases(table: str, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    aliases = _READ_ALIASES.get(table) or ()
+    if not aliases:
+        return rows
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        for source, dest in aliases:
+            if row.get(dest) in (None, "", {}, []):
+                if row.get(source) not in (None, "", {}, []):
+                    row[dest] = row[source]
+    return rows
+
+
+def _apply_write_aliases(table: str, payload: Any) -> Any:
+    aliases = _WRITE_ALIASES.get(table) or ()
+    if not aliases:
+        return payload
+
+    def _one(row: Any) -> Any:
+        if not isinstance(row, dict):
+            return row
+        updated = dict(row)
+        for source, dest in aliases:
+            if source in updated and dest not in updated:
+                updated[dest] = updated[source]
+        return updated
+
+    if isinstance(payload, list):
+        return [_one(row) for row in payload]
+    return _one(payload)
+
+
+def _sanitize_payload_for_table(table: str, payload: Any) -> Any:
+    """Drop any keys that do not exist in the database table schema to avoid 400 Bad Request."""
+    valid_cols = TABLE_COLUMNS.get(table)
+    if not valid_cols:
+        return payload
+
+    def _clean(row: Any) -> Any:
+        if not isinstance(row, dict):
+            return row
+        return {k: v for k, v in row.items() if k in valid_cols}
+
+    if isinstance(payload, list):
+        return [_clean(r) for r in payload]
+    return _clean(payload)
+
+
+def _unknown_column_name(body: str) -> str | None:
+    match = _UNKNOWN_COLUMN.search(body or "")
+    if match:
+        return match.group(1) or match.group(2)
+    return None
+
+
+def _drop_payload_column(payload: Any, column: str) -> Any:
+    if isinstance(payload, list):
+        return [{k: v for k, v in row.items() if k != column} if isinstance(row, dict) else row for row in payload]
+    if isinstance(payload, dict):
+        return {k: v for k, v in payload.items() if k != column}
+    return payload
+
+
 def _identifier(value: str) -> str:
     if not _IDENTIFIER.fullmatch(value):
         raise ValueError(f"Unsafe field identifier: {value}")
@@ -57,7 +320,6 @@ def _with_file_access_token(settings: Settings, bucket: str, path: str, url: str
 
 
 def _authenticated_file_url(settings: Settings, bucket: str, path: str) -> str:
-    """Build the deployed API route used by all private-file responses."""
     suffix = f"/files/{quote(bucket)}/{quote(path, safe='/')}"
     base = (settings.public_api_base_url or "").rstrip("/")
     prefix = (settings.api_v1_prefix or "/api/v1").rstrip("/")
@@ -69,7 +331,6 @@ def _authenticated_file_url(settings: Settings, bucket: str, path: str) -> str:
 
 
 def _order_value(value: Any) -> tuple[int, Any]:
-    """Sort numeric Firestore fields numerically, while preserving text order."""
     if isinstance(value, bool):
         return (0, int(value))
     if isinstance(value, (int, float)):
@@ -80,15 +341,11 @@ def _order_value(value: Any) -> tuple[int, Any]:
         except ValueError:
             return (1, value.casefold())
     return (1, str(value).casefold())
-class Result:
-    def __init__(self, data: list[dict[str, Any]] | None = None, count: int | None = None):
-        self.data = data or []
-        self.count = count
+
+
 def _safe_object_key(name: str) -> str:
-    # Validate type at producer; enrich error with type/truncated value for telemetry.
     if not isinstance(name, str):
         raise ValueError(f"Invalid storage path: type={type(name).__name__}, value={str(name)[:80]}")
-    # Decode any percent-encoded traversal before check (already decoded by FastAPI, but double-encode guard).
     from urllib.parse import unquote
     decoded = unquote(name)
     relative = Path(decoded)
@@ -97,108 +354,24 @@ def _safe_object_key(name: str) -> str:
     cleaned = "/".join(part for part in relative.as_posix().split("/") if part and part != ".")
     if not cleaned:
         raise ValueError(f"Invalid storage path: type=str, value={name[:80]} empty after cleaning")
-    # Ensure cleaned == original (no // or ./ bypass) — if divergence, reject to avoid prefix bypass.
     if cleaned != decoded.strip("/"):
-        # Allow single slash normalization but reject // or ./ tricks: compare without empty parts.
         normalized = "/".join(p for p in decoded.split("/") if p and p != ".")
         if cleaned != normalized:
             raise ValueError(f"Invalid storage path: type=str, value={name[:80]} normalized mismatch")
     return cleaned
 
 
-class _LegacyFirebaseStorageObject:
-    """Object store backed by Firebase Storage (GCS) under a logical bucket prefix."""
-
-    def __init__(self, settings: Settings, logical_bucket: str):
-        self.settings = settings
-        self.bucket = _bucket_name(logical_bucket)
-
-    def _object_path(self, path: str) -> str:
-        return f"{self.bucket}/{_safe_object_key(path)}"
-
-    def _gcs_bucket(self):
-        from firebase_admin import storage as firebase_storage
-
-        app = firebase_admin_app(self.settings)
-        name = self.settings.resolved_firebase_storage_bucket
-        if not name:
-            raise RuntimeError(
-                "Firebase Storage is not configured. Set FIREBASE_STORAGE_BUCKET "
-                "(for example your-project.appspot.com)."
-            )
-        # Must pass the named Admin app — this project never uses the default app.
-        return firebase_storage.bucket(name, app=app)
-
-    def upload(self, path: str, content: bytes, options: dict[str, Any] | None = None) -> dict[str, Any]:
-        object_path = self._object_path(path)
-        blob = self._gcs_bucket().blob(object_path)
-        if blob.exists() and (options or {}).get("upsert") not in {True, "true"}:
-            raise FileExistsError(path)
-        content_type = (options or {}).get("content-type") or (options or {}).get("content_type")
-        blob.upload_from_string(content, content_type=content_type)
-        return {"path": path}
-
-    def download(self, path: str) -> bytes:
-        blob = self._gcs_bucket().blob(self._object_path(path))
-        if not blob.exists():
-            raise FileNotFoundError(path)
-        return blob.download_as_bytes()
-
-    def remove(self, paths: list[str]) -> list[dict[str, str]]:
-        removed: list[dict[str, str]] = []
-        bucket = self._gcs_bucket()
-        for name in paths:
-            blob = bucket.blob(self._object_path(name))
-            if blob.exists():
-                blob.delete()
-                removed.append({"name": name})
-        return removed
-
-    def list(self, prefix: str = "") -> list[dict[str, Any]]:
-        bucket = self._gcs_bucket()
-        base = self.bucket if not prefix else f"{self.bucket}/{_safe_object_key(prefix)}"
-        search = f"{base}/"
-        iterator = bucket.list_blobs(prefix=search, delimiter="/")
-        items: list[dict[str, Any]] = []
-        for blob in iterator:
-            rel = blob.name[len(search) :] if blob.name.startswith(search) else blob.name
-            if not rel or "/" in rel:
-                continue
-            items.append(
-                {
-                    "name": rel,
-                    "id": secrets.token_hex(8),
-                    "metadata": {"size": int(blob.size or 0)},
-                }
-            )
-        for folder in getattr(iterator, "prefixes", []) or []:
-            rel = folder[len(search) :].rstrip("/") if folder.startswith(search) else folder.rstrip("/")
-            if rel and "/" not in rel:
-                items.append({"name": rel, "id": None, "metadata": {}})
-        return items
-
-    def create_signed_url(self, path: str, expires: int) -> dict[str, str]:
-        """Return authenticated app file URL; bytes live in Firebase Storage.
-
-        Browser access stays on /api/files so ownership is enforced with the app JWT.
-        The expires argument is retained for API compatibility; access is session-gated.
-        """
-        blob = self._gcs_bucket().blob(self._object_path(path))
-        if not blob.exists():
-            raise FileNotFoundError(path)
-        url = _authenticated_file_url(self.settings, self.bucket, path)
-        url = _with_file_access_token(self.settings, self.bucket, path, url, expires)
-        return {"signedURL": url, "authenticated_file_url": url, "expires_in": int(expires)}
+class Result:
+    def __init__(self, data: list[dict[str, Any]] | None = None, count: int | None = None):
+        self.data = data or []
+        self.count = count
 
 
 class SupabaseStorageObject:
-    """Private Supabase Storage bucket used through the server-side service role."""
-
     def __init__(self, settings: Settings, logical_bucket: str):
         self.settings = settings
         self.bucket = _bucket_name(logical_bucket)
         self.storage_bucket = _bucket_name(settings.supabase_storage_bucket)
-        # Reuse a connection pool for all operations through this object.
         self._http = httpx.Client(timeout=30)
 
     def _url(self, path: str = "") -> str:
@@ -235,14 +408,11 @@ class SupabaseStorageObject:
             try:
                 self._request("DELETE", self._url(path))
             except FileNotFoundError:
-                # Storage cleanup is idempotent; a missing object must not
-                # abort account deletion or cleanup of later objects.
                 continue
             removed.append({"name": path})
         return removed
 
     def list(self, prefix: str = "") -> list[dict[str, Any]]:
-        """Paginate Supabase Storage list (limit 1000 per page) until exhausted."""
         base_prefix = f"{self.bucket}/{_safe_object_key(prefix)}" if prefix else self.bucket
         items: list[dict[str, Any]] = []
         offset = 0
@@ -263,17 +433,12 @@ class SupabaseStorageObject:
         return items
 
     def create_signed_url(self, path: str, expires: int) -> dict[str, str]:
-        # The application file route enforces ownership and performs the actual
-        # storage read. Do not perform a second remote HEAD/GET just to build a
-        # same-origin URL for every profile/bootstrap request.
         url = _authenticated_file_url(self.settings, self.bucket, path)
         url = _with_file_access_token(self.settings, self.bucket, path, url, expires)
         return {"signedURL": url, "authenticated_file_url": url, "expires_in": int(expires)}
 
 
 class MemoryStorageObject:
-    """In-process object store for automated tests only (APP_ENV=test)."""
-
     _STORE: dict[str, dict[str, bytes]] = {}
 
     def __init__(self, settings: Settings, logical_bucket: str):
@@ -334,21 +499,12 @@ class MemoryStorageObject:
 
 
 class ObjectStorage:
-    """Object storage facade.
-
-    - APP_ENV=test → in-memory (no network)
-    - Supabase Storage when SUPABASE_URL + service role + bucket are set
-    - otherwise raises ApiError (fail closed — no silent invent of storage)
-    """
-
     def __init__(self, settings: Settings):
         self.settings = settings
         self._memory = str(settings.app_env).lower() == "test"
         self._objects: dict[str, SupabaseStorageObject | MemoryStorageObject] = {}
 
     def from_(self, bucket: str) -> SupabaseStorageObject | MemoryStorageObject:
-        from app.core.errors import ApiError
-
         logical_bucket = _bucket_name(bucket)
         cached = self._objects.get(logical_bucket)
         if cached is not None:
@@ -371,20 +527,16 @@ class ObjectStorage:
         return storage
 
 
-class FirestoreResult(Result):
-    pass
-
-
-class FirestoreQuery:
-    def __init__(self, client: FirestoreClient, table: str):
+class SupabaseQuery:
+    def __init__(self, client: SupabaseDatabaseClient, table: str):
         self.client = client
         self.table_name = _identifier(table)
-        if self.table_name not in _TABLES and self.table_name != "_setup_checks":
+        if self.table_name not in _TABLES:
             raise ValueError(f"Unknown table: {table}")
         self.columns = ["*"]
+        self.requested_columns: list[str] = ["*"]
         self.filters: list[tuple[str, str, Any]] = []
         self.orders: list[tuple[str, bool]] = []
-        self.server_orders: list[tuple[str, bool]] = []
         self.max_rows: int | None = None
         self.single_row = False
         self.count_requested = False
@@ -392,364 +544,564 @@ class FirestoreQuery:
         self.operation = "select"
         self.payload: Any = None
 
-    def select(self, columns: str = "*", count: str | None = None, head: bool = False):
+    def select(self, columns: str = "*", count: str | None = None, head: bool = False) -> SupabaseQuery:
         parts = [column.strip() for column in columns.split(",") if column.strip()]
-        for part in parts:
-            if "(" in part and ")" in part:
-                raise ValueError(
-                    f"Unsupported nested select syntax '{part}'. "
-                    "Fetch related rows with explicit queries (Firestore has no relational embeds)."
-                )
         self.columns = parts or ["*"]
+        self.requested_columns = list(parts or ["*"])
         self.count_requested = count == "exact"
         self.head = head
         return self
 
-    def eq(self, column: str, value: Any): return self._filter("==", column, value)
-    def neq(self, column: str, value: Any): return self._filter("!=", column, value)
-    def ilike(self, column: str, value: Any):
-        # Firestore has no case-insensitive LIKE operator. Keep this compatible
-        # with the Supabase query surface and apply the pattern after retrieval.
-        self.filters.append(("ilike", _identifier(column), str(value or "")))
-        return self
-    def lt(self, column: str, value: Any): return self._filter("<", column, value)
-    def lte(self, column: str, value: Any): return self._filter("<=", column, value)
-    def gt(self, column: str, value: Any): return self._filter(">", column, value)
-    def gte(self, column: str, value: Any): return self._filter(">=", column, value)
-    def in_(self, column: str, values: list[Any]): return self._filter("in", column, values)
-    def is_(self, column: str, value: str):
-        # Soft-delete: match documents where field is null OR missing.
-        # Stored as a special filter applied client-side after stream.
-        if str(value).lower() == "null":
-            self.filters.append(("is_null_or_missing", _identifier(column), None))
-            return self
-        return self._filter("==", column, None)
+    def eq(self, column: str, value: Any) -> SupabaseQuery: return self._filter("eq", column, value)
+    def neq(self, column: str, value: Any) -> SupabaseQuery: return self._filter("neq", column, value)
+    def ilike(self, column: str, value: Any) -> SupabaseQuery: return self._filter("ilike", column, value)
+    def lt(self, column: str, value: Any) -> SupabaseQuery: return self._filter("lt", column, value)
+    def lte(self, column: str, value: Any) -> SupabaseQuery: return self._filter("lte", column, value)
+    def gt(self, column: str, value: Any) -> SupabaseQuery: return self._filter("gt", column, value)
+    def gte(self, column: str, value: Any) -> SupabaseQuery: return self._filter("gte", column, value)
+    def in_(self, column: str, values: list[Any]) -> SupabaseQuery: return self._filter("in", column, list(values or []))
+    def is_(self, column: str, value: str) -> SupabaseQuery: return self._filter("is", column, value)
 
-    def _filter(self, operator: str, column: str, value: Any):
+    def _filter(self, operator: str, column: str, value: Any) -> SupabaseQuery:
         self.filters.append((operator, _identifier(column), value))
         return self
 
-    def order(self, column: str, desc: bool = False, *, server: bool = False):
-        normalized = (_identifier(column), desc)
-        self.orders.append(normalized)
-        if server:
-            self.server_orders.append(normalized)
+    def order(self, column: str, desc: bool = False, *, server: bool = False) -> SupabaseQuery:
+        self.orders.append((_identifier(column), desc))
         return self
 
-    def limit(self, amount: int):
+    def limit(self, amount: int) -> SupabaseQuery:
         self.max_rows = max(0, int(amount))
         return self
-    def single(self):
-        self.max_rows, self.single_row = 1, True
+
+    def single(self) -> SupabaseQuery:
+        self.max_rows = 1
+        self.single_row = True
         return self
-    def insert(self, payload):
-        self.operation, self.payload = "insert", payload
+
+    def insert(self, payload: Any) -> SupabaseQuery:
+        self.operation = "insert"
+        self.payload = payload
         return self
-    def update(self, payload):
-        self.operation, self.payload = "update", payload
+
+    def update(self, payload: Any) -> SupabaseQuery:
+        self.operation = "update"
+        self.payload = payload
         return self
-    def upsert(self, payload):
-        self.operation, self.payload = "upsert", payload
+
+    def upsert(self, payload: Any) -> SupabaseQuery:
+        self.operation = "upsert"
+        self.payload = payload
         return self
-    def delete(self):
+
+    def delete(self) -> SupabaseQuery:
         self.operation = "delete"
         return self
 
-    def execute(self) -> FirestoreResult:
-        collection = self.client.db.collection(self.table_name)
-        if self.operation in {"insert", "upsert"}:
-            rows = self.payload if isinstance(self.payload, list) else [self.payload]
-            output = []
-            for raw in rows:
-                row = dict(raw or {})
-                if self.operation == "upsert" and self.table_name in {
-                    "candidate_preferences",
-                    "notification_preferences",
-                    "privacy_preferences",
-                    "saved_jobs",
-                }:
-                    identity = (
-                        f"{self.table_name}:user:{row.get('user_id')}"
-                        if self.table_name != "saved_jobs"
-                        else f"{self.table_name}:user:{row.get('user_id')}:job:{row.get('job_id')}"
-                    )
-                    doc_id = str(uuid.uuid5(uuid.NAMESPACE_URL, identity))
-                else:
-                    doc_id = str(row.get("id") or uuid.uuid4())
-                row["id"] = doc_id
-                if self.operation == "upsert":
-                    existing = self._find_upsert_target(collection, row)
-                    if existing is not None:
-                        existing.reference.set(row, merge=True)
-                        row = {**(existing.to_dict() or {}), **row}
+    def _build_params(self) -> dict[str, Any]:
+        params: dict[str, Any] = {}
+        valid_cols = TABLE_COLUMNS.get(self.table_name)
+        if self.operation == "select":
+            if valid_cols and "*" not in self.columns:
+                select_cols: list[str] = []
+                for c in self.columns:
+                    if c in valid_cols:
+                        select_cols.append(c)
                     else:
-                        collection.document(doc_id).set(row)
-                else:
-                    collection.document(doc_id).create(row)
-                output.append(row)
-            return FirestoreResult(output)
-
-        docs = self._documents(collection)
-        if self.operation == "delete":
-            output = []
-            for document in docs:
-                data = document.to_dict() or {}
-                output.append({**data, "id": document.id})
-                document.reference.delete()
-            return FirestoreResult(output)
-        if self.operation == "update":
-            output = []
-            for document in docs:
-                document.reference.set(dict(self.payload or {}), merge=True)
-                output.append({**(document.to_dict() or {}), **dict(self.payload or {}), "id": document.id})
-            # Direct id write: query-by-field can miss right after create, or when the
-            # document id equals the payload id but the `id` field filter is flaky.
-            if not output:
-                direct = self._direct_id_update(collection)
-                if direct is not None:
-                    output.append(direct)
-            return FirestoreResult(output)
-
-        data = [] if self.head else [self._project(document) for document in docs]
-        count = len(docs) if self.count_requested else None
-        if self.single_row:
-            # Always return a list (0 or 1 row) so Result.data has a stable type.
-            return FirestoreResult(data[:1], count)
-        return FirestoreResult(data, count)
-
-    def _documents(self, collection):
-        query = collection
-        post_filters: list[tuple[str, str, Any]] = []
-        oversized_in: tuple[str, list[Any]] | None = None
-        for operator, column, value in self.filters:
-            if operator == "is_null_or_missing":
-                post_filters.append((operator, column, value))
-                continue
-            if operator == "ilike":
-                post_filters.append((operator, column, value))
-                continue
-            if operator == "in":
-                values = list(value or [])
-                if not values:
-                    return []
-                if len(values) > 30 and oversized_in is None:
-                    oversized_in = (column, values)
-                    continue
-            query = query.where(filter=self.client.field_filter(column, operator, value))
-        # Firestore excludes documents that do not contain an ordered field.
-        # Several legacy records legitimately lack recency fields, so apply
-        # ordering after retrieval and keep missing values at the end.
-        # Soft-delete (is_null_or_missing) is applied client-side. Never apply a
-        # server-side limit before that filter — soft-deleted docs would consume
-        # the window and hide live rows (e.g. the one active resume among many deleted).
-        if oversized_in is not None:
-            in_column, in_values = oversized_in
-            docs = []
-            for offset in range(0, len(in_values), 30):
-                chunk_query = collection
-                for operator, column, value in self.filters:
-                    if operator == "is_null_or_missing":
-                        continue
-                    chunk_value = in_values[offset : offset + 30] if operator == "in" and column == in_column else value
-                    chunk_query = chunk_query.where(filter=self.client.field_filter(column, operator, chunk_value))
-                docs.extend(chunk_query.stream())
-            unique: dict[str, Any] = {document.id: document for document in docs}
-            docs = list(unique.values())
-        else:
-            if self.max_rows is not None and not post_filters and not self.orders:
-                query = query.limit(self.max_rows)
-            if self.server_orders and not post_filters:
-                try:
-                    ordered_query = query
-                    for column, desc in self.server_orders:
-                        ordered_query = ordered_query.order_by(column, direction=self.client.direction(desc))
-                    if self.max_rows is not None:
-                        ordered_query = ordered_query.limit(self.max_rows)
-                    docs = list(ordered_query.stream())
-                except Exception as exc:
-                    # Composite indexes are an operational concern, and a missing
-                    # optional index must not blank the authenticated workspace.
-                    # Re-run the filtered query without server ordering; the
-                    # existing client-side sort below preserves the same order.
-                    from google.api_core.exceptions import FailedPrecondition
-
-                    if not isinstance(exc, FailedPrecondition) or "requires an index" not in str(exc).lower():
-                        raise
-                    logger.warning(
-                        "firestore_missing_index_fallback table=%s order=%s",
-                        self.table_name,
-                        self.server_orders,
-                    )
-                    docs = list(query.stream())
+                        source = next((s for s, d in _READ_ALIASES.get(self.table_name, ()) if d == c and s in valid_cols), None)
+                        if source and source not in select_cols:
+                            select_cols.append(source)
+                if not select_cols:
+                    select_cols = ["id"] if "id" in valid_cols else ["*"]
+                params["select"] = ",".join(select_cols)
             else:
-                docs = list(query.stream())
-        if post_filters:
-            kept = []
-            for document in docs:
-                data = document.to_dict() or {}
-                ok = True
-                for operator, column, _value in post_filters:
-                    if operator == "is_null_or_missing":
-                        if column in data and data.get(column) is not None:
-                            ok = False
-                            break
-                    elif operator == "ilike":
-                        pattern = re.escape(str(_value)).replace(r"%", ".*").replace(r"_", ".")
-                        candidate = data.get(column)
-                        if candidate is None or re.fullmatch(pattern, str(candidate), flags=re.IGNORECASE) is None:
-                            ok = False
-                            break
-                if ok:
-                    kept.append(document)
-            docs = kept
-        for column, desc in reversed(self.orders):
-            present = []
-            missing = []
-            for document in docs:
-                value = (document.to_dict() or {}).get(column)
-                (missing if value is None else present).append(document)
-            present.sort(
-                key=lambda document: _order_value((document.to_dict() or {}).get(column)),
-                reverse=desc,
-            )
-            docs = present + missing
-        if self.max_rows is not None and self.orders:
-            docs = docs[: self.max_rows]
-        elif self.max_rows is not None:
-            docs = docs[: self.max_rows]
-        return docs
+                params["select"] = ",".join(self.columns)
 
-    def _project(self, document):
-        data = document.to_dict() or {}
-        data["id"] = document.id
-        if "*" not in self.columns:
-            data = {key: data.get(key) for key in self.columns if key in data}
-            data["id"] = document.id
-        return data
+            if self.orders:
+                order_specs: list[str] = []
+                for col, desc in self.orders:
+                    real_col: str | None = col
+                    if valid_cols and col not in valid_cols:
+                        real_col = _ORDER_ALIASES.get(self.table_name, {}).get(col)
+                        if not real_col:
+                            source = next((s for s, d in _READ_ALIASES.get(self.table_name, ()) if d == col and s in valid_cols), None)
+                            real_col = source
+                        if not real_col:
+                            real_col = "created_at" if "created_at" in valid_cols else ("saved_at" if "saved_at" in valid_cols else None)
+                    if real_col:
+                        order_specs.append(f"{real_col}.desc" if desc else f"{real_col}.asc")
+                if order_specs:
+                    params["order"] = ",".join(order_specs)
 
-    def _find_upsert_target(self, collection, row):
-        keys = {"user_id"} if self.table_name in {"candidate_preferences", "notification_preferences", "privacy_preferences"} else {"user_id", "job_id"} if self.table_name == "saved_jobs" else {"id"}
-        query = collection
-        for key in keys.intersection(row):
-            query = query.where(filter=self.client.field_filter(key, "==", row[key]))
-        return next(iter(query.limit(1).stream()), None)
+            if self.max_rows is not None:
+                params["limit"] = str(self.max_rows)
 
-    def _direct_id_update(self, collection):
-        """Update by document id when equality filters include id (and optional user_id)."""
-        doc_id = None
-        user_id = None
-        for operator, column, value in self.filters:
-            if operator != "==":
+        ignores = _FILTER_IGNORES.get(self.table_name, set())
+        for op, col, val in self.filters:
+            if col in ignores:
                 continue
-            if column == "id":
-                doc_id = str(value)
-            elif column == "user_id":
-                user_id = str(value)
-        if not doc_id:
-            return None
-        snap = collection.document(doc_id).get()
-        if not snap.exists:
-            return None
-        data = snap.to_dict() or {}
-        if user_id is not None and str(data.get("user_id") or "") != user_id:
-            return None
-        payload = dict(self.payload or {})
-        snap.reference.set(payload, merge=True)
-        return {**data, **payload, "id": snap.id}
+            real_col = col
+            if valid_cols and col not in valid_cols:
+                alias = _FILTER_ALIASES.get(self.table_name, {}).get(col)
+                if alias and alias in valid_cols:
+                    real_col = alias
+                else:
+                    source = next((s for s, d in _READ_ALIASES.get(self.table_name, ()) if d == col and s in valid_cols), None)
+                    if source and source in valid_cols:
+                        real_col = source
+                    else:
+                        logger.warning("omitting_unknown_filter_column table=%s col=%s", self.table_name, col)
+                        continue
+            if op == "eq":
+                params[real_col] = f"eq.{val}"
+            elif op == "neq":
+                params[real_col] = f"neq.{val}"
+            elif op == "ilike":
+                params[real_col] = f"ilike.{val}"
+            elif op == "lt":
+                params[real_col] = f"lt.{val}"
+            elif op == "lte":
+                params[real_col] = f"lte.{val}"
+            elif op == "gt":
+                params[real_col] = f"gt.{val}"
+            elif op == "gte":
+                params[real_col] = f"gte.{val}"
+            elif op == "is":
+                params[real_col] = f"is.{str(val).lower()}"
+            elif op == "in":
+                items = []
+                for item in val:
+                    s = str(item)
+                    if "," in s or '"' in s:
+                        items.append(f'"{s}"')
+                    else:
+                        items.append(s)
+                params[real_col] = f"in.({','.join(items)})"
+        return params
+
+    def execute(self) -> Result:
+        base_url = f"{self.client.settings.resolved_supabase_url}/rest/v1/{self.table_name}"
+        server_key = self.client.settings.supabase_server_key
+        headers = {
+            "apikey": server_key,
+            "Authorization": f"Bearer {server_key}",
+            "Content-Type": "application/json",
+        }
+
+        params = self._build_params()
+
+        try:
+            if self.operation == "select":
+                if self.count_requested:
+                    headers["Prefer"] = "count=exact"
+                method = "HEAD" if self.head else "GET"
+                resp = self.client.http.request(method, base_url, headers=headers, params=params)
+                resp.raise_for_status()
+
+                count = None
+                if self.count_requested:
+                    range_header = resp.headers.get("content-range", "")
+                    if "/" in range_header:
+                        total_str = range_header.split("/")[-1].strip()
+                        if total_str.isdigit():
+                            count = int(total_str)
+
+                if self.head:
+                    return Result([], count)
+
+                data = resp.json() or []
+                if not isinstance(data, list):
+                    data = [data]
+                if self.single_row:
+                    data = data[:1]
+                data = _apply_read_aliases(self.table_name, data)
+                # Ensure all requested columns exist in returned row dictionaries
+                req_cols = getattr(self, "requested_columns", self.columns)
+                if "*" not in req_cols:
+                    for row in data:
+                        if isinstance(row, dict):
+                            for col in req_cols:
+                                if col not in row:
+                                    if self.table_name == "profiles" and col == "current_role":
+                                        row[col] = row.get("target_role")
+                                    elif self.table_name == "saved_jobs" and col == "updated_at":
+                                        row[col] = row.get("saved_at")
+                                    else:
+                                        row[col] = None
+                return Result(data, count)
+
+            elif self.operation == "insert":
+                headers["Prefer"] = "return=representation"
+                rows = _apply_write_aliases(
+                    self.table_name, self.payload if isinstance(self.payload, list) else [self.payload]
+                )
+                rows = _sanitize_payload_for_table(self.table_name, rows)
+                resp = None
+                for _ in range(12):
+                    resp = self.client.http.post(base_url, headers=headers, json=rows)
+                    if resp.status_code != 400:
+                        break
+                    missing = _unknown_column_name(resp.text)
+                    if not missing:
+                        break
+                    rows = _drop_payload_column(rows, missing)
+                resp.raise_for_status()
+                data = resp.json() or []
+                if not isinstance(data, list):
+                    data = [data]
+                return Result(_apply_read_aliases(self.table_name, data))
+
+            elif self.operation == "update":
+                headers["Prefer"] = "return=representation"
+                body = _apply_write_aliases(self.table_name, self.payload)
+                body = _sanitize_payload_for_table(self.table_name, body)
+                resp = None
+                for _ in range(12):
+                    resp = self.client.http.patch(base_url, headers=headers, params=params, json=body)
+                    if resp.status_code != 400:
+                        break
+                    missing = _unknown_column_name(resp.text)
+                    if not missing:
+                        break
+                    body = _drop_payload_column(body, missing)
+                resp.raise_for_status()
+                data = resp.json() or []
+                if not isinstance(data, list):
+                    data = [data]
+                return Result(_apply_read_aliases(self.table_name, data))
+
+            elif self.operation == "upsert":
+                headers["Prefer"] = "resolution=merge-duplicates,return=representation"
+                rows = _apply_write_aliases(
+                    self.table_name, self.payload if isinstance(self.payload, list) else [self.payload]
+                )
+                rows = _sanitize_payload_for_table(self.table_name, rows)
+                resp = None
+                for _ in range(12):
+                    resp = self.client.http.post(base_url, headers=headers, json=rows)
+                    if resp.status_code != 400:
+                        break
+                    missing = _unknown_column_name(resp.text)
+                    if not missing:
+                        break
+                    rows = _drop_payload_column(rows, missing)
+                resp.raise_for_status()
+                data = resp.json() or []
+                if not isinstance(data, list):
+                    data = [data]
+                return Result(_apply_read_aliases(self.table_name, data))
+
+            elif self.operation == "delete":
+                headers["Prefer"] = "return=representation"
+                resp = self.client.http.delete(base_url, headers=headers, params=params)
+                resp.raise_for_status()
+                data = resp.json() or []
+                if not isinstance(data, list):
+                    data = [data]
+                return Result(data)
+
+        except httpx.HTTPStatusError as exc:
+            body_snippet = exc.response.text[:300] if exc.response.text else ""
+            logger.error("supabase_http_error table=%s status=%s body=%s", self.table_name, exc.response.status_code, body_snippet)
+            postgrest_code = ""
+            postgrest_message = ""
+            try:
+                payload = exc.response.json()
+            except (ValueError, json.JSONDecodeError):
+                payload = None
+            if isinstance(payload, dict):
+                postgrest_code = str(payload.get("code") or "")
+                postgrest_message = str(payload.get("message") or "")
+            if postgrest_code == "42501" or postgrest_message.lower().startswith("permission denied"):
+                raise ApiError(
+                    503,
+                    "database_privileges_missing",
+                    "Supabase tables exist, but the API role cannot access them. "
+                    "Run docs/database/supabase-grants.sql in the Supabase SQL Editor.",
+                ) from exc
+            detail = f"Supabase query failed: HTTP {exc.response.status_code}"
+            if body_snippet:
+                detail = f"{detail} ({body_snippet})"
+            raise ApiError(503, "database_unavailable", detail) from exc
+        except httpx.RequestError as exc:
+            logger.error("supabase_request_error table=%s error=%s", self.table_name, exc)
+            raise ApiError(503, "database_unavailable", "Supabase database could not be reached.") from exc
 
 
-class FirestoreClient:
+class MemoryQuery:
+    def __init__(self, client: MemoryDatabaseClient, table: str):
+        self.client = client
+        self.table_name = _identifier(table)
+        self.columns = ["*"]
+        self.requested_columns: list[str] = ["*"]
+        self.filters: list[tuple[str, str, Any]] = []
+        self.orders: list[tuple[str, bool]] = []
+        self.max_rows: int | None = None
+        self.single_row = False
+        self.count_requested = False
+        self.head = False
+        self.operation = "select"
+        self.payload: Any = None
+
+    def select(self, columns: str = "*", count: str | None = None, head: bool = False) -> MemoryQuery:
+        parts = [column.strip() for column in columns.split(",") if column.strip()]
+        self.columns = parts or ["*"]
+        self.requested_columns = list(parts or ["*"])
+        self.count_requested = count == "exact"
+        self.head = head
+        return self
+
+    def eq(self, column: str, value: Any) -> MemoryQuery: return self._filter("eq", column, value)
+    def neq(self, column: str, value: Any) -> MemoryQuery: return self._filter("neq", column, value)
+    def ilike(self, column: str, value: Any) -> MemoryQuery: return self._filter("ilike", column, value)
+    def lt(self, column: str, value: Any) -> MemoryQuery: return self._filter("lt", column, value)
+    def lte(self, column: str, value: Any) -> MemoryQuery: return self._filter("lte", column, value)
+    def gt(self, column: str, value: Any) -> MemoryQuery: return self._filter("gt", column, value)
+    def gte(self, column: str, value: Any) -> MemoryQuery: return self._filter("gte", column, value)
+    def in_(self, column: str, values: list[Any]) -> MemoryQuery: return self._filter("in", column, list(values or []))
+    def is_(self, column: str, value: str) -> MemoryQuery: return self._filter("is", column, value)
+
+    def _filter(self, operator: str, column: str, value: Any) -> MemoryQuery:
+        self.filters.append((operator, _identifier(column), value))
+        return self
+
+    def order(self, column: str, desc: bool = False, *, server: bool = False) -> MemoryQuery:
+        self.orders.append((_identifier(column), desc))
+        return self
+
+    def limit(self, amount: int) -> MemoryQuery:
+        self.max_rows = max(0, int(amount))
+        return self
+
+    def single(self) -> MemoryQuery:
+        self.max_rows = 1
+        self.single_row = True
+        return self
+
+    def insert(self, payload: Any) -> MemoryQuery:
+        self.operation = "insert"
+        self.payload = payload
+        return self
+
+    def update(self, payload: Any) -> MemoryQuery:
+        self.operation = "update"
+        self.payload = payload
+        return self
+
+    def upsert(self, payload: Any) -> MemoryQuery:
+        self.operation = "upsert"
+        self.payload = payload
+        return self
+
+    def delete(self) -> MemoryQuery:
+        self.operation = "delete"
+        return self
+
+    def _matches(self, row: dict[str, Any]) -> bool:
+        ignores = _FILTER_IGNORES.get(self.table_name, set())
+        for op, col, val in self.filters:
+            if col in ignores:
+                continue
+            actual = row.get(col)
+            if op == "eq":
+                if str(actual) != str(val) and actual != val:
+                    return False
+            elif op == "neq":
+                if str(actual) == str(val) or actual == val:
+                    return False
+            elif op == "ilike":
+                pattern = re.escape(str(val or "")).replace(r"%", ".*").replace(r"_", ".")
+                if actual is None or re.fullmatch(pattern, str(actual), flags=re.IGNORECASE) is None:
+                    return False
+            elif op == "lt":
+                if actual is None or actual >= val:
+                    return False
+            elif op == "lte":
+                if actual is None or actual > val:
+                    return False
+            elif op == "gt":
+                if actual is None or actual <= val:
+                    return False
+            elif op == "gte":
+                if actual is None or actual < val:
+                    return False
+            elif op == "is":
+                if str(val).lower() == "null":
+                    if actual is not None:
+                        return False
+                else:
+                    if actual != val:
+                        return False
+            elif op == "in":
+                str_vals = {str(v) for v in val}
+                if str(actual) not in str_vals and actual not in val:
+                    return False
+        return True
+
+    def execute(self) -> Result:
+        store = self.client.get_table(self.table_name)
+        if self.operation == "insert":
+            rows = self.payload if isinstance(self.payload, list) else [self.payload]
+            rows = _apply_write_aliases(self.table_name, rows)
+            rows = _sanitize_payload_for_table(self.table_name, rows)
+            output = []
+            for r in rows:
+                row = copy.deepcopy(dict(r or {}))
+                if "id" not in row or not row["id"]:
+                    row["id"] = str(uuid.uuid4())
+                store.append(row)
+                output.append(copy.deepcopy(row))
+            return Result(_apply_read_aliases(self.table_name, output))
+
+        elif self.operation == "upsert":
+            rows = self.payload if isinstance(self.payload, list) else [self.payload]
+            rows = _apply_write_aliases(self.table_name, rows)
+            rows = _sanitize_payload_for_table(self.table_name, rows)
+            output = []
+            for r in rows:
+                row = copy.deepcopy(dict(r or {}))
+                key_field = "id"
+                if self.table_name in {"candidate_preferences", "notification_preferences", "privacy_preferences"}:
+                    key_field = "user_id"
+                elif self.table_name == "saved_jobs":
+                    key_field = ("user_id", "job_id")
+
+                existing = None
+                for idx, item in enumerate(store):
+                    if isinstance(key_field, tuple):
+                        if all(item.get(k) == row.get(k) for k in key_field):
+                            existing = idx
+                            break
+                    else:
+                        if item.get(key_field) == row.get(key_field):
+                            existing = idx
+                            break
+
+                if existing is not None:
+                    store[existing].update(row)
+                    output.append(copy.deepcopy(store[existing]))
+                else:
+                    if "id" not in row or not row["id"]:
+                        row["id"] = str(uuid.uuid4())
+                    store.append(row)
+                    output.append(copy.deepcopy(row))
+            return Result(_apply_read_aliases(self.table_name, output))
+
+        elif self.operation == "update":
+            output = []
+            payload = _apply_write_aliases(self.table_name, self.payload)
+            payload = _sanitize_payload_for_table(self.table_name, payload)
+            for item in store:
+                if self._matches(item):
+                    item.update(copy.deepcopy(dict(payload or {})))
+                    output.append(copy.deepcopy(item))
+            return Result(_apply_read_aliases(self.table_name, output))
+
+        elif self.operation == "delete":
+            kept = []
+            deleted = []
+            for item in store:
+                if self._matches(item):
+                    deleted.append(copy.deepcopy(item))
+                else:
+                    kept.append(item)
+            self.client.set_table(self.table_name, kept)
+            return Result(deleted)
+
+        matching = [copy.deepcopy(item) for item in store if self._matches(item)]
+        matching = _apply_read_aliases(self.table_name, matching)
+        total_count = len(matching) if self.count_requested else None
+
+        for col, desc in reversed(self.orders):
+            real_col = col
+            if self.table_name in TABLE_COLUMNS and col not in TABLE_COLUMNS[self.table_name]:
+                real_col = _ORDER_ALIASES.get(self.table_name, {}).get(col)
+                if not real_col:
+                    source = next((s for s, d in _READ_ALIASES.get(self.table_name, ()) if d == col), None)
+                    real_col = source or "created_at"
+            matching.sort(key=lambda r: _order_value(r.get(real_col) if real_col else r.get(col)), reverse=desc)
+
+        if self.max_rows is not None:
+            matching = matching[: self.max_rows]
+
+        req_cols = getattr(self, "requested_columns", self.columns)
+        if "*" not in req_cols:
+            res_matching = []
+            for r in matching:
+                row_dict = {}
+                for k in req_cols:
+                    if k in r:
+                        row_dict[k] = r.get(k)
+                    elif self.table_name == "profiles" and k == "current_role":
+                        row_dict[k] = r.get("target_role")
+                    elif self.table_name == "saved_jobs" and k == "updated_at":
+                        row_dict[k] = r.get("saved_at")
+                    else:
+                        row_dict[k] = None
+                res_matching.append(row_dict)
+            matching = res_matching
+
+        if self.head:
+            return Result([], total_count)
+        if self.single_row:
+            return Result(matching[:1], total_count)
+        return Result(matching, total_count)
+
+
+class MemoryDatabaseClient:
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.db = _firestore_for(settings)
         self.storage = ObjectStorage(settings)
+        self._tables: dict[str, list[dict[str, Any]]] = {}
 
-    @staticmethod
-    def field_filter(column: str, operator: str, value: Any):
-        from google.cloud.firestore_v1.base_query import FieldFilter
-        return FieldFilter(column, operator, value)
+    def get_table(self, name: str) -> list[dict[str, Any]]:
+        return self._tables.setdefault(name, [])
 
-    @staticmethod
-    def direction(desc: bool):
-        from google.cloud.firestore_v1 import Query as FirestoreSdkQuery
-        return FirestoreSdkQuery.DESCENDING if desc else FirestoreSdkQuery.ASCENDING
+    def set_table(self, name: str, rows: list[dict[str, Any]]) -> None:
+        self._tables[name] = rows
 
-    def table(self, name: str) -> FirestoreQuery: return FirestoreQuery(self, name)
-    def attach_nested(self, table: str, rows: list[dict[str, Any]], columns: list[str]) -> None: return None
+    def table(self, name: str) -> MemoryQuery:
+        return MemoryQuery(self, name)
 
 
-_firestore_cache: dict[str, Any] = {}
-_firestore_app_cache: dict[str, Any] = {}
+class SupabaseDatabaseClient:
+    def __init__(self, settings: Settings):
+        self.settings = settings
+        self.storage = ObjectStorage(settings)
+        self.http = httpx.Client(timeout=30)
 
-def _firestore_for(settings: Settings):
-    from firebase_admin import firestore
-
-    cache_key = f"{settings.firebase_project_id}:{settings.firebase_database_id}"
-    if cache_key in _firestore_cache:
-        return _firestore_cache[cache_key]
-    app = firebase_admin_app(settings)
-    client = firestore.client(app=app, database_id=settings.firebase_database_id)
-    _firestore_cache[cache_key] = client
-    return client
-
-
-def firebase_admin_app(settings: Settings):
-    import firebase_admin
-    from firebase_admin import credentials
-
-    credential_path = Path(settings.firebase_credentials_path)
-    if not credential_path.is_absolute():
-        credential_path = (Path(__file__).resolve().parents[3] / credential_path).resolve()
-    if not credential_path.is_file():
-        raise RuntimeError(f"Firebase credentials file not found: {credential_path}")
-    if credential_path.stat().st_size == 0:
-        raise RuntimeError("Firebase credentials file is empty")
-    try:
-        certificate = credentials.Certificate(str(credential_path))
-    except (OSError, ValueError) as exc:
-        raise RuntimeError("Firebase credentials file is invalid") from exc
-    credential_project = getattr(certificate, "project_id", None)
-    if credential_project and credential_project != settings.firebase_project_id:
-        raise RuntimeError("Firebase project mismatch between FIREBASE_PROJECT_ID and service-account credentials")
-    app_name = f"career-copilot-{settings.firebase_project_id}-{settings.firebase_database_id}"
-    options: dict[str, str] = {"projectId": settings.firebase_project_id}
-    try:
-        return firebase_admin.get_app(app_name)
-    except ValueError:
-        return firebase_admin.initialize_app(certificate, options, name=app_name)
+    def table(self, name: str) -> SupabaseQuery:
+        return SupabaseQuery(self, name)
 
 
 _db_client_cache: dict[str, Any] = {}
 
-def database_client(settings: Settings):
-    from app.core.errors import ApiError
 
-    if not settings.firebase_configured:
+def database_client(settings: Settings) -> SupabaseDatabaseClient | MemoryDatabaseClient:
+    if str(settings.app_env).lower() == "test":
+        cache_key = "test_memory_db"
+        if cache_key not in _db_client_cache:
+            _db_client_cache[cache_key] = MemoryDatabaseClient(settings)
+        return _db_client_cache[cache_key]
+
+    if not settings.database_configured:
         raise ApiError(
             503,
             "database_not_configured",
-            "Firestore is not configured. Set FIREBASE_PROJECT_ID and FIREBASE_CREDENTIALS_PATH.",
+            "Supabase database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
         )
-    cache_key = f"{settings.firebase_project_id}:{settings.firebase_database_id}:{settings.firebase_credentials_path}"
+
+    cache_key = f"{settings.resolved_supabase_url}:{settings.supabase_server_key}"
     if cache_key in _db_client_cache:
         return _db_client_cache[cache_key]
-    try:
-        client = FirestoreClient(settings)
-        _db_client_cache[cache_key] = client
-        return client
-    except RuntimeError as exc:
-        raise ApiError(503, "database_unavailable", "Firestore is unavailable or misconfigured.") from exc
+
+    client = SupabaseDatabaseClient(settings)
+    _db_client_cache[cache_key] = client
+    return client
 
 
 def _probe_with_timeout(label: str, fn, timeout_seconds: float = 3.0) -> tuple[bool, str | None]:
-    """Run a probe in a worker thread so a hung network call cannot block the API forever.
-
-    Important: do not use ``with ThreadPoolExecutor`` here — its default
-    ``shutdown(wait=True)`` would still wait for the hung worker after a timeout,
-    re-introducing the hang we are trying to prevent.
-    """
-    from concurrent.futures import ThreadPoolExecutor
-    from concurrent.futures import TimeoutError as FuturesTimeout
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 
     timeout = max(0.5, float(timeout_seconds))
     pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"probe-{label}")
@@ -761,65 +1113,70 @@ def _probe_with_timeout(label: str, fn, timeout_seconds: float = 3.0) -> tuple[b
         except FuturesTimeout:
             future.cancel()
             return False, f"{label}_probe_timeout_after_{timeout:.1f}s"
-        except Exception as exc:  # noqa: BLE001 — probe surfaces any failure as status text
+        except Exception as exc:
             return False, f"{type(exc).__name__}: {exc}"[:240]
     finally:
-        # wait=False so a stuck Firestore/Storage call cannot delay the HTTP response.
         pool.shutdown(wait=False, cancel_futures=True)
 
 
 _probe_cache: dict[str, tuple[float, dict[str, Any]]] = {}
 
-def database_probe(settings: Settings, *, timeout_seconds: float = 3.0) -> dict[str, Any]:
-    """Reachability check for Firestore + object storage with hard timeouts.
 
-    Used by /health and /health/database. Timeouts keep readiness checks from
-    hanging when a remote dependency is slow (common cause of ``npm run dev``
-    failing after uvicorn has already started).
-    Producer fix: concurrent probes + 10s cache (was sequential sum 6s, now max 3s, cached <10ms).
-    """
-    # Cache probe for 10s to avoid hammering Firestore on every /health poll (frontend polls every 2-3s)
-    cache_key = f"{settings.firebase_project_id}:{settings.firebase_database_id}:{settings.supabase_storage_bucket}:{timeout_seconds}"
+def database_probe(settings: Settings, *, timeout_seconds: float = 3.0) -> dict[str, Any]:
+    cache_key = f"{settings.resolved_supabase_url}:{settings.supabase_storage_bucket}:{timeout_seconds}"
     now = time.time()
     if cache_key in _probe_cache:
         ts, cached = _probe_cache[cache_key]
         if now - ts < 10:
             return cached
+
     storage_engine = "supabase_storage" if settings.supabase_storage_configured else "unconfigured"
     storage_bucket = settings.supabase_storage_bucket or None
     result: dict[str, Any] = {
         "status": "unreachable",
         "configured": settings.database_configured,
-        "database": settings.firebase_database_id,
-        "engine": "firestore",
-        "project": settings.firebase_project_id or None,
+        "database": "postgres",
+        "engine": "supabase",
+        "project": settings.supabase_project_ref or None,
         "storage_bucket": storage_bucket,
         "storage_engine": storage_engine,
         "database_status": "unreachable",
         "storage_status": "unreachable",
     }
 
-    def _db_ping() -> None:
-        # Force materialization of the stream so the call is not lazy-noop.
-        list(database_client(settings).db.collection("_setup_checks").limit(1).stream())
+    if not settings.database_configured:
+        result["database_error"] = "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY not configured"
+        return result
 
-    # Concurrent probes so health latency is max, not sum
+    def _db_ping() -> None:
+        client = database_client(settings)
+        if isinstance(client, MemoryDatabaseClient):
+            client.table("_setup_checks").select("id").limit(1).execute()
+            return
+        url = f"{settings.resolved_supabase_url}/rest/v1/"
+        server_key = settings.supabase_server_key
+        headers = {"apikey": server_key, "Authorization": f"Bearer {server_key}"}
+        resp = client.http.get(url, headers=headers, timeout=timeout_seconds)
+        if resp.status_code not in (200, 404):
+            resp.raise_for_status()
+
+    def _storage_ping() -> None:
+        if not settings.storage_configured:
+            raise RuntimeError("Object storage is not configured")
+        ObjectStorage(settings).from_(settings.document_bucket).list("_setup_checks")
+
     from concurrent.futures import ThreadPoolExecutor as _TPE
     with _TPE(max_workers=2) as _pool:
-        f_db = _pool.submit(_probe_with_timeout, "firestore", _db_ping, timeout_seconds)
-        # Storage ping needs to be defined before submitting, so define inline
-        def _storage_ping_inner() -> None:
-            if not settings.storage_configured:
-                raise RuntimeError("Object storage is not configured")
-            # Reuse cached storage client if possible
-            ObjectStorage(settings).from_(settings.document_bucket).list("_setup_checks")
-        f_st = _pool.submit(_probe_with_timeout, "storage", _storage_ping_inner, timeout_seconds)
+        f_db = _pool.submit(_probe_with_timeout, "supabase_db", _db_ping, timeout_seconds)
+        f_st = _pool.submit(_probe_with_timeout, "storage", _storage_ping, timeout_seconds)
         ok_db, db_err = f_db.result()
         ok_st, st_err = f_st.result()
+
     if ok_db:
         result["database_status"] = "reachable"
     elif db_err:
         result["database_error"] = db_err
+
     if ok_st:
         result["storage_status"] = "reachable"
     elif st_err:
@@ -828,7 +1185,7 @@ def database_probe(settings: Settings, *, timeout_seconds: float = 3.0) -> dict[
     if result["database_status"] == "reachable" and result["storage_status"] == "reachable":
         result["status"] = "reachable"
     elif result["database_status"] == "reachable" or result["storage_status"] == "reachable":
-        # Partial connectivity — still useful for ops; not fully healthy.
         result["status"] = "degraded"
+
     _probe_cache[cache_key] = (time.time(), result)
     return result

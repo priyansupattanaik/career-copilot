@@ -1,22 +1,24 @@
-"""Firestore + Firebase Storage data access for Career Copilot.
+﻿"""Supabase database and object storage data access for Career Copilot.
 
-Structured documents: Cloud Firestore collections via FirestoreClient.
-Binary objects (resumes, avatars, media): Firebase Storage via ObjectStorage.
-There is no local SQL/SQLite database in the product path.
+Structured data: Supabase PostgreSQL (PostgREST) via SupabaseDatabaseClient.
+Binary objects (resumes, avatars, media): Supabase Storage via ObjectStorage.
+Automated tests: in-memory database and storage (APP_ENV=test).
 """
 
 from app.database.client import (
-    FirestoreClient,
+    MemoryDatabaseClient,
     ObjectStorage,
+    Result,
+    SupabaseDatabaseClient,
     database_client,
     database_probe,
-    firebase_admin_app,
 )
 
 __all__ = [
-    "FirestoreClient",
+    "MemoryDatabaseClient",
     "ObjectStorage",
+    "Result",
+    "SupabaseDatabaseClient",
     "database_client",
     "database_probe",
-    "firebase_admin_app",
 ]
