@@ -2791,7 +2791,7 @@ async def create_ats(
         generation_id=source_fp,
     )
     scoring_method = "Evidence-backed keyword coverage"
-    persisted_score = 0.0 if domain_gate.get("decision") == "REJECT" else score.overall_score
+    persisted_score = 0 if domain_gate.get("decision") == "REJECT" else int(round(score.overall_score))
     score_breakdown = {
         **score.breakdown,
         "method": scoring_method,
@@ -2926,7 +2926,7 @@ async def create_ats(
             .update(
                 {
                     "status": "completed",
-                    "overall_score": persisted_score,
+                    "overall_score": int(round(persisted_score)),
                     "breakdown": score_breakdown,
                     "completed_at": utc_now(),
                 }
@@ -3713,10 +3713,10 @@ async def _create_interview_report(
         "session_id": str(session_id),
         "created_at": utc_now(),
         "status": "ready",
-        "overall_score": report_body.get("overall_score"),
-        "communication_score": report_body.get("communication_score"),
-        "structure_score": report_body.get("structure_score"),
-        "content_score": report_body.get("content_score"),
+        "overall_score": int(round(float(report_body["overall_score"]))) if report_body.get("overall_score") is not None else None,
+        "communication_score": int(round(float(report_body["communication_score"]))) if report_body.get("communication_score") is not None else None,
+        "structure_score": int(round(float(report_body["structure_score"]))) if report_body.get("structure_score") is not None else None,
+        "content_score": int(round(float(report_body["content_score"]))) if report_body.get("content_score") is not None else None,
         "summary": report_body.get("overall_summary"),
         "report": report_body,
         "provider": report_body.get("provider"),

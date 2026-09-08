@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 _PROMPT_PATH = PROMPTS_DIR / "ats_improvement_v1.txt"
 # Optional enrichment only — never block ATS scoring on a hung provider.
 # Profile AI uses the same 12s cap; full provider timeout+retries can exceed 4 minutes.
-_OPTIONAL_BRIEF_TIMEOUT_SECONDS = 45.0
+_OPTIONAL_BRIEF_TIMEOUT_SECONDS = 12.0
 
 
 class AtsImprovementBriefResult(BaseModel):

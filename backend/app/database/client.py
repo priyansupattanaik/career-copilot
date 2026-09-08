@@ -265,16 +265,42 @@ def _apply_write_aliases(table: str, payload: Any) -> Any:
     return _one(payload)
 
 
+TABLE_INT_COLUMNS: dict[str, set[str]] = {
+    "users": {"token_version"},
+    "learning_paths": {"progress_percent"},
+    "job_recommendations": {"match_score"},
+    "profiles": {"profile_completion"},
+    "learning_items": {"progress_percent", "item_order"},
+    "interview_questions": {"question_index"},
+    "learning_resources": {"duration_minutes"},
+    "ats_analyses": {"overall_score"},
+    "interview_reports": {"overall_score", "communication_score", "structure_score", "content_score"},
+    "resume_versions": {"version_number"},
+}
+
+
 def _sanitize_payload_for_table(table: str, payload: Any) -> Any:
-    """Drop any keys that do not exist in the database table schema to avoid 400 Bad Request."""
+    """Drop any keys that do not exist in the database table schema to avoid 400 Bad Request,
+    and coerce known integer columns if provided as floats or numeric strings."""
     valid_cols = TABLE_COLUMNS.get(table)
+    int_cols = TABLE_INT_COLUMNS.get(table, set())
     if not valid_cols:
         return payload
 
     def _clean(row: Any) -> Any:
         if not isinstance(row, dict):
             return row
-        return {k: v for k, v in row.items() if k in valid_cols}
+        res = {}
+        for k, v in row.items():
+            if k in valid_cols:
+                if k in int_cols and v is not None:
+                    try:
+                        res[k] = int(round(float(v)))
+                    except (ValueError, TypeError):
+                        res[k] = v
+                else:
+                    res[k] = v
+        return res
 
     if isinstance(payload, list):
         return [_clean(r) for r in payload]
