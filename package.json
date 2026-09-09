@@ -9,7 +9,6 @@
     "dev:frontend": "node scripts/dev/frontend.mjs",
     "dev:backend": "node scripts/dev/backend.mjs",
     "supabase:check": "node scripts/dev/preflight.mjs --strict",
-    "db:migrate:firestore": "node scripts/shared/backend-venv.mjs scripts/migration/migrate_firestore_to_supabase.py",
     "lint": "node scripts/run-frontend.mjs lint",
     "tsc": "node scripts/run-frontend.mjs typecheck",
     "typecheck": "node scripts/run-frontend.mjs typecheck",
