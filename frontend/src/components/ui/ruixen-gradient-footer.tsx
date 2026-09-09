@@ -80,7 +80,7 @@ export interface RuixenGradientFooterProps {
 
 export function RuixenGradientFooter({
   children,
-  gradientHeight = "65vh",
+  gradientHeight = "180px",
   minReveal = 0.045,
   bars = 9,
   blur = 15,
@@ -128,17 +128,15 @@ export function RuixenGradientFooter({
     // height beneath its content for the glow to land in.
     <footer
       className={className}
-      style={{ paddingBottom: gradientHeight, ...style }}
+      style={{ position: "relative", overflow: "hidden", ...style }}
     >
       {children}
 
-      {/* ponytail: fixed to the viewport — a transformed/filtered ancestor
-          would capture it. Give the footer a plain containing block. */}
       <div
         ref={bandRef}
         aria-hidden
         style={{
-          position: "fixed",
+          position: "absolute",
           left: 0,
           right: 0,
           bottom: 0,
@@ -146,7 +144,7 @@ export function RuixenGradientFooter({
           pointerEvents: "none",
           transformOrigin: "bottom",
           transform: `scaleY(${progress})`,
-          willChange: "transform",
+          zIndex: 0,
         }}
       >
         <svg

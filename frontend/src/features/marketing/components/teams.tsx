@@ -39,7 +39,7 @@ function TeamsInner() {
           description="The builders behind Career Copilot."
         />
       </main>
-      <RuixenGradientFooter gradientHeight="44vh" className="home-footer">
+      <RuixenGradientFooter gradientHeight="56px" className="home-footer">
         <div className="home-frame home-footer-content">
           <div className="home-footer-top">
             <Link
@@ -50,9 +50,6 @@ function TeamsInner() {
               <BrandMark compact />
               <span>Career Copilot</span>
             </Link>
-            <span className="home-footer-tagline">
-              Private career preparation
-            </span>
             <nav className="home-footer-nav" aria-label="Footer navigation">
               <Link href="/sign-in">Sign in</Link>
               <Link href="/sign-up">Get started</Link>
@@ -62,10 +59,6 @@ function TeamsInner() {
           </div>
           <div className="home-footer-meta">
             <span>© 2026 Career Copilot</span>
-            <span className="home-status">
-              <i className="home-status-dot" aria-hidden /> Evidence-first ·
-              scores from confirmed work only
-            </span>
             <span>Built for candidates</span>
           </div>
         </div>

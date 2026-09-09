@@ -278,20 +278,26 @@ function ProfileSheet() {
       <div className="home-sheet-items">
         <span>
           <CopilotIcon name="resume" size={17} />
-          <b>Resume evidence</b>
-          <small>12 confirmed signals</small>
+          <span className="home-sheet-copy">
+            <b>Resume evidence</b>
+            <small>12 confirmed signals</small>
+          </span>
           <i>ready</i>
         </span>
         <span>
           <CopilotIcon name="interview" size={17} />
-          <b>Video practice</b>
-          <small>3 sessions this week</small>
+          <span className="home-sheet-copy">
+            <b>Video practice</b>
+            <small>3 sessions this week</small>
+          </span>
           <i>growing</i>
         </span>
         <span>
           <CopilotIcon name="learning" size={17} />
-          <b>Next skill route</b>
-          <small>Make system design visible</small>
+          <span className="home-sheet-copy">
+            <b>Next skill route</b>
+            <small>Make system design visible</small>
+          </span>
           <i>next</i>
         </span>
       </div>
@@ -406,7 +412,7 @@ function LandingInner() {
         </section>
       </main>
 
-      <RuixenGradientFooter gradientHeight="44vh" className="home-footer">
+      <RuixenGradientFooter gradientHeight="56px" className="home-footer">
         <div className="home-frame home-footer-content">
           <div className="home-footer-top">
             <Link
@@ -417,9 +423,6 @@ function LandingInner() {
               <BrandMark compact />
               <span>Career Copilot</span>
             </Link>
-            <span className="home-footer-tagline">
-              Private career preparation
-            </span>
             <nav className="home-footer-nav" aria-label="Footer navigation">
               <Link href="/sign-in">Sign in</Link>
               <Link href="/sign-up">Get started</Link>
@@ -430,10 +433,6 @@ function LandingInner() {
           </div>
           <div className="home-footer-meta">
             <span>© 2026 Career Copilot</span>
-            <span className="home-status">
-              <i className="home-status-dot" aria-hidden /> Evidence-first ·
-              scores from confirmed work only
-            </span>
             <span>Built for candidates</span>
           </div>
         </div>

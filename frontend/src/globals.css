@@ -46,6 +46,7 @@
 }
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 88px;
   font-size: 16px;
   background: var(--background);
 }
@@ -8724,6 +8725,14 @@ select option {
   /* Opacity-only enter: transform on this layer would flatten backdrop-filter. */
   animation: nav5-enter 0.55s cubic-bezier(0.32, 0.72, 0, 1) backwards;
 }
+.nav5-brand {
+  min-width: 0;
+}
+.nav5-brand span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 @keyframes nav5-enter {
   from {
     opacity: 0;
@@ -9446,6 +9455,7 @@ select option {
   padding: 150px 0;
   background: var(--primary-deep);
   color: #f8f8f4;
+  scroll-margin-top: 88px;
 }
 .home-practice-grid {
   display: grid;
@@ -9593,6 +9603,7 @@ select option {
 .home-system {
   padding: 145px 0 155px;
   background: var(--home-paper);
+  scroll-margin-top: 88px;
 }
 .home-system-copy {
   max-width: 38rem;
@@ -9715,6 +9726,7 @@ select option {
 .home-profile {
   padding: 145px 0;
   background: #e9ece3;
+  scroll-margin-top: 88px;
 }
 .home-profile-grid {
   display: grid;
@@ -9795,11 +9807,14 @@ select option {
 }
 .home-sheet-items > span {
   display: grid;
-  grid-template-columns: 22px 1fr auto;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
+  gap: 10px 12px;
   padding: 17px 20px;
   background: #f8f9f4;
+}
+.home-sheet-copy {
+  min-width: 0;
 }
 .home-sheet-items svg {
   color: var(--home-blue);
@@ -9820,10 +9835,13 @@ select option {
   color: #71766b;
   font-size: 0.62rem;
   font-style: normal;
+  white-space: nowrap;
+  justify-self: end;
 }
 .home-final {
   padding: 0 0 120px;
   background: #e9ece3;
+  scroll-margin-top: 88px;
 }
 .home-final-card {
   padding: clamp(45px, 8vw, 90px);
@@ -10030,8 +10048,24 @@ select option {
   .home-frame {
     width: min(100% - 32px, 500px);
   }
+  .nav5-pill {
+    height: 52px;
+    gap: 8px;
+  }
   .home-hero {
-    padding-top: 100px;
+    padding-top: 88px;
+  }
+  .home-practice,
+  .home-system,
+  .home-profile {
+    padding-top: 72px;
+    padding-bottom: 72px;
+  }
+  .home-final {
+    padding-bottom: 64px;
+  }
+  .home-sheet-items > span {
+    padding: 14px 16px;
   }
   .home-hero h1,
   .home-practice h2,
@@ -10359,6 +10393,7 @@ select option {
 .home-footer {
   position: relative;
   padding-top: 30px;
+  padding-bottom: 88px;
   border-top: 1px solid color-mix(in srgb, var(--home-line) 80%, transparent);
 }
 .home-footer-content {
@@ -10368,6 +10403,7 @@ select option {
   flex-direction: column;
   gap: 24px;
   margin-bottom: 0;
+  padding-bottom: 8px;
 }
 .home-footer-top {
   display: flex;
@@ -10375,10 +10411,6 @@ select option {
   align-items: center;
   justify-content: space-between;
   gap: 16px 28px;
-}
-.home-footer-tagline {
-  font-size: 0.78rem;
-  letter-spacing: 0.02em;
 }
 .home-footer-nav {
   display: flex;
@@ -10407,19 +10439,7 @@ select option {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.home-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-.home-status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--home-accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--home-accent) 20%, transparent);
-  animation: cc-pulse 3s ease-in-out infinite;
-}
+
 
 /* ===== Landing beams background ==========================================
    Canvas sits above the page paper but below every content layer. Hero and
@@ -16221,7 +16241,6 @@ select option {
 .home-page[data-motion="paused"] .home-window-dots i,
 .home-page[data-motion="paused"] .home-live-label i,
 .home-page[data-motion="paused"] .home-float-card,
-.home-page[data-motion="paused"] .home-status-dot,
 .home-page[data-motion="paused"] .home-demo-waveform i,
 .home-page[data-motion="paused"] .home-demo-answering-label i,
 .home-page[data-motion="paused"] .home-demo-cursor,

@@ -285,7 +285,7 @@ export function SignInScreen() {
             required
             value={identifier}
             onChange={(e: any) => setIdentifier(e.target.value)}
-            placeholder="you@example.com or @username"
+            placeholder="Email, phone, or username"
           />
         </label>
         <label className="field-label">

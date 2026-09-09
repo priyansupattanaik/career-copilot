@@ -334,12 +334,13 @@ export function Navigation5({ className }: { className?: string }) {
             </div>
 
             <span
+              className="hidden sm:inline-flex"
               onMouseEnter={() => prefetchRoute("/sign-up")}
               onFocus={() => prefetchRoute("/sign-up")}
             >
               <Link
                 href="/sign-up"
-                className="button button-primary hidden sm:inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-semibold shadow-sm transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                className="button button-primary inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-semibold shadow-sm transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <span>Get started</span>
                 <CopilotIcon name="go" size={15} />
