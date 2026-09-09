@@ -21,6 +21,11 @@ import { AnimatedIcon } from "@/components/ui/animated-icon";
 
 
 
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import {
+  FLUID_SPRING_TRANSITION,
+  pageTransitionVariants,
+} from "@/components/ui/motion-system";
 import "../resume.css";
 
 import { apiRequest } from "@/shared/api/client";
@@ -312,6 +317,7 @@ function ParsedInputPanel({ title, input }: { title: string; input?: ParsedInput
 }
 
 export function AnalysisHistory() {
+  const shouldReduceMotion = useReducedMotion();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const initialTab: HubTab =
@@ -353,21 +359,62 @@ export function AnalysisHistory() {
           </p>
         </div>
         <nav className="ra-segnav" aria-label="Resume analysis sections">
-          {segments.map((segment) => (
-            <button
-              key={segment.key}
-              type="button"
-              className="ra-segnav-item"
-              onClick={() => selectTab(segment.key)}
-              aria-current={tab === segment.key ? "page" : undefined}
-            >
-              {segment.icon}
-              <span className="ra-seg-label">{segment.label}</span>
-            </button>
-          ))}
+          {segments.map((segment) => {
+            const isSelected = tab === segment.key;
+            return (
+              <motion.button
+                key={segment.key}
+                type="button"
+                className="ra-segnav-item"
+                style={{ position: "relative" }}
+                onClick={() => selectTab(segment.key)}
+                aria-current={isSelected ? "page" : undefined}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+              >
+                {isSelected && (
+                  <motion.span
+                    layoutId="ra-segnav-active-pill"
+                    transition={shouldReduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      borderRadius: 999,
+                      background: "var(--surface)",
+                      border: "1px solid var(--border-strong)",
+                      boxShadow: "var(--shadow-sm)",
+                      pointerEvents: "none",
+                      zIndex: 0,
+                    }}
+                  />
+                )}
+                <span
+                  style={{
+                    position: "relative",
+                    zIndex: 1,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  {segment.icon}
+                  <span className="ra-seg-label">{segment.label}</span>
+                </span>
+              </motion.button>
+            );
+          })}
         </nav>
       </header>
-      {tab === "ats" ? <AtsHistoryList /> : tab === "resumes" ? <ResumeLibrary /> : <NewAnalysis embedded />}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={tab}
+          variants={pageTransitionVariants}
+          initial={shouldReduceMotion ? false : "hidden"}
+          animate="visible"
+          exit={shouldReduceMotion ? undefined : "exit"}
+        >
+          {tab === "ats" ? <AtsHistoryList /> : tab === "resumes" ? <ResumeLibrary /> : <NewAnalysis embedded />}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
@@ -958,6 +1005,7 @@ function ExtractionPanel({
 }
 
 export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
+  const shouldReduceMotion = useReducedMotion();
   const navigate = useNavigate();
   const [step, setStep] = useState<UploadStep>("upload");
   const [resumeSource, setResumeSource] = useState<"stored" | "upload">("upload");
@@ -1207,9 +1255,14 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
             aria-current={item.index === currentStepIndex ? "step" : undefined}
           >
             {index > 0 ? <span className="ra-step-line" aria-hidden="true" /> : null}
-            <span className="ra-step-dot" aria-hidden="true">
+            <motion.span
+              className="ra-step-dot"
+              aria-hidden="true"
+              animate={item.index === currentStepIndex ? { scale: [1, 1.1, 1] } : { scale: 1 }}
+              transition={shouldReduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION}
+            >
               {item.index < currentStepIndex ? <AnimatedIcon icon={CheckCircle2} size={14} /> : item.index}
-            </span>
+            </motion.span>
             <span className="ra-step-label">{item.label}</span>
           </span>
         ))}
@@ -1241,7 +1294,11 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
       {step === "upload" && !busy && (
         <section className="ra-section" aria-label="Choose source files">
           <div className="ra-intake">
-            <article className="ra-intake-card">
+            <motion.article
+              className="ra-intake-card"
+              whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+              transition={FLUID_SPRING_TRANSITION}
+            >
               <div className="ra-intake-head">
                 <span className="ra-intake-icon" aria-hidden="true">
                   <AnimatedIcon icon={FileText} size={19} strokeWidth={2.1} />
@@ -1259,19 +1316,53 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
                     <button
                       type="button"
                       className="ra-mode-btn"
+                      style={{ position: "relative" }}
                       aria-pressed={resumeSource === "stored"}
                       disabled={!storedResumes.some((row) => row.latest_version?.id)}
                       onClick={() => setResumeSource("stored")}
                     >
-                      Saved resume
+                      {resumeSource === "stored" && (
+                        <motion.span
+                          layoutId="resume-source-pill"
+                          transition={shouldReduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION}
+                          style={{
+                            position: "absolute",
+                            inset: 0,
+                            borderRadius: 8,
+                            background: "var(--surface)",
+                            border: "1px solid var(--border-strong)",
+                            boxShadow: "var(--shadow-sm)",
+                            pointerEvents: "none",
+                            zIndex: 0,
+                          }}
+                        />
+                      )}
+                      <span style={{ position: "relative", zIndex: 1 }}>Saved resume</span>
                     </button>
                     <button
                       type="button"
                       className="ra-mode-btn"
+                      style={{ position: "relative" }}
                       aria-pressed={resumeSource === "upload"}
                       onClick={() => setResumeSource("upload")}
                     >
-                      Upload new
+                      {resumeSource === "upload" && (
+                        <motion.span
+                          layoutId="resume-source-pill"
+                          transition={shouldReduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION}
+                          style={{
+                            position: "absolute",
+                            inset: 0,
+                            borderRadius: 8,
+                            background: "var(--surface)",
+                            border: "1px solid var(--border-strong)",
+                            boxShadow: "var(--shadow-sm)",
+                            pointerEvents: "none",
+                            zIndex: 0,
+                          }}
+                        />
+                      )}
+                      <span style={{ position: "relative", zIndex: 1 }}>Upload new</span>
                     </button>
                   </div>
                   <div className="ra-intake-body">
@@ -1327,9 +1418,13 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
                   </div>
                 </>
               )}
-            </article>
+            </motion.article>
 
-            <article className="ra-intake-card">
+            <motion.article
+              className="ra-intake-card"
+              whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+              transition={FLUID_SPRING_TRANSITION}
+            >
               <div className="ra-intake-head">
                 <span className="ra-intake-icon" aria-hidden="true">
                   <AnimatedIcon icon={BriefcaseBusiness} size={19} strokeWidth={2.1} />
@@ -1343,18 +1438,52 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
                 <button
                   type="button"
                   className="ra-mode-btn"
+                  style={{ position: "relative" }}
                   aria-pressed={jdMode === "text"}
                   onClick={() => setJdMode("text")}
                 >
-                  Paste text
+                  {jdMode === "text" && (
+                    <motion.span
+                      layoutId="jd-mode-pill"
+                      transition={shouldReduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION}
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        borderRadius: 8,
+                        background: "var(--surface)",
+                        border: "1px solid var(--border-strong)",
+                        boxShadow: "var(--shadow-sm)",
+                        pointerEvents: "none",
+                        zIndex: 0,
+                      }}
+                    />
+                  )}
+                  <span style={{ position: "relative", zIndex: 1 }}>Paste text</span>
                 </button>
                 <button
                   type="button"
                   className="ra-mode-btn"
+                  style={{ position: "relative" }}
                   aria-pressed={jdMode === "file"}
                   onClick={() => setJdMode("file")}
                 >
-                  Upload file
+                  {jdMode === "file" && (
+                    <motion.span
+                      layoutId="jd-mode-pill"
+                      transition={shouldReduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION}
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        borderRadius: 8,
+                        background: "var(--surface)",
+                        border: "1px solid var(--border-strong)",
+                        boxShadow: "var(--shadow-sm)",
+                        pointerEvents: "none",
+                        zIndex: 0,
+                      }}
+                    />
+                  )}
+                  <span style={{ position: "relative", zIndex: 1 }}>Upload file</span>
                 </button>
               </div>
               <div className="ra-intake-body">
@@ -1387,7 +1516,7 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
                   </>
                 )}
               </div>
-            </article>
+            </motion.article>
           </div>
 
           <div className="ra-ready">

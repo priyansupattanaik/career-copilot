@@ -150,8 +150,8 @@ const microVariants: Record<
   }
 > = {
   default: {
-    rest: { scale: 1, y: 0, rotate: 0 },
-    animate: { scale: 1.15, y: -2 },
+    rest: { scale: 1, rotate: 0 },
+    animate: { scale: 1.12, rotate: 0 },
     transition: springQuick,
   },
   pointing: {
@@ -165,13 +165,13 @@ const microVariants: Record<
     transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
   },
   "pointing-down": {
-    rest: { y: 0, scale: 1 },
-    animate: { y: [0, 5, 0], scale: [1, 1.08, 1] },
+    rest: { scale: 1 },
+    animate: { scale: [1, 1.08, 1] },
     transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
   },
   "pointing-up": {
-    rest: { y: 0, scale: 1 },
-    animate: { y: [0, -5, 0], scale: [1, 1.08, 1] },
+    rest: { scale: 1 },
+    animate: { scale: [1, 1.08, 1] },
     transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
   },
   draw: {
@@ -190,20 +190,19 @@ const microVariants: Record<
     transition: { duration: 0.52, ease: "easeInOut" },
   },
   "trash-lid": {
-    rest: { y: 0, rotate: 0, scale: 1 },
-    animate: { y: [0, -4, 0], rotate: [0, -14, 4, 0], scale: [1, 1.06, 1] },
+    rest: { rotate: 0, scale: 1 },
+    animate: { rotate: [0, -14, 4, 0], scale: [1, 1.06, 1] },
     transition: { duration: 0.42, ease: "easeOut" },
   },
   bookmark: {
-    rest: { y: 0, scaleY: 1 },
-    animate: { y: [0, 4, -1, 0], scaleY: [1, 1.2, 0.95, 1] },
+    rest: { scaleY: 1 },
+    animate: { scaleY: [1, 1.15, 0.95, 1] },
     transition: { duration: 0.45, ease: "easeInOut" },
   },
   fly: {
-    rest: { x: 0, y: 0, rotate: 0, scale: 1 },
+    rest: { x: 0, rotate: 0, scale: 1 },
     animate: {
       x: [0, 5, 0],
-      y: [0, -5, 0],
       rotate: [0, -12, 0],
       scale: [1, 1.1, 1],
     },
@@ -225,23 +224,23 @@ const microVariants: Record<
     transition: { duration: 1, ease: "linear", repeat: Infinity },
   },
   external: {
-    rest: { x: 0, y: 0, scale: 1 },
-    animate: { x: [0, 3.5, 0], y: [0, -3.5, 0], scale: [1, 1.12, 1] },
+    rest: { x: 0, scale: 1 },
+    animate: { x: [0, 3.5, 0], scale: [1, 1.12, 1] },
     transition: { duration: 0.4, ease: "easeOut" },
   },
   drop: {
-    rest: { y: 0, scale: 1 },
-    animate: { y: [0, -5, 1, 0], scale: [1, 1.15, 0.96, 1] },
+    rest: { scale: 1 },
+    animate: { scale: [1, 1.15, 0.96, 1] },
     transition: { duration: 0.45, ease: "easeOut" },
   },
   lift: {
-    rest: { y: 0, scale: 1 },
-    animate: { y: [0, -3.5, 0], scale: [1, 1.1, 1] },
+    rest: { scale: 1 },
+    animate: { scale: [1, 1.1, 1] },
     transition: springQuick,
   },
   people: {
-    rest: { y: 0, scale: 1 },
-    animate: { y: [0, -3, 0], scale: [1, 1.1, 1] },
+    rest: { scale: 1 },
+    animate: { scale: [1, 1.1, 1] },
     transition: { duration: 0.42, ease: "easeOut" },
   },
   play: {
@@ -280,8 +279,8 @@ const microVariants: Record<
     transition: { duration: 0.4, ease: "easeInOut" },
   },
   bounce: {
-    rest: { y: 0, scale: 1 },
-    animate: { y: [0, -5, 0], scale: [1, 1.1, 1] },
+    rest: { scale: 1 },
+    animate: { scale: [1, 1.1, 1] },
     transition: springQuick,
   },
 };

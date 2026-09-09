@@ -7,6 +7,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { apiRequest } from "@/shared/api/client";
 import { Badge, Button, Card, EmptyState, ErrorState, PageHeader, Progress, Select, Skeleton } from "@/shared/ui/primitives";
+import { motion, useReducedMotion } from "motion/react";
+import {
+  FAST_SPRING_TRANSITION,
+  staggerContainerVariants,
+  staggerItemVariants,
+} from "@/components/ui/motion-system";
 import {
   createInterviewPreparation,
   type ConfirmedJobDescription,
@@ -25,6 +31,7 @@ function sourceLabel(source: PreparationQuestion["source"]) {
 }
 
 function QuestionList({ title, description, questions }: { title: string; description: string; questions: PreparationQuestion[] }) {
+  const shouldReduceMotion = useReducedMotion();
   return (
     <Card className="stack">
       <div>
@@ -32,24 +39,37 @@ function QuestionList({ title, description, questions }: { title: string; descri
         <p className="muted" style={{ marginBottom: 0 }}>{description}</p>
       </div>
       {questions.length ? (
-        <ol className="stack" style={{ margin: 0, paddingLeft: 20 }}>
+        <motion.ol
+          className="stack"
+          style={{ margin: 0, paddingLeft: 20 }}
+          variants={staggerContainerVariants}
+          initial={shouldReduceMotion ? false : "hidden"}
+          animate="visible"
+        >
           {questions.map((item, index) => (
-            <li key={`${item.question}-${index}`} className="suggestion">
+            <motion.li
+              key={`${item.question}-${index}`}
+              className="suggestion"
+              variants={staggerItemVariants}
+              whileHover={shouldReduceMotion ? undefined : { x: 3 }}
+              transition={FAST_SPRING_TRANSITION}
+            >
               <p style={{ margin: 0 }}>{item.question}</p>
               <div className="cluster" style={{ marginTop: 8 }}>
                 {item.skill ? <Badge variant="secondary">{item.skill}</Badge> : null}
                 <Badge variant={difficultyTone(item.difficulty)}>{item.difficulty}</Badge>
                 <Badge variant="secondary">{sourceLabel(item.source)}</Badge>
               </div>
-            </li>
+            </motion.li>
           ))}
-        </ol>
+        </motion.ol>
       ) : <p className="muted" style={{ margin: 0 }}>No evidence-grounded questions are available for this section.</p>}
     </Card>
   );
 }
 
 export function InterviewPreparationHome() {
+  const shouldReduceMotion = useReducedMotion();
   const [resumes, setResumes] = useState<ConfirmedResume[]>([]);
   const [jobs, setJobs] = useState<ConfirmedJobDescription[]>([]);
   const [resumeVersionId, setResumeVersionId] = useState("");
@@ -162,7 +182,13 @@ export function InterviewPreparationHome() {
       {error ? <p role="alert" className="field-error">{error}</p> : null}
       {loading ? <div className="stack" style={{ marginTop: 24 }}><Skeleton lines={7} /><Skeleton lines={8} /></div> : null}
       {data ? (
-        <div className="stack" style={{ marginTop: 24 }}>
+        <motion.div
+          className="stack"
+          style={{ marginTop: 24 }}
+          variants={staggerContainerVariants}
+          initial={shouldReduceMotion ? false : "hidden"}
+          animate="visible"
+        >
           <Card className="stack">
             <div className="row">
               <div>
@@ -187,7 +213,7 @@ export function InterviewPreparationHome() {
           <QuestionList title="Focus-area questions" description="Use these requirements to guide preparation; missing means not found in the selected resume, not that you lack the skill." questions={data.missing_skill_questions} />
           <QuestionList title="Coding questions" description="State your approach, edge cases, tests, and complexity before implementation." questions={data.coding_questions} />
           <QuestionList title="HR questions" description="Use concise, truthful examples from your experience." questions={data.hr_questions} />
-        </div>
+        </motion.div>
       ) : null}
     </div>
   );

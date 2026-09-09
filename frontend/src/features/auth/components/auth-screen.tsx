@@ -20,6 +20,8 @@ import { CareerIcon } from "@/components/ui/career-icons";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 import { resolveApiBase } from "@/shared/config";
 import { authCallbackUrl } from "@/features/auth/public-origin";
+import { motion, useReducedMotion } from "motion/react";
+import { FLUID_SPRING_TRANSITION } from "@/components/ui/motion-system";
 
 function Shell({
   children,
@@ -30,6 +32,7 @@ function Shell({
   title: string;
   description: string;
 }) {
+  const shouldReduceMotion = useReducedMotion();
   return (
     <main id="main-content" className="auth-shell atlas-auth-shell">
       <aside
@@ -41,7 +44,12 @@ function Shell({
             <BrandMark />
             <span>Career Copilot</span>
           </Link>
-          <div className="auth-aside-copy">
+          <motion.div
+            className="auth-aside-copy"
+            initial={shouldReduceMotion ? false : { opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={FLUID_SPRING_TRANSITION}
+          >
             <h1>{title}</h1>
             <p>{description}</p>
             <ul className="auth-aside-points">
@@ -58,7 +66,7 @@ function Shell({
                 <span>See roles matched to your confirmed profile</span>
               </li>
             </ul>
-          </div>
+          </motion.div>
         </AuroraBackground>
       </aside>
       <section className="auth-main atlas-auth-main">
@@ -66,7 +74,14 @@ function Shell({
           <div className="auth-theme-control atlas-auth-theme-control">
             <ThemeToggle compact />
           </div>
-          <div className="auth-bezel">{children}</div>
+          <motion.div
+            className="auth-bezel"
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={FLUID_SPRING_TRANSITION}
+          >
+            {children}
+          </motion.div>
         </div>
       </section>
     </main>

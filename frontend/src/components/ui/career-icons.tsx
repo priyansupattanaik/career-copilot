@@ -120,16 +120,16 @@ export function CareerIcon({
   const svgProps = props as unknown as SVGProps<SVGSVGElement>;
 
   const hoverVariants = {
-    dashboard: { scale: 1.12, y: -2 },
-    resume: { scale: 1.12, y: -2 },
-    interview: { scale: 1.12, y: -2 },
-    learning: { scale: 1.12, y: -2 },
-    opportunities: { scale: 1.12, rotate: 18, y: -2 },
-    profile: { scale: 1.12, y: -2 },
-    evidence: { scale: 1.12, y: -2 },
-    signal: { scale: 1.12, y: -2 },
-    confidence: { scale: 1.12, y: -2 },
-    projects: { scale: 1.12, y: -2 },
+    dashboard: { scale: 1.08 },
+    resume: { scale: 1.08 },
+    interview: { scale: 1.08 },
+    learning: { scale: 1.08 },
+    opportunities: { scale: 1.08, rotate: 12 },
+    profile: { scale: 1.08 },
+    evidence: { scale: 1.08 },
+    signal: { scale: 1.08 },
+    confidence: { scale: 1.08 },
+    projects: { scale: 1.08 },
   };
 
   return (
@@ -140,9 +140,9 @@ export function CareerIcon({
       whileHover={
         reducedMotion
           ? undefined
-          : hoverVariants[name] || { scale: 1.12, y: -2 }
+          : hoverVariants[name] || { scale: 1.08 }
       }
-      whileTap={reducedMotion ? undefined : { scale: 0.92, y: 1 }}
+      whileTap={reducedMotion ? undefined : { scale: 0.95 }}
       transition={hoverSpring}
       style={{
         display: "inline-flex",
@@ -152,7 +152,7 @@ export function CareerIcon({
         lineHeight: 0,
       }}
     >
-      <span className="icon-idle">
+      <span className="icon-idle" style={{ display: "inline-flex", transform: "none", animation: "none" }}>
         <svg
           {...svgProps}
           className={className}

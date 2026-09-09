@@ -28,6 +28,12 @@ import {
   completionFromBootstrap,
   useWorkspaceBootstrap,
 } from "@/features/workspace/bootstrap-context";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import {
+  FLUID_SPRING_TRANSITION,
+  dropdownMenuVariants,
+  pageTransitionVariants,
+} from "@/components/ui/motion-system";
 
 /** Primary nav only — Settings lives in the profile account menu. */
 const navigation = [
@@ -80,6 +86,7 @@ function subscribeDemoMode() {
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const reduceMotion = useReducedMotion();
   const { data: bootstrap } = useWorkspaceBootstrap();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -226,11 +233,32 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
                   className={`sidebar-link ${active ? "active" : ""}`}
                   aria-current={active ? "page" : undefined}
                   title={item.label}
+                  style={{ position: "relative" }}
                 >
-                  <span className="sidebar-link-icon" aria-hidden>
+                  {active ? (
+                    <motion.span
+                      layoutId="sidebar-active-indicator"
+                      className="sidebar-active-pill"
+                      transition={
+                        reduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION
+                      }
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        borderRadius: 12,
+                        background:
+                          "color-mix(in srgb, var(--primary-strong) 12%, #ffffff)",
+                        border:
+                          "1px solid color-mix(in srgb, var(--primary-strong) 16%, transparent)",
+                        boxShadow: "var(--shadow-sm)",
+                        zIndex: 0,
+                      }}
+                    />
+                  ) : null}
+                  <span className="sidebar-link-icon" style={{ position: "relative", zIndex: 1 }} aria-hidden>
                     <CareerIcon name={item.icon} size={18} />
                   </span>
-                  <span className="sidebar-link-label">{item.label}</span>
+                  <span className="sidebar-link-label" style={{ position: "relative", zIndex: 1 }}>{item.label}</span>
                 </Link>
               );
             })}
@@ -240,101 +268,107 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         <div className="sidebar-footer">
           <div className="sidebar-profile-menu-wrap" ref={profileMenuRef}>
             {/* Menu sits above the trigger in normal flow so it is never clipped by absolute positioning. */}
-            {profileMenuOpen ? (
-              <div
-                id={profileMenuId}
-                className="sidebar-account-menu"
-                role="menu"
-                aria-label="Account options"
-              >
-                <div className="sidebar-account-menu-head">
-                  <span
-                    className="sidebar-profile-avatar sidebar-account-menu-avatar"
-                    aria-hidden
-                  >
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt=""
-                        className="avatar-image"
-                        onError={() => setFailedAvatarUrl(avatarUrl)}
-                      />
-                    ) : (
-                      initials
-                    )}
-                  </span>
-                  <div className="sidebar-account-menu-identity">
-                    <p className="sidebar-account-menu-name">{fullName}</p>
-                    {showCompletionPercent ? (
-                      <>
+            <AnimatePresence>
+              {profileMenuOpen ? (
+                <motion.div
+                  id={profileMenuId}
+                  className="sidebar-account-menu"
+                  role="menu"
+                  aria-label="Account options"
+                  variants={dropdownMenuVariants}
+                  initial={reduceMotion ? false : "initial"}
+                  animate="animate"
+                  exit="exit"
+                >
+                  <div className="sidebar-account-menu-head">
+                    <span
+                      className="sidebar-profile-avatar sidebar-account-menu-avatar"
+                      aria-hidden
+                    >
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt=""
+                          className="avatar-image"
+                          onError={() => setFailedAvatarUrl(avatarUrl)}
+                        />
+                      ) : (
+                        initials
+                      )}
+                    </span>
+                    <div className="sidebar-account-menu-identity">
+                      <p className="sidebar-account-menu-name">{fullName}</p>
+                      {showCompletionPercent ? (
+                        <>
+                          <p className="sidebar-account-menu-sub">
+                            {completion}% complete
+                          </p>
+                          <div
+                            className="sidebar-account-menu-progress"
+                            role="progressbar"
+                            aria-valuenow={completion}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-label="Profile completion"
+                          >
+                            <span
+                              style={{
+                                width: `${Math.max(0, Math.min(100, completion))}%`,
+                              }}
+                            />
+                          </div>
+                        </>
+                      ) : (
                         <p className="sidebar-account-menu-sub">
-                          {completion}% complete
+                          Profile complete
                         </p>
-                        <div
-                          className="sidebar-account-menu-progress"
-                          role="progressbar"
-                          aria-valuenow={completion}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                          aria-label="Profile completion"
-                        >
-                          <span
-                            style={{
-                              width: `${Math.max(0, Math.min(100, completion))}%`,
-                            }}
-                          />
-                        </div>
-                      </>
-                    ) : (
-                      <p className="sidebar-account-menu-sub">
-                        Profile complete
-                      </p>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                <div className="sidebar-account-menu-actions" role="none">
-                  <div
-                    className="sidebar-account-menu-item theme-menu-item"
-                    role="none"
-                  >
-                    <ThemeToggle />
+                  <div className="sidebar-account-menu-actions" role="none">
+                    <div
+                      className="sidebar-account-menu-item theme-menu-item"
+                      role="none"
+                    >
+                      <ThemeToggle />
+                    </div>
+                    <Link
+                      href="/settings/profile"
+                      className="sidebar-account-menu-item"
+                      role="menuitem"
+                      onClick={closeMenus}
+                      onMouseEnter={() => prefetchRoute("/settings/profile")}
+                      onFocus={() => prefetchRoute("/settings/profile")}
+                    >
+                      <AnimatedIcon icon={UserRound} size={16} aria-hidden />
+                      View profile
+                    </Link>
+                    <Link
+                      href="/settings/account"
+                      className="sidebar-account-menu-item"
+                      role="menuitem"
+                      onClick={closeMenus}
+                      onMouseEnter={() => prefetchRoute("/settings/account")}
+                      onFocus={() => prefetchRoute("/settings/account")}
+                    >
+                      <AnimatedIcon icon={Settings} size={16} aria-hidden />
+                      Settings
+                    </Link>
+                    <button
+                      type="button"
+                      className="sidebar-account-menu-item is-danger"
+                      role="menuitem"
+                      disabled={loggingOut}
+                      onClick={() => void logout()}
+                    >
+                      <AnimatedIcon icon={LogOut} size={16} aria-hidden />
+                      {loggingOut ? "Signing out…" : "Logout"}
+                    </button>
                   </div>
-                  <Link
-                    href="/settings/profile"
-                    className="sidebar-account-menu-item"
-                    role="menuitem"
-                    onClick={closeMenus}
-                    onMouseEnter={() => prefetchRoute("/settings/profile")}
-                    onFocus={() => prefetchRoute("/settings/profile")}
-                  >
-                    <AnimatedIcon icon={UserRound} size={16} aria-hidden />
-                    View profile
-                  </Link>
-                  <Link
-                    href="/settings/account"
-                    className="sidebar-account-menu-item"
-                    role="menuitem"
-                    onClick={closeMenus}
-                    onMouseEnter={() => prefetchRoute("/settings/account")}
-                    onFocus={() => prefetchRoute("/settings/account")}
-                  >
-                    <AnimatedIcon icon={Settings} size={16} aria-hidden />
-                    Settings
-                  </Link>
-                  <button
-                    type="button"
-                    className="sidebar-account-menu-item is-danger"
-                    role="menuitem"
-                    disabled={loggingOut}
-                    onClick={() => void logout()}
-                  >
-                    <AnimatedIcon icon={LogOut} size={16} aria-hidden />
-                    {loggingOut ? "Signing out…" : "Logout"}
-                  </button>
-                </div>
-              </div>
-            ) : null}
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
 
             <button
               type="button"
@@ -398,7 +432,15 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         </header>
 
         <main id="main-content" className="workspace-content">
-          {children}
+          <motion.div
+            key={pathname}
+            variants={pageTransitionVariants}
+            initial={reduceMotion ? false : "initial"}
+            animate="animate"
+            style={{ width: "100%", display: "contents" }}
+          >
+            {children}
+          </motion.div>
         </main>
         <ProfileCompletionToast completion={completion} missing={missing} />
       </div>
@@ -416,11 +458,28 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
               className={active ? "active" : ""}
               aria-label={item.label}
               aria-current={active ? "page" : undefined}
+              style={{ position: "relative" }}
             >
-              <span className="mobile-bottom-nav-icon" aria-hidden>
+              {active ? (
+                <motion.span
+                  layoutId="mobile-nav-active-pill"
+                  transition={
+                    reduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION
+                  }
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: 12,
+                    background:
+                      "var(--surface-selected, color-mix(in srgb, var(--app-blue) 16%, transparent))",
+                    zIndex: 0,
+                  }}
+                />
+              ) : null}
+              <span className="mobile-bottom-nav-icon" style={{ position: "relative", zIndex: 1 }} aria-hidden>
                 <CareerIcon name={item.icon} size={20} />
               </span>
-              <span className="mobile-bottom-nav-label">{item.shortLabel}</span>
+              <span className="mobile-bottom-nav-label" style={{ position: "relative", zIndex: 1 }}>{item.shortLabel}</span>
             </Link>
           );
         })}
@@ -430,11 +489,28 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
           onFocus={() => prefetchRoute("/settings/profile")}
           className={pathname.startsWith("/settings") ? "active" : ""}
           aria-current={pathname.startsWith("/settings") ? "page" : undefined}
+          style={{ position: "relative" }}
         >
-          <span className="mobile-bottom-nav-icon" aria-hidden>
+          {pathname.startsWith("/settings") ? (
+            <motion.span
+              layoutId="mobile-nav-active-pill"
+              transition={
+                reduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION
+              }
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: 12,
+                background:
+                  "var(--surface-selected, color-mix(in srgb, var(--app-blue) 16%, transparent))",
+                zIndex: 0,
+              }}
+            />
+          ) : null}
+          <span className="mobile-bottom-nav-icon" style={{ position: "relative", zIndex: 1 }} aria-hidden>
             <AnimatedIcon icon={Settings} size={20} />
           </span>
-          <span className="mobile-bottom-nav-label">Profile</span>
+          <span className="mobile-bottom-nav-label" style={{ position: "relative", zIndex: 1 }}>Profile</span>
         </Link>
       </nav>
     </div>

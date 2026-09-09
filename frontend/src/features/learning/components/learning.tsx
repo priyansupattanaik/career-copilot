@@ -16,6 +16,8 @@ import { apiRequest, isAbortError } from "@/shared/api/client";
 import LoadingState from "@/components/ui/loading-state";
 import { Badge, Button, Progress } from "@/shared/ui/primitives";
 import { AnimatedIcon } from "@/components/ui/animated-icon";
+import { motion, useReducedMotion } from "motion/react";
+import { FLUID_SPRING_TRANSITION } from "@/components/ui/motion-system";
 import type {
   AtsAnalysis,
   LearningItem,
@@ -152,6 +154,7 @@ function applyResourceToPath(
 }
 
 export function LearningHome() {
+  const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
   const [paths, setPaths] = useState<Path[]>([]);
   const [analyses, setAnalyses] = useState<AtsAnalysis[]>([]);
@@ -356,7 +359,11 @@ export function LearningHome() {
                   const steps = pathStepCount(path);
                   const watched = path.watch_summary?.watched_percent ?? path.progress_percentage;
                   return (
-                    <article key={path.id} className="lp-path-card">
+                    <motion.article
+                      key={path.id}
+                      className="lp-path-card"
+                      whileHover={reduceMotion ? undefined : { y: -3, transition: FLUID_SPRING_TRANSITION }}
+                    >
                       <div className="lp-path-card-head">
                         <div>
                           <span className="status-chip" data-tone={watched === 100 ? "success" : "info"}>
@@ -412,7 +419,7 @@ export function LearningHome() {
                           </Button>
                         </div>
                       )}
-                    </article>
+                    </motion.article>
                   );
                 })}
               </div>
@@ -425,6 +432,7 @@ export function LearningHome() {
 }
 
 export function LearningPath({ pathId }: { pathId: string }) {
+  const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [path, setPath] = useState<Path | null>(null);
@@ -786,14 +794,30 @@ export function LearningPath({ pathId }: { pathId: string }) {
               <ol className="lp-step-list">
                 {items.map((item) => {
                   const percent = itemWatchPercent(item);
+                  const isSelected = item.id === selectedItem?.id;
                   return (
                     <li key={item.id}>
                       <button
                         type="button"
-                        className={`lp-step${item.id === selectedItem?.id ? " is-active" : ""}`}
+                        className={`lp-step${isSelected ? " is-active" : ""}`}
                         onClick={() => selectLesson(item)}
+                        style={{ position: "relative" }}
                       >
-                        <span className="lp-step-top">
+                        {isSelected ? (
+                          <motion.span
+                            layoutId="learning-active-step-pill"
+                            transition={reduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION}
+                            style={{
+                              position: "absolute",
+                              inset: 0,
+                              borderRadius: "inherit",
+                              background: "color-mix(in srgb, var(--primary-strong) 10%, transparent)",
+                              border: "1px solid color-mix(in srgb, var(--primary-strong) 20%, transparent)",
+                              zIndex: 0,
+                            }}
+                          />
+                        ) : null}
+                        <span className="lp-step-top" style={{ position: "relative", zIndex: 1 }}>
                           <span className="lp-chip-row">
                             {percent >= 90 || item.status === "completed" ? (
                               <AnimatedIcon icon={CheckCircle2} size={17} aria-hidden />
@@ -806,7 +830,7 @@ export function LearningPath({ pathId }: { pathId: string }) {
                           </span>
                           <span className="lp-step-watch">{percent}%</span>
                         </span>
-                        <span className="lp-mini-bar" aria-hidden>
+                        <span className="lp-mini-bar" style={{ position: "relative", zIndex: 1 }} aria-hidden>
                           <span style={{ width: `${percent}%` }} />
                         </span>
                       </button>

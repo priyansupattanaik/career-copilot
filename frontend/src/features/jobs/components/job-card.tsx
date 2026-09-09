@@ -13,6 +13,8 @@ import type { Job, Recommendation, SavedJobStatus } from "./job-types";
 import { statusLabel, statusTone } from "./job-types";
 import { Badge, Button, Card } from "@/shared/ui/primitives";
 import { AnimatedIcon } from "@/components/ui/animated-icon";
+import { motion, useReducedMotion } from "motion/react";
+import { FLUID_SPRING_TRANSITION } from "@/components/ui/motion-system";
 
 function salaryLabel(job: Job): string | null {
   if (job.salary_min != null && job.salary_max != null) {
@@ -61,6 +63,8 @@ export function JobCard({
   const scoreTone =
     score == null ? "muted" : score >= 75 ? "high" : score >= 50 ? "mid" : "low";
 
+  const reduceMotion = useReducedMotion();
+
   function onKeyActivate(event: React.KeyboardEvent) {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
@@ -69,15 +73,21 @@ export function JobCard({
   }
 
   return (
-    <Card
-      as="article"
-      className="job-card"
-      onClick={onOpen}
-      onKeyDown={onKeyActivate}
-      role="button"
-      tabIndex={0}
-      aria-label={`${job.title} at ${job.company}${score != null ? `, ${score}% match` : ""}`}
+    <motion.div
+      whileHover={reduceMotion ? undefined : { y: -3, transition: FLUID_SPRING_TRANSITION }}
+      whileTap={reduceMotion ? undefined : { scale: 0.995 }}
+      style={{ height: "100%", display: "flex", flexDirection: "column" }}
     >
+      <Card
+        as="article"
+        className="job-card"
+        onClick={onOpen}
+        onKeyDown={onKeyActivate}
+        role="button"
+        tabIndex={0}
+        aria-label={`${job.title} at ${job.company}${score != null ? `, ${score}% match` : ""}`}
+        style={{ height: "100%" }}
+      >
       <div className="job-card-top">
         {score != null ? (
           <div className="job-score" data-tone={scoreTone} aria-label={`${score}% match`}>
@@ -183,5 +193,6 @@ export function JobCard({
         </div>
       </div>
     </Card>
+    </motion.div>
   );
 }

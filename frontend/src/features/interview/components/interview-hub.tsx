@@ -6,6 +6,13 @@ import { apiRequest, isAbortError } from "@/shared/api/client";
 import { Button, PageHeader, Textarea } from "@/shared/ui/primitives";
 import { createLiveInterview, saveLiveInterview } from "@/features/interview/live-store";
 import type { Session } from "@/features/interview/types";
+import { motion, useReducedMotion } from "motion/react";
+import {
+  FLUID_SPRING_TRANSITION,
+  FAST_SPRING_TRANSITION,
+  staggerContainerVariants,
+  staggerItemVariants,
+} from "@/components/ui/motion-system";
 import "@/features/interview/interview.css";
 
 const FOCUS_OPTIONS = [
@@ -52,6 +59,7 @@ function formatMode(mode: string) {
 }
 
 export function InterviewStartForm() {
+  const shouldReduceMotion = useReducedMotion();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const linkedResumeVersionId = searchParams.get("resume_version_id") || "";
@@ -135,7 +143,13 @@ export function InterviewStartForm() {
           {FOCUS_OPTIONS.map((option) => {
             const selected = mode === option.value;
             return (
-              <label key={option.value} className={`interview-focus-tile${selected ? " is-selected" : ""}`}>
+              <motion.label
+                key={option.value}
+                className={`interview-focus-tile${selected ? " is-selected" : ""}`}
+                whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.985 }}
+                transition={FLUID_SPRING_TRANSITION}
+              >
                 <input
                   type="radio"
                   name="interview-focus"
@@ -143,9 +157,23 @@ export function InterviewStartForm() {
                   checked={selected}
                   onChange={() => setMode(option.value)}
                 />
-                <span className="interview-focus-label">{option.label}</span>
-                <span className="interview-focus-hint">{option.hint}</span>
-              </label>
+                {selected && (
+                  <motion.span
+                    layoutId="interview-focus-pill"
+                    transition={shouldReduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      borderRadius: 16,
+                      border: "2px solid var(--interview-accent, #6366f1)",
+                      pointerEvents: "none",
+                      zIndex: 0,
+                    }}
+                  />
+                )}
+                <span className="interview-focus-label" style={{ position: "relative", zIndex: 1 }}>{option.label}</span>
+                <span className="interview-focus-hint" style={{ position: "relative", zIndex: 1 }}>{option.hint}</span>
+              </motion.label>
             );
           })}
         </div>
@@ -169,18 +197,41 @@ export function InterviewStartForm() {
         <fieldset className="interview-length">
           <legend className="interview-field-label">How many questions</legend>
           <div className="interview-length-row">
-            {QUESTION_COUNTS.map((count) => (
-              <label key={count} className={`interview-length-chip${questionCount === count ? " is-selected" : ""}`}>
-                <input
-                  type="radio"
-                  name="interview-length"
-                  value={count}
-                  checked={questionCount === count}
-                  onChange={() => setQuestionCount(count)}
-                />
-                {count}
-              </label>
-            ))}
+            {QUESTION_COUNTS.map((count) => {
+              const selected = questionCount === count;
+              return (
+                <motion.label
+                  key={count}
+                  className={`interview-length-chip${selected ? " is-selected" : ""}`}
+                  whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
+                  whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
+                  transition={FAST_SPRING_TRANSITION}
+                >
+                  <input
+                    type="radio"
+                    name="interview-length"
+                    value={count}
+                    checked={selected}
+                    onChange={() => setQuestionCount(count)}
+                  />
+                  {selected && (
+                    <motion.span
+                      layoutId="interview-count-pill"
+                      transition={shouldReduceMotion ? { duration: 0 } : FAST_SPRING_TRANSITION}
+                      style={{
+                        position: "absolute",
+                        inset: -1,
+                        borderRadius: 999,
+                        border: "2px solid var(--interview-accent, #6366f1)",
+                        pointerEvents: "none",
+                        zIndex: 0,
+                      }}
+                    />
+                  )}
+                  <span style={{ position: "relative", zIndex: 1 }}>{count}</span>
+                </motion.label>
+              );
+            })}
           </div>
         </fieldset>
       </div>
@@ -276,6 +327,7 @@ export function InterviewStartForm() {
 }
 
 export function InterviewHome() {
+  const shouldReduceMotion = useReducedMotion();
   const [data, setData] = useState<Session[]>([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -375,9 +427,19 @@ export function InterviewHome() {
             </p>
           ) : null}
           {data.length > 0 ? (
-            <ul className="interview-history-list">
+            <motion.ul
+              className="interview-history-list"
+              variants={staggerContainerVariants}
+              initial={shouldReduceMotion ? false : "hidden"}
+              animate="visible"
+            >
               {data.map((session) => (
-                <li key={session.id}>
+                <motion.li
+                  key={session.id}
+                  variants={staggerItemVariants}
+                  whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+                  transition={FLUID_SPRING_TRANSITION}
+                >
                   <article className="interview-history-item">
                     <div className="interview-history-copy">
                       <h3>{session.target_role || formatMode(session.mode)} interview</h3>
@@ -408,9 +470,9 @@ export function InterviewHome() {
                       </Button>
                     </div>
                   </article>
-                </li>
+                </motion.li>
               ))}
-            </ul>
+            </motion.ul>
           ) : null}
           {!loading && !error && data.length === 0 ? (
             <p className="interview-history-empty">No sessions yet. Start one from the form.</p>

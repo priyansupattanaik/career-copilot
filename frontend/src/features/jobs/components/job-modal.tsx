@@ -10,6 +10,11 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useEffect } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import {
+  modalBackdropVariants,
+  modalPanelVariants,
+} from "@/components/ui/motion-system";
 import type { Job, Recommendation, SavedJobStatus } from "./job-types";
 import { statusLabel, statusTone } from "./job-types";
 import { Button } from "@/shared/ui/primitives";
@@ -34,6 +39,7 @@ export function JobModal({
   onClose: () => void;
   onDismiss: () => void;
 }) {
+  const reduceMotion = useReducedMotion();
   const publishedDate = job.published_at ? new Date(job.published_at).toLocaleDateString() : null;
   const salaryText =
     job.salary_min && job.salary_max
@@ -62,10 +68,19 @@ export function JobModal({
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 100 }}>
-      <div
+    <motion.div
+      className="modal-backdrop"
+      onClick={onClose}
+      style={{ zIndex: 100 }}
+      variants={modalBackdropVariants}
+      initial={reduceMotion ? false : "initial"}
+      animate="animate"
+      exit="exit"
+    >
+      <motion.div
         className="modal-panel modal-panel-wide"
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        variants={modalPanelVariants}
         style={{
           display: "flex",
           flexDirection: "column",
@@ -162,7 +177,7 @@ export function JobModal({
             </a>
           ) : null}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

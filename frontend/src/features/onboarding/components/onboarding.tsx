@@ -9,6 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { apiRequest } from "@/shared/api/client";
 import { createClient } from "@/features/auth/api/client";
 import { Button, Card, Input, PageHeader, Textarea } from "@/shared/ui/primitives";
+import { motion, useReducedMotion } from "motion/react";
+import { pageTransitionVariants } from "@/components/ui/motion-system";
 
 type OnboardingForm = {
   full_name: string;
@@ -38,6 +40,7 @@ function pickNameFromAuthMeta(meta: Record<string, unknown> | undefined | null):
 }
 
 export function Onboarding() {
+  const shouldReduceMotion = useReducedMotion();
   const navigate = useNavigate();
   const [form, setForm] = useState<OnboardingForm>(EMPTY);
   const [error, setError] = useState("");
@@ -140,46 +143,52 @@ export function Onboarding() {
           title="Build your profile"
           description="These details are saved to your private profile. Your sign-up name is filled in automatically when available."
         />
-        <Card className="stack">
-          {loading ? (
-            <p style={{ margin: 0 }}>Loading your profile…</p>
-          ) : (
-            <>
-              <div className="grid-2">
-                {(
-                  [
-                    ["full_name", "Full name"],
-                    ["headline", "Professional headline"],
-                    ["phone", "Phone"],
-                    ["location", "Location"],
-                    ["current_role", "Current role"],
-                  ] as const
-                ).map(([key, label]) => (
-                  <label className="field-label" key={key}>
-                    {label}
-                    <Input
-                      value={form[key]}
-                      onChange={(e: any) => updateField(key, e.target.value)}
-                      required={key === "full_name"}
-                    />
-                  </label>
-                ))}
-              </div>
-              <label className="field-label">
-                Bio
-                <Textarea value={form.bio} onChange={(e: any) => updateField("bio", e.target.value)} />
-              </label>
-              {error ? (
-                <p role="alert" className="field-error">
-                  {error}
-                </p>
-              ) : null}
-              <Button disabled={saving} onClick={() => void save()}>
-                {saving ? "Saving…" : "Save profile"}
-              </Button>
-            </>
-          )}
-        </Card>
+        <motion.div
+          variants={pageTransitionVariants}
+          initial={shouldReduceMotion ? false : "hidden"}
+          animate="visible"
+        >
+          <Card className="stack">
+            {loading ? (
+              <p style={{ margin: 0 }}>Loading your profile…</p>
+            ) : (
+              <>
+                <div className="grid-2">
+                  {(
+                    [
+                      ["full_name", "Full name"],
+                      ["headline", "Professional headline"],
+                      ["phone", "Phone"],
+                      ["location", "Location"],
+                      ["current_role", "Current role"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <label className="field-label" key={key}>
+                      {label}
+                      <Input
+                        value={form[key]}
+                        onChange={(e: any) => updateField(key, e.target.value)}
+                        required={key === "full_name"}
+                      />
+                    </label>
+                  ))}
+                </div>
+                <label className="field-label">
+                  Bio
+                  <Textarea value={form.bio} onChange={(e: any) => updateField("bio", e.target.value)} />
+                </label>
+                {error ? (
+                  <p role="alert" className="field-error">
+                    {error}
+                  </p>
+                ) : null}
+                <Button disabled={saving} onClick={() => void save()}>
+                  {saving ? "Saving…" : "Save profile"}
+                </Button>
+              </>
+            )}
+          </Card>
+        </motion.div>
       </div>
     </main>
   );

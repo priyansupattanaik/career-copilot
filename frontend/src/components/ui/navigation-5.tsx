@@ -12,7 +12,14 @@ import { AnimatedIcon } from "@/components/ui/animated-icon";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { prefetchRoute } from "@/shared/route-prefetch";
 import { cn } from "@/shared/utils";
-import { useMotionValueEvent, useScroll } from "motion/react";
+import {
+  AnimatePresence,
+  motion,
+  useMotionValueEvent,
+  useReducedMotion,
+  useScroll,
+} from "motion/react";
+import { dropdownMenuVariants } from "@/components/ui/motion-system";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -24,10 +31,11 @@ import {
 } from "lucide-react";
 
 const navLinkClass =
-  "nav5-link rounded-full px-3 py-2 text-sm font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--surface)_55%,transparent)]";
+  "nav5-link relative rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] transition-all duration-200 hover:text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--surface-muted)_65%,transparent)]";
 
 export function Navigation5({ className }: { className?: string }) {
   const { pathname } = useLocation();
+  const reduceMotion = useReducedMotion();
   const atHome = pathname === "/";
   const sectionHref = (id: string) => (atHome ? `#${id}` : `/#${id}`);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -149,17 +157,11 @@ export function Navigation5({ className }: { className?: string }) {
             "nav5-pill flex h-16 w-full items-center justify-between gap-2 rounded-full border px-3 sm:px-4",
             scrolled && "nav5-pill-scrolled",
           )}
-          style={{
-            backgroundColor: "color-mix(in srgb, var(--surface) 48%, transparent)",
-            borderColor: "color-mix(in srgb, var(--border) 58%, transparent)",
-            backdropFilter: "blur(22px) saturate(180%)",
-            WebkitBackdropFilter: "blur(22px) saturate(180%)",
-          }}
         >
           {/* Logo Section */}
           <Link
             href="/"
-            className="nav5-brand flex items-center gap-2.5 pr-3 pl-2 transition-transform hover:scale-[1.02]"
+            className="nav5-brand flex items-center gap-2.5 pr-3 pl-2 select-none"
             aria-label="Career Copilot home"
           >
             <BrandMark />
@@ -188,9 +190,9 @@ export function Navigation5({ className }: { className?: string }) {
               <button
                 type="button"
                 className={cn(
-                  "flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] transition-all hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
+                  "nav5-link flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] transition-all hover:bg-[color-mix(in_srgb,var(--surface-muted)_65%,transparent)] hover:text-[var(--text)]",
                   solutionsOpen &&
-                    "bg-[var(--surface-muted)] text-[var(--text)]",
+                    "bg-[color-mix(in_srgb,var(--surface-muted)_80%,transparent)] text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]",
                 )}
                 aria-expanded={solutionsOpen}
                 onClick={() => setSolutionsOpen((v) => !v)}
@@ -206,114 +208,120 @@ export function Navigation5({ className }: { className?: string }) {
               </button>
 
               {/* Mega Menu Dropdown Island */}
-              {solutionsOpen && (
-                <div
-                  className="nav5-dropdown absolute top-full left-1/2 -translate-x-1/2 pt-3 w-[740px] transition-all"
-                  role="menu"
-                  aria-label="Platform solutions"
-                >
-                  <div className="nav5-menu overflow-hidden rounded-3xl border p-6">
-                    <div className="grid grid-cols-3 gap-6 divide-x divide-[var(--divider)]">
-                      {/* Column 1: Resume & ATS */}
-                      <div className="flex flex-col gap-3 pr-4">
-                        <div className="mb-1 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-muted)] text-[var(--primary-strong)]">
-                          <FileText className="size-4.5" />
+              <AnimatePresence>
+                {solutionsOpen && (
+                  <motion.div
+                    className="nav5-dropdown absolute top-full left-1/2 -translate-x-1/2 pt-3 w-[740px]"
+                    role="menu"
+                    aria-label="Platform solutions"
+                    variants={dropdownMenuVariants}
+                    initial={reduceMotion ? false : "initial"}
+                    animate="animate"
+                    exit="exit"
+                  >
+                    <div className="nav5-menu overflow-hidden rounded-3xl border p-6">
+                      <div className="grid grid-cols-3 gap-6 divide-x divide-[var(--divider)]">
+                        {/* Column 1: Resume & ATS */}
+                        <div className="flex flex-col gap-3 pr-4">
+                          <div className="mb-1 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-muted)] text-[var(--primary-strong)]">
+                            <FileText className="size-4.5" />
+                          </div>
+                          <h4 className="text-sm font-semibold text-[var(--text)]">
+                            ATS & Evidence
+                          </h4>
+                          <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                            Extract verified skills, score resume fit against real
+                            job descriptions, and close gaps.
+                          </p>
+                          <div className="mt-1 flex flex-col gap-1">
+                            <Link
+                              href="/resume-analysis?tab=upload"
+                              className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--primary-strong)] transition-colors"
+                              onClick={() => setSolutionsOpen(false)}
+                            >
+                              Analyze Resume
+                            </Link>
+                            <Link
+                              href="/resume-analysis"
+                              className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--primary-strong)] transition-colors"
+                              onClick={() => setSolutionsOpen(false)}
+                            >
+                              Score Breakdown
+                            </Link>
+                          </div>
                         </div>
-                        <h4 className="text-sm font-semibold text-[var(--text)]">
-                          ATS & Evidence
-                        </h4>
-                        <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                          Extract verified skills, score resume fit against real
-                          job descriptions, and close gaps.
-                        </p>
-                        <div className="mt-1 flex flex-col gap-1">
-                          <Link
-                            href="/resume-analysis?tab=upload"
-                            className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--primary-strong)] transition-colors"
-                            onClick={() => setSolutionsOpen(false)}
-                          >
-                            Analyze Resume
-                          </Link>
-                          <Link
-                            href="/resume-analysis"
-                            className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--primary-strong)] transition-colors"
-                            onClick={() => setSolutionsOpen(false)}
-                          >
-                            Score Breakdown
-                          </Link>
-                        </div>
-                      </div>
 
-                      {/* Column 2: Mock Interview & Learning */}
-                      <div className="flex flex-col gap-3 px-4">
-                        <div className="mb-1 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-muted)] text-[var(--primary-strong)]">
-                          <Video className="size-4.5" />
+                        {/* Column 2: Mock Interview & Learning */}
+                        <div className="flex flex-col gap-3 px-4">
+                          <div className="mb-1 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-muted)] text-[var(--primary-strong)]">
+                            <Video className="size-4.5" />
+                          </div>
+                          <h4 className="text-sm font-semibold text-[var(--text)]">
+                            Interview & Skills
+                          </h4>
+                          <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                            Real-time AI video interviews with voice, turn-taking,
+                            and tailored gap curriculum.
+                          </p>
+                          <div className="mt-1 flex flex-col gap-1">
+                            <Link
+                              href="/mock-interview/preparation"
+                              className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--primary-strong)] transition-colors"
+                              onClick={() => setSolutionsOpen(false)}
+                            >
+                              Video Practice Room
+                            </Link>
+                            <Link
+                              href="/learning"
+                              className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--primary-strong)] transition-colors"
+                              onClick={() => setSolutionsOpen(false)}
+                            >
+                              Learning Path
+                            </Link>
+                          </div>
                         </div>
-                        <h4 className="text-sm font-semibold text-[var(--text)]">
-                          Interview & Skills
-                        </h4>
-                        <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                          Real-time AI video interviews with voice, turn-taking,
-                          and tailored gap curriculum.
-                        </p>
-                        <div className="mt-1 flex flex-col gap-1">
+
+                        {/* Column 3: Featured Card */}
+                        <div className="flex flex-col pl-4">
+                          <span className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                            Featured
+                          </span>
                           <Link
                             href="/mock-interview/preparation"
-                            className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--primary-strong)] transition-colors"
+                            className="group relative flex flex-1 flex-col justify-between overflow-hidden rounded-2xl border border-[var(--border)] p-4 transition-all hover:border-[var(--primary-strong)] hover:shadow-md"
+                            style={{
+                              backgroundColor: "var(--surface-muted)",
+                            }}
                             onClick={() => setSolutionsOpen(false)}
                           >
-                            Video Practice Room
-                          </Link>
-                          <Link
-                            href="/learning"
-                            className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--primary-strong)] transition-colors"
-                            onClick={() => setSolutionsOpen(false)}
-                          >
-                            Learning Path
+                            <div>
+                              <span className="badge badge-info mb-2 text-[10px] uppercase tracking-wider">
+                                Live AI Studio
+                              </span>
+                              <h5 className="text-xs font-bold text-[var(--text)]">
+                                Camera & Mic Readiness
+                              </h5>
+                              <p className="mt-1 text-[11px] text-[var(--text-muted)] leading-normal">
+                                Test lighting, speech pace, and receive instant
+                                feedback.
+                              </p>
+                            </div>
+                            <div className="mt-3 flex items-center text-xs font-semibold text-[var(--primary-strong)]">
+                              <span>Try session</span>
+                              <AnimatedIcon
+                                icon={ArrowUpRight}
+                                size={13}
+                                className="ml-1"
+                                aria-hidden
+                              />
+                            </div>
                           </Link>
                         </div>
                       </div>
-
-                      {/* Column 3: Featured Card */}
-                      <div className="flex flex-col pl-4">
-                        <span className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                          Featured
-                        </span>
-                        <Link
-                          href="/mock-interview/preparation"
-                          className="group relative flex flex-1 flex-col justify-between overflow-hidden rounded-2xl border border-[var(--border)] p-4 transition-all hover:border-[var(--primary-strong)] hover:shadow-md"
-                          style={{
-                            backgroundColor: "var(--surface-muted)",
-                          }}
-                          onClick={() => setSolutionsOpen(false)}
-                        >
-                          <div>
-                            <span className="badge badge-info mb-2 text-[10px] uppercase tracking-wider">
-                              Live AI Studio
-                            </span>
-                            <h5 className="text-xs font-bold text-[var(--text)]">
-                              Camera & Mic Readiness
-                            </h5>
-                            <p className="mt-1 text-[11px] text-[var(--text-muted)] leading-normal">
-                              Test lighting, speech pace, and receive instant
-                              feedback.
-                            </p>
-                          </div>
-                          <div className="mt-3 flex items-center text-xs font-semibold text-[var(--primary-strong)]">
-                            <span>Try session</span>
-                            <AnimatedIcon
-                              icon={ArrowUpRight}
-                              size={13}
-                              className="ml-1"
-                              aria-hidden
-                            />
-                          </div>
-                        </Link>
-                      </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <Link href="/community" className={navLinkClass}>
@@ -330,7 +338,7 @@ export function Navigation5({ className }: { className?: string }) {
               <ThemeToggle compact />
               <Link
                 href="/sign-in"
-                className="rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text)] transition-colors hover:bg-[var(--surface-muted)]"
+                className="nav5-link rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text)] transition-all hover:bg-[color-mix(in_srgb,var(--surface-muted)_65%,transparent)]"
                 onMouseEnter={() => prefetchRoute("/sign-in")}
                 onFocus={() => prefetchRoute("/sign-in")}
               >
@@ -344,7 +352,7 @@ export function Navigation5({ className }: { className?: string }) {
             >
               <Link
                 href="/sign-up"
-                className="button button-primary hidden sm:inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-semibold shadow-sm"
+                className="button button-primary hidden sm:inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-semibold shadow-sm transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <span>Get started</span>
                 <AnimatedIcon icon={ArrowRight} size={15} aria-hidden />
@@ -356,7 +364,7 @@ export function Navigation5({ className }: { className?: string }) {
               <button
                 ref={menuButtonRef}
                 type="button"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--surface-muted)_65%,transparent)] transition-colors active:scale-95"
                 aria-label="Open navigation"
                 aria-expanded={mobileOpen}
                 onClick={() => setMobileOpen(true)}
@@ -369,156 +377,172 @@ export function Navigation5({ className }: { className?: string }) {
       </div>
 
       {/* Mobile Drawer / Sheet */}
-      {mobileOpen && (
-        <div
-          ref={dialogRef}
-          className="fixed inset-0 z-50 flex justify-end"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Mobile navigation"
-        >
-          {/* Backdrop Scrim */}
+      <AnimatePresence>
+        {mobileOpen && (
           <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
-            onClick={closeMobileMenu}
-            aria-hidden="true"
-          />
+            ref={dialogRef}
+            className="fixed inset-0 z-50 flex justify-end"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mobile navigation"
+          >
+            {/* Backdrop Scrim */}
+            <motion.div
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={closeMobileMenu}
+              aria-hidden="true"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            />
 
-          {/* Drawer Content */}
-          <div className="nav5-drawer relative z-10 flex h-full w-full max-w-sm flex-col border-l p-6 shadow-2xl">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-[var(--divider)]">
-              <div className="flex items-center gap-2">
-                <BrandMark />
-                <span className="text-base font-bold text-[var(--text)]">
-                  Career Copilot
-                </span>
-              </div>
-              <button
-                type="button"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)] transition-colors"
-                aria-label="Close menu"
-                onClick={closeMobileMenu}
-              >
-                <AnimatedIcon icon={X} size={18} idle={false} aria-hidden />
-              </button>
-            </div>
-
-            {/* Navigation Links */}
-            <div className="flex flex-1 flex-col gap-2 overflow-y-auto py-6">
-              <a
-                href={sectionHref("practice")}
-                className="rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
-                onClick={closeAndFollowAnchor}
-              >
-                Practice
-              </a>
-
-              <a
-                href={sectionHref("system")}
-                className="rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
-                onClick={closeAndFollowAnchor}
-              >
-                How it works
-              </a>
-
-              {/* Mobile Collapsible Platform section */}
-              <div>
+            {/* Drawer Content */}
+            <motion.div
+              className="nav5-drawer relative z-10 flex h-full w-full max-w-sm flex-col border-l p-6 shadow-2xl"
+              initial={reduceMotion ? { opacity: 0 } : { x: "100%" }}
+              animate={reduceMotion ? { opacity: 1 } : { x: 0 }}
+              exit={reduceMotion ? { opacity: 0 } : { x: "100%" }}
+              transition={
+                reduceMotion
+                  ? { duration: 0.15 }
+                  : { type: "spring", stiffness: 340, damping: 32 }
+              }
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-[var(--divider)]">
+                <div className="flex items-center gap-2">
+                  <BrandMark />
+                  <span className="text-base font-bold text-[var(--text)]">
+                    Career Copilot
+                  </span>
+                </div>
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
-                  onClick={() => setMobileSolutionsOpen((v) => !v)}
-                  aria-expanded={mobileSolutionsOpen}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)] transition-colors"
+                  aria-label="Close menu"
+                  onClick={closeMobileMenu}
                 >
-                  <span>Platform Modules</span>
-                  <ChevronDown
-                    className={cn(
-                      "size-4 text-[var(--text-muted)] transition-transform duration-200",
-                      mobileSolutionsOpen && "rotate-180",
-                    )}
-                  />
+                  <AnimatedIcon icon={X} size={18} idle={false} aria-hidden />
                 </button>
-                {mobileSolutionsOpen && (
-                  <div className="mt-1 ml-3 flex flex-col gap-1 border-l-2 border-[var(--divider)] pl-3">
-                    <Link
-                      href="/resume-analysis?tab=upload"
-                      className="rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary-strong)]"
-                      onClick={closeMobileMenu}
-                    >
-                      Resume Analysis
-                    </Link>
-                    <Link
-                      href="/mock-interview/preparation"
-                      className="rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary-strong)]"
-                      onClick={closeMobileMenu}
-                    >
-                      Mock Interview Studio
-                    </Link>
-                    <Link
-                      href="/learning"
-                      className="rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary-strong)]"
-                      onClick={closeMobileMenu}
-                    >
-                      Learning Path
-                    </Link>
-                    <Link
-                      href="/jobs"
-                      className="rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary-strong)]"
-                      onClick={closeMobileMenu}
-                    >
-                      Recommended Jobs
-                    </Link>
-                  </div>
-                )}
               </div>
 
-              <Link
-                href="/community"
-                className="rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Community
-              </Link>
-              <Link
-                href="/teams"
-                className="rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Team
-              </Link>
+              {/* Navigation Links */}
+              <div className="flex flex-1 flex-col gap-2 overflow-y-auto py-6">
+                <a
+                  href={sectionHref("practice")}
+                  className="rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
+                  onClick={closeAndFollowAnchor}
+                >
+                  Practice
+                </a>
 
-              <div className="my-2 border-t border-[var(--divider)] pt-2">
-                <div className="flex items-center justify-between px-3 py-2">
-                  <span className="text-xs font-medium text-[var(--text-muted)]">
-                    Theme
-                  </span>
-                  <ThemeToggle />
+                <a
+                  href={sectionHref("system")}
+                  className="rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
+                  onClick={closeAndFollowAnchor}
+                >
+                  How it works
+                </a>
+
+                {/* Mobile Collapsible Platform section */}
+                <div>
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
+                    onClick={() => setMobileSolutionsOpen((v) => !v)}
+                    aria-expanded={mobileSolutionsOpen}
+                  >
+                    <span>Platform Modules</span>
+                    <ChevronDown
+                      className={cn(
+                        "size-4 text-[var(--text-muted)] transition-transform duration-200",
+                        mobileSolutionsOpen && "rotate-180",
+                      )}
+                    />
+                  </button>
+                  {mobileSolutionsOpen && (
+                    <div className="mt-1 ml-3 flex flex-col gap-1 border-l-2 border-[var(--divider)] pl-3">
+                      <Link
+                        href="/resume-analysis?tab=upload"
+                        className="rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary-strong)]"
+                        onClick={closeMobileMenu}
+                      >
+                        Resume Analysis
+                      </Link>
+                      <Link
+                        href="/mock-interview/preparation"
+                        className="rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary-strong)]"
+                        onClick={closeMobileMenu}
+                      >
+                        Mock Interview Studio
+                      </Link>
+                      <Link
+                        href="/learning"
+                        className="rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary-strong)]"
+                        onClick={closeMobileMenu}
+                      >
+                        Learning Path
+                      </Link>
+                      <Link
+                        href="/jobs"
+                        className="rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary-strong)]"
+                        onClick={closeMobileMenu}
+                      >
+                        Recommended Jobs
+                      </Link>
+                    </div>
+                  )}
                 </div>
+
+                <Link
+                  href="/community"
+                  className="rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
+                  onClick={closeMobileMenu}
+                >
+                  Community
+                </Link>
+                <Link
+                  href="/teams"
+                  className="rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
+                  onClick={closeMobileMenu}
+                >
+                  Team
+                </Link>
+
+                <div className="my-2 border-t border-[var(--divider)] pt-2">
+                  <div className="flex items-center justify-between px-3 py-2">
+                    <span className="text-xs font-medium text-[var(--text-muted)]">
+                      Theme
+                    </span>
+                    <ThemeToggle />
+                  </div>
+                </div>
+
+                <Link
+                  href="/sign-in"
+                  className="rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
+                  onClick={closeMobileMenu}
+                >
+                  Sign in
+                </Link>
               </div>
 
-              <Link
-                href="/sign-in"
-                className="rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Sign in
-              </Link>
-            </div>
-
-            {/* Bottom CTA */}
-            <div className="pt-4 border-t border-[var(--divider)]">
-              <Link
-                href="/sign-up"
-                className="button button-primary flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold shadow-sm"
-                onClick={closeMobileMenu}
-              >
-                <span>Get started</span>
-                <AnimatedIcon icon={ArrowRight} size={16} aria-hidden />
-              </Link>
-            </div>
+              {/* Bottom CTA */}
+              <div className="pt-4 border-t border-[var(--divider)]">
+                <Link
+                  href="/sign-up"
+                  className="button button-primary flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold shadow-sm"
+                  onClick={closeMobileMenu}
+                >
+                  <span>Get started</span>
+                  <AnimatedIcon icon={ArrowRight} size={16} aria-hidden />
+                </Link>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </nav>
   );
 }

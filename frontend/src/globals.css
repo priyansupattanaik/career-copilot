@@ -127,11 +127,11 @@ button > svg {
 }
 a:hover > svg,
 button:hover > svg {
-  transform: translateY(-1px) scale(1.06);
+  transform: scale(1.04);
 }
 a:active > svg,
 button:active > svg {
-  transform: translateY(1px) scale(0.94);
+  transform: scale(0.96);
 }
 [data-motion-paused="true"] a:hover > svg,
 [data-motion-paused="true"] button:hover > svg {
@@ -3027,10 +3027,10 @@ p {
 .icon-button:hover {
   box-shadow: var(--shadow-md);
   border-color: color-mix(in srgb, var(--primary-strong) 45%, var(--border));
-  transform: translateY(-1px);
+  transform: none;
 }
 .icon-button:active {
-  transform: translateY(1px) scale(0.97);
+  transform: scale(0.97);
 }
 
 .mobile-menu-button {
@@ -8419,49 +8419,119 @@ select option {
   }
 }
 .nav5-pill {
-  background: color-mix(in srgb, var(--surface) 48%, transparent);
-  border-color: color-mix(in srgb, var(--border) 58%, white 22%);
+  position: relative;
+  /* 100% Solid, Non-Transparent Surface with Liquid Glass specular top sheen */
+  background:
+    radial-gradient(130% 120% at 50% -20%, rgba(255, 255, 255, 0.95) 0%, rgba(246, 250, 255, 0.5) 45%, rgba(255, 255, 255, 0) 75%),
+    linear-gradient(180deg, #ffffff 0%, #f6faff 100%);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, white 30%);
   box-shadow:
-    0 1px 0 color-mix(in srgb, white 55%, transparent) inset,
-    0 10px 28px color-mix(in srgb, var(--text) 8%, transparent);
-  backdrop-filter: blur(22px) saturate(180%);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
+    0 1.5px 1.5px 0 #ffffff inset,
+    0 -1.5px 1px 0 rgba(11, 41, 66, 0.05) inset,
+    0 14px 34px -8px rgba(11, 41, 66, 0.12),
+    0 4px 12px -2px rgba(11, 41, 66, 0.06);
   transition:
-    background-color 280ms var(--ease-out),
-    box-shadow 280ms var(--ease-out),
-    border-color 280ms var(--ease-out);
+    background 320ms var(--ease-out),
+    box-shadow 320ms var(--ease-out),
+    border-color 320ms var(--ease-out);
+}
+.nav5-pill::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.06) 35%, transparent 60%);
+  mask-image: linear-gradient(to bottom, black 0%, black 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 50%, transparent 100%);
 }
 .nav5-pill-scrolled {
-  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  background:
+    radial-gradient(130% 120% at 50% -20%, rgba(255, 255, 255, 0.95) 0%, rgba(246, 250, 255, 0.45) 45%, rgba(255, 255, 255, 0) 75%),
+    linear-gradient(180deg, #ffffff 0%, #f0f6ff 100%);
+  border-color: var(--border-strong);
   box-shadow:
-    0 1px 0 color-mix(in srgb, white 40%, transparent) inset,
-    0 14px 36px color-mix(in srgb, var(--text) 12%, transparent);
+    0 1.5px 1.5px 0 #ffffff inset,
+    0 -1.5px 1px 0 rgba(11, 41, 66, 0.07) inset,
+    0 18px 38px -8px rgba(11, 41, 66, 0.15),
+    0 6px 14px -2px rgba(11, 41, 66, 0.08);
 }
-.nav5-link:active,
-.nav5-brand:active {
-  transform: scale(0.98);
+.nav5-link {
+  transition:
+    color 200ms var(--ease-out),
+    background-color 200ms var(--ease-out),
+    box-shadow 200ms var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+.nav5-link:hover {
+  box-shadow:
+    0 1px 1px 0 rgba(255, 255, 255, 0.4) inset,
+    0 2px 8px 0 rgba(0, 0, 0, 0.04);
+}
+.nav5-link:active {
+  transform: scale(0.97);
+}
+/* Brand logo & Career Copilot text: completely static, zero hover or active reaction */
+.nav5-brand,
+.nav5-brand:hover,
+.nav5-brand:active,
+.nav5-brand:focus,
+.nav5-brand *,
+.nav5-brand:hover * {
+  transform: none !important;
+  transition: none !important;
 }
 .nav5-menu,
 .nav5-drawer {
-  background: color-mix(in srgb, var(--surface) 72%, transparent);
-  border-color: color-mix(in srgb, var(--border) 70%, transparent);
-  backdrop-filter: blur(24px) saturate(170%);
-  -webkit-backdrop-filter: blur(24px) saturate(170%);
-  box-shadow: 0 24px 60px color-mix(in srgb, var(--text) 12%, transparent);
+  position: relative;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border-color: var(--border);
+  box-shadow:
+    0 1.5px 1.5px 0 #ffffff inset,
+    0 -1px 1.5px 0 rgba(11, 41, 66, 0.04) inset,
+    0 26px 58px -10px rgba(11, 41, 66, 0.16),
+    0 10px 22px -4px rgba(11, 41, 66, 0.08);
 }
 [data-theme="dark"] .nav5-pill {
-  background: color-mix(in srgb, var(--surface) 42%, transparent);
-  border-color: color-mix(in srgb, var(--border) 50%, transparent);
+  /* 100% Solid, Non-Transparent Dark Surface with Liquid Glass specular top sheen */
+  background:
+    radial-gradient(130% 120% at 50% -20%, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 65%),
+    linear-gradient(180deg, #17263c 0%, #111c2d 100%);
+  border: 1px solid color-mix(in srgb, var(--border) 75%, white 12%);
   box-shadow:
-    0 1px 0 color-mix(in srgb, white 8%, transparent) inset,
-    0 10px 28px rgb(0 0 0 / 28%);
+    0 1.5px 1.5px 0 rgba(255, 255, 255, 0.16) inset,
+    0 -1.5px 1.5px 0 rgba(0, 0, 0, 0.6) inset,
+    0 18px 42px -8px rgba(0, 0, 0, 0.7),
+    0 6px 16px -2px rgba(0, 0, 0, 0.45);
+}
+[data-theme="dark"] .nav5-pill::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.02) 40%, transparent 85%);
 }
 [data-theme="dark"] .nav5-pill-scrolled {
-  background: color-mix(in srgb, var(--surface) 58%, transparent);
+  background:
+    radial-gradient(130% 120% at 50% -20%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 65%),
+    linear-gradient(180deg, #1a2a42 0%, #111c2d 100%);
+  border-color: color-mix(in srgb, var(--border) 90%, white 16%);
+  box-shadow:
+    0 1.5px 1.5px 0 rgba(255, 255, 255, 0.2) inset,
+    0 -1.5px 1.5px 0 rgba(0, 0, 0, 0.7) inset,
+    0 22px 48px -8px rgba(0, 0, 0, 0.8),
+    0 8px 18px -2px rgba(0, 0, 0, 0.5);
+}
+[data-theme="dark"] .nav5-link:hover {
+  box-shadow:
+    0 1px 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 2px 8px 0 rgba(0, 0, 0, 0.25);
 }
 [data-theme="dark"] .nav5-menu,
 [data-theme="dark"] .nav5-drawer {
-  background: color-mix(in srgb, var(--surface) 64%, transparent);
+  background: linear-gradient(180deg, #17263b 0%, #111c2d 100%);
+  border-color: color-mix(in srgb, var(--border) 70%, white 12%);
+  box-shadow:
+    0 1.5px 1.5px 0 rgba(255, 255, 255, 0.14) inset,
+    0 -1px 1.5px 0 rgba(0, 0, 0, 0.6) inset,
+    0 28px 64px -10px rgba(0, 0, 0, 0.75),
+    0 12px 26px -4px rgba(0, 0, 0, 0.5);
 }
 @media (prefers-reduced-transparency: reduce) {
   .nav5-pill,
@@ -8471,6 +8541,10 @@ select option {
     background: var(--surface);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent);
+  }
+  .nav5-pill::before {
+    display: none;
   }
 }
 
@@ -9800,10 +9874,7 @@ select option {
 @keyframes cc-bob {
   0%,
   100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
+    transform: none;
   }
 }
 
@@ -9838,18 +9909,20 @@ select option {
   animation: cc-pulse 2.4s ease-in-out infinite;
 }
 .home-float-card {
-  animation: cc-bob 7s ease-in-out 1.4s infinite;
+  animation: none !important;
+  transform: none !important;
 }
+.career-icon,
 .career-icon .icon-idle {
   display: inline-flex;
-  animation: cc-bob 6.5s ease-in-out infinite;
+  animation: none !important;
+  transform: none !important;
 }
 .home-page[data-motion="paused"] .career-icon .icon-idle,
 .home-page[data-motion="paused"] .home-float-card {
   animation-play-state: paused;
 }
-.home-page[data-motion="paused"] .home-live-label i,
-.home-page[data-motion="paused"] .home-float-card {
+.home-page[data-motion="paused"] .home-live-label i {
   animation-play-state: paused;
 }
 

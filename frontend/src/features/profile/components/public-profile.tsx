@@ -3,6 +3,13 @@ import { Link } from "@/shared/ui/router-link";
 import { resolveApiBase } from "@/shared/config";
 import { demoApiRequest, isDemoSession } from "@/features/auth/demo-session";
 import { isAbortError } from "@/shared/api/client";
+import { motion, useReducedMotion } from "motion/react";
+import {
+  staggerContainerVariants,
+  staggerItemVariants,
+  FLUID_SPRING_TRANSITION,
+  FAST_SPRING_TRANSITION,
+} from "@/components/ui/motion-system";
 
 type PublicProfilePayload = {
   profile: Record<string, unknown>;
@@ -56,6 +63,7 @@ function LinkTypeIcon({ type, size = 14 }: { type: string; size?: number }) {
 }
 
 export function PublicProfile({ username }: { username: string }) {
+  const shouldReduceMotion = useReducedMotion();
   const [data, setData] = useState<PublicProfilePayload | null>(null);
   const [error, setError] = useState("");
 
@@ -138,8 +146,17 @@ export function PublicProfile({ username }: { username: string }) {
 
   return (
     <main className="public-profile-page">
-      <div className="public-profile-container">
-        <header className="public-profile-hero">
+      <motion.div
+        className="public-profile-container"
+        variants={staggerContainerVariants}
+        initial={shouldReduceMotion ? false : "hidden"}
+        animate="visible"
+      >
+        <motion.header
+          className="public-profile-hero"
+          variants={staggerItemVariants}
+          transition={FLUID_SPRING_TRANSITION}
+        >
           <div className="public-profile-hero-main">
             <div className="public-profile-avatar" aria-hidden={avatarUrl ? undefined : true}>
               {avatarUrl ? (
@@ -185,17 +202,23 @@ export function PublicProfile({ username }: { username: string }) {
           <div className="public-profile-hero-actions">
             <Link className="public-profile-cta" href="/sign-in">Build your own</Link>
           </div>
-        </header>
+        </motion.header>
 
         {profile.bio ? (
-          <section className="public-profile-card public-profile-bio-card">
+          <motion.section
+            className="public-profile-card public-profile-bio-card"
+            variants={staggerItemVariants}
+          >
             <h2>About</h2>
             <p className="public-profile-bio">{String(profile.bio)}</p>
-          </section>
+          </motion.section>
         ) : null}
 
         {displayLinks.length > 0 ? (
-          <section className="public-profile-card">
+          <motion.section
+            className="public-profile-card"
+            variants={staggerItemVariants}
+          >
             <div className="public-profile-card-head">
               <h2>Connect</h2>
               <span className="public-profile-card-count">{displayLinks.length}</span>
@@ -206,7 +229,15 @@ export function PublicProfile({ username }: { username: string }) {
                 const type = String(row.link_type || "other");
                 const label = String(row.label || (type.charAt(0).toUpperCase() + type.slice(1)));
                 return (
-                  <a key={String(row.id || url)} className="public-profile-link" href={url} target="_blank" rel="noreferrer">
+                  <motion.a
+                    key={String(row.id || url)}
+                    className="public-profile-link"
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+                    transition={FAST_SPRING_TRANSITION}
+                  >
                     <span className="public-profile-link-icon">
                       <LinkTypeIcon type={type} size={16} />
                     </span>
@@ -215,15 +246,18 @@ export function PublicProfile({ username }: { username: string }) {
                       <span className="public-profile-link-url">{url.replace(/^https?:\/\/(www\.)?/, "")}</span>
                     </span>
                     <ExternalIcon size={14} />
-                  </a>
+                  </motion.a>
                 );
               })}
             </div>
-          </section>
+          </motion.section>
         ) : null}
 
         {projects.length > 0 ? (
-          <section className="public-profile-card">
+          <motion.section
+            className="public-profile-card"
+            variants={staggerItemVariants}
+          >
             <div className="public-profile-card-head">
               <h2>Projects</h2>
               <span className="public-profile-card-count">{projects.length}</span>
@@ -238,7 +272,12 @@ export function PublicProfile({ username }: { username: string }) {
                 const hasGithub = isValidHttpUrl(github);
                 const hasLive = isValidHttpUrl(live);
                 return (
-                  <article key={String(row.id || title)} className="public-profile-project">
+                  <motion.article
+                    key={String(row.id || title)}
+                    className="public-profile-project"
+                    whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+                    transition={FLUID_SPRING_TRANSITION}
+                  >
                     <div className="public-profile-project-head">
                       <h3>{title}</h3>
                       {role ? <span className="public-profile-project-role">{role}</span> : null}
@@ -258,16 +297,19 @@ export function PublicProfile({ username }: { username: string }) {
                         ) : null}
                       </div>
                     ) : null}
-                  </article>
+                  </motion.article>
                 );
               })}
             </div>
-          </section>
+          </motion.section>
         ) : null}
 
         <div className="public-profile-grid">
           {skills.length > 0 ? (
-            <section className="public-profile-card">
+            <motion.section
+              className="public-profile-card"
+              variants={staggerItemVariants}
+            >
               <div className="public-profile-card-head">
                 <h2>Skills</h2>
                 <span className="public-profile-card-count">{skills.length}</span>
@@ -277,11 +319,14 @@ export function PublicProfile({ username }: { username: string }) {
                   <span key={String(row.id || row.name)}>{String(row.name)}</span>
                 ))}
               </div>
-            </section>
+            </motion.section>
           ) : null}
 
           {experiences.length > 0 ? (
-            <section className="public-profile-card">
+            <motion.section
+              className="public-profile-card"
+              variants={staggerItemVariants}
+            >
               <div className="public-profile-card-head">
                 <h2>Experience</h2>
                 <span className="public-profile-card-count">{experiences.length}</span>
@@ -301,11 +346,14 @@ export function PublicProfile({ username }: { username: string }) {
                   </article>
                 ))}
               </div>
-            </section>
+            </motion.section>
           ) : null}
 
           {education.length > 0 ? (
-            <section className="public-profile-card">
+            <motion.section
+              className="public-profile-card"
+              variants={staggerItemVariants}
+            >
               <div className="public-profile-card-head">
                 <h2>Education</h2>
                 <span className="public-profile-card-count">{education.length}</span>
@@ -318,11 +366,14 @@ export function PublicProfile({ username }: { username: string }) {
                   </article>
                 ))}
               </div>
-            </section>
+            </motion.section>
           ) : null}
 
           {certifications.length > 0 ? (
-            <section className="public-profile-card">
+            <motion.section
+              className="public-profile-card"
+              variants={staggerItemVariants}
+            >
               <div className="public-profile-card-head">
                 <h2>Certifications</h2>
                 <span className="public-profile-card-count">{certifications.length}</span>
@@ -335,11 +386,14 @@ export function PublicProfile({ username }: { username: string }) {
                   </article>
                 ))}
               </div>
-            </section>
+            </motion.section>
           ) : null}
 
           {languages.length > 0 ? (
-            <section className="public-profile-card">
+            <motion.section
+              className="public-profile-card"
+              variants={staggerItemVariants}
+            >
               <div className="public-profile-card-head">
                 <h2>Languages</h2>
                 <span className="public-profile-card-count">{languages.length}</span>
@@ -352,16 +406,19 @@ export function PublicProfile({ username }: { username: string }) {
                   </span>
                 ))}
               </div>
-            </section>
+            </motion.section>
           ) : null}
         </div>
 
         {skills.length === 0 && experiences.length === 0 && education.length === 0 && projects.length === 0 && certifications.length === 0 && languages.length === 0 ? (
-          <section className="public-profile-card public-profile-empty-card">
+          <motion.section
+            className="public-profile-card public-profile-empty-card"
+            variants={staggerItemVariants}
+          >
             <p className="muted">This profile hasn’t added public sections yet.</p>
-          </section>
+          </motion.section>
         ) : null}
-      </div>
+      </motion.div>
     </main>
   );
 }

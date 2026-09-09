@@ -16,6 +16,8 @@ import { isPipelineStatus } from "./job-types";
 import { jobRecsCacheKey, readJobRecsCache, writeJobRecsCache } from "../job-recs-cache";
 import { Badge, Button, Card, EmptyState, PageHeader } from "@/shared/ui/primitives";
 import { AnimatedIcon } from "@/components/ui/animated-icon";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { FLUID_SPRING_TRANSITION } from "@/components/ui/motion-system";
 
 export type { Job, Recommendation } from "./job-types";
 
@@ -42,6 +44,7 @@ function normalizeStatus(status: string | undefined | null): SavedJobStatus {
 }
 
 export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
+  const reduceMotion = useReducedMotion();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [error, setError] = useState("");
@@ -440,7 +443,7 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
           </Button>
         </div>
       ) : (
-        <div className="cluster" role="tablist" aria-label="Filter pipeline by status" style={{ marginBottom: 8 }}>
+        <div className="cluster" role="tablist" aria-label="Filter pipeline by status" style={{ marginBottom: 8, position: "relative" }}>
           {(
             [
               ["all", `All (${counts.total})`],
@@ -448,16 +451,35 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
               ["applied", `Applied (${counts.applied})`],
               ["rejected", `Rejected (${counts.rejected})`],
             ] as const
-          ).map(([key, label]) => (
-            <Button
-              key={key}
-              variant={pipelineFilter === key ? "secondary" : "ghost"}
-              onClick={() => setPipelineFilter(key)}
-              aria-pressed={pipelineFilter === key}
-            >
-              {label}
-            </Button>
-          ))}
+          ).map(([key, label]) => {
+            const active = pipelineFilter === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                className={`button ${active ? "button-secondary is-active" : "button-ghost"}`}
+                onClick={() => setPipelineFilter(key)}
+                aria-pressed={active}
+                style={{ position: "relative" }}
+              >
+                {active ? (
+                  <motion.span
+                    layoutId="job-pipeline-active-pill"
+                    transition={reduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      borderRadius: "inherit",
+                      background: "color-mix(in srgb, var(--primary-strong) 12%, transparent)",
+                      border: "1px solid color-mix(in srgb, var(--primary-strong) 25%, transparent)",
+                      zIndex: 0,
+                    }}
+                  />
+                ) : null}
+                <span style={{ position: "relative", zIndex: 1 }}>{label}</span>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -528,18 +550,20 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
         </div>
       )}
 
-      {selected ? (
-        <JobModal
-          job={selected}
-          recommendation={selectedRec}
-          status={selectedStatus}
-          onToggleSave={() => void toggleSave(selected.id)}
-          onMarkApplied={() => void setJobStatus(selected.id, "applied")}
-          onMarkRejected={() => void setJobStatus(selected.id, "rejected")}
-          onClose={() => setSelectedJob(null)}
-          onDismiss={() => void dismissJob(selected.id)}
-        />
-      ) : null}
+      <AnimatePresence>
+        {selected ? (
+          <JobModal
+            job={selected}
+            recommendation={selectedRec}
+            status={selectedStatus}
+            onToggleSave={() => void toggleSave(selected.id)}
+            onMarkApplied={() => void setJobStatus(selected.id, "applied")}
+            onMarkRejected={() => void setJobStatus(selected.id, "rejected")}
+            onClose={() => setSelectedJob(null)}
+            onDismiss={() => void dismissJob(selected.id)}
+          />
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

@@ -24,6 +24,8 @@ import {
 import { CareerIcon, type CareerIconName } from "@/components/ui/career-icons";
 import { AnimatedIcon } from "@/components/ui/animated-icon";
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "motion/react";
+import { FLUID_SPRING_TRANSITION } from "@/components/ui/motion-system";
 import { cn } from "@/shared/utils";
 import {
   clampCompletion,
@@ -328,6 +330,7 @@ function Frame({
   description: string;
   className?: string;
 }) {
+  const shouldReduceMotion = useReducedMotion();
   const path = usePathname();
   return (
     <div className={cn("feature-page settings-page", className)}>
@@ -342,8 +345,23 @@ function Frame({
                 className={`button ${active ? "button-primary is-active" : "button-secondary"}`}
                 href={href}
                 aria-current={active ? "page" : undefined}
+                style={{ position: "relative" }}
               >
-                {label}
+                {active && (
+                  <motion.span
+                    layoutId="settings-tab-pill"
+                    transition={shouldReduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      borderRadius: "inherit",
+                      background: "var(--primary-strong, #6366f1)",
+                      pointerEvents: "none",
+                      zIndex: 0,
+                    }}
+                  />
+                )}
+                <span style={{ position: "relative", zIndex: 1 }}>{label}</span>
               </Link>
             );
           })}
@@ -707,37 +725,47 @@ function MultiOptionGroup({
       )}
 
       {selected.length > 0 ? (
-        <div
-          className="cluster"
-          role="list"
-          aria-label={`Selected ${legend.toLowerCase()}`}
-        >
-          {selected.map((value) => (
-            <span
-              key={value}
-              className="badge badge-info"
-              role="listitem"
-              style={{ gap: 8 }}
-            >
-              {labelByValue.get(value) || value}
-              <button
-                type="button"
-                className="button-quiet"
-                style={{
-                  minHeight: "auto",
-                  padding: 0,
-                  boxShadow: "none",
-                  border: "none",
-                  fontWeight: 600,
-                }}
-                onClick={() => removeValue(value)}
-                aria-label={`Remove ${labelByValue.get(value) || value}`}
-              >
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
+        <MotionConfig transition={{ type: "spring", stiffness: 300, damping: 40 }}>
+          <motion.div
+            layout
+            className="cluster"
+            role="list"
+            aria-label={`Selected ${legend.toLowerCase()}`}
+          >
+            <AnimatePresence mode="popLayout" initial={false}>
+              {selected.map((value) => (
+                <motion.span
+                  key={value}
+                  layout
+                  layoutId={`pref-tag-${legend}-${value}`}
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.85 }}
+                  className="badge badge-info"
+                  role="listitem"
+                  style={{ gap: 8 }}
+                >
+                  {labelByValue.get(value) || value}
+                  <button
+                    type="button"
+                    className="button-quiet"
+                    style={{
+                      minHeight: "auto",
+                      padding: 0,
+                      boxShadow: "none",
+                      border: "none",
+                      fontWeight: 600,
+                    }}
+                    onClick={() => removeValue(value)}
+                    aria-label={`Remove ${labelByValue.get(value) || value}`}
+                  >
+                    ×
+                  </button>
+                </motion.span>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        </MotionConfig>
       ) : (
         <p className="mono" style={{ margin: 0, opacity: 0.8 }}>
           None selected yet{required ? " (required)" : ""}.
@@ -901,6 +929,7 @@ export function ProfileSettings() {
   }, [form.username]);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const AVATAR_MAX_BYTES = 3 * 1024 * 1024;
+  const shouldReduceMotion = useReducedMotion();
 
   const [activeProfileSection, setActiveProfileSection] = useState<string>(
     () => {
@@ -1945,23 +1974,52 @@ export function ProfileSettings() {
 
           <nav className="profile-tabs" aria-label="Profile sections">
             <div className="profile-tabs-track">
-              {PROFILE_NAV.map((item) => (
-                <a
-                  key={item.id}
-                  href={`#${item.id}`}
-                  className={`profile-tab ${activeProfileSection === item.id ? "is-active" : ""}`}
-                  aria-current={
-                    activeProfileSection === item.id ? "page" : undefined
-                  }
-                  onClick={(event) => {
-                    event.preventDefault();
-                    openProfileSection(item.id);
-                  }}
-                >
-                  <CareerIcon name={item.icon} size={15} aria-hidden />
-                  {item.label}
-                </a>
-              ))}
+              {PROFILE_NAV.map((item) => {
+                const isActive = activeProfileSection === item.id;
+                return (
+                  <a
+                    key={item.id}
+                    href={`#${item.id}`}
+                    className={`profile-tab ${isActive ? "is-active" : ""}`}
+                    aria-current={isActive ? "page" : undefined}
+                    style={{ position: "relative" }}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      openProfileSection(item.id);
+                    }}
+                  >
+                    {isActive && (
+                      <motion.span
+                        layoutId="profile-nav-pill"
+                        transition={shouldReduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION}
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          borderRadius: 10,
+                          background: "var(--ps-panel, var(--surface))",
+                          border: "1px solid var(--ps-line, var(--border))",
+                          boxShadow:
+                            "0 1px 4px rgb(15 23 42 / 08%), 0 2px 8px rgb(15 23 42 / 06%)",
+                          pointerEvents: "none",
+                          zIndex: 0,
+                        }}
+                      />
+                    )}
+                    <span
+                      style={{
+                        position: "relative",
+                        zIndex: 1,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <CareerIcon name={item.icon} size={15} aria-hidden />
+                      {item.label}
+                    </span>
+                  </a>
+                );
+              })}
             </div>
           </nav>
 
@@ -2666,36 +2724,45 @@ export function ProfileSettings() {
                   )}
                 </div>
               </div>
-              <div className="profile-chip-list">
-                {skills.length === 0 && (
-                  <p className="profile-empty">No skills saved yet.</p>
-                )}
-                {skills.map((skill) => (
-                  <span
-                    key={skill.id}
-                    className={`badge ${editingSkillId === skill.id ? "badge-warning" : "badge-info"}`}
-                    style={{ gap: 8 }}
-                  >
-                    {skill.name}
-                    <button
-                      type="button"
-                      className="button-quiet profile-chip-action"
-                      onClick={() => startEditSkill(skill)}
-                      aria-label={`Edit ${skill.name}`}
-                    >
-                      <AnimatedIcon icon={Pencil} size={13} aria-hidden />
-                    </button>
-                    <button
-                      type="button"
-                      className="button-quiet profile-chip-action"
-                      onClick={() => removeRecord("skills", skill.id, "Skill")}
-                      aria-label={`Remove ${skill.name}`}
-                    >
-                      <AnimatedIcon icon={Trash2} size={13} aria-hidden />
-                    </button>
-                  </span>
-                ))}
-              </div>
+              <MotionConfig transition={{ type: "spring", stiffness: 300, damping: 40 }}>
+                <motion.div layout className="profile-chip-list">
+                  {skills.length === 0 && (
+                    <p className="profile-empty">No skills saved yet.</p>
+                  )}
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {skills.map((skill) => (
+                      <motion.span
+                        key={skill.id}
+                        layout
+                        layoutId={`skill-tag-${skill.id}`}
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.85 }}
+                        className={`badge ${editingSkillId === skill.id ? "badge-warning" : "badge-info"}`}
+                        style={{ gap: 8 }}
+                      >
+                        {skill.name}
+                        <button
+                          type="button"
+                          className="button-quiet profile-chip-action"
+                          onClick={() => startEditSkill(skill)}
+                          aria-label={`Edit ${skill.name}`}
+                        >
+                          <AnimatedIcon icon={Pencil} size={13} aria-hidden />
+                        </button>
+                        <button
+                          type="button"
+                          className="button-quiet profile-chip-action"
+                          onClick={() => removeRecord("skills", skill.id, "Skill")}
+                          aria-label={`Remove ${skill.name}`}
+                        >
+                          <AnimatedIcon icon={Trash2} size={13} aria-hidden />
+                        </button>
+                      </motion.span>
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
+              </MotionConfig>
             </Card>
 
             <Card
