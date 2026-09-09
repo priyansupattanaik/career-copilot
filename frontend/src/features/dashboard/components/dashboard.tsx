@@ -1,6 +1,6 @@
-﻿import { Link } from "@/shared/ui/router-link";
-import { useSyncExternalStore } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { Link } from "@/shared/ui/router-link";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { CopilotIcon } from "@/components/ui/copilot-icons";
 import {
   staggerContainerVariants,
@@ -42,6 +42,28 @@ function subscribeDemoMode() {
   return () => undefined;
 }
 
+const READINESS_DISMISSED_KEY = "career_copilot_readiness_100_dismissed";
+
+function readReadinessDismissed(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.sessionStorage.getItem(READINESS_DISMISSED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function writeReadinessDismissed(dismissed: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (dismissed) {
+      window.sessionStorage.setItem(READINESS_DISMISSED_KEY, "true");
+    } else {
+      window.sessionStorage.removeItem(READINESS_DISMISSED_KEY);
+    }
+  } catch {}
+}
+
 function DashboardSkeleton() {
   return (
     <div className="dashboard-skeleton" aria-busy="true" aria-live="polite">
@@ -74,6 +96,38 @@ export function Dashboard() {
     details,
     missing,
   );
+
+  const [readinessDismissed, setReadinessDismissed] = useState<boolean>(readReadinessDismissed);
+
+  useEffect(() => {
+    if (completion >= 100) {
+      if (!readinessDismissed) {
+        const timer = setTimeout(() => {
+          setReadinessDismissed(true);
+          writeReadinessDismissed(true);
+        }, 1200);
+        return () => clearTimeout(timer);
+      }
+    } else {
+      if (readinessDismissed) {
+        setReadinessDismissed(false);
+        writeReadinessDismissed(false);
+      }
+    }
+  }, [completion, readinessDismissed]);
+
+  const handleDismissReadiness = () => {
+    setReadinessDismissed(true);
+    writeReadinessDismissed(true);
+  };
+
+  const handleToggleReadiness = () => {
+    setReadinessDismissed((prev) => {
+      const next = !prev;
+      writeReadinessDismissed(next);
+      return next;
+    });
+  };
 
   const actions = data?.latest_actions;
   const lastResume = actions?.last_resume_upload;
@@ -375,8 +429,34 @@ export function Dashboard() {
         <Card className="dashboard-card dashboard-milestones-card">
           <div className="dashboard-card-header">
             <div>
-              <span className="dashboard-card-eyebrow">Profile & Milestones</span>
-              <h3 className="dashboard-card-title">Career Readiness</h3>
+              <span className="dashboard-card-eyebrow">
+                {completion >= 100 && readinessDismissed ? "Career Milestones" : "Profile & Milestones"}
+              </span>
+              <div className="dashboard-card-title-row">
+                <h3 className="dashboard-card-title">
+                  {completion >= 100 && readinessDismissed ? "Active Milestones" : "Career Readiness"}
+                </h3>
+                {completion >= 100 && (
+                  <button
+                    type="button"
+                    className="dashboard-readiness-complete-badge"
+                    onClick={handleToggleReadiness}
+                    title={
+                      readinessDismissed
+                        ? "Show profile readiness details"
+                        : "Hide profile readiness details"
+                    }
+                    aria-label={
+                      readinessDismissed
+                        ? "Profile 100% complete. Show details."
+                        : "Profile 100% complete. Hide details."
+                    }
+                  >
+                    <CopilotIcon name="check" size={11} />
+                    <span>100% Ready</span>
+                  </button>
+                )}
+              </div>
             </div>
             <Link className="dashboard-inline-action" href="/settings/profile">
               Edit Profile
@@ -385,31 +465,65 @@ export function Dashboard() {
 
           <div className="dashboard-card-content">
             {/* Readiness score ring row */}
-            <div className="dashboard-readiness-row">
-              <ScoreRing score={completion} label="Profile ready" size={88} unit="%" tone="accent" />
-              <div className="dashboard-readiness-meta">
-                <h4 className="dashboard-readiness-heading">
-                  {completion >= 100
-                    ? "Profile Fully Optimized"
-                    : `Profile ${completion}% Complete`}
-                </h4>
-                <p className="dashboard-readiness-desc">
-                  {completion >= 100
-                    ? "Your evidence records and background credentials are comprehensive."
-                    : missing.length > 0
-                    ? `Add ${missing[0]?.label || "more details"} to sharpen ATS alignment.`
-                    : "Add your latest projects and certifications to stand out."}
-                </p>
-                {completion < 100 && (
-                  <Link className="dashboard-inline-action" href="/settings/profile">
-                    Complete profile <CopilotIcon name="go" size={12} />
-                  </Link>
-                )}
-              </div>
-            </div>
+            <AnimatePresence initial={false}>
+              {(!readinessDismissed || completion < 100) && (
+                <motion.div
+                  key="dashboard-readiness-row"
+                  className="dashboard-readiness-row"
+                  initial={{ opacity: 1, height: "auto" }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{
+                    opacity: 0,
+                    height: 0,
+                    paddingBottom: 0,
+                    marginBottom: 0,
+                    borderBottomColor: "transparent",
+                    overflow: "hidden",
+                  }}
+                  transition={{
+                    duration: reduceMotion ? 0 : 0.45,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                >
+                  <ScoreRing score={completion} label="Profile ready" size={88} unit="%" tone="accent" />
+                  <div className="dashboard-readiness-meta">
+                    <div className="dashboard-readiness-meta-top">
+                      <h4 className="dashboard-readiness-heading">
+                        {completion >= 100
+                          ? "Profile Fully Optimized"
+                          : `Profile ${completion}% Complete`}
+                      </h4>
+                      {completion >= 100 && (
+                        <button
+                          type="button"
+                          className="dashboard-readiness-dismiss-btn"
+                          onClick={handleDismissReadiness}
+                          aria-label="Dismiss completion banner"
+                          title="Dismiss"
+                        >
+                          <CopilotIcon name="close" size={13} />
+                        </button>
+                      )}
+                    </div>
+                    <p className="dashboard-readiness-desc">
+                      {completion >= 100
+                        ? "Your evidence records and background credentials are comprehensive."
+                        : missing.length > 0
+                        ? `Add ${missing[0]?.label || "more details"} to sharpen ATS alignment.`
+                        : "Add your latest projects and certifications to stand out."}
+                    </p>
+                    {completion < 100 && (
+                      <Link className="dashboard-inline-action" href="/settings/profile">
+                        Complete profile <CopilotIcon name="go" size={12} />
+                      </Link>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Milestones list */}
-            <div className="dashboard-milestones-list">
+            <div className={`dashboard-milestones-list ${completion >= 100 && readinessDismissed ? "is-readiness-faded" : ""}`}>
               {/* Milestone 1: Resume */}
               <div className="dashboard-milestone-item">
                 <div className="dashboard-milestone-icon">
@@ -430,7 +544,27 @@ export function Dashboard() {
                 )}
               </div>
 
-              {/* Milestone 2: Interview */}
+              {/* Milestone 2: ATS Scan */}
+              <div className="dashboard-milestone-item">
+                <div className="dashboard-milestone-icon">
+                  <CopilotIcon name="scan" size={16} />
+                </div>
+                <div className="dashboard-milestone-info">
+                  <span className="dashboard-milestone-label">Latest ATS Scan</span>
+                  {data?.latest_ats_analysis ? (
+                    <Link className="dashboard-milestone-value" href={atsHref}>
+                      {atsScore != null ? `${atsScore}% Target Role Match` : "Analysis Completed"}
+                    </Link>
+                  ) : (
+                    <span className="dashboard-milestone-empty">No scan performed</span>
+                  )}
+                </div>
+                {atsScore != null && (
+                  <span className="dashboard-milestone-time">{atsScore}% match</span>
+                )}
+              </div>
+
+              {/* Milestone 3: Interview */}
               <div className="dashboard-milestone-item">
                 <div className="dashboard-milestone-icon">
                   <CopilotIcon name="trend" size={16} />
@@ -451,7 +585,7 @@ export function Dashboard() {
                 )}
               </div>
 
-              {/* Milestone 3: Job */}
+              {/* Milestone 4: Job */}
               <div className="dashboard-milestone-item">
                 <div className="dashboard-milestone-icon">
                   <CopilotIcon name="jobs" size={16} />
@@ -476,6 +610,14 @@ export function Dashboard() {
                   <span className="dashboard-milestone-time">{formatWhen(lastJob.at)}</span>
                 )}
               </div>
+            </div>
+
+            {/* Anchored sync footer to cleanly balance vertical height */}
+            <div className="dashboard-milestones-footer">
+              <span className="dashboard-milestones-sync-pill">
+                <CopilotIcon name="sparkles" size={12} />
+                <span>Signals synced with Copilot intelligence</span>
+              </span>
             </div>
           </div>
         </Card>

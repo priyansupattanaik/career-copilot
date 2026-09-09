@@ -18311,18 +18311,93 @@ body,
 }
 
 /* Career Readiness & Milestones */
+.workspace .dashboard-page .dashboard-milestones-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace .dashboard-page .dashboard-milestones-card .dashboard-card-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.workspace .dashboard-page .dashboard-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.workspace .dashboard-page .dashboard-readiness-complete-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  background: color-mix(in srgb, var(--success, #10b981) 12%, transparent);
+  color: var(--success, #10b981);
+  border: 1px solid color-mix(in srgb, var(--success, #10b981) 32%, transparent);
+  cursor: pointer;
+  transition: all 180ms ease;
+  line-height: 1;
+  user-select: none;
+}
+
+.workspace .dashboard-page .dashboard-readiness-complete-badge:hover {
+  background: color-mix(in srgb, var(--success, #10b981) 22%, transparent);
+  border-color: color-mix(in srgb, var(--success, #10b981) 50%, transparent);
+  transform: translateY(-1px);
+}
+
 .workspace .dashboard-page .dashboard-readiness-row {
   display: flex;
   align-items: center;
   gap: 20px;
   padding-bottom: 20px;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .workspace .dashboard-page .dashboard-readiness-meta {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  flex: 1;
+}
+
+.workspace .dashboard-page .dashboard-readiness-meta-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.workspace .dashboard-page .dashboard-readiness-dismiss-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+.workspace .dashboard-page .dashboard-readiness-dismiss-btn:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--border) 50%, transparent);
 }
 
 .workspace .dashboard-page .dashboard-readiness-heading {
@@ -18355,6 +18430,30 @@ body,
   flex-direction: column;
   gap: 10px;
   margin-top: 16px;
+  flex: 1;
+}
+
+.workspace .dashboard-page .dashboard-milestones-list.is-readiness-faded {
+  margin-top: 0;
+  gap: 12px;
+}
+
+.workspace .dashboard-page .dashboard-milestones-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+}
+
+.workspace .dashboard-page .dashboard-milestones-sync-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  color: var(--muted);
+  font-weight: 500;
 }
 
 .workspace .dashboard-page .dashboard-milestone-item {
