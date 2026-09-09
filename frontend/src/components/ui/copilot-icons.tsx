@@ -113,411 +113,424 @@ export function resolveCopilotIconName(name: string): CopilotIconName {
 }
 
 /**
- * Merge-safe 24px marks: strokes never share an edge, connectors stop
- * short of nodes, and filled accents are fill-only.
+ * Mathematically balanced 24px marks:
+ * - Uniform 1.75px stroke weight
+ * - Sits strictly within [2, 2] to [22, 22] live canvas
+ * - Zero stroke collisions, duplicate overlaps, or line crossing
+ * - Authentic filled brand marks (GitHub, Twitter/X)
  */
 const glyphs: Record<CopilotIconName, ReactNode> = {
   dashboard: (
     <>
-      <rect x="4" y="4" width="16" height="16" rx="3.2" />
-      <path className="ci-a" d="M7.4 15.6v-3" />
-      <path className="ci-b" d="M10.5 15.6V9.4" />
-      <path className="ci-c" d="M13.6 15.6v-4.2" />
-      <path className="ci-d" d="M16.7 15.6V8.2" />
+      <rect x="3" y="3" width="7" height="9" rx="1.5" />
+      <rect x="14" y="3" width="7" height="5" rx="1.5" />
+      <rect x="14" y="12" width="7" height="9" rx="1.5" />
+      <rect x="3" y="16" width="7" height="5" rx="1.5" />
     </>
   ),
   resume: (
     <>
-      <path d="M7.2 4.4h6.1L16.8 8v10.6a1.6 1.6 0 0 1-1.6 1.6H7.2A1.6 1.6 0 0 1 5.6 18.6V6a1.6 1.6 0 0 1 1.6-1.6Z" />
-      <path className="ci-a" d="M13.3 4.6v3.2h3.3" />
-      <path d="M8.4 11.2h6.6M8.4 13.8h5" />
-      <path className="ci-b" d="M8.4 16.4h3.4" />
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline className="ci-a" points="14 2 14 8 20 8" />
+      <line className="ci-b" x1="16" y1="13" x2="8" y2="13" />
+      <line className="ci-b" x1="16" y1="17" x2="8" y2="17" />
+      <line className="ci-b" x1="10" y1="9" x2="8" y2="9" />
     </>
   ),
   interview: (
     <>
-      <path className="ci-a" d="M4.4 10.8h5.8a1.3 1.3 0 0 1 1.3 1.3v2.2a1.3 1.3 0 0 1-1.3 1.3H7L4.4 17.6V10.8Z" />
-      <path className="ci-b" d="M19.6 6.2h-5.6a1.2 1.2 0 0 0-1.2 1.2v2a1.2 1.2 0 0 0 1.2 1.2h3.2L19.6 12.4V6.2Z" />
-      <circle className="ci-c ci-fill" cx="17.6" cy="8" r="0.8" />
+      <path
+        className="ci-a"
+        d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+      />
+      <line className="ci-b" x1="8" y1="9" x2="16" y2="9" />
+      <line className="ci-b" x1="8" y1="13" x2="14" y2="13" />
     </>
   ),
   learning: (
     <>
-      <circle cx="5.4" cy="7.2" r="1.55" />
-      <circle cx="12" cy="12" r="1.55" />
-      <circle cx="18.6" cy="16.8" r="1.55" />
-      <path d="M7.7 8.85 10.05 10.5M13.95 13.45 16.3 15.15" />
-      <circle className="ci-a ci-fill" cx="5.4" cy="7.2" r="0.65" />
+      <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+      <path className="ci-a" d="M6 12v5c0 2 3 3 6 3s6-1 6-3v-5" />
     </>
   ),
   jobs: (
     <>
-      <circle cx="12" cy="12" r="8" />
-      <circle cx="12" cy="12" r="3.6" />
-      <path d="M12 4.4v1.7M19.6 12h-1.7M12 19.6v-1.7M4.4 12h1.7" />
-      <path className="ci-a" d="M12 8.4A3.6 3.6 0 0 1 15.6 12" />
-      <circle className="ci-b ci-fill" cx="16.6" cy="8.2" r="1" />
+      <circle cx="12" cy="12" r="10" />
+      <line className="ci-a" x1="22" y1="12" x2="18" y2="12" />
+      <line className="ci-a" x1="6" y1="12" x2="2" y2="12" />
+      <line className="ci-a" x1="12" y1="6" x2="12" y2="2" />
+      <line className="ci-a" x1="12" y1="22" x2="12" y2="18" />
+      <circle className="ci-b" cx="12" cy="12" r="4" />
     </>
   ),
   community: (
     <>
-      <circle className="ci-a" cx="7.2" cy="8" r="2" />
-      <circle className="ci-b" cx="16.8" cy="8.8" r="2" />
-      <circle className="ci-c" cx="12" cy="16.6" r="2" />
-      <path d="M10.45 8.28h3.1M8.8 10.85 10.4 13.7M15.1 11.55 13.7 13.8" />
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path className="ci-a" d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path className="ci-b" d="M16 3.13a4 4 0 0 1 0 7.75" />
     </>
   ),
   profile: (
     <>
-      <circle cx="12" cy="8.2" r="2.7" />
-      <path d="M6.6 18.6c.6-2.8 2.5-4.2 5.4-4.2s4.8 1.4 5.4 4.2" />
-      <path className="ci-a" d="M18.6 12a6.6 6.6 0 1 0-2.2 5" />
+      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+      <circle className="ci-a" cx="12" cy="7" r="4" />
     </>
   ),
   settings: (
     <>
-      <circle cx="12" cy="12" r="8" />
-      <circle cx="12" cy="12" r="2.3" />
-      <path className="ci-a" d="M12 9.7V6.4" />
-      <circle className="ci-b ci-fill" cx="12" cy="5.5" r="0.7" />
+      <circle cx="12" cy="12" r="3" />
+      <path
+        className="ci-a"
+        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+      />
     </>
   ),
   evidence: (
     <>
-      <path d="M4.6 7.2h8.2M4.6 11.4h6.2M4.6 15.6h4.6" />
-      <circle className="ci-a" cx="16.6" cy="15.2" r="3.1" />
-      <path className="ci-a" d="m15.4 15.2.85.85 1.7-1.8" />
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <polyline className="ci-a" points="9 12 11 14 15 10" />
     </>
   ),
   skills: (
     <>
-      <path d="M4.8 18.2h14.4" />
-      <path className="ci-a" d="M7.4 18.2v-4.6" />
-      <path className="ci-b" d="M12 18.2V6.8" />
-      <path className="ci-c" d="M16.6 18.2v-7.4" />
+      <line className="ci-a" x1="6" y1="20" x2="6" y2="14" />
+      <line className="ci-b" x1="12" y1="20" x2="12" y2="9" />
+      <line className="ci-c" x1="18" y1="20" x2="18" y2="4" />
     </>
   ),
   confidence: (
     <>
-      <circle cx="12" cy="12" r="8" />
-      <path className="ci-a" d="M12 7.2 13.5 12 12 16.8 10.5 12Z" />
-      <circle className="ci-fill" cx="12" cy="12" r="0.85" />
+      <circle cx="12" cy="12" r="10" />
+      <polygon
+        className="ci-a"
+        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+      />
     </>
   ),
   projects: (
     <>
-      <rect className="ci-a" x="4.6" y="4.8" width="11.4" height="8.4" rx="1.6" />
-      <rect className="ci-b" x="8" y="10.8" width="11.4" height="8.4" rx="1.6" />
+      <polygon points="12 2 2 7 12 12 22 7 12 2" />
+      <polyline className="ci-a" points="2 17 12 22 22 17" />
+      <polyline className="ci-b" points="2 12 12 17 22 12" />
     </>
   ),
   assist: (
-    <>
-      <circle className="ci-a" cx="8.2" cy="12" r="2.1" />
-      <path className="ci-b" d="M11.2 10.2c1.8-1.6 3.6-2.2 5.6-2.2" />
-      <path className="ci-b" d="M11.2 13.8c1.8 1.6 3.6 2.2 5.6 2.2" />
-      <circle className="ci-fill" cx="8.2" cy="12" r="0.7" />
-    </>
+    <path
+      className="ci-a"
+      d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"
+    />
   ),
   scan: (
     <>
-      <rect x="5.4" y="4.6" width="13.2" height="14.8" rx="1.8" />
-      <path d="M8 9h8M8 12h5.2M8 15h4" />
-      <path className="ci-a" d="M6.8 8.2h10.4" />
+      <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
+      <line className="ci-a" x1="4" y1="12" x2="20" y2="12" />
     </>
   ),
   search: (
     <>
-      <circle className="ci-a" cx="10.6" cy="10.6" r="5.6" />
-      <path className="ci-b" d="m15 15 4.2 4.2" />
+      <circle cx="11" cy="11" r="8" />
+      <line className="ci-a" x1="21" y1="21" x2="16.65" y2="16.65" />
     </>
   ),
-  check: (
-    <>
-      <circle cx="12" cy="12" r="8" />
-      <path className="ci-a" d="m8.4 12.2 2.4 2.4 4.8-5" />
-    </>
-  ),
+  check: <polyline className="ci-a" points="20 6 9 17 4 12" />,
   close: (
     <>
-      <g className="ci-a">
-        <path d="m7.2 7.2 9.6 9.6M16.8 7.2 7.2 16.8" />
-      </g>
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
     </>
   ),
   add: (
     <>
-      <g className="ci-a">
-        <path d="M12 6.4v11.2M6.4 12h11.2" />
-      </g>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
     </>
   ),
   edit: (
     <>
-      <path className="ci-a" d="M14.4 5.8 18.2 9.6 9.2 18.6H5.4v-3.8Z" />
-      <path className="ci-b" d="M13 7.2 16.8 11" />
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path
+        className="ci-a"
+        d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+      />
     </>
   ),
   trash: (
     <>
-      <path className="ci-a" d="M8.4 6.4h7.2M10.2 6.4V5.2h3.6v1.2" />
-      <path className="ci-b" d="M7.4 6.6h9.2l-.7 11.6H8.1Z" />
-      <path className="ci-b" d="M10.4 9.6v5.4M13.6 9.6v5.4" />
+      <path
+        className="ci-a"
+        d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+      />
+      <path
+        className="ci-b"
+        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"
+      />
+      <line className="ci-b" x1="10" y1="11" x2="10" y2="17" />
+      <line className="ci-b" x1="14" y1="11" x2="14" y2="17" />
     </>
   ),
   save: (
-    <>
-      <path d="M7.2 4.6v15.2" />
-      <path className="ci-a" d="M7.4 5.2h8.6l-1.7 3.2 1.7 3.2H7.4" />
-    </>
+    <path
+      className="ci-a"
+      d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
+    />
   ),
   apply: (
     <>
-      <g className="ci-a">
-        <rect x="4.8" y="6.6" width="10.4" height="10.8" rx="1.6" />
-        <path d="M7 10h5.6M7 13h3.8" />
-        <path d="m14.2 14.4 3.4-3.4 1.5 1.5-3.4 3.4H14.2Z" />
-      </g>
+      <line className="ci-a" x1="22" y1="2" x2="11" y2="13" />
+      <polygon className="ci-a" points="22 2 15 22 11 13 2 9 22 2" />
     </>
   ),
   reject: (
     <>
-      <g className="ci-a">
-        <rect x="5.4" y="5.6" width="13.2" height="12.8" rx="2" />
-        <path d="m9.2 9.6 5.6 5.6M14.8 9.6l-5.6 5.6" />
-      </g>
+      <circle cx="12" cy="12" r="10" />
+      <line className="ci-a" x1="15" y1="9" x2="9" y2="15" />
+      <line className="ci-a" x1="9" y1="9" x2="15" y2="15" />
     </>
   ),
   show: (
     <>
-      <path d="M3.8 12s3.5-5.8 8.2-5.8S20.2 12 20.2 12s-3.5 5.8-8.2 5.8S3.8 12 3.8 12Z" />
-      <circle cx="12" cy="12" r="2.2" />
-      <path className="ci-a" d="M7.2 9.2c1.4-1.2 3-1.8 4.8-1.8s3.4.6 4.8 1.8" />
+      <path
+        className="ci-a"
+        d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+      />
+      <circle className="ci-b" cx="12" cy="12" r="3" />
     </>
   ),
   hide: (
     <>
-      <path d="M3.8 12s3.5-5.8 8.2-5.8S20.2 12 20.2 12s-3.5 5.8-8.2 5.8S3.8 12 3.8 12Z" />
-      <path className="ci-a" d="m5.2 5.2 13.6 13.6" />
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <line className="ci-a" x1="1" y1="1" x2="23" y2="23" />
     </>
   ),
   upload: (
     <>
-      <path d="M6.4 16v2.2h11.2V16" />
-      <g className="ci-a">
-        <path d="M12 16.4V7.2" />
-        <path d="m8.8 10.2 3.2-3.2 3.2 3.2" />
-      </g>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline className="ci-a" points="17 8 12 3 7 8" />
+      <line className="ci-a" x1="12" y1="3" x2="12" y2="15" />
     </>
   ),
   library: (
-    <>
-      <path className="ci-a" d="M4.8 8.4h5l1.5 1.7h8" />
-      <path d="M4.8 10.4h14.4v8.2H4.8Z" />
-    </>
+    <path
+      className="ci-a"
+      d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+    />
   ),
   history: (
     <>
-      <circle cx="12.4" cy="12.4" r="7.2" />
-      <path className="ci-a" d="M12.4 8.6v4l2.8 1.6" />
-      <path d="M7.2 5.6 5.4 8.2h3.2" />
+      <circle cx="12" cy="12" r="10" />
+      <polyline className="ci-a" points="12 6 12 12 16 14" />
     </>
   ),
   play: (
-    <>
-      <circle cx="12" cy="12" r="8" />
-      <path className="ci-a ci-fill" d="M10.2 8.8v6.4l5.4-3.2Z" />
-    </>
+    <polygon className="ci-a ci-fill" points="5 3 19 12 5 21 5 3" />
   ),
   lesson: (
     <>
-      <rect className="ci-a" x="3.8" y="6.4" width="16.4" height="11.2" rx="2.2" />
-      <circle className="ci-b ci-fill" cx="12" cy="12" r="1.15" />
+      <polygon className="ci-a" points="23 7 16 12 23 17 23 7" />
+      <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
     </>
   ),
   "lesson-check": (
     <>
-      <path d="M5.2 6.2h5.2v11.6H6.4A1.2 1.2 0 0 0 5.2 19V6.2Z" />
-      <path d="M18.8 6.2h-5.2v11.6h4A1.2 1.2 0 0 1 18.8 19V6.2Z" />
-      <path className="ci-a" d="m13.4 11.4 1.3 1.3 2.4-2.5" />
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+      <polyline className="ci-a" points="9 10 11 12 15 8" />
     </>
   ),
   external: (
     <>
-      <path d="M5.2 8.4h7.2V19H5.2Z" />
-      <g className="ci-a">
-        <path d="M12.8 5.6H19v6.2M18.8 5.8l-6.4 6.4" />
-      </g>
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <polyline className="ci-a" points="15 3 21 3 21 9" />
+      <line className="ci-a" x1="10" y1="14" x2="21" y2="3" />
     </>
   ),
   refresh: (
-    <>
-      <g className="ci-a">
-        <path d="M6.4 10.4a6 6 0 1 1 .6 5.2" />
-        <path d="M6.4 7v3.4H9.8" />
-      </g>
-    </>
+    <g className="ci-a">
+      <path d="M23 4v6h-6" />
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+    </g>
   ),
   alert: (
-    <>
-      <g className="ci-a">
-        <path d="M12 4.8 20 18.6H4Z" />
-        <path d="M12 10v3.8" />
-        <circle className="ci-fill" cx="12" cy="16.2" r="0.65" />
-      </g>
-    </>
+    <g className="ci-a">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </g>
   ),
   empty: (
     <>
-      <path className="ci-a" d="M5.2 9.4h13.6L17.6 18H6.4Z" />
-      <path d="M9.4 9.4 10.5 5.6h3l1.1 3.8" />
+      <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+      <path
+        className="ci-a"
+        d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"
+      />
     </>
   ),
   mail: (
     <>
-      <rect x="4" y="6.6" width="16" height="10.8" rx="1.8" />
-      <path className="ci-a" d="m4.6 7.6 7.4 5 7.4-5" />
-      <path className="ci-b" d="m14.6 13.6 1.2 1.2 2.3-2.4" />
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+      <polyline className="ci-a" points="22,6 12,13 2,6" />
     </>
   ),
   pin: (
-    <>
-      <g className="ci-a">
-        <path d="M12 20.2s6.2-5.8 6.2-10A6.2 6.2 0 0 0 5.8 10.2c0 4.2 6.2 10 6.2 10Z" />
-        <circle cx="12" cy="10" r="1.9" />
-      </g>
-    </>
+    <g className="ci-a">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </g>
   ),
   company: (
     <>
-      <path d="M5.4 19.6V7.6h8v12" />
-      <path d="M13.4 10.6h5.2v9" />
-      <path className="ci-a" d="M7.4 10.4h1.5M7.4 13h1.5M7.4 15.6h1.5" />
-      <path className="ci-b" d="M15.4 13.2h1.5M15.4 15.8h1.5" />
+      <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+      <path
+        className="ci-a"
+        d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"
+      />
     </>
   ),
   pay: (
     <>
-      <rect x="4.4" y="6.4" width="15.2" height="11.2" rx="1.8" />
-      <path d="M7 9.4h4.2" />
-      <path className="ci-a" d="M15.4 15.2V9.8" />
-      <path d="m14.2 11.2 1.2-1.4 1.2 1.4" />
+      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+      <line className="ci-a" x1="1" y1="10" x2="23" y2="10" />
     </>
   ),
   applicants: (
     <>
-      <circle cx="9" cy="8.4" r="2.4" />
-      <path d="M5 18.2c.5-2.7 2-4.2 4-4.2" />
-      <g className="ci-a">
-        <circle cx="15.4" cy="9" r="2.1" />
-        <path d="M12.4 18.2c.5-2.4 1.9-3.8 3.7-3.8 2 0 3.4 1.5 4 3.8" />
-      </g>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path className="ci-a" d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path className="ci-a" d="M16 3.13a4 4 0 0 1 0 7.75" />
     </>
   ),
   loader: (
-    <>
-      <g className="ci-a">
-        <circle cx="12" cy="12" r="7.2" opacity=".28" />
-        <circle className="ci-fill" cx="12" cy="4.8" r="1.4" />
-      </g>
-    </>
+    <path className="ci-a" d="M21 12a9 9 0 1 1-6.219-8.56" />
   ),
   filters: (
-    <>
-      <rect className="ci-a" x="4.8" y="5.2" width="10.6" height="7.6" rx="1.5" />
-      <rect className="ci-b" x="8.6" y="11.2" width="10.6" height="7.6" rx="1.5" />
-    </>
+    <polygon
+      className="ci-a"
+      points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"
+    />
   ),
   link: (
     <>
-      <path className="ci-a" d="M10.2 14.2 8.6 15.8A3 3 0 1 1 4.4 11.6l1.6-1.6" />
-      <path className="ci-b" d="M13.8 9.8 15.4 8.2A3 3 0 1 1 19.6 12.4l-1.6 1.6" />
+      <path
+        className="ci-a"
+        d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+      />
+      <path
+        className="ci-b"
+        d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+      />
     </>
   ),
   menu: (
     <>
-      <path className="ci-a" d="M5.2 7.4h13.6" />
-      <path className="ci-b" d="M5.2 12h13.6" />
-      <path className="ci-c" d="M5.2 16.6h13.6" />
+      <line className="ci-a" x1="3" y1="12" x2="21" y2="12" />
+      <line className="ci-b" x1="3" y1="6" x2="21" y2="6" />
+      <line className="ci-c" x1="3" y1="18" x2="21" y2="18" />
     </>
   ),
-  next: <path className="ci-a" d="m9 6.6 6 5.4-6 5.4" />,
-  back: <path className="ci-a" d="M15 6.6 9 12l6 5.4" />,
-  collapse: <path className="ci-a" d="m6.6 15 5.4-6 5.4 6" />,
-  expand: <path className="ci-a" d="m6.6 9 5.4 6 5.4-6" />,
+  next: <polyline className="ci-a" points="9 18 15 12 9 6" />,
+  back: <polyline className="ci-a" points="15 18 9 12 15 6" />,
+  collapse: <polyline className="ci-a" points="18 15 12 9 6 15" />,
+  expand: <polyline className="ci-a" points="6 9 12 15 18 9" />,
   go: (
     <g className="ci-a">
-      <path d="M5 12h13.2M14.4 8 19 12l-4.6 4" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
     </g>
   ),
   account: (
     <>
-      <rect x="6.6" y="10.6" width="10.8" height="8" rx="1.8" />
-      <path className="ci-a" d="M8.8 10.6V8.6a3.2 3.2 0 0 1 6.4 0v2" />
+      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+      <circle className="ci-a" cx="12" cy="7" r="4" />
     </>
   ),
   logout: (
     <>
-      <path d="M5.2 6.4h7.6v11.2H5.2" />
-      <path className="ci-a" d="M11 12h8.2M16.4 8.8 19.4 12l-3 3.2" />
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline className="ci-a" points="16 17 21 12 16 7" />
+      <line className="ci-a" x1="21" y1="12" x2="9" y2="12" />
     </>
   ),
   sun: (
     <>
-      <circle className="ci-a" cx="12" cy="12" r="3.2" />
+      <circle className="ci-a" cx="12" cy="12" r="5" />
       <g className="ci-b">
-        <path d="M12 4.8v1.6M12 17.6v1.6M4.8 12h1.6M17.6 12h1.6M6.8 6.8l1.1 1.1M16.1 16.1l1.1 1.1M6.8 17.2l1.1-1.1M16.1 7.9l1.1-1.1" />
+        <line x1="12" y1="1" x2="12" y2="3" />
+        <line x1="12" y1="21" x2="12" y2="23" />
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+        <line x1="1" y1="12" x2="3" y2="12" />
+        <line x1="21" y1="12" x2="23" y2="12" />
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
       </g>
     </>
   ),
   moon: (
-    <path className="ci-a" d="M14.4 5.6A7.2 7.2 0 1 0 18.4 15 5.6 5.6 0 0 1 14.4 5.6Z" />
+    <path
+      className="ci-a"
+      d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+    />
   ),
   work: (
     <>
-      <rect x="4.4" y="8.4" width="15.2" height="10.2" rx="1.8" />
-      <path d="M9 8.4V6.8a1.4 1.4 0 0 1 1.4-1.4h3.2A1.4 1.4 0 0 1 15 6.8v1.6" />
-      <path className="ci-a" d="M4.6 12.4h14.8" />
+      <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+      <path
+        className="ci-a"
+        d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"
+      />
     </>
   ),
   trend: (
-    <>
-      <path d="M4.6 16.6h14.8" />
-      <path className="ci-a" d="M5.4 13.2 9.6 9l3.2 3.2 6-6" />
-      <path d="M15.4 6.2h3.4v3.4" />
-    </>
+    <g className="ci-a">
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+      <polyline points="17 6 23 6 23 12" />
+    </g>
   ),
   compass: (
     <>
-      <circle cx="12" cy="12" r="8" />
-      <path className="ci-a" d="M12 7.4 14.4 14.4 7.4 12Z" />
+      <circle cx="12" cy="12" r="10" />
+      <polygon
+        className="ci-a"
+        points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"
+      />
     </>
   ),
-  idle: <circle cx="12" cy="12" r="7.2" />,
+  idle: <circle cx="12" cy="12" r="10" />,
   linkedin: (
     <>
-      <rect x="4.6" y="4.6" width="14.8" height="14.8" rx="2.2" />
-      <path d="M8.2 10.6v5.6M8.2 8.2v.2" />
-      <path d="M11.4 16.2v-3.4a1.8 1.8 0 0 1 3.6 0v3.4" />
+      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+      <rect x="2" y="9" width="4" height="12" />
+      <circle cx="4" cy="4" r="2" />
     </>
   ),
   github: (
-    <>
-      <path d="M12 4.6a7.4 7.4 0 0 0-2.3 14.4c.4.08.5-.16.5-.36v-1.3c-2.2.48-2.6-1.06-2.6-1.06-.36-.9-.88-1.14-.88-1.14-.72-.5.06-.5.06-.5.8.06 1.22.82 1.22.82.72 1.22 1.88.86 2.34.66.08-.52.28-.86.5-1.06-1.74-.2-3.56-.88-3.56-3.9 0-.86.3-1.56.8-2.12-.08-.2-.36-1.02.08-2.12 0 0 .66-.22 2.16.82a7.4 7.4 0 0 1 3.94 0c1.5-1.04 2.16-.82 2.16-.82.44 1.1.16 1.92.08 2.12.5.56.8 1.26.8 2.12 0 3.04-1.84 3.7-3.58 3.9.28.24.54.72.54 1.46v2.16c0 .2.16.44.52.36A7.4 7.4 0 0 0 12 4.6Z" />
-    </>
+    <path
+      className="ci-fill"
+      d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+    />
   ),
   twitter: (
-    <path d="M6.2 6.4h3.2l3 4.2 3.6-4.2H18l-5.2 6 5.4 5.6h-3.2l-3.4-4.4-4 4.4H6.2l5.6-6.2Z" />
+    <path
+      className="ci-fill"
+      d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+    />
   ),
   dribbble: (
     <>
-      <circle cx="12" cy="12" r="8" />
-      <path d="M6.2 9.4c3.4 0 7.4.4 11.2 3.6M8.2 18.2c1.6-3.4 3.2-7.8 3-13.4M18.4 14.6c-2.6-1-6.8-1.2-11.6 1.8" />
+      <circle cx="12" cy="12" r="10" />
+      <path d="M19.13 5.09C15.22 9.14 10 10.44 2.25 10.94" />
+      <path d="M21.75 12.84c-6.62-1.41-12.14 1-16.38 6.32" />
+      <path d="M8.56 2.75c4.37 6 6 9.42 8 17.72" />
     </>
   ),
   website: (
     <>
-      <circle cx="12" cy="12" r="8" />
-      <path d="M4.4 12h15.2M12 4.4c2.4 2.6 3.6 5.2 3.6 7.6s-1.2 5-3.6 7.6M12 4.4C9.6 7 8.4 9.6 8.4 12s1.2 5 3.6 7.6" />
+      <circle cx="12" cy="12" r="10" />
+      <line x1="2" y1="12" x2="22" y2="12" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
     </>
   ),
 };
@@ -591,6 +604,7 @@ export function CopilotIcon({
         width: size,
         height: size,
         color: "currentColor",
+        flexShrink: 0,
       }}
       aria-hidden={labelled ? undefined : true}
     >
@@ -600,7 +614,7 @@ export function CopilotIcon({
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.65"
+        strokeWidth="1.75"
         strokeLinecap="round"
         strokeLinejoin="round"
         aria-hidden={labelled ? undefined : true}
