@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  RefreshCw,
-  MapPin,
-  CheckCircle2,
-  ExternalLink,
-} from "lucide-react";
+import { CopilotIcon } from "@/components/ui/copilot-icons";
 import { Link } from "@/shared/ui/router-link";
 import { apiRequest } from "@/shared/api/client";
 import { isDemoSession } from "@/features/auth/demo-session";
@@ -15,7 +10,7 @@ import type { Job, Recommendation, SavedJobRow, SavedJobStatus } from "./job-typ
 import { isPipelineStatus } from "./job-types";
 import { jobRecsCacheKey, readJobRecsCache, writeJobRecsCache } from "../job-recs-cache";
 import { Badge, Button, Card, EmptyState, PageHeader } from "@/shared/ui/primitives";
-import { AnimatedIcon } from "@/components/ui/animated-icon";
+
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { FLUID_SPRING_TRANSITION } from "@/components/ui/motion-system";
 
@@ -439,7 +434,7 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
             />
           </label>
           <Button variant="secondary" onClick={() => void syncExternalJobs()} data-testid="freehire-sync">
-            <AnimatedIcon icon={RefreshCw} size={16} aria-hidden /> Refresh job search
+            <CopilotIcon name="refresh" size={16} /> Refresh job search
           </Button>
         </div>
       ) : (
@@ -594,10 +589,10 @@ export function JobDetail({ jobId }: { jobId: string }) {
         <Card className="stack">
           <div className="cluster">
             <Badge variant="secondary">
-              <AnimatedIcon icon={MapPin} size={14} aria-hidden /> {job.location || "Location not specified"}
+              <CopilotIcon name="pin" size={14} /> {job.location || "Location not specified"}
             </Badge>
             <Badge variant="secondary">
-              <AnimatedIcon icon={CheckCircle2} size={14} aria-hidden /> Stored job record
+              <CopilotIcon name="check" size={14} /> Stored job record
             </Badge>
             {job.work_mode ? <Badge variant="secondary">{job.work_mode}</Badge> : null}
             {job.salary_min != null || job.salary_max != null ? (
@@ -623,7 +618,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
             <Link className="button button-secondary" href="/jobs">Back to jobs</Link>
             {job.application_url ? (
               <a className="button button-primary" href={job.application_url} target="_blank" rel="noreferrer">
-                Apply on employer site <AnimatedIcon icon={ExternalLink} size={14} aria-hidden />
+                Apply on employer site <CopilotIcon name="external" size={14} />
               </a>
             ) : null}
           </div>

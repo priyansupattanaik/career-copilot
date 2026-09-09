@@ -358,8 +358,8 @@
 }
 
 .lp-step.is-active {
-  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border-color: transparent;
+  background: transparent;
 }
 
 .lp-step:focus-visible {
@@ -412,7 +412,7 @@
   gap: 0;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 22px;
+  border-radius: var(--radius-lg);
   background: #111;
   box-shadow: var(--shadow-md);
 }

@@ -140,11 +140,9 @@
   width: 100%;
   min-width: 0;
   padding: var(--ps-20) var(--ps-24);
-  border: 1px solid color-mix(in srgb, var(--ps-line) 85%, transparent);
+  border: 1px solid var(--ps-line);
   border-radius: var(--ps-radius-lg);
-  background: color-mix(in srgb, var(--ps-panel) 84%, transparent);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background: var(--ps-panel);
   box-shadow: var(--ps-shadow);
   position: relative;
   overflow: hidden;
@@ -430,11 +428,9 @@
   min-width: 0;
   width: 100%;
   padding: 6px;
-  border: 1px solid color-mix(in srgb, var(--ps-line) 80%, transparent);
+  border: 1px solid var(--ps-line);
   border-radius: var(--ps-radius);
-  background: color-mix(in srgb, var(--ps-panel) 78%, transparent);
-  backdrop-filter: blur(14px) saturate(160%);
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  background: var(--ps-panel);
   box-shadow: 0 2px 12px rgb(15 23 42 / 06%);
 }
 .workspace .feature-page.settings-page.profile-v2 .profile-tabs-track {
@@ -482,11 +478,9 @@
 }
 .workspace .feature-page.settings-page.profile-v2 .profile-tab.is-active {
   color: var(--ps-text);
-  background: var(--ps-panel);
-  border-color: var(--ps-line);
-  box-shadow:
-    0 1px 4px rgb(15 23 42 / 08%),
-    0 2px 8px rgb(15 23 42 / 06%);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 .workspace .feature-page.settings-page.profile-v2 .profile-tab:focus-visible {
   outline: 2px solid var(--ps-accent);

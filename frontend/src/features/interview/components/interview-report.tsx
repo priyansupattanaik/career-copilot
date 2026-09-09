@@ -1,7 +1,6 @@
 import { Link } from "@/shared/ui/router-link";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-
 import { apiRequest } from "@/shared/api/client";
 import { Card, PageHeader } from "@/shared/ui/primitives";
 import { ScoreRing } from "@/features/dashboard/components/interview-progress-charts";

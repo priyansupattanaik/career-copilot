@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Play } from "lucide-react";
+import { CopilotIcon } from "@/components/ui/copilot-icons";
 import {
   motion,
   useReducedMotion,
@@ -12,12 +12,12 @@ import {
   type ReactNode,
   type SyntheticEvent,
 } from "react";
-import { CareerIcon } from "@/components/ui/career-icons";
+
 import { BrandMark } from "@/components/ui/brand-mark";
 import { Navigation5 } from "@/components/ui/navigation-5";
 import { BeamsBackground } from "@/components/ui/beams-background";
 import { RuixenGradientFooter } from "@/components/ui/ruixen-gradient-footer";
-import { AnimatedIcon } from "@/components/ui/animated-icon";
+
 import { MotionProvider, useMotion } from "../motion-context";
 import { useReveal } from "../use-reveal";
 import { useTheme } from "@/shared/theme";
@@ -39,7 +39,7 @@ const features = [
     text: "See the next skill, example, or practice session that makes your target role more reachable.",
   },
   {
-    icon: "opportunities" as const,
+    icon: "jobs" as const,
     label: "Role fit",
     title: "Choose opportunities with context.",
     text: "Connect your profile to roles that make sense for your evidence, goals, and work style.",
@@ -124,7 +124,7 @@ function HeroCopy() {
           </ButtonLink>
         </span>
         <a href="#practice" className="home-text-cta">
-          <AnimatedIcon icon={Play} size={14} fill="currentColor" aria-hidden />{" "}
+          <CopilotIcon name="play" size={14} />{" "}
           See the practice room
         </a>
       </div>
@@ -147,21 +147,21 @@ function PracticeCopy() {
       </p>
       <div className="home-check-list">
         <span>
-          <AnimatedIcon icon={Check} size={15} aria-hidden /> Camera and
+          <CopilotIcon name="check" size={15} /> Camera and
           microphone readiness
         </span>
         <span>
-          <AnimatedIcon icon={Check} size={15} aria-hidden /> Clear feedback
+          <CopilotIcon name="check" size={15} /> Clear feedback
           after every answer
         </span>
         <span>
-          <AnimatedIcon icon={Check} size={15} aria-hidden /> Evidence, pace,
+          <CopilotIcon name="check" size={15} /> Evidence, pace,
           and clarity signals
         </span>
       </div>
       <Link href="/mock-interview/preparation" className="home-inline-link">
         Start a video practice session{" "}
-        <AnimatedIcon icon={ArrowRight} size={15} aria-hidden />
+        <CopilotIcon name="go" size={15} />
       </Link>
     </div>
   );
@@ -200,7 +200,7 @@ function PracticeCard() {
       </div>
       <div className="home-practice-divider" />
       <div className="home-practice-row">
-        <CareerIcon name="confidence" size={19} />
+        <CopilotIcon name="confidence" size={19} />
         <span>
           <b>Confidence</b>
           <small>steadier than last session</small>
@@ -208,7 +208,7 @@ function PracticeCard() {
         <strong>+18%</strong>
       </div>
       <div className="home-practice-row">
-        <CareerIcon name="signal" size={19} />
+        <CopilotIcon name="skills" size={19} />
         <span>
           <b>Clarity</b>
           <small>strong opening, sharper close</small>
@@ -226,7 +226,7 @@ function SystemSteps() {
       {features.map((feature) => (
         <article className="home-step" key={feature.label}>
           <div className="home-step-icon">
-            <CareerIcon name={feature.icon} size={22} />
+            <CopilotIcon name={feature.icon} size={22} />
           </div>
           <div className="home-step-copy">
             <h3>{feature.title}</h3>
@@ -253,7 +253,7 @@ function ProfileIntro() {
       </p>
       <Link href="/resume-analysis?tab=upload" className="home-inline-link">
         Bring in my resume{" "}
-        <AnimatedIcon icon={ArrowRight} size={15} aria-hidden />
+        <CopilotIcon name="go" size={15} />
       </Link>
     </div>
   );
@@ -277,19 +277,19 @@ function ProfileSheet() {
       </div>
       <div className="home-sheet-items">
         <span>
-          <CareerIcon name="resume" size={17} />
+          <CopilotIcon name="resume" size={17} />
           <b>Resume evidence</b>
           <small>12 confirmed signals</small>
           <i>ready</i>
         </span>
         <span>
-          <CareerIcon name="interview" size={17} />
+          <CopilotIcon name="interview" size={17} />
           <b>Video practice</b>
           <small>3 sessions this week</small>
           <i>growing</i>
         </span>
         <span>
-          <CareerIcon name="learning" size={17} />
+          <CopilotIcon name="learning" size={17} />
           <b>Next skill route</b>
           <small>Make system design visible</small>
           <i>next</i>

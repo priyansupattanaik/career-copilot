@@ -204,7 +204,7 @@ export function BeamsBackground({
       />
       <motion.div
         className="absolute inset-0"
-        style={{ backgroundColor: veil, backdropFilter: "blur(2px)" }}
+        style={{ backgroundColor: veil }}
         animate={{ opacity: paused ? 0.6 : [0.35, 0.7, 0.35] }}
         transition={{ duration: 10, ease: "easeInOut", repeat: Number.POSITIVE_INFINITY }}
       />

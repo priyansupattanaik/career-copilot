@@ -2,8 +2,7 @@ import { Link } from "@/shared/ui/router-link";
 import { useNavigate } from "react-router-dom";
 import { useSearchParams } from "@/shared/router";
 import { useEffect, useState, type KeyboardEvent } from "react";
-import { ArrowRight, Eye, EyeOff, MailCheck } from "lucide-react";
-import { AnimatedIcon } from "@/components/ui/animated-icon";
+import { CopilotIcon } from "@/components/ui/copilot-icons";
 
 import { createClient } from "@/features/auth/api/client";
 import { safeRedirectPath } from "@/features/auth/safe-path";
@@ -16,7 +15,7 @@ import {
 } from "@/shared/ui/phone-field";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { BrandMark } from "@/components/ui/brand-mark";
-import { CareerIcon } from "@/components/ui/career-icons";
+
 import { AuroraBackground } from "@/components/ui/aurora-background";
 import { resolveApiBase } from "@/shared/config";
 import { authCallbackUrl } from "@/features/auth/public-origin";
@@ -54,15 +53,15 @@ function Shell({
             <p>{description}</p>
             <ul className="auth-aside-points">
               <li>
-                <CareerIcon name="evidence" size={17} />{" "}
+                <CopilotIcon name="evidence" size={17} />{" "}
                 <span>Review every score against evidence you control</span>
               </li>
               <li>
-                <CareerIcon name="interview" size={17} />{" "}
+                <CopilotIcon name="interview" size={17} />{" "}
                 <span>Practice interviews with a live transcript</span>
               </li>
               <li>
-                <CareerIcon name="opportunities" size={17} />{" "}
+                <CopilotIcon name="jobs" size={17} />{" "}
                 <span>See roles matched to your confirmed profile</span>
               </li>
             </ul>
@@ -325,11 +324,7 @@ export function SignInScreen() {
                   setShowPassword(false);
               }}
             >
-              <AnimatedIcon
-                icon={showPassword ? EyeOff : Eye}
-                size={18}
-                aria-hidden
-              />
+              <CopilotIcon name={showPassword ? "hide" : "show"} size={18} />
             </button>
           </div>
         </label>
@@ -357,7 +352,7 @@ export function SignInScreen() {
           <span>{busy ? "Signing in…" : "Sign in"}</span>
           {busy ? null : (
             <span className="auth-cta-orb" aria-hidden>
-              <ArrowRight size={14} strokeWidth={1.75} />
+              <CopilotIcon name="go" size={14} />
             </span>
           )}
         </Button>
@@ -524,7 +519,7 @@ export function SignUpScreen() {
     >
       {sent ? (
         <div className="auth-card panel empty-state atlas-auth-card">
-          <AnimatedIcon icon={MailCheck} size={44} />
+          <CopilotIcon name="mail" size={44} />
           <h1>Check your inbox</h1>
           <p>Open the verification link we sent to activate your account.</p>
           {error && (
@@ -660,7 +655,7 @@ export function SignUpScreen() {
             <span>{busy ? "Creating account…" : "Create account"}</span>
             {busy ? null : (
               <span className="auth-cta-orb" aria-hidden>
-                <ArrowRight size={14} strokeWidth={1.75} />
+                <CopilotIcon name="go" size={14} />
               </span>
             )}
           </Button>
@@ -680,7 +675,7 @@ export function VerifyEmailScreen() {
       description="We sent a verification link to finish setting up your account."
     >
       <div className="auth-card panel empty-state atlas-auth-card">
-        <AnimatedIcon icon={MailCheck} size={44} />
+        <CopilotIcon name="mail" size={44} />
         <h1>Check your inbox</h1>
         <p>
           Open the verification link to continue. If it expired, return to sign

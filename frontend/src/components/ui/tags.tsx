@@ -1,8 +1,8 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, MotionConfig } from 'motion/react';
-import { X } from 'lucide-react';
+import { CopilotIcon } from '@/components/ui/copilot-icons';
 
 export type Tag = {
   id: string;
@@ -80,13 +80,13 @@ export function Tags({
         <motion.div
           ref={selectedsContainerRef}
           layout
-          className="mt-2 mb-3 flex min-h-14 w-full flex-wrap gap-1.5 rounded-2xl border-[1.6px] border-[#E5E5E5] bg-[#fefefe] p-1.5 dark:border-neutral-800 dark:bg-neutral-900"
+          className="mt-2 mb-3 flex min-h-14 w-full flex-wrap gap-1.5 rounded-2xl border border-[#E5E5E5] bg-[#fefefe] p-1.5 dark:border-neutral-800 dark:bg-neutral-900"
         >
           {selecteds.map((tag) => (
             <motion.div
               key={tag.id}
               layoutId={`tag-${tag.id}`}
-              className="flex w-fit items-center gap-1 border-[1.6px] border-[#E5E5E5] bg-white py-1 pr-1 pl-3 dark:border-neutral-700 dark:bg-neutral-800"
+              className="flex w-fit items-center gap-1 border border-[#E5E5E5] bg-white py-1 pr-1 pl-3 dark:border-neutral-700 dark:bg-neutral-800"
               style={{ borderRadius: 10, zIndex: 20 }}
             >
               <motion.span
@@ -103,7 +103,7 @@ export function Tags({
                 className="rounded-full p-1 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                 aria-label={`Remove ${tag.label}`}
               >
-                <X className="size-5 text-gray-400 dark:text-neutral-400" />
+                <CopilotIcon name="close" size={20} className="text-gray-400 dark:text-neutral-400" />
               </button>
             </motion.div>
           ))}
@@ -111,7 +111,7 @@ export function Tags({
         {tags.length > selecteds.length && (
           <motion.div
             layout
-            className="w-full rounded-2xl border-[1.6px] border-[#E5E5E5] bg-white p-2 dark:border-neutral-800 dark:bg-neutral-900"
+            className="w-full rounded-2xl border border-[#E5E5E5] bg-white p-2 dark:border-neutral-800 dark:bg-neutral-900"
           >
             <motion.div className="flex flex-wrap gap-2">
               {tags

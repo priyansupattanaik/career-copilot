@@ -171,8 +171,8 @@
 }
 
 .interview-focus-tile.is-selected {
-  border-color: var(--interview-accent);
-  background: color-mix(in srgb, var(--interview-accent) 10%, var(--surface));
+  border-color: transparent;
+  background: transparent;
 }
 
 .interview-focus-tile input,
@@ -240,8 +240,8 @@
 }
 
 .interview-length-chip.is-selected {
-  border-color: var(--interview-accent);
-  background: color-mix(in srgb, var(--interview-accent) 12%, var(--surface));
+  border-color: transparent;
+  background: transparent;
   color: var(--text);
 }
 

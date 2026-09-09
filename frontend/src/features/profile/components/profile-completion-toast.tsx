@@ -2,8 +2,7 @@
 import { Link } from "@/shared/ui/router-link";
 import { usePathname } from "@/shared/router";
 import { useMemo, useSyncExternalStore } from "react";
-import { X } from "lucide-react";
-import { AnimatedIcon } from "@/components/ui/animated-icon";
+import { CopilotIcon } from "@/components/ui/copilot-icons";
 import {
   clampCompletion,
   extractMissing,
@@ -82,7 +81,7 @@ export function ProfileCompletionToast({ completion, missing }: Props) {
           </p>
         </div>
         <button type="button" className="icon-button" onClick={dismiss} aria-label="Dismiss">
-          <AnimatedIcon icon={X} size={16} idle={false} />
+          <CopilotIcon name="close" size={16} />
         </button>
       </div>
       <ul className="profile-toast-list">

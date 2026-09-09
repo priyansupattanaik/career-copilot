@@ -1,164 +1,156 @@
 /**
- * Shared Motion & Interaction System
- * Standardized spring physics, shared layout transitions, and animation presets.
+ * Shared motion tokens, springs, and interaction presets.
+ * Critically damped by default (Apple response ~0.3–0.4). Bounce only on release.
  */
 import type { Transition, Variants } from "motion/react";
 
-export const FLUID_SPRING_TRANSITION: Transition = {
-  type: "spring",
-  stiffness: 300,
-  damping: 40,
+export const motionTokens = {
+  duration: {
+    instant: 0.08,
+    fast: 0.18,
+    normal: 0.32,
+    slow: 0.48,
+  },
+  easing: {
+    smooth: [0.22, 1, 0.36, 1] as const,
+    sharp: [0.4, 0, 0.2, 1] as const,
+    out: [0.32, 0.72, 0, 1] as const,
+  },
+  distance: {
+    xs: 4,
+    sm: 8,
+    md: 12,
+    lg: 20,
+  },
+  scale: {
+    subtle: 0.98,
+    press: 0.97,
+    pop: 1.02,
+  },
 };
 
-export const FAST_SPRING_TRANSITION: Transition = {
-  type: "spring",
-  stiffness: 400,
-  damping: 35,
+export const springs = {
+  snappy: { type: "spring" as const, stiffness: 440, damping: 38, mass: 0.8 },
+  fluid: { type: "spring" as const, stiffness: 380, damping: 36, mass: 0.8 },
+  gentle: { type: "spring" as const, stiffness: 280, damping: 32, mass: 0.9 },
+  instant: { type: "spring" as const, stiffness: 600, damping: 42, mass: 0.6 },
 };
 
-export const GENTLE_SPRING_TRANSITION: Transition = {
-  type: "spring",
-  stiffness: 220,
-  damping: 30,
-};
+export const FLUID_SPRING_TRANSITION: Transition = springs.fluid;
+export const FAST_SPRING_TRANSITION: Transition = springs.snappy;
+export const GENTLE_SPRING_TRANSITION: Transition = springs.gentle;
+export const BOUNCE_SPRING_TRANSITION: Transition = springs.snappy;
 
-export const BOUNCE_SPRING_TRANSITION: Transition = {
-  type: "spring",
-  stiffness: 400,
-  damping: 25,
-};
-
-/**
- * Silky page cross-fade and subtle upward rise for route navigation.
- */
 export const pageTransitionVariants: Variants = {
   initial: {
     opacity: 0,
-    y: 8,
   },
   animate: {
     opacity: 1,
-    y: 0,
     transition: {
-      duration: 0.28,
-      ease: [0.22, 1, 0.36, 1],
+      duration: 0.16,
+      ease: [0.16, 1, 0.3, 1],
     },
   },
   exit: {
     opacity: 0,
-    y: -6,
     transition: {
-      duration: 0.18,
-      ease: [0.36, 0, 0.66, -0.56],
+      duration: 0.1,
+      ease: [0.4, 0, 1, 1],
     },
   },
 };
 
-/**
- * Stagger container for lists, grids, and dashboards.
- */
 export const staggerContainerVariants: Variants = {
   hidden: {},
   visible: {
     transition: {
-      staggerChildren: 0.05,
+      staggerChildren: 0.055,
       delayChildren: 0.02,
     },
   },
 };
 
-/**
- * Child item for staggered animations.
- */
 export const staggerItemVariants: Variants = {
-  hidden: { opacity: 0, y: 12 },
+  hidden: { opacity: 0, y: motionTokens.distance.md },
   visible: {
     opacity: 1,
     y: 0,
-    transition: {
-      type: "spring",
-      stiffness: 340,
-      damping: 30,
-    },
+    transition: springs.gentle,
   },
 };
 
-/**
- * Dropdown menu entrance and exit with spring scale.
- */
 export const dropdownMenuVariants: Variants = {
   initial: {
     opacity: 0,
-    scale: 0.94,
-    y: 6,
+    scale: 0.96,
+    y: 8,
   },
   animate: {
     opacity: 1,
     scale: 1,
     y: 0,
-    transition: {
-      type: "spring",
-      stiffness: 420,
-      damping: 32,
-    },
+    transition: springs.snappy,
   },
   exit: {
     opacity: 0,
-    scale: 0.95,
-    y: 4,
+    scale: 0.98,
+    y: 6,
     transition: {
-      duration: 0.15,
-      ease: "easeOut",
+      duration: motionTokens.duration.fast,
+      ease: motionTokens.easing.sharp,
     },
   },
 };
 
-/**
- * Modal dialog backdrop and panel animations.
- */
 export const modalBackdropVariants: Variants = {
   initial: { opacity: 0 },
   animate: {
     opacity: 1,
-    transition: { duration: 0.2, ease: "easeOut" },
+    transition: { duration: motionTokens.duration.fast, ease: motionTokens.easing.out },
   },
   exit: {
     opacity: 0,
-    transition: { duration: 0.16, ease: "easeIn" },
+    transition: { duration: 0.16, ease: motionTokens.easing.sharp },
   },
 };
 
 export const modalPanelVariants: Variants = {
   initial: {
     opacity: 0,
-    scale: 0.95,
-    y: 16,
+    scale: 0.96,
+    y: motionTokens.distance.md,
   },
   animate: {
     opacity: 1,
     scale: 1,
     y: 0,
-    transition: {
-      type: "spring",
-      stiffness: 350,
-      damping: 32,
-    },
+    transition: springs.gentle,
   },
   exit: {
     opacity: 0,
-    scale: 0.97,
-    y: 10,
+    scale: 0.98,
+    y: motionTokens.distance.sm,
     transition: {
-      duration: 0.16,
-      ease: "easeIn",
+      duration: motionTokens.duration.fast,
+      ease: motionTokens.easing.sharp,
     },
   },
 };
 
-/**
- * Interactive button and card physics.
- */
-export const buttonTapTransition = { scale: 0.97 };
-export const buttonHoverTransition = { scale: 1.02 };
-export const cardHoverTransition = { y: -3, transition: FLUID_SPRING_TRANSITION };
+export const sheetVariants: Variants = {
+  initial: { opacity: 0, x: 24 },
+  animate: { opacity: 1, x: 0, transition: springs.fluid },
+  exit: {
+    opacity: 0,
+    x: 16,
+    transition: { duration: motionTokens.duration.fast, ease: motionTokens.easing.sharp },
+  },
+};
 
+export const buttonTapTransition = { scale: motionTokens.scale.press };
+export const buttonHoverTransition = { scale: motionTokens.scale.pop };
+export const cardHoverTransition = {
+  y: -3,
+  transition: springs.fluid,
+};

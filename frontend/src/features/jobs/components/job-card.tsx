@@ -1,18 +1,7 @@
-import {
-  Bookmark,
-  MapPin,
-  CheckCircle2,
-  Building2,
-  Briefcase,
-  Send,
-  ThumbsDown,
-  Banknote,
-  Users,
-} from "lucide-react";
 import type { Job, Recommendation, SavedJobStatus } from "./job-types";
 import { statusLabel, statusTone } from "./job-types";
 import { Badge, Button, Card } from "@/shared/ui/primitives";
-import { AnimatedIcon } from "@/components/ui/animated-icon";
+import { CopilotIcon } from "@/components/ui/copilot-icons";
 import { motion, useReducedMotion } from "motion/react";
 import { FLUID_SPRING_TRANSITION } from "@/components/ui/motion-system";
 
@@ -96,7 +85,7 @@ export function JobCard({
           </div>
         ) : (
           <div className="job-score job-score-empty" aria-hidden="true">
-            <AnimatedIcon icon={Briefcase} size={20} />
+            <CopilotIcon name="work" size={20} />
           </div>
         )}
         <div className="job-card-body">
@@ -108,27 +97,27 @@ export function JobCard({
             ) : null}
             {job.work_mode ? (
               <Badge variant="secondary">
-                <AnimatedIcon icon={Briefcase} size={12} aria-hidden /> {job.work_mode}
+                <CopilotIcon name="work" size={12} /> {job.work_mode}
               </Badge>
             ) : null}
             {salary ? (
               <Badge variant="secondary">
-                <AnimatedIcon icon={Banknote} size={12} aria-hidden /> {salary}
+                <CopilotIcon name="pay" size={12} /> {salary}
               </Badge>
             ) : null}
           </div>
           <h3 className="job-card-title">{job.title}</h3>
           <p className="job-card-meta">
             <span>
-              <AnimatedIcon icon={Building2} size={14} aria-hidden /> {job.company || "Company"}
+              <CopilotIcon name="company" size={14} /> {job.company || "Company"}
             </span>
             {job.location ? (
               <span>
-                <AnimatedIcon icon={MapPin} size={14} aria-hidden /> {job.location}
+                <CopilotIcon name="pin" size={14} /> {job.location}
               </span>
             ) : null}
           </p>
-          <p className="job-card-applicants"><AnimatedIcon icon={Users} size={14} aria-hidden /> {Number(job.application_count || 0)} {Number(job.application_count || 0) === 1 ? "user has applied" : "users have applied"}</p>
+          <p className="job-card-applicants"><CopilotIcon name="applicants" size={14} /> {Number(job.application_count || 0)} {Number(job.application_count || 0) === 1 ? "user has applied" : "users have applied"}</p>
         </div>
       </div>
 
@@ -138,7 +127,7 @@ export function JobCard({
         <div className="job-card-tags" aria-label="Match highlights">
           {matched.map((item) => (
             <span key={`m-${item}`} className="job-tag job-tag-matched">
-              <AnimatedIcon icon={CheckCircle2} size={12} aria-hidden /> {item}
+              <CopilotIcon name="check" size={12} /> {item}
             </span>
           ))}
           {missing.map((item) => (
@@ -167,7 +156,7 @@ export function JobCard({
             aria-label={isSaved ? "Unsave job" : "Save job"}
             title={isSaved ? "Unsave" : "Save"}
           >
-            <AnimatedIcon icon={Bookmark} size={16} aria-hidden />
+            <CopilotIcon name="save" size={16} />
             <span className="job-card-action-label">{isSaved ? "Saved" : "Save"}</span>
           </Button>
           <Button
@@ -177,7 +166,7 @@ export function JobCard({
             aria-label="Mark as applied"
             title="Mark applied"
           >
-            <AnimatedIcon icon={Send} size={16} aria-hidden />
+            <CopilotIcon name="apply" size={16} />
             <span className="job-card-action-label">{isApplied ? "Applied" : "Apply"}</span>
           </Button>
           <Button
@@ -187,7 +176,7 @@ export function JobCard({
             aria-label="Mark as rejected"
             title="Mark rejected"
           >
-            <AnimatedIcon icon={ThumbsDown} size={16} aria-hidden />
+            <CopilotIcon name="reject" size={16} />
             <span className="job-card-action-label">{isRejected ? "Rejected" : "Pass"}</span>
           </Button>
         </div>

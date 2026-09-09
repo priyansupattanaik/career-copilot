@@ -1,16 +1,11 @@
 ﻿import { Link } from "@/shared/ui/router-link";
 import { useSyncExternalStore } from "react";
 import { motion, useReducedMotion } from "motion/react";
+import { CopilotIcon } from "@/components/ui/copilot-icons";
 import {
-  ArrowRight,
-  Briefcase,
-  CheckCircle2,
-  FileCheck2,
-  FileText,
-  Play,
-  Sparkles,
-  TrendingUp,
-} from "lucide-react";
+  staggerContainerVariants,
+  staggerItemVariants,
+} from "@/components/ui/motion-system";
 import {
   extractMissing,
   resolveCompletion,
@@ -109,24 +104,12 @@ export function Dashboard() {
     ? `/resume-analysis/report/${data.latest_ats_analysis.id}`
     : "/resume-analysis?tab=upload";
 
-  const containerVariants = {
-    hidden: {},
-    visible: {
-      transition: {
-        staggerChildren: reduceMotion ? 0 : 0.06,
-        delayChildren: 0.02,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 12 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { type: "spring" as const, bounce: 0, duration: 0.44 },
-    },
-  };
+  const containerVariants = reduceMotion
+    ? { hidden: {}, visible: {} }
+    : staggerContainerVariants;
+  const itemVariants = reduceMotion
+    ? { hidden: { opacity: 1, y: 0 }, visible: { opacity: 1, y: 0 } }
+    : staggerItemVariants;
 
   if (loading && !data && !error) {
     return (
@@ -151,11 +134,11 @@ export function Dashboard() {
           action={
             <div className="dashboard-header-actions">
               <Link className="button button-secondary" href="/mock-interview">
-                <Play size={14} className="button-icon" />
+                <CopilotIcon name="play" size={14} className="button-icon" />
                 <span>Practice Interview</span>
               </Link>
               <Link className="button button-primary" href="/resume-analysis?tab=upload">
-                <Sparkles size={14} className="button-icon" />
+                <CopilotIcon name="assist" size={14} className="button-icon" />
                 <span>New ATS Run</span>
               </Link>
             </div>
@@ -192,7 +175,7 @@ export function Dashboard() {
           <Card className="dashboard-next-step-card">
             <div className="dashboard-next-step-main">
               <div className="dashboard-next-step-icon">
-                <FileText size={22} />
+                <CopilotIcon name="resume" size={22} />
               </div>
               <div>
                 <span className="dashboard-badge-pill">Priority Next Step</span>
@@ -204,7 +187,7 @@ export function Dashboard() {
               </div>
             </div>
             <Link className="button button-primary" href="/resume-analysis?tab=upload">
-              Upload Resume <ArrowRight size={14} />
+              Upload Resume <CopilotIcon name="go" size={14} />
             </Link>
           </Card>
         </motion.div>
@@ -240,7 +223,7 @@ export function Dashboard() {
           <div className="dashboard-stat-footer">
             <Link className="dashboard-stat-link" href={atsHref}>
               {data?.latest_ats_analysis?.id ? "Open analysis" : "Run scan"}
-              <ArrowRight size={13} />
+              <CopilotIcon name="go" size={13} />
             </Link>
           </div>
         </article>
@@ -278,7 +261,7 @@ export function Dashboard() {
           <div className="dashboard-stat-footer">
             <Link className="dashboard-stat-link" href={interviewHref}>
               {interviewLatest != null ? "View report" : "Start session"}
-              <ArrowRight size={13} />
+              <CopilotIcon name="go" size={13} />
             </Link>
           </div>
         </article>
@@ -291,7 +274,7 @@ export function Dashboard() {
               className="dashboard-stat-badge"
               data-status={hasConfirmedResume ? "verified" : "empty"}
             >
-              {hasConfirmedResume ? <CheckCircle2 size={12} /> : null}
+              {hasConfirmedResume ? <CopilotIcon name="check" size={12} /> : null}
               {hasConfirmedResume ? "Verified" : "None"}
             </span>
           </div>
@@ -308,7 +291,7 @@ export function Dashboard() {
           <div className="dashboard-stat-footer">
             <Link className="dashboard-stat-link" href="/resume-analysis?tab=resumes">
               Manage resumes
-              <ArrowRight size={13} />
+              <CopilotIcon name="go" size={13} />
             </Link>
           </div>
         </article>
@@ -317,7 +300,7 @@ export function Dashboard() {
         <article className="dashboard-stat-card">
           <div className="dashboard-stat-header">
             <span className="dashboard-stat-label">Job Pipeline</span>
-            <Briefcase size={16} className="dashboard-stat-icon" />
+            <CopilotIcon name="work" size={16} className="dashboard-stat-icon" />
           </div>
           <div className="dashboard-stat-body">
             <div className="dashboard-stat-value-row">
@@ -333,7 +316,7 @@ export function Dashboard() {
           <div className="dashboard-stat-footer">
             <Link className="dashboard-stat-link" href="/jobs">
               Explore opportunities
-              <ArrowRight size={13} />
+              <CopilotIcon name="go" size={13} />
             </Link>
           </div>
         </article>
@@ -419,7 +402,7 @@ export function Dashboard() {
                 </p>
                 {completion < 100 && (
                   <Link className="dashboard-inline-action" href="/settings/profile">
-                    Complete profile <ArrowRight size={12} style={{ display: "inline", verticalAlign: "middle" }} />
+                    Complete profile <CopilotIcon name="go" size={12} />
                   </Link>
                 )}
               </div>
@@ -430,7 +413,7 @@ export function Dashboard() {
               {/* Milestone 1: Resume */}
               <div className="dashboard-milestone-item">
                 <div className="dashboard-milestone-icon">
-                  <FileCheck2 size={16} />
+                  <CopilotIcon name="evidence" size={16} />
                 </div>
                 <div className="dashboard-milestone-info">
                   <span className="dashboard-milestone-label">Latest Resume</span>
@@ -450,7 +433,7 @@ export function Dashboard() {
               {/* Milestone 2: Interview */}
               <div className="dashboard-milestone-item">
                 <div className="dashboard-milestone-icon">
-                  <TrendingUp size={16} />
+                  <CopilotIcon name="trend" size={16} />
                 </div>
                 <div className="dashboard-milestone-info">
                   <span className="dashboard-milestone-label">Latest Interview</span>
@@ -471,7 +454,7 @@ export function Dashboard() {
               {/* Milestone 3: Job */}
               <div className="dashboard-milestone-item">
                 <div className="dashboard-milestone-icon">
-                  <Briefcase size={16} />
+                  <CopilotIcon name="jobs" size={16} />
                 </div>
                 <div className="dashboard-milestone-info">
                   <span className="dashboard-milestone-label">

@@ -128,9 +128,9 @@
 
 .ra-segnav-item[aria-current="page"] {
   color: var(--text);
-  background: var(--surface);
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-sm);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .ra-segnav-item[aria-current="page"] svg {
@@ -604,10 +604,10 @@
 }
 
 .ra-mode-btn[aria-pressed="true"] {
-  background: var(--surface);
-  border-color: var(--border-strong);
+  background: transparent;
+  border-color: transparent;
   color: var(--text);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 .ra-intake-body {
@@ -938,9 +938,7 @@
   padding: 15px 18px;
   border: 1px solid color-mix(in srgb, var(--primary-strong) 32%, var(--border));
   border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--surface-blue) 92%, transparent);
-  backdrop-filter: blur(var(--blur-chrome));
-  -webkit-backdrop-filter: blur(var(--blur-chrome));
+  background: var(--surface-blue);
   box-shadow: var(--shadow-md);
 }
 

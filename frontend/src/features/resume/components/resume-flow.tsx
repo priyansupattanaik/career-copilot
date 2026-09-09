@@ -2,21 +2,7 @@
 import { Link } from "@/shared/ui/router-link";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import {
-  AlertTriangle,
-  BriefcaseBusiness,
-  CheckCircle2,
-  CloudUpload,
-  Eye,
-  FileText,
-  FolderOpen,
-  History,
-  RotateCcw,
-  ShieldCheck,
-  Trash2,
-  X,
-} from "lucide-react";
-import { AnimatedIcon } from "@/components/ui/animated-icon";
+import { CopilotIcon } from "@/components/ui/copilot-icons";
 
 
 
@@ -228,7 +214,7 @@ function statusStamp(status: string): { tone: "done" | "wait" | "failed"; label:
 function ErrorBanner({ children }: { children: React.ReactNode }) {
   return (
     <p role="alert" className="ra-error">
-      <AnimatedIcon icon={AlertTriangle} size={17} aria-hidden="true" />
+      <CopilotIcon name="alert" size={17} />
       <span>{children}</span>
     </p>
   );
@@ -237,7 +223,7 @@ function ErrorBanner({ children }: { children: React.ReactNode }) {
 function StatusNote({ children }: { children: React.ReactNode }) {
   return (
     <p role="status" className="ra-status">
-      <AnimatedIcon icon={CheckCircle2} size={16} aria-hidden="true" />
+      <CopilotIcon name="check" size={16} />
       <span>{children}</span>
     </p>
   );
@@ -256,7 +242,7 @@ function ParsedInputPanel({ title, input }: { title: string; input?: ParsedInput
         <div className="ra-docpanel-head">
           <div className="ra-docpanel-id">
             <span className="ra-intake-icon" aria-hidden="true">
-              <AnimatedIcon icon={FileText} size={18} strokeWidth={2.2} />
+              <CopilotIcon name="resume" size={18} />
             </span>
             <div>
               <h2>{title}</h2>
@@ -274,7 +260,7 @@ function ParsedInputPanel({ title, input }: { title: string; input?: ParsedInput
       <div className="ra-docpanel-head">
         <div className="ra-docpanel-id">
           <span className="ra-intake-icon" aria-hidden="true">
-            <AnimatedIcon icon={FileText} size={18} strokeWidth={2.2} />
+            <CopilotIcon name="resume" size={18} />
           </span>
           <div>
             <p className="ra-docpanel-kicker">{title}</p>
@@ -343,9 +329,9 @@ export function AnalysisHistory() {
   }, [searchParams]);
 
   const segments: { key: HubTab; label: string; icon: React.ReactNode }[] = [
-    { key: "ats", label: "Runs", icon: <AnimatedIcon icon={History} size={16} aria-hidden="true" /> },
-    { key: "resumes", label: "Library", icon: <AnimatedIcon icon={FolderOpen} size={16} aria-hidden="true" /> },
-    { key: "upload", label: "New upload", icon: <AnimatedIcon icon={CloudUpload} size={16} aria-hidden="true" /> },
+    { key: "ats", label: "Runs", icon: <CopilotIcon name="history" size={16} /> },
+    { key: "resumes", label: "Library", icon: <CopilotIcon name="library" size={16} /> },
+    { key: "upload", label: "New upload", icon: <CopilotIcon name="upload" size={16} /> },
   ];
 
   return (
@@ -378,7 +364,7 @@ export function AnalysisHistory() {
                     style={{
                       position: "absolute",
                       inset: 0,
-                      borderRadius: 999,
+                      borderRadius: "inherit",
                       background: "var(--surface)",
                       border: "1px solid var(--border-strong)",
                       boxShadow: "var(--shadow-sm)",
@@ -408,8 +394,8 @@ export function AnalysisHistory() {
         <motion.div
           key={tab}
           variants={pageTransitionVariants}
-          initial={shouldReduceMotion ? false : "hidden"}
-          animate="visible"
+          initial={shouldReduceMotion ? false : "initial"}
+          animate="animate"
           exit={shouldReduceMotion ? undefined : "exit"}
         >
           {tab === "ats" ? <AtsHistoryList /> : tab === "resumes" ? <ResumeLibrary /> : <NewAnalysis embedded />}
@@ -555,7 +541,7 @@ function ResumeLibrary() {
       {message ? <StatusNote>{message}</StatusNote> : null}
       {!resumes.length && !error ? (
         <div className="ra-empty">
-          <AnimatedIcon icon={FolderOpen} size={30} aria-hidden="true" />
+          <CopilotIcon name="library" size={30} />
           <h2>No resumes yet</h2>
           <p>Upload a resume once and reuse it for every analysis. Saved files appear here.</p>
           <Link className="button button-primary" href="/resume-analysis?tab=upload">
@@ -565,7 +551,7 @@ function ResumeLibrary() {
       ) : null}
       {!resumes.length && error ? (
         <div className="ra-empty">
-          <AnimatedIcon icon={AlertTriangle} size={30} aria-hidden="true" />
+          <CopilotIcon name="alert" size={30} />
           <h2>Could not load resumes</h2>
           <p>Confirm the backend is running and object storage is configured, then retry.</p>
           <Button
@@ -593,7 +579,7 @@ function ResumeLibrary() {
             {resumes.map((resume) => (
               <article className="ra-doc" key={resume.id}>
                 <span className="ra-doctile" aria-hidden="true">
-                  <AnimatedIcon icon={FileText} size={22} strokeWidth={1.9} />
+                  <CopilotIcon name="resume" size={22} />
                 </span>
                 <div className="ra-doc-main">
                   <p className="ra-run-pair">
@@ -620,7 +606,7 @@ function ResumeLibrary() {
                     disabled={previewLoading}
                     onClick={() => openPreview(resume.id)}
                   >
-                    <AnimatedIcon icon={Eye} size={15} aria-hidden="true" />
+                    <CopilotIcon name="show" size={15} />
                     {previewLoading && previewLoadingId === resume.id ? "Loading…" : "Preview"}
                   </Button>
                   <Button
@@ -628,7 +614,7 @@ function ResumeLibrary() {
                     disabled={deletingId === resume.id}
                     onClick={() => deleteResume(resume.id, resume.title)}
                   >
-                    <AnimatedIcon icon={Trash2} size={15} aria-hidden="true" />
+                    <CopilotIcon name="trash" size={15} />
                     {deletingId === resume.id ? "Deleting…" : "Delete"}
                   </Button>
                 </div>
@@ -661,7 +647,7 @@ function ResumeLibrary() {
                 </p>
               </div>
               <Button variant="secondary" onClick={closePreview}>
-                <AnimatedIcon icon={X} size={15} idle={false} aria-hidden="true" />
+                <CopilotIcon name="close" size={15} />
                 Close
               </Button>
             </div>
@@ -795,7 +781,7 @@ function AtsHistoryList() {
               disabled={!selectedIds.size || [...selectedIds].some((id) => deletingIds.has(id))}
               onClick={() => void deleteAnalyses([...selectedIds])}
             >
-              <AnimatedIcon icon={Trash2} size={15} aria-hidden="true" />
+              <CopilotIcon name="trash" size={15} />
               Delete selected{selectedIds.size ? ` (${selectedIds.size})` : ""}
             </Button>
           </div>
@@ -803,7 +789,7 @@ function AtsHistoryList() {
       ) : null}
       {!analyses.length && !error ? (
         <div className="ra-empty">
-          <AnimatedIcon icon={History} size={30} aria-hidden="true" />
+          <CopilotIcon name="history" size={30} />
           <h2>No ATS analyses yet</h2>
           <p>Upload a resume and a job description to produce your first audited coverage report.</p>
           <Link className="button button-primary" href="/resume-analysis?tab=upload">
@@ -813,7 +799,7 @@ function AtsHistoryList() {
       ) : null}
       {!analyses.length && error ? (
         <div className="ra-empty">
-          <AnimatedIcon icon={AlertTriangle} size={30} aria-hidden="true" />
+          <CopilotIcon name="alert" size={30} />
           <h2>Could not load analyses</h2>
           <p>Check that the backend is running and your session is still valid, then retry.</p>
           <Button
@@ -953,7 +939,7 @@ function ExtractionPanel({
       <div className="ra-docpanel-head">
         <div className="ra-docpanel-id">
           <span className="ra-intake-icon" aria-hidden="true">
-            {isResume ? <AnimatedIcon icon={FileText} size={18} strokeWidth={2.2} /> : <AnimatedIcon icon={BriefcaseBusiness} size={18} strokeWidth={2.2} />}
+            {isResume ? <CopilotIcon name="resume" size={18} /> : <CopilotIcon name="work" size={18} />}
           </span>
           <div>
             <p className="ra-docpanel-kicker">{isResume ? "Parsed resume" : "Parsed job description"}</p>
@@ -1240,7 +1226,7 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
           </div>
           <nav className="ra-segnav" aria-label="Back to overview">
             <Link className="ra-segnav-item" href="/resume-analysis">
-              <AnimatedIcon icon={History} size={16} aria-hidden="true" />
+              <CopilotIcon name="history" size={16} />
               <span className="ra-seg-label">Overview</span>
             </Link>
           </nav>
@@ -1261,7 +1247,7 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
               animate={item.index === currentStepIndex ? { scale: [1, 1.1, 1] } : { scale: 1 }}
               transition={shouldReduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION}
             >
-              {item.index < currentStepIndex ? <AnimatedIcon icon={CheckCircle2} size={14} /> : item.index}
+              {item.index < currentStepIndex ? <CopilotIcon name="check" size={14} /> : item.index}
             </motion.span>
             <span className="ra-step-label">{item.label}</span>
           </span>
@@ -1301,7 +1287,7 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
             >
               <div className="ra-intake-head">
                 <span className="ra-intake-icon" aria-hidden="true">
-                  <AnimatedIcon icon={FileText} size={19} strokeWidth={2.1} />
+                  <CopilotIcon name="resume" size={19} />
                 </span>
                 <div>
                   <h2>Resume</h2>
@@ -1328,7 +1314,7 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
                           style={{
                             position: "absolute",
                             inset: 0,
-                            borderRadius: 8,
+                            borderRadius: "inherit",
                             background: "var(--surface)",
                             border: "1px solid var(--border-strong)",
                             boxShadow: "var(--shadow-sm)",
@@ -1353,7 +1339,7 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
                           style={{
                             position: "absolute",
                             inset: 0,
-                            borderRadius: 8,
+                            borderRadius: "inherit",
                             background: "var(--surface)",
                             border: "1px solid var(--border-strong)",
                             boxShadow: "var(--shadow-sm)",
@@ -1427,7 +1413,7 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
             >
               <div className="ra-intake-head">
                 <span className="ra-intake-icon" aria-hidden="true">
-                  <AnimatedIcon icon={BriefcaseBusiness} size={19} strokeWidth={2.1} />
+                  <CopilotIcon name="work" size={19} />
                 </span>
                 <div>
                   <h2>Job description</h2>
@@ -1449,7 +1435,7 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
                       style={{
                         position: "absolute",
                         inset: 0,
-                        borderRadius: 8,
+                        borderRadius: "inherit",
                         background: "var(--surface)",
                         border: "1px solid var(--border-strong)",
                         boxShadow: "var(--shadow-sm)",
@@ -1474,7 +1460,7 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
                       style={{
                         position: "absolute",
                         inset: 0,
-                        borderRadius: 8,
+                        borderRadius: "inherit",
                         background: "var(--surface)",
                         border: "1px solid var(--border-strong)",
                         boxShadow: "var(--shadow-sm)",
@@ -1522,11 +1508,11 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
           <div className="ra-ready">
             <ul className="ra-ready-list">
               <li className={`ra-ready-item ${resumeReady ? "is-ok" : "is-wait"}`}>
-                <AnimatedIcon icon={CheckCircle2} size={14} aria-hidden="true" />
+                <CopilotIcon name="check" size={14} />
                 Resume {resumeReady ? "ready" : "needed"}
               </li>
               <li className={`ra-ready-item ${jdReady ? "is-ok" : "is-wait"}`}>
-                <AnimatedIcon icon={CheckCircle2} size={14} aria-hidden="true" />
+                <CopilotIcon name="check" size={14} />
                 Job description {jdReady ? "ready" : "needed"}
               </li>
             </ul>
@@ -1561,21 +1547,21 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
                 setReviewed(false);
               }}
             >
-              <AnimatedIcon icon={RotateCcw} size={15} aria-hidden="true" />
+              <CopilotIcon name="refresh" size={15} />
               Change files
             </Button>
           </div>
 
           <div className="ra-chips">
             <span className="ra-chip">
-              <AnimatedIcon icon={ShieldCheck} size={18} aria-hidden="true" />
+              <CopilotIcon name="scan" size={18} />
               <span>
                 <strong>Evidence-first scoring</strong>
                 <small>No unsupported experience is added.</small>
               </span>
             </span>
             <span className="ra-chip">
-              <AnimatedIcon icon={CheckCircle2} size={18} aria-hidden="true" />
+              <CopilotIcon name="check" size={18} />
               <span>
                 <strong>Two inputs ready</strong>
                 <small>Resume and job description are saved.</small>
@@ -1640,7 +1626,7 @@ export function ExtractionReview() {
         </div>
       </header>
       <div className="ra-empty">
-        <AnimatedIcon icon={CloudUpload} size={30} aria-hidden="true" />
+        <CopilotIcon name="upload" size={30} />
         <h2>Use new upload</h2>
         <p>Extraction review happens inside the upload flow once your files are stored.</p>
         <Link className="button button-primary" href="/resume-analysis?tab=upload">
@@ -1679,7 +1665,7 @@ export function AtsReport() {
           </div>
           <nav className="ra-segnav" aria-label="Back to overview">
             <Link className="ra-segnav-item" href="/resume-analysis">
-              <AnimatedIcon icon={History} size={16} aria-hidden="true" />
+              <CopilotIcon name="history" size={16} />
               <span className="ra-seg-label">Overview</span>
             </Link>
           </nav>
@@ -1780,7 +1766,7 @@ export function AtsReport() {
             because nothing supported them.
           </p>
           <span className="ra-notechip">
-            <AnimatedIcon icon={ShieldCheck} size={13} aria-hidden="true" />
+            <CopilotIcon name="scan" size={13} />
             {analysis.summary?.disclaimer || "Keyword coverage is not a hiring prediction."}
           </span>
           <div className="ra-hero-actions">
@@ -1801,7 +1787,7 @@ export function AtsReport() {
         </ErrorBanner>
       ) : domainGate?.decision === "UNVERIFIED" ? (
         <p role="status" className="ra-warn">
-          <AnimatedIcon icon={AlertTriangle} size={17} aria-hidden="true" />
+          <CopilotIcon name="alert" size={17} />
           <span>
             <strong>Domain match not verified. </strong>
             {domainGate.reason || "The LLM domain gate was unavailable. Treat this score as unverified for domain fit."}

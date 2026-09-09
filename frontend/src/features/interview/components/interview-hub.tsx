@@ -164,8 +164,9 @@ export function InterviewStartForm() {
                     style={{
                       position: "absolute",
                       inset: 0,
-                      borderRadius: 16,
-                      border: "2px solid var(--interview-accent, #6366f1)",
+                      borderRadius: "inherit",
+                      border: "1px solid var(--interview-accent, #6366f1)",
+                      background: "color-mix(in srgb, var(--interview-accent) 10%, var(--surface))",
                       pointerEvents: "none",
                       zIndex: 0,
                     }}
@@ -220,9 +221,10 @@ export function InterviewStartForm() {
                       transition={shouldReduceMotion ? { duration: 0 } : FAST_SPRING_TRANSITION}
                       style={{
                         position: "absolute",
-                        inset: -1,
-                        borderRadius: 999,
-                        border: "2px solid var(--interview-accent, #6366f1)",
+                        inset: 0,
+                        borderRadius: "inherit",
+                        border: "1px solid var(--interview-accent, #6366f1)",
+                        background: "color-mix(in srgb, var(--interview-accent) 12%, var(--surface))",
                         pointerEvents: "none",
                         zIndex: 0,
                       }}

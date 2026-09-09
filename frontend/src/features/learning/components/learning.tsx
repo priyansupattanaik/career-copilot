@@ -1,21 +1,11 @@
 import { Link } from "@/shared/ui/router-link";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  BookOpenCheck,
-  CheckCircle2,
-  Circle,
-  ExternalLink,
-  LoaderCircle,
-  PlayCircle,
-  Trash2,
-  Sparkles,
-  Video,
-} from "lucide-react";
+import { CopilotIcon } from "@/components/ui/copilot-icons";
 import { apiRequest, isAbortError } from "@/shared/api/client";
 import LoadingState from "@/components/ui/loading-state";
 import { Badge, Button, Progress } from "@/shared/ui/primitives";
-import { AnimatedIcon } from "@/components/ui/animated-icon";
+
 import { motion, useReducedMotion } from "motion/react";
 import { FLUID_SPRING_TRANSITION } from "@/components/ui/motion-system";
 import type {
@@ -251,9 +241,9 @@ export function LearningHome() {
         <div className="lp-masthead-actions">
           <Button onClick={() => void generate()} disabled={busy || !selectedId || Boolean(deletingId)}>
             {busy ? (
-              <AnimatedIcon icon={LoaderCircle} className="spin" idle={false} size={17} aria-hidden />
+              <CopilotIcon name="loader" size={17} loop />
             ) : (
-              <AnimatedIcon icon={Sparkles} size={17} aria-hidden />
+              <CopilotIcon name="assist" size={17} />
             )}
             {existingForSelected ? "Open path from this ATS" : "Generate from ATS gaps"}
           </Button>
@@ -414,7 +404,7 @@ export function LearningHome() {
                             onClick={() => setConfirmDeleteId(path.id)}
                             aria-label={`Delete learning path ${path.title}`}
                           >
-                            <AnimatedIcon icon={Trash2} size={17} aria-hidden />
+                            <CopilotIcon name="trash" size={17} />
                             Delete
                           </Button>
                         </div>
@@ -719,7 +709,7 @@ export function LearningPath({ pathId }: { pathId: string }) {
               disabled={deleting || Boolean(updatingId)}
               onClick={() => setConfirmDelete(true)}
             >
-              <AnimatedIcon icon={Trash2} size={17} aria-hidden />
+              <CopilotIcon name="trash" size={17} />
               {deleting ? "Deleting…" : "Delete path"}
             </Button>
           ) : null}
@@ -820,11 +810,11 @@ export function LearningPath({ pathId }: { pathId: string }) {
                         <span className="lp-step-top" style={{ position: "relative", zIndex: 1 }}>
                           <span className="lp-chip-row">
                             {percent >= 90 || item.status === "completed" ? (
-                              <AnimatedIcon icon={CheckCircle2} size={17} aria-hidden />
+                              <CopilotIcon name="check" size={17} />
                             ) : percent > 0 || item.status === "in_progress" ? (
-                              <AnimatedIcon icon={PlayCircle} size={17} aria-hidden />
+                              <CopilotIcon name="play" size={17} />
                             ) : (
-                              <AnimatedIcon icon={Circle} size={17} aria-hidden />
+                              <CopilotIcon name="idle" size={17} />
                             )}
                             <span className="lp-step-title">{item.title}</span>
                           </span>
@@ -969,7 +959,7 @@ export function LearningPath({ pathId }: { pathId: string }) {
                               variant="secondary"
                               onClick={() => selectLesson(selectedItem, resource)}
                             >
-                              <AnimatedIcon icon={Video} size={17} aria-hidden />
+                              <CopilotIcon name="lesson" size={17} />
                               {resourceActionLabel(resource)}
                             </Button>
                           ) : (
@@ -981,12 +971,12 @@ export function LearningPath({ pathId }: { pathId: string }) {
                               onClick={() => void patchResource(resource, { opened: true })}
                             >
                               {isVideoResource(resource) ? (
-                                <AnimatedIcon icon={Video} size={17} aria-hidden />
+                                <CopilotIcon name="lesson" size={17} />
                               ) : (
-                                <AnimatedIcon icon={BookOpenCheck} size={17} aria-hidden />
+                                <CopilotIcon name="lesson-check" size={17} />
                               )}
                               {resourceActionLabel(resource)}
-                              <AnimatedIcon icon={ExternalLink} size={14} aria-hidden />
+                              <CopilotIcon name="external" size={14} />
                             </a>
                           )}
                           {resource.watch_status === "completed" ? (

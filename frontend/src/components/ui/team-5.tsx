@@ -1,6 +1,5 @@
-import type { ElementType, ReactNode } from "react";
-import { FaDribbble, FaGithub, FaGlobe, FaLinkedinIn } from "react-icons/fa";
-import { FaXTwitter } from "react-icons/fa6";
+import type { ReactNode } from "react";
+import { CopilotIcon, type CopilotIconName } from "@/components/ui/copilot-icons";
 
 import { cn } from "@/shared/utils";
 import { Badge } from "@/shared/ui/primitives";
@@ -39,12 +38,12 @@ export interface Team5Props {
   }) => ReactNode;
 }
 
-const socialIconMap: Record<Team5SocialPlatform, ElementType> = {
-  linkedin: FaLinkedinIn,
-  github: FaGithub,
-  twitter: FaXTwitter,
-  dribbble: FaDribbble,
-  website: FaGlobe,
+const socialIconMap: Record<Team5SocialPlatform, CopilotIconName> = {
+  linkedin: "linkedin",
+  github: "github",
+  twitter: "twitter",
+  dribbble: "dribbble",
+  website: "website",
 };
 
 /** Team members for Career Copilot. */
@@ -135,14 +134,14 @@ function MemberSocialLinks({
   return (
     <div className="team5-socials flex items-center gap-2">
       {socials.map((social) => {
-        const Icon = socialIconMap[social.platform];
-        if (!Icon) return null;
+        const iconName = socialIconMap[social.platform];
+        if (!iconName) return null;
 
         const label = social.label ?? `${member.name} on ${social.platform}`;
 
         const content = (
-          <span className="team5-social flex size-8 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white hover:text-zinc-950">
-            <Icon className="size-3.5" aria-hidden />
+          <span className="team5-social flex size-8 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white hover:text-zinc-950">
+            <CopilotIcon name={iconName} size={14} />
           </span>
         );
 

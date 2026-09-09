@@ -7,9 +7,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { ChevronUp, LogOut, Settings, UserRound } from "lucide-react";
-import { CareerIcon, type CareerIconName } from "@/components/ui/career-icons";
-import { AnimatedIcon } from "@/components/ui/animated-icon";
+import { CopilotIcon, type CopilotIconName } from "@/components/ui/copilot-icons";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { routes } from "@/shared/routes";
@@ -28,11 +26,18 @@ import {
   completionFromBootstrap,
   useWorkspaceBootstrap,
 } from "@/features/workspace/bootstrap-context";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import {
+  AnimatePresence,
+  LayoutGroup,
+  MotionConfig,
+  motion,
+  useReducedMotion,
+} from "motion/react";
 import {
   FLUID_SPRING_TRANSITION,
   dropdownMenuVariants,
   pageTransitionVariants,
+  springs,
 } from "@/components/ui/motion-system";
 
 /** Primary nav only — Settings lives in the profile account menu. */
@@ -41,37 +46,37 @@ const navigation = [
     href: routes.dashboard,
     label: "Dashboard",
     shortLabel: "Home",
-    icon: "dashboard" as CareerIconName,
+    icon: "dashboard" as CopilotIconName,
   },
   {
     href: routes.resume,
     label: "Resume Analysis",
     shortLabel: "Resume",
-    icon: "resume" as CareerIconName,
+    icon: "resume" as CopilotIconName,
   },
   {
     href: routes.interview,
     label: "Mock Interview",
     shortLabel: "Interview",
-    icon: "interview" as CareerIconName,
+    icon: "interview" as CopilotIconName,
   },
   {
     href: routes.learning,
     label: "Learning Path",
     shortLabel: "Learn",
-    icon: "learning" as CareerIconName,
+    icon: "learning" as CopilotIconName,
   },
   {
     href: routes.jobs,
     label: "Recommended Jobs",
     shortLabel: "Jobs",
-    icon: "opportunities" as CareerIconName,
+    icon: "jobs" as CopilotIconName,
   },
   {
     href: routes.community,
     label: "Community",
     shortLabel: "People",
-    icon: "profile" as CareerIconName,
+    icon: "community" as CopilotIconName,
   },
 ];
 
@@ -204,6 +209,8 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
+    <MotionConfig transition={reduceMotion ? { duration: 0 } : springs.fluid} reducedMotion="user">
+    <LayoutGroup>
     <div className="workspace">
       <aside className="sidebar" aria-label="Workspace navigation">
         <div className="sidebar-top">
@@ -242,21 +249,10 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
                       transition={
                         reduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION
                       }
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        borderRadius: 12,
-                        background:
-                          "color-mix(in srgb, var(--primary-strong) 12%, #ffffff)",
-                        border:
-                          "1px solid color-mix(in srgb, var(--primary-strong) 16%, transparent)",
-                        boxShadow: "var(--shadow-sm)",
-                        zIndex: 0,
-                      }}
                     />
                   ) : null}
                   <span className="sidebar-link-icon" style={{ position: "relative", zIndex: 1 }} aria-hidden>
-                    <CareerIcon name={item.icon} size={18} />
+                    <CopilotIcon name={item.icon} size={18} />
                   </span>
                   <span className="sidebar-link-label" style={{ position: "relative", zIndex: 1 }}>{item.label}</span>
                 </Link>
@@ -341,7 +337,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
                       onMouseEnter={() => prefetchRoute("/settings/profile")}
                       onFocus={() => prefetchRoute("/settings/profile")}
                     >
-                      <AnimatedIcon icon={UserRound} size={16} aria-hidden />
+                      <CopilotIcon name="account" size={16} />
                       View profile
                     </Link>
                     <Link
@@ -352,7 +348,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
                       onMouseEnter={() => prefetchRoute("/settings/account")}
                       onFocus={() => prefetchRoute("/settings/account")}
                     >
-                      <AnimatedIcon icon={Settings} size={16} aria-hidden />
+                      <CopilotIcon name="settings" size={16} />
                       Settings
                     </Link>
                     <button
@@ -362,7 +358,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
                       disabled={loggingOut}
                       onClick={() => void logout()}
                     >
-                      <AnimatedIcon icon={LogOut} size={16} aria-hidden />
+                      <CopilotIcon name="logout" size={16} />
                       {loggingOut ? "Signing out…" : "Logout"}
                     </button>
                   </div>
@@ -404,11 +400,10 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
                   <span className="sidebar-profile-sub">Account</span>
                 )}
               </span>
-              <AnimatedIcon
-                icon={ChevronUp}
+              <CopilotIcon
+                name="collapse"
                 className={`sidebar-profile-caret ${profileMenuOpen ? "is-open" : ""}`}
                 size={16}
-                aria-hidden
               />
             </button>
           </div>
@@ -434,10 +429,10 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         <main id="main-content" className="workspace-content">
           <motion.div
             key={pathname}
+            className="workspace-page"
             variants={pageTransitionVariants}
             initial={reduceMotion ? false : "initial"}
             animate="animate"
-            style={{ width: "100%", display: "contents" }}
           >
             {children}
           </motion.div>
@@ -463,21 +458,14 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
               {active ? (
                 <motion.span
                   layoutId="mobile-nav-active-pill"
+                  className="mobile-nav-active-pill"
                   transition={
                     reduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION
                   }
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    borderRadius: 12,
-                    background:
-                      "var(--surface-selected, color-mix(in srgb, var(--app-blue) 16%, transparent))",
-                    zIndex: 0,
-                  }}
                 />
               ) : null}
               <span className="mobile-bottom-nav-icon" style={{ position: "relative", zIndex: 1 }} aria-hidden>
-                <CareerIcon name={item.icon} size={20} />
+                <CopilotIcon name={item.icon} size={20} />
               </span>
               <span className="mobile-bottom-nav-label" style={{ position: "relative", zIndex: 1 }}>{item.shortLabel}</span>
             </Link>
@@ -494,25 +482,20 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
           {pathname.startsWith("/settings") ? (
             <motion.span
               layoutId="mobile-nav-active-pill"
+              className="mobile-nav-active-pill"
               transition={
                 reduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION
               }
-              style={{
-                position: "absolute",
-                inset: 0,
-                borderRadius: 12,
-                background:
-                  "var(--surface-selected, color-mix(in srgb, var(--app-blue) 16%, transparent))",
-                zIndex: 0,
-              }}
             />
           ) : null}
           <span className="mobile-bottom-nav-icon" style={{ position: "relative", zIndex: 1 }} aria-hidden>
-            <AnimatedIcon icon={Settings} size={20} />
+            <CopilotIcon name="settings" size={20} />
           </span>
           <span className="mobile-bottom-nav-label" style={{ position: "relative", zIndex: 1 }}>Profile</span>
         </Link>
       </nav>
     </div>
+    </LayoutGroup>
+    </MotionConfig>
   );
 }

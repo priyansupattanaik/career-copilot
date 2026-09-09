@@ -8,7 +8,7 @@ import {
 import { useLocation } from "react-router-dom";
 import { Link } from "@/shared/ui/router-link";
 import { BrandMark } from "@/components/ui/brand-mark";
-import { AnimatedIcon } from "@/components/ui/animated-icon";
+import { CopilotIcon } from "@/components/ui/copilot-icons";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { prefetchRoute } from "@/shared/route-prefetch";
 import { cn } from "@/shared/utils";
@@ -20,18 +20,9 @@ import {
   useScroll,
 } from "motion/react";
 import { dropdownMenuVariants } from "@/components/ui/motion-system";
-import {
-  ArrowRight,
-  ArrowUpRight,
-  ChevronDown,
-  FileText,
-  Menu,
-  Video,
-  X,
-} from "lucide-react";
 
 const navLinkClass =
-  "nav5-link relative rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] transition-all duration-200 hover:text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--surface-muted)_65%,transparent)]";
+  "nav5-link relative rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--surface-muted)_65%,transparent)]";
 
 export function Navigation5({ className }: { className?: string }) {
   const { pathname } = useLocation();
@@ -145,7 +136,7 @@ export function Navigation5({ className }: { className?: string }) {
   return (
     <nav
       className={cn(
-        "home-nav nav5-wrapper sticky top-4 z-50 w-full px-4 sm:px-6 transition-all",
+        "home-nav nav5-wrapper sticky top-4 z-50 w-full px-4 sm:px-6",
         className,
       )}
       aria-label="Primary"
@@ -190,7 +181,7 @@ export function Navigation5({ className }: { className?: string }) {
               <button
                 type="button"
                 className={cn(
-                  "nav5-link flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] transition-all hover:bg-[color-mix(in_srgb,var(--surface-muted)_65%,transparent)] hover:text-[var(--text)]",
+                  "nav5-link flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] hover:bg-[color-mix(in_srgb,var(--surface-muted)_65%,transparent)] hover:text-[var(--text)]",
                   solutionsOpen &&
                     "bg-[color-mix(in_srgb,var(--surface-muted)_80%,transparent)] text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]",
                 )}
@@ -198,12 +189,13 @@ export function Navigation5({ className }: { className?: string }) {
                 onClick={() => setSolutionsOpen((v) => !v)}
               >
                 <span>Platform</span>
-                <ChevronDown
+                <CopilotIcon
+                  name="expand"
+                  size={14}
                   className={cn(
-                    "size-3.5 transition-transform duration-200",
+                    "transition-transform duration-200",
                     solutionsOpen && "rotate-180",
                   )}
-                  aria-hidden
                 />
               </button>
 
@@ -224,7 +216,7 @@ export function Navigation5({ className }: { className?: string }) {
                         {/* Column 1: Resume & ATS */}
                         <div className="flex flex-col gap-3 pr-4">
                           <div className="mb-1 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-muted)] text-[var(--primary-strong)]">
-                            <FileText className="size-4.5" />
+                            <CopilotIcon name="resume" size={18} />
                           </div>
                           <h4 className="text-sm font-semibold text-[var(--text)]">
                             ATS & Evidence
@@ -254,7 +246,7 @@ export function Navigation5({ className }: { className?: string }) {
                         {/* Column 2: Mock Interview & Learning */}
                         <div className="flex flex-col gap-3 px-4">
                           <div className="mb-1 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-muted)] text-[var(--primary-strong)]">
-                            <Video className="size-4.5" />
+                            <CopilotIcon name="interview" size={18} />
                           </div>
                           <h4 className="text-sm font-semibold text-[var(--text)]">
                             Interview & Skills
@@ -288,7 +280,7 @@ export function Navigation5({ className }: { className?: string }) {
                           </span>
                           <Link
                             href="/mock-interview/preparation"
-                            className="group relative flex flex-1 flex-col justify-between overflow-hidden rounded-2xl border border-[var(--border)] p-4 transition-all hover:border-[var(--primary-strong)] hover:shadow-md"
+                            className="group relative flex flex-1 flex-col justify-between overflow-hidden rounded-2xl border border-[var(--border)] p-4 transition-[border-color,box-shadow,transform] duration-200 hover:border-[var(--primary-strong)] hover:shadow-md"
                             style={{
                               backgroundColor: "var(--surface-muted)",
                             }}
@@ -308,12 +300,7 @@ export function Navigation5({ className }: { className?: string }) {
                             </div>
                             <div className="mt-3 flex items-center text-xs font-semibold text-[var(--primary-strong)]">
                               <span>Try session</span>
-                              <AnimatedIcon
-                                icon={ArrowUpRight}
-                                size={13}
-                                className="ml-1"
-                                aria-hidden
-                              />
+                              <CopilotIcon name="external" size={13} className="ml-1" />
                             </div>
                           </Link>
                         </div>
@@ -338,7 +325,7 @@ export function Navigation5({ className }: { className?: string }) {
               <ThemeToggle compact />
               <Link
                 href="/sign-in"
-                className="nav5-link rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text)] transition-all hover:bg-[color-mix(in_srgb,var(--surface-muted)_65%,transparent)]"
+                className="nav5-link rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--surface-muted)_65%,transparent)]"
                 onMouseEnter={() => prefetchRoute("/sign-in")}
                 onFocus={() => prefetchRoute("/sign-in")}
               >
@@ -355,7 +342,7 @@ export function Navigation5({ className }: { className?: string }) {
                 className="button button-primary hidden sm:inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-semibold shadow-sm transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <span>Get started</span>
-                <AnimatedIcon icon={ArrowRight} size={15} aria-hidden />
+                <CopilotIcon name="go" size={15} />
               </Link>
             </span>
 
@@ -369,7 +356,7 @@ export function Navigation5({ className }: { className?: string }) {
                 aria-expanded={mobileOpen}
                 onClick={() => setMobileOpen(true)}
               >
-                <AnimatedIcon icon={Menu} size={20} aria-hidden />
+                <CopilotIcon name="menu" size={20} />
               </button>
             </div>
           </div>
@@ -388,7 +375,7 @@ export function Navigation5({ className }: { className?: string }) {
           >
             {/* Backdrop Scrim */}
             <motion.div
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+              className="fixed inset-0 bg-black/50"
               onClick={closeMobileMenu}
               aria-hidden="true"
               initial={{ opacity: 0 }}
@@ -423,7 +410,7 @@ export function Navigation5({ className }: { className?: string }) {
                   aria-label="Close menu"
                   onClick={closeMobileMenu}
                 >
-                  <AnimatedIcon icon={X} size={18} idle={false} aria-hidden />
+                  <CopilotIcon name="close" size={18} />
                 </button>
               </div>
 
@@ -454,9 +441,11 @@ export function Navigation5({ className }: { className?: string }) {
                     aria-expanded={mobileSolutionsOpen}
                   >
                     <span>Platform Modules</span>
-                    <ChevronDown
+                    <CopilotIcon
+                      name="expand"
+                      size={16}
                       className={cn(
-                        "size-4 text-[var(--text-muted)] transition-transform duration-200",
+                        "text-[var(--text-muted)] transition-transform duration-200",
                         mobileSolutionsOpen && "rotate-180",
                       )}
                     />
@@ -536,7 +525,7 @@ export function Navigation5({ className }: { className?: string }) {
                   onClick={closeMobileMenu}
                 >
                   <span>Get started</span>
-                  <AnimatedIcon icon={ArrowRight} size={16} aria-hidden />
+                  <CopilotIcon name="go" size={16} />
                 </Link>
               </div>
             </motion.div>

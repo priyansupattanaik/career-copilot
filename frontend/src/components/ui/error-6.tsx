@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@/shared/ui/router-link";
-import { ArrowRight, RotateCcw } from "lucide-react";
-import { AnimatedIcon } from "@/components/ui/animated-icon";
+import { CopilotIcon } from "@/components/ui/copilot-icons";
 import { Card } from "@/shared/ui/primitives";
 import { cn } from "@/shared/utils";
 
@@ -96,11 +95,7 @@ function ErrorContent({
             className="button button-primary inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold shadow-sm"
           >
             <span>{buttonLabel}</span>
-            <AnimatedIcon
-              icon={isRetry ? RotateCcw : ArrowRight}
-              size={16}
-              aria-hidden
-            />
+            <CopilotIcon name={isRetry ? "refresh" : "go"} size={16} />
           </Link>
         ) : onAction ? (
           <button
@@ -109,11 +104,7 @@ function ErrorContent({
             className="button button-primary inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold shadow-sm"
           >
             <span>{buttonLabel}</span>
-            <AnimatedIcon
-              icon={isRetry ? RotateCcw : ArrowRight}
-              size={16}
-              aria-hidden
-            />
+            <CopilotIcon name={isRetry ? "refresh" : "go"} size={16} />
           </button>
         ) : null}
 
@@ -200,7 +191,7 @@ export function SystemErrorPanel({
       aria-label={`${code} ${title}`}
     >
       <Card
-        className="relative mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border shadow-lg transition-all"
+        className="relative mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border shadow-lg"
         style={{
           backgroundColor: "var(--surface)",
           borderColor: "var(--border)",

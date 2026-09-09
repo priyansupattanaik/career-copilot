@@ -21,9 +21,7 @@ import {
   Select,
   Textarea,
 } from "@/shared/ui/primitives";
-import { CareerIcon, type CareerIconName } from "@/components/ui/career-icons";
-import { AnimatedIcon } from "@/components/ui/animated-icon";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { CopilotIcon, type CopilotIconName } from "@/components/ui/copilot-icons";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "motion/react";
 import { FLUID_SPRING_TRANSITION } from "@/components/ui/motion-system";
 import { cn } from "@/shared/utils";
@@ -44,26 +42,26 @@ const PROFILE_NAV = [
   {
     id: "profile-details",
     label: "Details",
-    icon: "profile" as CareerIconName,
+    icon: "profile" as CopilotIconName,
   },
-  { id: "profile-resume", label: "Resume", icon: "resume" as CareerIconName },
+  { id: "profile-resume", label: "Resume", icon: "resume" as CopilotIconName },
   {
     id: "profile-preferences",
     label: "Preferences",
-    icon: "opportunities" as CareerIconName,
+    icon: "jobs" as CopilotIconName,
   },
-  { id: "profile-skills", label: "Skills", icon: "signal" as CareerIconName },
+  { id: "profile-skills", label: "Skills", icon: "skills" as CopilotIconName },
   {
     id: "profile-experience",
     label: "Experience",
-    icon: "evidence" as CareerIconName,
+    icon: "evidence" as CopilotIconName,
   },
   {
     id: "profile-education",
     label: "Education",
-    icon: "learning" as CareerIconName,
+    icon: "learning" as CopilotIconName,
   },
-  { id: "profile-links", label: "Links", icon: "confidence" as CareerIconName },
+  { id: "profile-links", label: "Links", icon: "link" as CopilotIconName },
 ] as const;
 
 function sectionForMissingKey(key: string): string {
@@ -378,7 +376,7 @@ function ProfileSectionHead({
   lede,
   required,
 }: {
-  icon: CareerIconName;
+  icon: CopilotIconName;
   title: string;
   lede?: string;
   required?: boolean;
@@ -387,7 +385,7 @@ function ProfileSectionHead({
     <div className="profile-section-head">
       <div className="profile-section-kicker">
         <span className="profile-section-icon" aria-hidden="true">
-          <CareerIcon name={icon} size={18} />
+          <CopilotIcon name={icon} size={18} />
         </span>
         <h2>
           {title}
@@ -737,7 +735,6 @@ function MultiOptionGroup({
                 <motion.span
                   key={value}
                   layout
-                  layoutId={`pref-tag-${legend}-${value}`}
                   initial={{ opacity: 0, scale: 0.85 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.85 }}
@@ -1995,7 +1992,7 @@ export function ProfileSettings() {
                         style={{
                           position: "absolute",
                           inset: 0,
-                          borderRadius: 10,
+                          borderRadius: "inherit",
                           background: "var(--ps-panel, var(--surface))",
                           border: "1px solid var(--ps-line, var(--border))",
                           boxShadow:
@@ -2014,7 +2011,7 @@ export function ProfileSettings() {
                         gap: 8,
                       }}
                     >
-                      <CareerIcon name={item.icon} size={15} aria-hidden />
+                      <CopilotIcon name={item.icon} size={15} />
                       {item.label}
                     </span>
                   </a>
@@ -2552,7 +2549,7 @@ export function ProfileSettings() {
               hidden={activeProfileSection !== "profile-preferences"}
             >
               <ProfileSectionHead
-                icon="opportunities"
+                icon="jobs"
                 title="Career preferences"
                 lede="These preferences are saved to your account. Use each dropdown to add options; remove tags with ×."
               />
@@ -2687,7 +2684,7 @@ export function ProfileSettings() {
               className="stack profile-card profile-skills-card"
               hidden={activeProfileSection !== "profile-skills"}
             >
-              <ProfileSectionHead icon="signal" title="Skills" required />
+              <ProfileSectionHead icon="skills" title="Skills" required />
               <div className="profile-composer">
                 <SelectWithOther
                   label={editingSkillId ? "Edit skill" : "Skill"}
@@ -2702,7 +2699,7 @@ export function ProfileSettings() {
                     onClick={() => void saveSkill()}
                     disabled={!skillName.trim() || recordBusy}
                   >
-                    <AnimatedIcon icon={Plus} size={16} aria-hidden />
+                    <CopilotIcon name="add" size={16} />
                     {editingSkillId ? "Save skill" : "Add skill"}
                   </Button>
                   {editingSkillId ? (
@@ -2734,7 +2731,6 @@ export function ProfileSettings() {
                       <motion.span
                         key={skill.id}
                         layout
-                        layoutId={`skill-tag-${skill.id}`}
                         initial={{ opacity: 0, scale: 0.85 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.85 }}
@@ -2748,7 +2744,7 @@ export function ProfileSettings() {
                           onClick={() => startEditSkill(skill)}
                           aria-label={`Edit ${skill.name}`}
                         >
-                          <AnimatedIcon icon={Pencil} size={13} aria-hidden />
+                          <CopilotIcon name="edit" size={13} />
                         </button>
                         <button
                           type="button"
@@ -2756,7 +2752,7 @@ export function ProfileSettings() {
                           onClick={() => removeRecord("skills", skill.id, "Skill")}
                           aria-label={`Remove ${skill.name}`}
                         >
-                          <AnimatedIcon icon={Trash2} size={13} aria-hidden />
+                          <CopilotIcon name="trash" size={13} />
                         </button>
                       </motion.span>
                     ))}
@@ -2926,7 +2922,7 @@ export function ProfileSettings() {
                         onClick={() => startEditExperience(item)}
                         disabled={recordBusy}
                       >
-                        <AnimatedIcon icon={Pencil} size={15} aria-hidden />
+                        <CopilotIcon name="edit" size={15} />
                         Edit
                       </Button>
                       <Button
@@ -2936,7 +2932,7 @@ export function ProfileSettings() {
                         }
                         disabled={recordBusy}
                       >
-                        <AnimatedIcon icon={Trash2} size={15} aria-hidden />
+                        <CopilotIcon name="trash" size={15} />
                         Remove
                       </Button>
                     </div>
@@ -3024,7 +3020,7 @@ export function ProfileSettings() {
                         onClick={() => startEditEducation(item)}
                         disabled={recordBusy}
                       >
-                        <AnimatedIcon icon={Pencil} size={15} aria-hidden />
+                        <CopilotIcon name="edit" size={15} />
                         Edit
                       </Button>
                       <Button
@@ -3034,7 +3030,7 @@ export function ProfileSettings() {
                         }
                         disabled={recordBusy}
                       >
-                        <AnimatedIcon icon={Trash2} size={15} aria-hidden />
+                        <CopilotIcon name="trash" size={15} />
                         Remove
                       </Button>
                     </div>
@@ -3049,7 +3045,7 @@ export function ProfileSettings() {
               hidden={activeProfileSection !== "profile-links"}
             >
               <ProfileSectionHead
-                icon="confidence"
+                icon="link"
                 title="Professional links"
                 required
               />
@@ -3125,7 +3121,7 @@ export function ProfileSettings() {
                         onClick={() => startEditLink(item)}
                         disabled={recordBusy}
                       >
-                        <AnimatedIcon icon={Pencil} size={15} aria-hidden />
+                        <CopilotIcon name="edit" size={15} />
                         Edit
                       </Button>
                       <Button
@@ -3133,7 +3129,7 @@ export function ProfileSettings() {
                         onClick={() => removeRecord("links", item.id, "Link")}
                         disabled={recordBusy}
                       >
-                        <AnimatedIcon icon={Trash2} size={15} aria-hidden />
+                        <CopilotIcon name="trash" size={15} />
                         Remove
                       </Button>
                     </div>

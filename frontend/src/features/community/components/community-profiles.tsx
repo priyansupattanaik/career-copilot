@@ -1,10 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { Search, Users, MapPin, Layers, Compass } from "lucide-react";
 import { Button, Card, Badge } from "@/shared/ui/primitives";
 import { Link } from "@/shared/ui/router-link";
 import { resolveApiBase } from "@/shared/config";
-import { AnimatedIcon } from "@/components/ui/animated-icon";
+import { CopilotIcon } from "@/components/ui/copilot-icons";
+import {
+  staggerContainerVariants,
+  staggerItemVariants,
+} from "@/components/ui/motion-system";
 import { isDemoSession, demoApiRequest } from "@/features/auth/demo-session";
 import { isAbortError } from "@/shared/api/client";
 
@@ -106,24 +109,12 @@ export function CommunityProfiles() {
     setError("Enter at least 2 characters.");
   }
 
-  const containerVariants = {
-    hidden: {},
-    visible: {
-      transition: {
-        staggerChildren: reduceMotion ? 0 : 0.07,
-        delayChildren: 0.02,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 14 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { type: "spring" as const, bounce: 0, duration: 0.48 },
-    },
-  };
+  const containerVariants = reduceMotion
+    ? { hidden: {}, visible: {} }
+    : staggerContainerVariants;
+  const itemVariants = reduceMotion
+    ? { hidden: { opacity: 1, y: 0 }, visible: { opacity: 1, y: 0 } }
+    : staggerItemVariants;
 
   return (
     <motion.main
@@ -135,7 +126,7 @@ export function CommunityProfiles() {
       {/* Hero masthead */}
       <motion.header className="community-hero" variants={itemVariants}>
         <div className="community-hero-icon">
-          <AnimatedIcon icon={Users} size={22} aria-hidden />
+          <CopilotIcon name="community" size={22} />
         </div>
         <div className="community-hero-copy">
           <h1>Find people worth learning from</h1>
@@ -152,7 +143,7 @@ export function CommunityProfiles() {
         <Card className="community-search-card">
           <div className="community-search-heading">
             <span className="community-search-mark">
-              <AnimatedIcon icon={Search} size={18} aria-hidden />
+              <CopilotIcon name="search" size={18} />
             </span>
             <div>
               <h2>Explore the community</h2>
@@ -176,7 +167,7 @@ export function CommunityProfiles() {
               placeholder="Name, @username, AI engineer, fresher..."
             />
             <Button type="submit" disabled={busy}>
-              <AnimatedIcon icon={Search} size={16} aria-hidden />
+              <CopilotIcon name="search" size={16} />
               {busy ? "Searching..." : "Search"}
             </Button>
           </form>
@@ -251,13 +242,13 @@ export function CommunityProfiles() {
                               tone="info"
                               className="community-level-badge"
                             >
-                              <Layers size={11} />
+                              <CopilotIcon name="filters" size={11} />
                               {person.career_level}
                             </Badge>
                           ) : null}
                           {person.location ? (
                             <span className="community-location">
-                              <MapPin size={12} />
+                              <CopilotIcon name="pin" size={12} />
                               {person.location}
                             </span>
                           ) : null}
@@ -275,7 +266,7 @@ export function CommunityProfiles() {
             </div>
           ) : error ? null : (
             <div className="community-idle">
-              <AnimatedIcon icon={Compass} size={28} aria-hidden />
+              <CopilotIcon name="compass" size={28} />
               <p>
                 {searching
                   ? "No public profiles matched that search."

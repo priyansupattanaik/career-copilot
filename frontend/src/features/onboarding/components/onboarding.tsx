@@ -145,8 +145,8 @@ export function Onboarding() {
         />
         <motion.div
           variants={pageTransitionVariants}
-          initial={shouldReduceMotion ? false : "hidden"}
-          animate="visible"
+          initial={shouldReduceMotion ? false : "initial"}
+          animate="animate"
         >
           <Card className="stack">
             {loading ? (
