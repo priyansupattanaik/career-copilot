@@ -19,6 +19,13 @@ class ProfilePatch(BaseModel):
     username: str | None = Field(default=None, max_length=30)
     onboarding_step: int | None = Field(default=None, ge=1, le=6)
     onboarding_completed: bool | None = None
+
+
+class UsernameChange(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    username: str = Field(min_length=3, max_length=30)
+
+
 class ProfileFromResumePreviewRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     resume_version_id: UUID | None = None

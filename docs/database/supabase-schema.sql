@@ -30,6 +30,9 @@ create table if not exists public.users (
 create index if not exists idx_users_email on public.users (email);
 create index if not exists idx_users_supabase_uid on public.users (supabase_uid);
 create index if not exists idx_users_phone on public.users (phone);
+create unique index if not exists users_username_lower_unique
+  on public.users (lower(username))
+  where username is not null;
 
 create table if not exists public.profiles (
   id uuid primary key references public.users(id) on delete cascade,

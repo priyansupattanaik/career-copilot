@@ -195,6 +195,19 @@ export function Dashboard() {
                 <CopilotIcon name="assist" size={14} className="button-icon" />
                 <span>New ATS Run</span>
               </Link>
+              {hasConfirmedResume ? (
+                <Link
+                  className="button button-secondary"
+                  href={
+                    data?.latest_ats_analysis?.id
+                      ? `/resume-studio?analysis=${encodeURIComponent(String(data.latest_ats_analysis.id))}`
+                      : "/resume-studio"
+                  }
+                >
+                  <CopilotIcon name="edit" size={14} className="button-icon" />
+                  <span>Resume Studio</span>
+                </Link>
+              ) : null}
             </div>
           }
         />

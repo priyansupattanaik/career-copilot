@@ -188,7 +188,12 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const activeNav =
     navigation.find(
       (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
-    )?.label || (pathname.startsWith("/settings") ? "Settings" : "Workspace");
+    )?.label ||
+    (pathname.startsWith("/resume-studio")
+      ? "Resume Studio"
+      : pathname.startsWith("/settings")
+        ? "Settings"
+        : "Workspace");
 
   function closeMenus() {
     setProfileMenuOpen(false);

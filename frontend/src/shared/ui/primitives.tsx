@@ -4,7 +4,6 @@ import {
   InputHTMLAttributes,
   ButtonHTMLAttributes,
   TextareaHTMLAttributes,
-  SelectHTMLAttributes,
   HTMLAttributes,
   MouseEventHandler,
 } from "react";
@@ -71,14 +70,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
 );
 Textarea.displayName = "Textarea";
 
-export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
-  ({ className, children, ...props }, ref) => (
-    <select ref={ref} className={cn("field", className)} {...props}>
-      {children}
-    </select>
-  ),
-);
-Select.displayName = "Select";
+export { Select } from "@/shared/ui/select-field";
 
 export function Card({
   children,

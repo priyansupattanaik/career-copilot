@@ -25,6 +25,23 @@ function saveToken(value: string) {
   document.cookie = `career_copilot_demo=; Max-Age=0; Path=/; SameSite=Lax`;
 }
 
+function clearAccountClientState() {
+  if (typeof window === "undefined") return;
+  const keep = new Set(["career-copilot-theme", "career-copilot-motion-paused"]);
+  for (const store of [window.localStorage, window.sessionStorage]) {
+    const keys: string[] = [];
+    for (let index = 0; index < store.length; index += 1) {
+      const key = store.key(index);
+      if (!key || keep.has(key)) continue;
+      if (key.startsWith("career_copilot") || key.startsWith("career-copilot")) {
+        keys.push(key);
+      }
+    }
+    keys.forEach((key) => store.removeItem(key));
+  }
+  document.cookie = `career_copilot_session=; Max-Age=0; Path=/; SameSite=Lax`;
+}
+
 async function request(path: string, body?: unknown) {
   const accessToken = token();
   const endpoint = `${resolveApiBase()}${path}`;
@@ -53,7 +70,15 @@ async function request(path: string, body?: unknown) {
     error.status = response.status;
     throw error;
   }
-  if (path !== "/auth/resend" && path !== "/auth/reset-password" && path !== "/auth/sign-out" && !payload?.access_token && path !== "/auth/session") {
+  if (
+    path !== "/auth/resend" &&
+    path !== "/auth/reset-password" &&
+    path !== "/auth/sign-out" &&
+    path !== "/auth/sign-up" &&
+    path !== "/auth/confirm-email" &&
+    path !== "/auth/session" &&
+    !payload?.access_token
+  ) {
     throw new Error("Authentication server returned an incomplete session. Please try again.");
   }
   return payload;
@@ -67,11 +92,13 @@ export function createClient() {
       return {
         data: { session: { access_token: payload.access_token }, user: payload.user },
         error: null as AuthError,
+        emailConfirmed: false,
       };
     } catch (error) {
       return {
         data: { session: null, user: null },
         error: { message: (error as Error).message, status: (error as { status?: number }).status },
+        emailConfirmed: false,
       };
     }
   }
@@ -97,6 +124,13 @@ export function createClient() {
           };
         } catch (error) {
           if (!isTimeoutError(error) && error instanceof Error && error.message) lastMessage = error.message;
+          const status = (error as Error & { status?: number }).status;
+          if (status === 403 || lastMessage.toLowerCase().includes("not verified")) {
+            return {
+              data: { session: null, user: null },
+              error: { message: lastMessage, status },
+            };
+          }
         }
 
         if (isEmail) {
@@ -156,62 +190,103 @@ export function createClient() {
       }) {
         const trimmed = email.trim();
         const phone = String(options?.phone || "").trim();
+        const appBody = {
+          email: trimmed,
+          password,
+          full_name: String(options?.data?.full_name || ""),
+          ...(options?.data?.username ? { username: String(options.data.username) } : {}),
+          ...(phone ? { phone } : {}),
+        };
+
+        const confirmationRedirect = options?.emailRedirectTo || authCallbackUrl("/sign-in");
+        const inboxResult = {
+          data: { session: null, user: null },
+          error: null as AuthError,
+          emailConfirmationSent: true,
+        };
+
         try {
           const result = await withTimeout(
             supabaseAuthClient().auth.signUp({
               email: trimmed,
               password,
               options: {
-                data: { full_name: String(options?.data?.full_name || ""), ...(options?.data?.username ? { username: String(options.data.username) } : {}), ...(phone ? { phone } : {}) },
-                emailRedirectTo: options?.emailRedirectTo,
+                data: {
+                  full_name: String(options?.data?.full_name || ""),
+                  ...(options?.data?.username ? { username: String(options.data.username) } : {}),
+                  ...(phone ? { phone } : {}),
+                },
+                emailRedirectTo: confirmationRedirect,
               },
             }),
             "Supabase sign-up",
+            APP_AUTH_TIMEOUT_MS,
           );
           if (result.error) {
-            return {
-              data: { session: null, user: null },
-              error: { message: result.error.message, status: result.error.status },
-              emailConfirmationSent: false,
-            };
-          }
-          const sessionToken = result.data.session?.access_token;
-          if (sessionToken) {
-            const exchanged = await signInWithSupabaseAccessToken(sessionToken);
-            return { ...exchanged, emailConfirmationSent: false };
-          }
-          return {
-            data: { session: null, user: null },
-            error: null as AuthError,
-            emailConfirmationSent: true,
-          };
-        } catch (error) {
-          if (error instanceof SupabaseWebConfigError || isTimeoutError(error)) {
-            try {
-              const payload = await request("/auth/sign-up", {
-                email: trimmed,
-                password,
-                full_name: String(options?.data?.full_name || ""),
-                ...(options?.data?.username ? { username: String(options.data.username) } : {}),
-                ...(phone ? { phone } : {}),
-              });
-              saveToken(payload.access_token);
-              return {
-                data: { session: { access_token: payload.access_token }, user: payload.user },
-                error: null as AuthError,
-                emailConfirmationSent: false,
-              };
-            } catch (legacyError) {
+            const message = result.error.message || "Sign-up failed.";
+            const already = /already registered|already exists|already been registered/i.test(message);
+            if (!already) {
               return {
                 data: { session: null, user: null },
-                error: { message: (legacyError as Error).message, status: undefined },
+                error: { message, status: result.error.status },
                 emailConfirmationSent: false,
               };
             }
           }
+          const supabaseUser = result.data.user;
+          const identities = (supabaseUser as { identities?: unknown[] } | null)?.identities;
+          if (Array.isArray(identities) && identities.length === 0) {
+            return {
+              data: { session: null, user: null },
+              error: {
+                message: "An account with this email already exists. Sign in instead.",
+                status: 409,
+              },
+              emailConfirmationSent: false,
+            };
+          }
+          try {
+            await withTimeout(
+              request("/auth/sign-up", {
+                ...appBody,
+                ...(supabaseUser?.id ? { supabase_uid: supabaseUser.id } : {}),
+              }),
+              "App sign-up",
+              APP_AUTH_TIMEOUT_MS,
+            );
+          } catch (error) {
+            const status = (error as Error & { status?: number }).status;
+            const message = error instanceof Error ? error.message : "Sign-up failed.";
+            if (message.includes("[username_taken]") || /username is already taken/i.test(message)) {
+              return {
+                data: { session: null, user: null },
+                error: { message: "That username is already taken.", status: 409 },
+                emailConfirmationSent: false,
+              };
+            }
+            if (status !== 409) {
+              return {
+                data: { session: null, user: null },
+                error: { message, status },
+                emailConfirmationSent: false,
+              };
+            }
+          }
+          if (result.data.session?.access_token) {
+            try {
+              await supabaseAuthClient().auth.signOut();
+            } catch {
+              // Confirmation is still required before sign-in.
+            }
+          }
+          return inboxResult;
+        } catch (error) {
           return {
             data: { session: null, user: null },
-            error: { message: error instanceof Error ? error.message : "Sign-up failed.", status: undefined },
+            error: {
+              message: error instanceof Error ? error.message : "Sign-up failed.",
+              status: (error as Error & { status?: number }).status,
+            },
             emailConfirmationSent: false,
           };
         }
@@ -302,15 +377,63 @@ export function createClient() {
       },
       async completeAuthRedirect() {
         try {
-          const { data } = await supabaseAuthClient().auth.getSession();
+          const client = supabaseAuthClient();
+          const url = new URL(window.location.href);
+          const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+          const type = (hashParams.get("type") || url.searchParams.get("type") || "").toLowerCase();
+          const next = url.searchParams.get("next") || "";
+          const code = url.searchParams.get("code");
+          let { data } = await client.auth.getSession();
+          if (!data.session?.access_token && code) {
+            const exchanged = await client.auth.exchangeCodeForSession(code);
+            if (!exchanged.error) {
+              data = (await client.auth.getSession()).data;
+            }
+          }
+          if (!data.session?.access_token) {
+            const accessToken = hashParams.get("access_token") || "";
+            const refreshToken = hashParams.get("refresh_token") || "";
+            if (accessToken && refreshToken) {
+              const applied = await client.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+              });
+              if (!applied.error) {
+                data = (await client.auth.getSession()).data;
+              }
+            }
+          }
+          const emailConfirm =
+            type === "signup" ||
+            type === "email" ||
+            type === "email_change" ||
+            next === "/sign-in";
+          if (emailConfirm) {
+            const accessToken = data.session?.access_token;
+            if (accessToken) {
+              await request("/auth/confirm-email", { access_token: accessToken }).catch(() => undefined);
+            }
+            await client.auth.signOut().catch(() => undefined);
+            window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+            return {
+              data: { session: null, user: null },
+              error: null as AuthError,
+              emailConfirmed: Boolean(accessToken || type === "signup" || type === "email"),
+            };
+          }
           if (data.session?.access_token) return signInWithSupabaseAccessToken(data.session.access_token);
         } catch (error) {
-          return { data: { session: null, user: null }, error: { message: (error as Error).message } };
+          return {
+            data: { session: null, user: null },
+            error: { message: (error as Error).message },
+            emailConfirmed: false,
+          };
         }
-        return { data: { session: null, user: null }, error: null as AuthError };
+        return { data: { session: null, user: null }, error: null as AuthError, emailConfirmed: false };
       },
       async signOut() {
         window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+        clearAccountClientState();
         try {
           await supabaseAuthClient().auth.signOut();
         } catch {

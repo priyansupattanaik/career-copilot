@@ -63,3 +63,33 @@ def validate_username(value: str | None) -> str:
     if username in RESERVED_USERNAMES:
         raise ValueError("That username is reserved.")
     return username
+
+
+def _username_owner_id(client, table: str, username: str) -> str | None:
+    rows = client.table(table).select("id").ilike("username", username).limit(1).execute().data or []
+    if not rows:
+        return None
+    return str(rows[0].get("id") or "") or None
+
+
+def change_username(client, user_id: str, raw: str) -> str:
+    """Validate, uniquely assign, and persist username on profiles and users."""
+    from app.core.errors import ApiError
+
+    normalized = validate_username(raw)
+    uid = str(user_id)
+    for table in ("profiles", "users"):
+        owner = _username_owner_id(client, table, normalized)
+        if owner and owner != uid:
+            raise ApiError(409, "username_taken", "That username is already taken.")
+    client.table("profiles").update({"username": normalized}).eq("id", uid).execute()
+    try:
+        client.table("users").update({"username": normalized}).eq("id", uid).execute()
+    except Exception:
+        # Sign-in still resolves through profiles.username; keep the profile write.
+        pass
+    stored = client.table("profiles").select("username").eq("id", uid).limit(1).execute().data or []
+    saved = normalize_username((stored[0] or {}).get("username") if stored else "")
+    if saved != normalized:
+        raise ApiError(500, "username_update_failed", "Could not save the username. Try again.")
+    return normalized

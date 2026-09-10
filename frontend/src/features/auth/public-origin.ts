@@ -41,7 +41,7 @@ export function publicAppOrigin(options?: {
 }
 
 export function authCallbackUrl(
-  next = "/onboarding",
+  next = "/sign-in",
   options?: { envOrigin?: string | null; currentOrigin?: string | null },
 ): string {
   const dest = next.startsWith("/") ? next : `/${next}`;

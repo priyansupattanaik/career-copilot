@@ -26,6 +26,9 @@ import {
   ErrorBoundary,
   SystemErrorPanel,
 } from "@/components/ui/error-boundary";
+import { SignInLightBend } from "@/features/auth/components/signin-light-bend";
+import { armSignInLightBend } from "@/features/auth/signin-light-bend";
+import { prefetchRoute } from "@/shared/route-prefetch";
 
 function ThemeFavicon() {
   const { resolvedTheme } = useTheme();
@@ -133,6 +136,11 @@ const AtsReport = lazy(() =>
 const NewAnalysis = lazy(() =>
   import("@/features/resume/components/resume-flow").then((m) => ({
     default: m.NewAnalysis,
+  })),
+);
+const ResumeStudio = lazy(() =>
+  import("@/features/resume-studio/components/resume-studio").then((m) => ({
+    default: m.ResumeStudio,
   })),
 );
 const AccountSettings = lazy(() =>
@@ -277,6 +285,49 @@ function WorkspaceRoute() {
   );
 }
 
+function CaptureEmailConfirmationRedirect() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (location.pathname === "/auth/callback" || location.pathname === "/auth/confirm") {
+      return;
+    }
+    const hash = location.hash.startsWith("#") ? location.hash.slice(1) : "";
+    const hashParams = new URLSearchParams(hash);
+    const searchParams = new URLSearchParams(location.search);
+    const type = (hashParams.get("type") || searchParams.get("type") || "").toLowerCase();
+    const hasAuth =
+      hashParams.has("access_token") ||
+      hashParams.has("refresh_token") ||
+      searchParams.has("code") ||
+      type === "signup" ||
+      type === "email";
+    if (!hasAuth) return;
+    const next =
+      type === "recovery"
+        ? "/reset-password"
+        : type === "signup" ||
+            type === "email" ||
+            type === "email_change" ||
+            location.pathname === "/"
+          ? "/sign-in"
+          : "/dashboard";
+    const params = new URLSearchParams(location.search);
+    params.set("next", next);
+    navigate(
+      {
+        pathname: "/auth/callback",
+        search: `?${params.toString()}`,
+        hash: location.hash,
+      },
+      { replace: true },
+    );
+  }, [location.hash, location.pathname, location.search, navigate]);
+
+  return null;
+}
+
 function AuthRedirectRoute() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -292,11 +343,22 @@ function AuthRedirectRoute() {
         setError(result.error.message);
         return;
       }
-      if (!result.data?.session) {
-        navigate(safeRedirectPath(next, "/sign-in"), { replace: true });
+      if (result.emailConfirmed) {
+        navigate("/sign-in?verified=1", { replace: true });
         return;
       }
-      navigate(safeRedirectPath(next, "/dashboard"), { replace: true });
+      if (!result.data?.session) {
+        navigate(safeRedirectPath(next === "/" ? "/sign-in" : next, "/sign-in"), { replace: true });
+        return;
+      }
+      const destination = safeRedirectPath(next, "/dashboard");
+      if (destination === "/" || destination === "/sign-in") {
+        navigate("/sign-in", { replace: true });
+        return;
+      }
+      prefetchRoute(destination);
+      armSignInLightBend(destination);
+      navigate(destination, { replace: true });
     })().catch(() => {
       if (active)
         setError(
@@ -306,7 +368,7 @@ function AuthRedirectRoute() {
     return () => {
       active = false;
     };
-  }, [location.search, navigate]);
+  }, [location.search, location.hash, navigate]);
 
   return (
     <main className="container stack" style={{ paddingBlock: "96px" }}>
@@ -356,6 +418,8 @@ export function App() {
   return (
     <ErrorBoundary>
       <ThemeFavicon />
+      <SignInLightBend />
+      <CaptureEmailConfirmationRedirect />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route
@@ -449,6 +513,7 @@ export function App() {
               path="/resume-analysis/report/:reportId"
               element={<AtsReport />}
             />
+            <Route path="/resume-studio" element={<ResumeStudio />} />
             <Route
               path="/resume-analysis/review"
               element={<Navigate to="/resume-analysis?tab=upload" replace />}

@@ -5,6 +5,7 @@
   onboarding: "/onboarding",
   dashboard: "/dashboard",
   resume: "/resume-analysis",
+  resumeStudio: "/resume-studio",
   interview: "/mock-interview",
   learning: "/learning",
   jobs: "/jobs",

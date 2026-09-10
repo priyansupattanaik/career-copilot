@@ -39,6 +39,7 @@ from app.api.schemas import (
     ProfileFromResumePreviewRequest,
     ProfilePatch,
     SavedJobPatch,
+    UsernameChange,
 )
 from app.core.config import Settings, get_settings
 from app.core.errors import ApiError
@@ -63,9 +64,13 @@ from app.features.ats.ats_score import (
 )
 from app.features.auth.account_deletion import (
     CONFIRM_PHRASE,
+    assert_user_erased,
     collect_user_storage_paths,
     confirmation_is_valid,
+    delete_supabase_auth_user,
+    delete_user_owned_records,
     email_matches_account,
+    lookup_supabase_auth_ids,
     purge_user_storage,
 )
 from app.features.auth.service import (
@@ -74,7 +79,7 @@ from app.features.auth.service import (
     get_current_user_optional,
     parse_file_access_token,
 )
-from app.features.auth.username import normalize_username, validate_username
+from app.features.auth.username import change_username, normalize_username, validate_username
 from app.features.career_matching import (
     ALGORITHM_VERSION as CAREER_MATCH_ALGORITHM_VERSION,
 )
@@ -129,12 +134,14 @@ from app.features.profile.avatars import (
 )
 from app.features.profile.importer import insert_validated_batch
 from app.features.resume_improvement.routes import router as resume_improvement_router
+from app.features.resume_studio.routes import router as resume_studio_router
 
 _bootstrap_cache: dict[str, tuple[float, dict[str, Any]]] = {}
 _bootstrap_cache_ttl = 5.0
 
 router = APIRouter()
 router.include_router(resume_improvement_router)
+router.include_router(resume_studio_router)
 logger = logging.getLogger(__name__)
 SCORING_ALGORITHM_VERSION = ALGORITHM_VERSION
 
@@ -983,6 +990,23 @@ def username_availability(
     return {"username": normalized, "available": available, "reason": None if available else "Username is already taken."}
 
 
+@router.patch("/profile/username")
+def update_profile_username(
+    payload: UsernameChange,
+    user: CurrentUser = Depends(get_current_user),
+    settings: Settings = Depends(get_settings),
+):
+    client = client_for(settings, user)
+    ensure_profile_row(client, user)
+    try:
+        username = change_username(client, str(user.id), payload.username)
+    except ValueError as exc:
+        raise ApiError(400, "invalid_username", str(exc)) from None
+    write_activity(client, user, "username_updated", f"Username changed to @{username}", "profile", str(user.id))
+    profile = recalculate_completion(client, user)
+    return {"username": username, "profile": attach_avatar_url(profile, client, settings)}
+
+
 @router.get("/public/username-availability")
 def public_username_availability(username: str = Query(..., min_length=3, max_length=30), settings: Settings = Depends(get_settings)):
     try:
@@ -1142,16 +1166,9 @@ def update_profile(
     values = payload.model_dump(exclude_none=True)
     if "username" in values:
         try:
-            values["username"] = validate_username(values["username"])
+            values["username"] = change_username(client, str(user.id), values["username"])
         except ValueError as exc:
             raise ApiError(400, "invalid_username", str(exc)) from None
-        existing = client.table("profiles").select("id").ilike("username", values["username"]).limit(1).execute().data or []
-        if existing and str(existing[0].get("id")) != str(user.id):
-            raise ApiError(409, "username_taken", "That username is already taken.")
-        try:
-            client.table("users").update({"username": values["username"]}).eq("id", str(user.id)).execute()
-        except Exception:
-            logger.debug("users_username_sync_failed user_id=%s", user.id)
     client.table("profiles").update(values).eq("id", str(user.id)).execute()
     profile = recalculate_completion(client, user)
     write_activity(client, user, "profile_updated", "Candidate profile updated", "profile", str(user.id))
@@ -4941,8 +4958,6 @@ def delete_account(
     Confirmation (required): body.confirmation or header X-Confirm-Delete must equal
     "DELETE MY ACCOUNT". Body email must match the account email.
     """
-    from app.features.auth.account_deletion import delete_user_owned_records
-
     if payload is None:
         raise ApiError(
             400,
@@ -4966,12 +4981,12 @@ def delete_account(
     user_client = client_for(settings, user)
     storage_paths = collect_user_storage_paths(user_client, user)
 
-    # Capture provider identity before we delete the users document.
     supabase_uid = ""
+    account_email = user.email
     try:
         user_rows = (
             user_client.table("users")
-            .select("supabase_uid")
+            .select("supabase_uid,email")
             .eq("id", str(user.id))
             .limit(1)
             .execute()
@@ -4980,6 +4995,7 @@ def delete_account(
         )
         if user_rows:
             supabase_uid = str(user_rows[0].get("supabase_uid") or "").strip()
+            account_email = account_email or str(user_rows[0].get("email") or "").strip()
     except Exception as exc:
         logger.exception("account_delete_identity_lookup_failed user_id=%s", user.id)
         raise ApiError(
@@ -4989,30 +5005,6 @@ def delete_account(
         ) from exc
 
     admin = database_client(settings)
-    # The Supabase Auth identity (email + credentials) must die with the
-    # account too, or the address stays "already registered" and can never
-    # sign up again.
-    if supabase_uid:
-        if not (settings.resolved_supabase_url and settings.supabase_server_key):
-            logger.error(
-                "account_delete_supabase_unconfigured user_id=%s supabase_uid_present=true", user.id
-            )
-            raise ApiError(
-                500,
-                "account_deletion_incomplete",
-                "The Supabase identity could not be deleted because server credentials are missing. No local data was removed.",
-            )
-        try:
-            from app.features.auth.account_deletion import delete_supabase_auth_user
-
-            delete_supabase_auth_user(settings, supabase_uid)
-        except Exception as exc:
-            logger.exception("account_delete_supabase_auth_failed user_id=%s", user.id)
-            raise ApiError(
-                500,
-                "account_deletion_incomplete",
-                "The Supabase identity could not be deleted. No local data was removed. Please retry.",
-            ) from exc
 
     # Fail closed: do not erase database identity while storage blobs may remain.
     try:
@@ -5025,7 +5017,29 @@ def delete_account(
             "Could not remove all stored account files. Account deletion stopped so data stays consistent.",
         ) from exc
 
+    # Child rows first so a later retry can still authenticate.
     delete_user_owned_records(admin, user)
+
+    auth_ids = lookup_supabase_auth_ids(
+        settings, supabase_uid=supabase_uid, email=account_email or payload.email
+    )
+    if auth_ids and not (settings.resolved_supabase_url and settings.supabase_server_key):
+        raise ApiError(
+            500,
+            "account_deletion_incomplete",
+            "The Supabase identity could not be deleted because server credentials are missing.",
+        )
+    for auth_id in auth_ids:
+        try:
+            delete_supabase_auth_user(settings, auth_id)
+        except Exception as exc:
+            logger.exception("account_delete_supabase_auth_failed user_id=%s", user.id)
+            raise ApiError(
+                500,
+                "account_deletion_incomplete",
+                "The sign-in identity could not be deleted. Please retry.",
+            ) from exc
+
     try:
         admin.table("users").delete().eq("id", str(user.id)).execute()
     except Exception as exc:
@@ -5034,3 +5048,13 @@ def delete_account(
             "account_deletion_failed",
             "The account could not be deleted from the local database.",
         ) from exc
+
+    try:
+        assert_user_erased(admin, str(user.id))
+    except ApiError:
+        delete_user_owned_records(admin, user)
+        try:
+            admin.table("users").delete().eq("id", str(user.id)).execute()
+        except Exception:
+            pass
+        assert_user_erased(admin, str(user.id))

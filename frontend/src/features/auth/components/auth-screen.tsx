@@ -6,6 +6,8 @@ import { CopilotIcon } from "@/components/ui/copilot-icons";
 
 import { createClient } from "@/features/auth/api/client";
 import { safeRedirectPath } from "@/features/auth/safe-path";
+import { armSignInLightBend } from "@/features/auth/signin-light-bend";
+import { prefetchRoute } from "@/shared/route-prefetch";
 import { Button, Input } from "@/shared/ui/primitives";
 import {
   PhoneField,
@@ -173,6 +175,10 @@ function GoogleMark() {
 export function SignInScreen() {
   const navigate = useNavigate();
   const search = useSearchParams();
+  const nextParam = search.get("next");
+  useEffect(() => {
+    prefetchRoute(safeRedirectPath(nextParam, "/dashboard"));
+  }, [nextParam]);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(
@@ -180,6 +186,7 @@ export function SignInScreen() {
       ? configurationError()
       : "",
   );
+  const emailVerified = search.get("verified") === "1";
   const [busy, setBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [needsVerification, setNeedsVerification] = useState(false);
@@ -208,7 +215,10 @@ export function SignInScreen() {
         );
         return setError(authErrorMessage(result.error.message));
       }
-      navigate(safeRedirectPath(search.get("next"), "/dashboard"));
+      const next = safeRedirectPath(search.get("next"), "/dashboard");
+      prefetchRoute(next);
+      armSignInLightBend(next);
+      navigate(next);
     } catch {
       setError(
         "Could not reach authentication. Check your connection and try again.",
@@ -229,7 +239,7 @@ export function SignInScreen() {
       const result = await authClient.auth.resend({
         type: "signup",
         email: address,
-        options: { emailRedirectTo: authCallbackUrl("/onboarding") },
+        options: { emailRedirectTo: authCallbackUrl("/sign-in") },
       });
       if (result.error) return setError(authErrorMessage(result.error.message));
       setVerificationMessage(
@@ -255,7 +265,10 @@ export function SignInScreen() {
       const oauthError = result.error;
       if (oauthError) setError(authErrorMessage(oauthError.message));
       else if (provider === "google" && result.data?.session) {
-        navigate(safeRedirectPath(search.get("next"), "/dashboard"));
+        const next = safeRedirectPath(search.get("next"), "/dashboard");
+        prefetchRoute(next);
+        armSignInLightBend(next);
+        navigate(next);
       }
     } catch {
       setError(
@@ -278,6 +291,11 @@ export function SignInScreen() {
         <div className="atlas-auth-card-header">
           <h1>Sign in</h1>
         </div>
+        {emailVerified ? (
+          <p role="status" className="badge badge-success">
+            Email verified. Sign in with your username or email to continue.
+          </p>
+        ) : null}
         <label className="field-label">
           Email, phone, or username
           <Input
@@ -379,7 +397,6 @@ export function SignInScreen() {
 }
 
 export function SignUpScreen() {
-  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -466,17 +483,11 @@ export function SignUpScreen() {
               ? { username: username.trim().replace(/^@/, "").toLowerCase() }
               : {}),
           },
-          emailRedirectTo: authCallbackUrl("/onboarding"),
+          emailRedirectTo: authCallbackUrl("/sign-in"),
           phone: composePhone(phone),
         },
       });
       if (result.error) return setError(authErrorMessage(result.error.message));
-      if (result.data.session?.access_token) {
-        // The account is active immediately (email confirmations disabled, or
-        // a legacy app account): skip the inbox screen and go straight in.
-        navigate("/onboarding");
-        return;
-      }
       setSent(true);
     } catch {
       setError(
@@ -498,7 +509,7 @@ export function SignUpScreen() {
       const result = await authClient.auth.resend({
         type: "signup",
         email: address,
-        options: { emailRedirectTo: authCallbackUrl("/onboarding") },
+        options: { emailRedirectTo: authCallbackUrl("/sign-in") },
       });
       if (result.error) return setError(authErrorMessage(result.error.message));
       setResendMessage(

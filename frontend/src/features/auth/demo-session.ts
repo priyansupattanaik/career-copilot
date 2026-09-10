@@ -745,6 +745,235 @@ function enrichDemoAnalysis(analysis: DemoRecord, includeParsed = false): DemoRe
   return enriched;
 }
 
+function demoStudioFromVersion(version: DemoRecord, analysisId?: string | null): DemoRecord {
+  const structured = (version.structured_content || {}) as DemoRecord;
+  if (structured.studio && typeof structured.studio === "object") return structured.studio as DemoRecord;
+  const sections = ((structured.sections || {}) as Record<string, string[]>) || {};
+  const skills = (sections.skills || []).flatMap((line) => String(line).split(/[,;/]/)).map((name) => name.trim()).filter(Boolean);
+  const document = {
+    schema_version: "resume-studio-v1",
+    source_version_id: String(version.id || ""),
+    ats_analysis_id: analysisId || null,
+    content: {
+      personal: {
+        name: "",
+        email: "",
+        phone: "",
+        location: "",
+        linkedin: "",
+        github: "",
+        portfolio: "",
+        website: "",
+        other_links: [],
+      },
+      summary: (sections.summary || []).join(" "),
+      skill_groups: skills.length
+        ? [{ id: "sg-demo", name: "", items: skills.map((name, index) => ({ id: `skill-demo-${index}`, name })) }]
+        : [],
+      experience: (sections.experience || []).map((line, index) => ({
+        id: `exp-demo-${index}`,
+        employer: "",
+        title: String(line),
+        location: "",
+        start_date: "",
+        end_date: "",
+        is_current: false,
+        employment_type: "",
+        bullets: [],
+      })),
+      projects: (sections.projects || []).map((line, index) => ({
+        id: `proj-demo-${index}`,
+        name: String(line),
+        description: "",
+        technologies: [],
+        url: "",
+        bullets: [],
+      })),
+      education: (sections.education || []).map((line, index) => ({
+        id: `edu-demo-${index}`,
+        institution: String(line),
+        degree: "",
+        specialization: "",
+        location: "",
+        start_date: "",
+        end_date: "",
+        gpa: "",
+        details: "",
+      })),
+      certifications: (sections.certifications || []).map((line, index) => ({
+        id: `cert-demo-${index}`,
+        name: String(line),
+        issuer: "",
+        date: "",
+        credential_id: "",
+        credential_url: "",
+      })),
+      achievements: (sections.achievements || []).map((line, index) => ({ id: `ach-demo-${index}`, text: String(line) })),
+      links: [],
+      languages: (sections.languages || []).map((line, index) => ({ id: `lang-demo-${index}`, language: String(line), proficiency: "" })),
+      additional: [],
+      section_order: ["personal", "summary", "skills", "experience", "projects", "education", "certifications", "achievements", "languages", "links"].filter((key) => {
+        if (key === "personal") return true;
+        if (key === "summary") return Boolean((sections.summary || []).length);
+        if (key === "skills") return skills.length > 0;
+        return Boolean((sections[key] || []).length);
+      }),
+      hidden_sections: [],
+    },
+    presentation: {
+      template: "classic",
+      page_size: "a4",
+      font_family: "calibri",
+      font_size: 10.5,
+      heading_size: 12.5,
+      heading_weight: 700,
+      line_height: 1.28,
+      paragraph_spacing: 4,
+      section_spacing: 12,
+      heading_spacing: 4,
+      bullet_spacing: 2,
+      bullet_indent: 14,
+      margin_top: 16,
+      margin_right: 16,
+      margin_bottom: 16,
+      margin_left: 16,
+      header_alignment: "center",
+      heading_alignment: "left",
+      accent_color: "#1e3a5f",
+      divider: "line",
+      section_overrides: {},
+    },
+  };
+  return document;
+}
+
+function demoStudioSession(working: DemoRecord, original: DemoRecord, analysisId?: string | null) {
+  const resume = state.resumes.find((item) => item.id === working.resume_id);
+  const analysis = analysisId ? state.analyses.find((item) => item.id === analysisId) : null;
+  const job = analysis?.job_description_id
+    ? state.jobDescriptions.find((item) => item.id === analysis.job_description_id)
+    : null;
+  return {
+    working_version: {
+      id: working.id,
+      resume_id: working.resume_id,
+      version_number: working.version_number,
+      source_type: working.source_type,
+      extraction_status: working.extraction_status,
+      original_filename: working.original_filename,
+      created_at: working.created_at,
+    },
+    source_version: {
+      id: original.id,
+      resume_id: original.resume_id,
+      version_number: original.version_number,
+      source_type: original.source_type,
+      original_filename: original.original_filename,
+    },
+    resume: { id: resume?.id, title: resume?.title, is_active: resume?.is_active },
+    document: demoStudioFromVersion(working, analysisId),
+    ats: analysis
+      ? {
+          analysis: {
+            id: analysis.id,
+            overall_score: analysis.overall_score,
+            status: analysis.status,
+            resume_version_id: analysis.resume_version_id,
+            job_description_id: analysis.job_description_id,
+            created_at: analysis.created_at,
+            summary: analysis.summary,
+            score_breakdown: analysis.score_breakdown,
+          },
+          evidence: state.evidence.filter((row) => row.analysis_id === analysis.id),
+          job_description: job
+            ? { id: job.id, title: job.title, company: job.company, role_title: job.role_title, raw_text: job.raw_text }
+            : null,
+        }
+      : null,
+  };
+}
+
+function demoOpenStudio(body: DemoRecord) {
+  const analysisId = String(body.ats_analysis_id || "");
+  const analysis = analysisId ? state.analyses.find((item) => item.id === analysisId) : null;
+  const confirmed = state.resumeVersions.filter((item) => item.extraction_status === "confirmed");
+  const source: DemoRecord | undefined =
+    state.resumeVersions.find((item) => item.id === body.source_version_id) ||
+    state.resumeVersions.find((item) => item.id === analysis?.resume_version_id) ||
+    confirmed.filter((item) => item.resume_id === body.resume_id).at(-1) ||
+    confirmed.at(-1);
+  if (!source) throw new Error("Upload and confirm a resume in Resume Match before opening Resume Studio.");
+  const sourceStudio = (source.structured_content as DemoRecord | undefined)?.studio as DemoRecord | undefined;
+  const original: DemoRecord =
+    state.resumeVersions.find((item) => item.id === sourceStudio?.source_version_id) || source;
+  let working = state.resumeVersions.find((item) => {
+    const studio = (item.structured_content as DemoRecord | undefined)?.studio as DemoRecord | undefined;
+    return item.source_type === "studio" && studio?.source_version_id === original.id;
+  });
+  if (!working) {
+    const document = demoStudioFromVersion(original, analysisId || null);
+    const created: DemoRecord = {
+      id: id("demo-studio"),
+      resume_id: original.resume_id,
+      user_id: DEMO_USER_ID,
+      version_number: Number(original.version_number || 1) + 1,
+      source_type: "studio",
+      original_filename: original.original_filename,
+      extraction_status: "confirmed",
+      created_at: now(),
+      structured_content: {
+        schema_version: "resume-studio-v1",
+        sections: (original.structured_content as DemoRecord | undefined)?.sections || {},
+        studio: document,
+      },
+    };
+    working = created;
+    state.resumeVersions.unshift(created);
+  }
+  return demoStudioSession(working, original, analysisId || null);
+}
+
+function demoReadStudio(versionId: string, analysisId: string | null) {
+  const working = state.resumeVersions.find((item) => item.id === versionId);
+  if (!working) throw new Error("The working resume was not found.");
+  const original =
+    state.resumeVersions.find((item) => item.id === ((working.structured_content as DemoRecord | undefined)?.studio as DemoRecord | undefined)?.source_version_id) ||
+    working;
+  return demoStudioSession(working, original, analysisId);
+}
+
+function demoSaveStudio(versionId: string, body: DemoRecord) {
+  const working = state.resumeVersions.find((item) => item.id === versionId);
+  if (!working) throw new Error("The working resume was not found.");
+  const previous = ((working.structured_content as DemoRecord | undefined)?.studio as DemoRecord) || {};
+  const studio: DemoRecord = {
+    ...previous,
+    content: body.content,
+    presentation: body.presentation,
+  };
+  working.structured_content = {
+    ...((working.structured_content as DemoRecord) || {}),
+    studio,
+  };
+  const original =
+    state.resumeVersions.find((item) => item.id === studio.source_version_id) || working;
+  return demoStudioSession(working, original, (studio.ats_analysis_id as string) || null);
+}
+
+function demoResetStudio(versionId: string) {
+  const working = state.resumeVersions.find((item) => item.id === versionId);
+  if (!working) throw new Error("The working resume was not found.");
+  const original =
+    state.resumeVersions.find((item) => item.id === ((working.structured_content as DemoRecord | undefined)?.studio as DemoRecord | undefined)?.source_version_id) ||
+    working;
+  const document = demoStudioFromVersion(
+    { ...original, structured_content: { ...(original.structured_content as DemoRecord), studio: undefined } },
+    ((working.structured_content as DemoRecord | undefined)?.studio as DemoRecord | undefined)?.ats_analysis_id as string,
+  );
+  working.structured_content = { schema_version: "resume-studio-v1", sections: (original.structured_content as DemoRecord)?.sections || {}, studio: document };
+  return demoStudioSession(working, original, document.ats_analysis_id as string | null);
+}
+
 function parsePath(path: string) {
   return path.split("?")[0].split("/").filter(Boolean);
 }
@@ -1104,6 +1333,45 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
   if (parts[0] === "ats-analyses" && parts.length === 2 && method === "DELETE") {
     state.analyses = state.analyses.filter((item) => item.id !== parts[1]);
     return undefined as T;
+  }
+
+  if (parts[0] === "resume-studio" && parts[1] === "sessions" && method === "POST") {
+    return demoOpenStudio(body) as T;
+  }
+  if (parts[0] === "resume-studio" && parts[1] === "sessions" && parts[2] && method === "GET") {
+    return demoReadStudio(parts[2], new URLSearchParams(path.split("?")[1] || "").get("ats_analysis_id")) as T;
+  }
+  if (parts[0] === "resume-studio" && parts[1] === "sessions" && parts[2] && method === "PUT") {
+    return demoSaveStudio(parts[2], body) as T;
+  }
+  if (parts[0] === "resume-studio" && parts[1] === "sessions" && parts[3] === "reset" && method === "POST") {
+    return demoResetStudio(parts[2]) as T;
+  }
+  if (parts[0] === "resume-studio" && parts[1] === "sessions" && parts[3] === "suggest" && method === "POST") {
+    const original = String(body.selected_text || "").trim();
+    return {
+      original_text: original,
+      proposed_text: original,
+      reason: "Demo mode keeps your original wording. Sign in to request grounded AI suggestions.",
+      addresses: "",
+      needs_candidate_input: false,
+      missing_facts: [],
+      requires_confirmation: false,
+      unsupported_claims: [],
+    } as T;
+  }
+  if (parts[0] === "resume-versions" && parts[2] === "exports" && method === "POST") {
+    const exportId = id("demo-export");
+    return { id: exportId, resume_version_id: parts[1], format: body.format || "pdf" } as T;
+  }
+  if (parts[0] === "resume-exports" && parts[2] === "download" && method === "GET") {
+    const blob = new Blob(
+      [
+        "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF",
+      ],
+      { type: "application/pdf" },
+    );
+    return { id: parts[1], filename: "resume.pdf", download_url: URL.createObjectURL(blob) } as T;
   }
 
   if (path === "/interview-preparation" && method === "POST") {

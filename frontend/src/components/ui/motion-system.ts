@@ -10,6 +10,7 @@ export const motionTokens = {
     fast: 0.18,
     normal: 0.32,
     slow: 0.48,
+    cinematic: 1.4,
   },
   easing: {
     smooth: [0.22, 1, 0.36, 1] as const,

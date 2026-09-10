@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { apiRequest, isAbortError } from "@/shared/api/client";
-import { Button, PageHeader, Textarea } from "@/shared/ui/primitives";
+import { Button, PageHeader, Select, Textarea } from "@/shared/ui/primitives";
 import { createLiveInterview, saveLiveInterview } from "@/features/interview/live-store";
 import type { Session } from "@/features/interview/types";
 import { motion, useReducedMotion } from "motion/react";
@@ -264,11 +264,11 @@ export function InterviewStartForm() {
             <span className="interview-field-label">
               Difficulty
             </span>
-            <select className="field" value={difficulty} onChange={(event) => setDifficulty(event.target.value)}>
+            <Select value={difficulty} onChange={(event) => setDifficulty(event.target.value)}>
               <option value="easy">Easy</option>
               <option value="balanced">Balanced</option>
               <option value="challenging">Challenging</option>
-            </select>
+            </Select>
           </label>
           <label className="interview-field">
             <span className="interview-field-label">
@@ -279,8 +279,7 @@ export function InterviewStartForm() {
                 Checking saved resumes
               </p>
             ) : resumesWithVersion.length ? (
-              <select
-                className="field"
+              <Select
                 value={resumeVersionId}
                 onChange={(event) => setResumeVersionId(event.target.value)}
               >
@@ -291,7 +290,7 @@ export function InterviewStartForm() {
                     {row.is_active ? " (active)" : ""}
                   </option>
                 ))}
-              </select>
+              </Select>
             ) : (
               <p className="muted" style={{ margin: 0 }}>
                 No saved resume yet. You can still start. Add one later if you want questions grounded in your work.

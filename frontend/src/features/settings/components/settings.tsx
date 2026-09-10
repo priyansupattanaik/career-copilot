@@ -30,6 +30,10 @@ import {
   extractMissing,
   notifyProfileUpdated,
 } from "@/features/profile/model/profile-completion";
+import {
+  isPublicProfileUsername,
+  normalizePublicProfileUsername,
+} from "@/features/profile/model/public-profile-username";
 import "../profile-v2.css";
 
 const tabs = [
@@ -855,6 +859,7 @@ export function ProfileSettings() {
     available: boolean;
     reason?: string | null;
   } | null>(null);
+  const [savedUsername, setSavedUsername] = useState("");
 
   // Keep the structured phone editor in sync whenever the stored value
   // changes (profile load, draft apply) — avoid overwriting user typing.
@@ -904,6 +909,10 @@ export function ProfileSettings() {
       });
       return;
     }
+    if (value === savedUsername) {
+      setUsernameAvailability({ available: true });
+      return;
+    }
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       void apiRequest<{
@@ -923,7 +932,7 @@ export function ProfileSettings() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [form.username]);
+  }, [form.username, savedUsername]);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const AVATAR_MAX_BYTES = 3 * 1024 * 1024;
   const shouldReduceMotion = useReducedMotion();
@@ -946,6 +955,9 @@ export function ProfileSettings() {
   const applyProfile = useCallback(
     (profile: ProfileRecord | null | undefined) => {
       setForm(profile || {});
+      setSavedUsername(
+        normalizePublicProfileUsername(String(profile?.username || "")),
+      );
     },
     [],
   );
@@ -1278,7 +1290,11 @@ export function ProfileSettings() {
             "Username must use only lowercase letters, numbers, and underscores (cannot start or end with _).",
           );
         }
-        if (usernameAvailability && usernameAvailability.available === false) {
+        if (
+          username !== savedUsername &&
+          usernameAvailability &&
+          usernameAvailability.available === false
+        ) {
           throw new Error(
             usernameAvailability.reason || "That username is not available.",
           );
@@ -1324,6 +1340,9 @@ export function ProfileSettings() {
             savedProfile.profile_completion_details ??
             current.profile_completion_details,
         }));
+      }
+      if (username) {
+        setSavedUsername(username);
       }
       setMessage("Profile saved to your account.");
     } catch (e) {
@@ -2445,17 +2464,16 @@ export function ProfileSettings() {
                   >
                     {usernameAvailability
                       ? usernameAvailability.available
-                        ? `Available. Public profile: /${String(
-                            form.username || "",
-                          )
-                            .trim()
-                            .replace(/^@/, "")
-                            .toLowerCase()}`
+                        ? `Available. Public profile and sign-in: /${normalizePublicProfileUsername(
+                            String(form.username || ""),
+                          )}`
                         : usernameAvailability.reason ||
                           "That username is not available."
                       : form.username
-                        ? `Public profile: /${String(form.username).replace(/^@/, "")}`
-                        : "Google and existing accounts can set a username here. 3–30 letters, numbers, underscores."}
+                        ? `You can change this anytime. Public profile: /${normalizePublicProfileUsername(
+                            String(form.username),
+                          )}`
+                        : "Choose a unique username. 3–30 letters, numbers, and underscores."}
                   </span>
                 </label>
                 <label className="field-label">
@@ -3146,6 +3164,187 @@ export function ProfileSettings() {
 
 const DELETE_ACCOUNT_PHRASE = "DELETE MY ACCOUNT";
 
+function UsernameChangeCard() {
+  const [current, setCurrent] = useState("");
+  const [draft, setDraft] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [availability, setAvailability] = useState<{
+    available: boolean;
+    reason?: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void apiRequest<{ profile?: { username?: string | null } }>("/profile")
+      .then((result) => {
+        if (!active) return;
+        const username = normalizePublicProfileUsername(
+          String(result.profile?.username || ""),
+        );
+        setCurrent(username);
+        setDraft(username);
+        setLoaded(true);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError((err as Error).message || "Could not load username.");
+        setLoaded(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const value = normalizePublicProfileUsername(draft);
+    if (!value) {
+      setAvailability(null);
+      return;
+    }
+    if (value === current) {
+      setAvailability({ available: true });
+      return;
+    }
+    if (!isPublicProfileUsername(value)) {
+      setAvailability({
+        available: false,
+        reason:
+          "Use 3–30 lowercase letters, numbers, and underscores (cannot start or end with _).",
+      });
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      void apiRequest<{
+        available?: boolean;
+        reason?: string | null;
+      }>(`/profile/username/availability?username=${encodeURIComponent(value)}`)
+        .then((result) =>
+          setAvailability({
+            available: Boolean(result.available),
+            reason: result.reason,
+          }),
+        )
+        .catch(() => undefined);
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [draft, current]);
+
+  async function saveUsername() {
+    setError("");
+    setMessage("");
+    const username = normalizePublicProfileUsername(draft);
+    if (!isPublicProfileUsername(username)) {
+      setError(
+        "Username must be 3–30 lowercase letters, numbers, and underscores.",
+      );
+      return;
+    }
+    if (username === current) {
+      setMessage("That is already your username.");
+      return;
+    }
+    if (availability && availability.available === false) {
+      setError(availability.reason || "That username is not available.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const result = await apiRequest<{ username?: string }>(
+        "/profile/username",
+        {
+          method: "PATCH",
+          body: JSON.stringify({ username }),
+        },
+      );
+      const saved = normalizePublicProfileUsername(
+        String(result.username || username),
+      );
+      setCurrent(saved);
+      setDraft(saved);
+      notifyProfileUpdated();
+      setMessage(
+        `Username updated to @${saved}. Sign-in and your public profile now use /${saved}.`,
+      );
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card className="stack settings-card">
+      <h2 style={{ margin: 0 }}>Username</h2>
+      <p className="muted" style={{ margin: 0 }}>
+        Change the handle used for sign-in and your public profile URL.
+      </p>
+      {current ? (
+        <p className="muted" style={{ margin: 0 }}>
+          Current:{" "}
+          <Link href={`/${encodeURIComponent(current)}`}>@{current}</Link>
+        </p>
+      ) : (
+        <p className="muted" style={{ margin: 0 }}>
+          No username yet. Choose one to claim your public profile.
+        </p>
+      )}
+      <label className="field-label">
+        New username
+        <Input
+          autoComplete="username"
+          minLength={3}
+          maxLength={30}
+          value={draft}
+          disabled={!loaded || saving}
+          onChange={(event: { target: { value: string } }) =>
+            setDraft(event.target.value)
+          }
+          placeholder="your_name"
+          aria-describedby="account-username-hint"
+        />
+        <span
+          id="account-username-hint"
+          className={
+            availability && !availability.available ? "field-error" : "field-hint"
+          }
+        >
+          {availability
+            ? availability.available
+              ? `Available: /${normalizePublicProfileUsername(draft)}`
+              : availability.reason || "That username is not available."
+            : "3–30 letters, numbers, and underscores."}
+        </span>
+      </label>
+      <div className="cluster">
+        <Button
+          disabled={
+            saving ||
+            !loaded ||
+            !normalizePublicProfileUsername(draft) ||
+            availability?.available === false
+          }
+          onClick={() => void saveUsername()}
+        >
+          {saving ? "Saving username…" : "Save username"}
+        </Button>
+      </div>
+      {message ? (
+        <p role="status" style={{ margin: 0 }}>
+          {message}
+        </p>
+      ) : null}
+      {error ? (
+        <p role="alert" className="field-error" style={{ margin: 0 }}>
+          {error}
+        </p>
+      ) : null}
+    </Card>
+  );
+}
+
 export function AccountSettings() {
   const navigate = useNavigate();
   const [error, setError] = useState("");
@@ -3233,6 +3432,7 @@ export function AccountSettings() {
       description="Manage your active session securely."
     >
       <div className="settings-canvas">
+        <UsernameChangeCard />
         <Card className="stack settings-card settings-session-card">
           <h2 style={{ margin: 0 }}>Session</h2>
           <div className="settings-session-identity">
