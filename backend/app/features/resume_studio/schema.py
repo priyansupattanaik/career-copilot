@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 STUDIO_SCHEMA_VERSION = "resume-studio-v1"
 SOURCE_TYPE_STUDIO = "studio"
 
-TemplateId = Literal["classic", "modern", "minimal"]
+TemplateId = Literal["classic", "modern", "minimal", "swiss"]
 PageSize = Literal["a4", "letter"]
 FontId = Literal["calibri", "arial", "georgia", "garamond", "palatino"]
 Alignment = Literal["left", "center", "right"]
@@ -47,98 +47,98 @@ class PersonalInfo(BaseModel):
     github: str = Field(default="", max_length=500)
     portfolio: str = Field(default="", max_length=500)
     website: str = Field(default="", max_length=500)
-    other_links: list[StudioLink] = Field(default_factory=list, max_length=8)
+    other_links: list[StudioLink] = Field(default_factory=list, max_length=20)
 
 
 class SkillItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(default_factory=lambda: new_id("skill"), max_length=80)
-    name: str = Field(default="", max_length=80)
+    name: str = Field(default="", max_length=120)
 
 
 class SkillGroup(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(default_factory=lambda: new_id("sg"), max_length=80)
-    name: str = Field(default="", max_length=80)
-    items: list[SkillItem] = Field(default_factory=list, max_length=40)
+    name: str = Field(default="", max_length=120)
+    items: list[SkillItem] = Field(default_factory=list, max_length=200)
 
 
 class Bullet(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(default_factory=lambda: new_id("b"), max_length=80)
-    text: str = Field(default="", max_length=600)
+    text: str = Field(default="", max_length=1000)
 
 
 class ExperienceEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(default_factory=lambda: new_id("exp"), max_length=80)
-    employer: str = Field(default="", max_length=200)
-    title: str = Field(default="", max_length=200)
-    location: str = Field(default="", max_length=160)
+    employer: str = Field(default="", max_length=250)
+    title: str = Field(default="", max_length=250)
+    location: str = Field(default="", max_length=200)
     start_date: str = Field(default="", max_length=40)
     end_date: str = Field(default="", max_length=40)
     is_current: bool = False
     employment_type: str = Field(default="", max_length=80)
-    bullets: list[Bullet] = Field(default_factory=list, max_length=20)
+    bullets: list[Bullet] = Field(default_factory=list, max_length=40)
 
 
 class ProjectEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(default_factory=lambda: new_id("proj"), max_length=80)
-    name: str = Field(default="", max_length=200)
-    description: str = Field(default="", max_length=2000)
-    technologies: list[str] = Field(default_factory=list, max_length=30)
+    name: str = Field(default="", max_length=250)
+    description: str = Field(default="", max_length=3000)
+    technologies: list[str] = Field(default_factory=list, max_length=100)
     url: str = Field(default="", max_length=500)
-    bullets: list[Bullet] = Field(default_factory=list, max_length=16)
+    bullets: list[Bullet] = Field(default_factory=list, max_length=40)
 
 
 class EducationEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(default_factory=lambda: new_id("edu"), max_length=80)
-    institution: str = Field(default="", max_length=200)
-    degree: str = Field(default="", max_length=160)
-    specialization: str = Field(default="", max_length=160)
-    location: str = Field(default="", max_length=160)
+    institution: str = Field(default="", max_length=250)
+    degree: str = Field(default="", max_length=200)
+    specialization: str = Field(default="", max_length=200)
+    location: str = Field(default="", max_length=200)
     start_date: str = Field(default="", max_length=40)
     end_date: str = Field(default="", max_length=40)
-    gpa: str = Field(default="", max_length=40)
-    details: str = Field(default="", max_length=1000)
+    gpa: str = Field(default="", max_length=60)
+    details: str = Field(default="", max_length=2000)
 
 
 class CertificationEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(default_factory=lambda: new_id("cert"), max_length=80)
-    name: str = Field(default="", max_length=200)
-    issuer: str = Field(default="", max_length=160)
+    name: str = Field(default="", max_length=250)
+    issuer: str = Field(default="", max_length=200)
     date: str = Field(default="", max_length=40)
-    credential_id: str = Field(default="", max_length=120)
+    credential_id: str = Field(default="", max_length=150)
     credential_url: str = Field(default="", max_length=500)
 
 
 class AchievementEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(default_factory=lambda: new_id("ach"), max_length=80)
-    text: str = Field(default="", max_length=400)
+    text: str = Field(default="", max_length=800)
 
 
 class LanguageEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(default_factory=lambda: new_id("lang"), max_length=80)
-    language: str = Field(default="", max_length=80)
-    proficiency: str = Field(default="", max_length=80)
+    language: str = Field(default="", max_length=100)
+    proficiency: str = Field(default="", max_length=100)
 
 
 class AdditionalEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(default_factory=lambda: new_id("line"), max_length=80)
-    text: str = Field(default="", max_length=600)
+    text: str = Field(default="", max_length=1000)
 
 
 class AdditionalSection(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(default_factory=lambda: new_id("add"), max_length=80)
-    title: str = Field(default="Additional", max_length=80)
-    entries: list[AdditionalEntry] = Field(default_factory=list, max_length=40)
+    title: str = Field(default="Additional", max_length=120)
+    entries: list[AdditionalEntry] = Field(default_factory=list, max_length=80)
 
 
 class SectionTypography(BaseModel):
@@ -187,18 +187,18 @@ class PresentationSettings(BaseModel):
 class ResumeContent(BaseModel):
     model_config = ConfigDict(extra="forbid")
     personal: PersonalInfo = Field(default_factory=PersonalInfo)
-    summary: str = Field(default="", max_length=4000)
-    skill_groups: list[SkillGroup] = Field(default_factory=list, max_length=12)
-    experience: list[ExperienceEntry] = Field(default_factory=list, max_length=20)
-    projects: list[ProjectEntry] = Field(default_factory=list, max_length=16)
-    education: list[EducationEntry] = Field(default_factory=list, max_length=12)
-    certifications: list[CertificationEntry] = Field(default_factory=list, max_length=20)
-    achievements: list[AchievementEntry] = Field(default_factory=list, max_length=20)
-    links: list[StudioLink] = Field(default_factory=list, max_length=12)
-    languages: list[LanguageEntry] = Field(default_factory=list, max_length=16)
-    additional: list[AdditionalSection] = Field(default_factory=list, max_length=8)
-    section_order: list[str] = Field(default_factory=list, max_length=24)
-    hidden_sections: list[str] = Field(default_factory=list, max_length=24)
+    summary: str = Field(default="", max_length=5000)
+    skill_groups: list[SkillGroup] = Field(default_factory=list, max_length=40)
+    experience: list[ExperienceEntry] = Field(default_factory=list, max_length=40)
+    projects: list[ProjectEntry] = Field(default_factory=list, max_length=40)
+    education: list[EducationEntry] = Field(default_factory=list, max_length=24)
+    certifications: list[CertificationEntry] = Field(default_factory=list, max_length=40)
+    achievements: list[AchievementEntry] = Field(default_factory=list, max_length=40)
+    links: list[StudioLink] = Field(default_factory=list, max_length=30)
+    languages: list[LanguageEntry] = Field(default_factory=list, max_length=30)
+    additional: list[AdditionalSection] = Field(default_factory=list, max_length=20)
+    section_order: list[str] = Field(default_factory=list, max_length=50)
+    hidden_sections: list[str] = Field(default_factory=list, max_length=50)
 
 
 class StudioDocument(BaseModel):

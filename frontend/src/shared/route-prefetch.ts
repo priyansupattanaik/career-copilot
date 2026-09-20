@@ -96,6 +96,7 @@ export function prefetchRoute(href: string): void {
 const WORKSPACE_PREFETCH_HREFS = [
   "/dashboard",
   "/resume-analysis",
+  "/resume-studio",
   "/mock-interview",
   "/mock-interview/preparation",
   "/learning",

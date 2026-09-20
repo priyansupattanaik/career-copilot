@@ -109,9 +109,9 @@ def _looks_like_location(line: str) -> bool:
 
 
 def _assign_url(personal: PersonalInfo, url: str) -> None:
-    value = url.strip()
+    value = url.strip()[:500]
     if value.lower().startswith("www."):
-        value = f"https://{value}"
+        value = f"https://{value}"[:500]
     lowered = value.casefold()
     if "linkedin.com" in lowered and not personal.linkedin:
         personal.linkedin = value
@@ -121,7 +121,7 @@ def _assign_url(personal: PersonalInfo, url: str) -> None:
         personal.portfolio = value
     elif not personal.website:
         personal.website = value
-    else:
+    elif len(personal.other_links) < 20:
         personal.other_links.append(StudioLink(label="Link", url=value))
 
 
@@ -136,7 +136,7 @@ def _parse_personal(structured: dict[str, Any]) -> PersonalInfo:
     for line in pool:
         emails = EMAIL_RE.findall(line)
         if emails and not personal.email:
-            personal.email = emails[0]
+            personal.email = emails[0][:320]
             line = EMAIL_RE.sub(" ", line)
         for match in URL_RE.findall(line):
             _assign_url(personal, match)
@@ -146,7 +146,7 @@ def _parse_personal(structured: dict[str, Any]) -> PersonalInfo:
             candidate = phone_match.group(0).strip()
             digits = re.sub(r"\D", "", candidate)
             if 8 <= len(digits) <= 15:
-                personal.phone = candidate
+                personal.phone = candidate[:40]
                 line = line[: phone_match.start()] + " " + line[phone_match.end() :]
         line = _clean_line(line)
         if not line:
@@ -154,39 +154,46 @@ def _parse_personal(structured: dict[str, Any]) -> PersonalInfo:
         leftover.append(line)
     for line in leftover:
         if not personal.name and _looks_like_name(line):
-            personal.name = line
+            personal.name = line[:160]
         elif not personal.location and _looks_like_location(line):
-            personal.location = line
+            personal.location = line[:160]
         elif not personal.name:
-            personal.name = line
+            personal.name = line[:160]
     return personal
 
 
 def _split_skills(lines: list[str]) -> list[SkillGroup]:
     groups: list[SkillGroup] = []
     ungrouped: list[SkillItem] = []
+    MAX_ITEMS_PER_GROUP = 120
     for line in lines:
-        if ":" in line and len(line.split(":", 1)[0]) <= 40:
+        if ":" in line and len(line.split(":", 1)[0]) <= 60:
             name, rest = line.split(":", 1)
             items = [_clean_line(part) for part in re.split(r"[,;/|]", rest)]
             items = [part for part in items if part]
             if items:
-                groups.append(
-                    SkillGroup(
-                        name=_clean_line(name),
-                        items=[SkillItem(name=item) for item in items],
+                for i in range(0, len(items), MAX_ITEMS_PER_GROUP):
+                    chunk = items[i : i + MAX_ITEMS_PER_GROUP]
+                    g_name = _clean_line(name) if i == 0 else f"{_clean_line(name)} (cont.)"
+                    groups.append(
+                        SkillGroup(
+                            name=g_name[:120],
+                            items=[SkillItem(name=item[:120]) for item in chunk],
+                        )
                     )
-                )
                 continue
         parts = [_clean_line(part) for part in re.split(r"[,;/|]", line)]
         parts = [part for part in parts if part]
         if len(parts) > 1:
-            ungrouped.extend(SkillItem(name=part) for part in parts)
+            ungrouped.extend(SkillItem(name=part[:120]) for part in parts)
         elif line:
-            ungrouped.append(SkillItem(name=line))
+            ungrouped.append(SkillItem(name=line[:120]))
     if ungrouped:
-        groups.insert(0, SkillGroup(name="", items=ungrouped))
-    return groups
+        for i in range(0, len(ungrouped), MAX_ITEMS_PER_GROUP):
+            chunk = ungrouped[i : i + MAX_ITEMS_PER_GROUP]
+            g_name = "" if i == 0 else f"Additional Skills {i // MAX_ITEMS_PER_GROUP + 1}"
+            groups.append(SkillGroup(name=g_name, items=chunk))
+    return groups[:40]
 
 
 def _split_entries(lines: list[str]) -> list[list[str]]:
@@ -261,22 +268,22 @@ def _parse_experience(lines: list[str]) -> list[ExperienceEntry]:
             continue
         header = _strip_bullet(block[0])
         fields = _split_header_fields(header)
-        bullets = [Bullet(text=_strip_bullet(line)) for line in block[1:] if _strip_bullet(line)]
+        bullets = [Bullet(text=_strip_bullet(line)[:1000]) for line in block[1:] if _strip_bullet(line)][:40]
         if not fields["title"] and not fields["employer"] and not bullets:
             continue
         entries.append(
             ExperienceEntry(
-                employer=str(fields["employer"]),
-                title=str(fields["title"]),
-                location=str(fields["location"]),
-                start_date=str(fields["start_date"]),
-                end_date=str(fields["end_date"]),
+                employer=str(fields["employer"])[:250],
+                title=str(fields["title"])[:250],
+                location=str(fields["location"])[:200],
+                start_date=str(fields["start_date"])[:40],
+                end_date=str(fields["end_date"])[:40],
                 is_current=bool(fields["is_current"]),
-                employment_type=str(fields["employment_type"]),
+                employment_type=str(fields["employment_type"])[:80],
                 bullets=bullets,
             )
         )
-    return entries
+    return entries[:40]
 
 
 def _parse_projects(lines: list[str]) -> list[ProjectEntry]:
@@ -288,7 +295,7 @@ def _parse_projects(lines: list[str]) -> list[ProjectEntry]:
         url = ""
         match = URL_RE.search(header)
         if match:
-            url = match.group(0)
+            url = match.group(0)[:500]
             header = header.replace(url, " ").strip(" -–—|,")
         tech: list[str] = []
         bullets: list[Bullet] = []
@@ -297,17 +304,23 @@ def _parse_projects(lines: list[str]) -> list[ProjectEntry]:
             cleaned = _strip_bullet(line)
             if cleaned.casefold().startswith("tech"):
                 _, rest = cleaned.split(":", 1) if ":" in cleaned else ("", cleaned)
-                tech = [part for part in (_clean_line(item) for item in re.split(r"[,;/|]", rest)) if part]
+                tech = [part[:80] for part in (_clean_line(item) for item in re.split(r"[,;/|]", rest)) if part]
             elif _is_bullet(line) or len(block) > 2:
-                bullets.append(Bullet(text=cleaned))
+                bullets.append(Bullet(text=cleaned[:1000]))
             elif not description:
-                description = cleaned
+                description = cleaned[:3000]
             else:
-                bullets.append(Bullet(text=cleaned))
+                bullets.append(Bullet(text=cleaned[:1000]))
         entries.append(
-            ProjectEntry(name=header, description=description, technologies=tech, url=url, bullets=bullets)
+            ProjectEntry(
+                name=header[:250],
+                description=description[:3000],
+                technologies=tech[:100],
+                url=url[:500],
+                bullets=bullets[:40],
+            )
         )
-    return entries
+    return entries[:40]
 
 
 def _parse_education(lines: list[str]) -> list[EducationEntry]:
@@ -332,22 +345,22 @@ def _parse_education(lines: list[str]) -> list[EducationEntry]:
             details.append(text)
         entries.append(
             EducationEntry(
-                institution=str(fields["employer"] or fields["title"]),
+                institution=str(fields["employer"] or fields["title"])[:250],
                 degree="" if fields["employer"] else "",
-                specialization=specialization,
-                location=str(fields["location"]),
-                start_date=str(fields["start_date"]),
-                end_date=str(fields["end_date"]),
-                gpa=gpa,
-                details=" ".join(details),
+                specialization=specialization[:200],
+                location=str(fields["location"])[:200],
+                start_date=str(fields["start_date"])[:40],
+                end_date=str(fields["end_date"])[:40],
+                gpa=gpa[:60],
+                details=" ".join(details)[:2000],
             )
         )
         if fields["employer"] and fields["title"]:
-            entries[-1].institution = str(fields["employer"])
-            entries[-1].degree = str(fields["title"])
+            entries[-1].institution = str(fields["employer"])[:250]
+            entries[-1].degree = str(fields["title"])[:200]
         elif fields["title"]:
-            entries[-1].institution = str(fields["title"])
-    return entries
+            entries[-1].institution = str(fields["title"])[:250]
+    return entries[:24]
 
 
 def _parse_certifications(lines: list[str]) -> list[CertificationEntry]:
@@ -357,12 +370,12 @@ def _parse_certifications(lines: list[str]) -> list[CertificationEntry]:
         url = ""
         match = URL_RE.search(text)
         if match:
-            url = match.group(0)
+            url = match.group(0)[:500]
             text = text.replace(url, " ").strip(" -–—|,")
         date = ""
         span = DATE_SPAN_RE.search(text)
         if span:
-            date = span.group(0)
+            date = span.group(0)[:40]
             text = (text[: span.start()] + " " + text[span.end() :]).strip(" -–—|,")
         parts = [part.strip() for part in re.split(r"\s*[|–—•]\s*|\s+[-–]\s+", text) if part.strip()]
         name = parts[0] if parts else text
@@ -370,19 +383,19 @@ def _parse_certifications(lines: list[str]) -> list[CertificationEntry]:
         credential_id = ""
         for part in parts[2:]:
             if re.search(r"id|credential", part, re.I):
-                credential_id = re.sub(r"^[^:]{0,20}:\s*", "", part).strip()
+                credential_id = re.sub(r"^[^:]{0,20}:\s*", "", part).strip()[:150]
             elif not issuer:
                 issuer = part
         entries.append(
             CertificationEntry(
-                name=name,
-                issuer=issuer,
-                date=date,
-                credential_id=credential_id,
-                credential_url=url,
+                name=name[:250],
+                issuer=issuer[:200],
+                date=date[:40],
+                credential_id=credential_id[:150],
+                credential_url=url[:500],
             )
         )
-    return entries
+    return entries[:40]
 
 
 def _parse_languages(lines: list[str]) -> list[LanguageEntry]:
@@ -398,8 +411,8 @@ def _parse_languages(lines: list[str]) -> list[LanguageEntry]:
                 language, proficiency = text[:-1].split("(", 1)
             else:
                 language, proficiency = text, ""
-            entries.append(LanguageEntry(language=language.strip(), proficiency=proficiency.strip()))
-    return entries
+            entries.append(LanguageEntry(language=language.strip()[:100], proficiency=proficiency.strip()[:100]))
+    return entries[:30]
 
 
 def _known_section_keys() -> set[str]:
@@ -438,35 +451,37 @@ def document_from_structured(
         return existing
 
     data = structured if isinstance(structured, dict) else {}
+    summary_text = " ".join(_section_lines(data, "summary", "profile", "objective"))[:5000]
     content = ResumeContent(
         personal=_parse_personal(data),
-        summary=" ".join(_section_lines(data, "summary", "profile", "objective")),
-        skill_groups=_split_skills(_section_lines(data, "skills")),
-        experience=_parse_experience(_section_lines(data, "experience")),
-        projects=_parse_projects(_section_lines(data, "projects")),
-        education=_parse_education(_section_lines(data, "education")),
-        certifications=_parse_certifications(_section_lines(data, "certifications")),
+        summary=summary_text,
+        skill_groups=_split_skills(_section_lines(data, "skills"))[:40],
+        experience=_parse_experience(_section_lines(data, "experience"))[:40],
+        projects=_parse_projects(_section_lines(data, "projects"))[:40],
+        education=_parse_education(_section_lines(data, "education"))[:24],
+        certifications=_parse_certifications(_section_lines(data, "certifications"))[:40],
         achievements=[
-            AchievementEntry(text=_strip_bullet(line))
+            AchievementEntry(text=_strip_bullet(line)[:800])
             for line in _section_lines(data, "achievements", "awards")
             if _strip_bullet(line)
-        ],
-        languages=_parse_languages(_section_lines(data, "languages")),
+        ][:40],
+        languages=_parse_languages(_section_lines(data, "languages"))[:30],
     )
     link_lines = _section_lines(data, "links")
     for line in link_lines:
         for match in URL_RE.findall(line):
             _assign_url(content.personal, match)
-    if content.personal.linkedin:
+    if content.personal.linkedin and len(content.links) < 30:
         content.links.append(StudioLink(label="LinkedIn", url=content.personal.linkedin))
-    if content.personal.github:
+    if content.personal.github and len(content.links) < 30:
         content.links.append(StudioLink(label="GitHub", url=content.personal.github))
-    if content.personal.portfolio:
+    if content.personal.portfolio and len(content.links) < 30:
         content.links.append(StudioLink(label="Portfolio", url=content.personal.portfolio))
-    if content.personal.website:
+    if content.personal.website and len(content.links) < 30:
         content.links.append(StudioLink(label="Website", url=content.personal.website))
     for extra in content.personal.other_links:
-        content.links.append(extra)
+        if len(content.links) < 30:
+            content.links.append(extra)
 
     sections = data.get("sections") if isinstance(data.get("sections"), dict) else {}
     known = _known_section_keys()
@@ -479,11 +494,12 @@ def document_from_structured(
         if not lines:
             continue
         extra = AdditionalSection(
-            title=str(raw_key).replace("_", " ").strip().title() or "Additional",
-            entries=[AdditionalEntry(text=line) for line in lines],
+            title=str(raw_key).replace("_", " ").strip().title()[:120] or "Additional",
+            entries=[AdditionalEntry(text=line[:1000]) for line in lines][:80],
         )
-        content.additional.append(extra)
-    content.section_order = default_section_order(content)
+        if len(content.additional) < 20:
+            content.additional.append(extra)
+    content.section_order = default_section_order(content)[:50]
     return StudioDocument(
         source_version_id=source_version_id,
         ats_analysis_id=ats_analysis_id,

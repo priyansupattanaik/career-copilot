@@ -1,4 +1,5 @@
 import { Button, Textarea } from "@/shared/ui/primitives";
+import { Select } from "@/shared/ui/select-field";
 import { CopilotIcon } from "@/components/ui/copilot-icons";
 import { atsFormatNotes } from "../model/ats-format";
 import {
@@ -22,6 +23,15 @@ const ACTIONS: { id: SuggestAction; label: string; when: (section: string) => bo
   { id: "suggest_supported_skills", label: "Suggest supported skills", when: (section) => section === "skills" },
 ];
 
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="rs-field">
+      <span className="rs-field-label">{label}</span>
+      {children}
+    </div>
+  );
+}
+
 function RangeField({
   label,
   value,
@@ -41,9 +51,10 @@ function RangeField({
 }) {
   return (
     <label className="rs-field rs-range">
-      <span>
-        {label} <b>{value}{unit}</b>
-      </span>
+      <div className="rs-range-header">
+        <span className="rs-field-label">{label}</span>
+        <span className="rs-range-val">{value}{unit}</span>
+      </div>
       <input
         type="range"
         min={min}
@@ -66,105 +77,142 @@ export function ResumeFormatPanel({
   onChange: (next: PresentationSettings) => void;
 }) {
   const notes = atsFormatNotes(presentation, content);
+  const selectedTemplate = TEMPLATE_OPTIONS.find((item) => item.id === presentation.template);
+
   return (
     <div className="rs-format">
-      <p className="rs-kicker">Formatting</p>
-      <label className="rs-field">
-        <span>Template</span>
-        <select
-          className="field"
-          value={presentation.template}
-          onChange={(event) => onChange({ ...presentation, template: event.target.value as PresentationSettings["template"] })}
-        >
-          {TEMPLATE_OPTIONS.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <p className="rs-hint">{TEMPLATE_OPTIONS.find((item) => item.id === presentation.template)?.note}</p>
-      <label className="rs-field">
-        <span>Page size</span>
-        <select
-          className="field"
-          value={presentation.page_size}
-          onChange={(event) => onChange({ ...presentation, page_size: event.target.value as PresentationSettings["page_size"] })}
-        >
-          <option value="a4">A4</option>
-          <option value="letter">US Letter</option>
-        </select>
-      </label>
-      <label className="rs-field">
-        <span>Font</span>
-        <select
-          className="field"
-          value={presentation.font_family}
-          onChange={(event) => onChange({ ...presentation, font_family: event.target.value as PresentationSettings["font_family"] })}
-        >
-          {FONT_OPTIONS.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <RangeField label="Body size" value={presentation.font_size} min={9} max={12.5} step={0.5} unit="pt" onChange={(font_size) => onChange({ ...presentation, font_size })} />
-      <RangeField label="Heading size" value={presentation.heading_size} min={10} max={16} step={0.5} unit="pt" onChange={(heading_size) => onChange({ ...presentation, heading_size })} />
-      <RangeField label="Line height" value={presentation.line_height} min={1.1} max={1.6} step={0.02} unit="" onChange={(line_height) => onChange({ ...presentation, line_height })} />
-      <RangeField label="Section spacing" value={presentation.section_spacing} min={4} max={28} step={1} unit="pt" onChange={(section_spacing) => onChange({ ...presentation, section_spacing })} />
-      <RangeField label="Heading spacing" value={presentation.heading_spacing} min={1} max={14} step={1} unit="pt" onChange={(heading_spacing) => onChange({ ...presentation, heading_spacing })} />
-      <RangeField label="Bullet spacing" value={presentation.bullet_spacing} min={0} max={10} step={1} unit="pt" onChange={(bullet_spacing) => onChange({ ...presentation, bullet_spacing })} />
-      <RangeField label="Top/bottom margin" value={presentation.margin_top} min={10} max={28} step={1} unit="mm" onChange={(margin) => onChange({ ...presentation, margin_top: margin, margin_bottom: margin })} />
-      <RangeField label="Side margin" value={presentation.margin_left} min={10} max={28} step={1} unit="mm" onChange={(margin) => onChange({ ...presentation, margin_left: margin, margin_right: margin })} />
-      <label className="rs-field">
-        <span>Header alignment</span>
-        <select
-          className="field"
-          value={presentation.header_alignment}
-          onChange={(event) => onChange({ ...presentation, header_alignment: event.target.value as PresentationSettings["header_alignment"] })}
-        >
-          <option value="left">Left</option>
-          <option value="center">Center</option>
-          <option value="right">Right</option>
-        </select>
-      </label>
-      <label className="rs-field">
-        <span>Heading alignment</span>
-        <select
-          className="field"
-          value={presentation.heading_alignment}
-          onChange={(event) => onChange({ ...presentation, heading_alignment: event.target.value as PresentationSettings["heading_alignment"] })}
-        >
-          <option value="left">Left</option>
-          <option value="center">Center</option>
-        </select>
-      </label>
-      <label className="rs-field">
-        <span>Accent color</span>
-        <input
-          type="color"
-          aria-label="Accent color"
-          value={presentation.accent_color}
-          onChange={(event) => onChange({ ...presentation, accent_color: event.target.value })}
-        />
-      </label>
-      <label className="rs-field">
-        <span>Section divider</span>
-        <select
-          className="field"
-          value={presentation.divider}
-          onChange={(event) => onChange({ ...presentation, divider: event.target.value as PresentationSettings["divider"] })}
-        >
-          <option value="line">Line</option>
-          <option value="space">Space</option>
-          <option value="none">None</option>
-        </select>
-      </label>
+      <div className="rs-panel-header">
+        <div>
+          <p className="rs-kicker">Design & Typography</p>
+          <h2 className="rs-panel-title">Document Styling</h2>
+        </div>
+      </div>
+
+      <div className="rs-format-section">
+        <span className="rs-format-section-title">Layout & Template</span>
+        <Field label="Template Style">
+          <Select
+            aria-label="Template Style"
+            value={presentation.template}
+            onChange={(event) => onChange({ ...presentation, template: event.target.value as PresentationSettings["template"] })}
+          >
+            {TEMPLATE_OPTIONS.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        {selectedTemplate?.note ? <p className="rs-hint rs-hint-sm">{selectedTemplate.note}</p> : null}
+
+        <Field label="Page Paper Size">
+          <Select
+            aria-label="Page Paper Size"
+            value={presentation.page_size}
+            onChange={(event) => onChange({ ...presentation, page_size: event.target.value as PresentationSettings["page_size"] })}
+          >
+            <option value="a4">A4 (Standard 210 × 297 mm)</option>
+            <option value="letter">US Letter (8.5 × 11 in)</option>
+          </Select>
+        </Field>
+      </div>
+
+      <div className="rs-format-section">
+        <span className="rs-format-section-title">Typography</span>
+        <Field label="Font Family">
+          <Select
+            aria-label="Font Family"
+            value={presentation.font_family}
+            onChange={(event) => onChange({ ...presentation, font_family: event.target.value as PresentationSettings["font_family"] })}
+          >
+            {FONT_OPTIONS.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        <div className="rs-grid-2col">
+          <RangeField label="Body font size" value={presentation.font_size} min={9} max={12.5} step={0.5} unit="pt" onChange={(font_size) => onChange({ ...presentation, font_size })} />
+          <RangeField label="Heading size" value={presentation.heading_size} min={10} max={16} step={0.5} unit="pt" onChange={(heading_size) => onChange({ ...presentation, heading_size })} />
+        </div>
+
+        <RangeField label="Line height" value={presentation.line_height} min={1.1} max={1.6} step={0.02} unit="×" onChange={(line_height) => onChange({ ...presentation, line_height })} />
+      </div>
+
+      <div className="rs-format-section">
+        <span className="rs-format-section-title">Spacing & Margins</span>
+        <div className="rs-grid-2col">
+          <RangeField label="Section gap" value={presentation.section_spacing} min={4} max={28} step={1} unit="pt" onChange={(section_spacing) => onChange({ ...presentation, section_spacing })} />
+          <RangeField label="Heading gap" value={presentation.heading_spacing} min={1} max={14} step={1} unit="pt" onChange={(heading_spacing) => onChange({ ...presentation, heading_spacing })} />
+        </div>
+        <RangeField label="Bullet spacing" value={presentation.bullet_spacing} min={0} max={10} step={1} unit="pt" onChange={(bullet_spacing) => onChange({ ...presentation, bullet_spacing })} />
+        <div className="rs-grid-2col">
+          <RangeField label="Page top/bottom" value={presentation.margin_top} min={10} max={28} step={1} unit="mm" onChange={(margin) => onChange({ ...presentation, margin_top: margin, margin_bottom: margin })} />
+          <RangeField label="Page left/right" value={presentation.margin_left} min={10} max={28} step={1} unit="mm" onChange={(margin) => onChange({ ...presentation, margin_left: margin, margin_right: margin })} />
+        </div>
+      </div>
+
+      <div className="rs-format-section">
+        <span className="rs-format-section-title">Alignment & Accents</span>
+        <div className="rs-grid-2col">
+          <Field label="Header Alignment">
+            <Select
+              aria-label="Header Alignment"
+              value={presentation.header_alignment}
+              onChange={(event) => onChange({ ...presentation, header_alignment: event.target.value as PresentationSettings["header_alignment"] })}
+            >
+              <option value="left">Left Aligned</option>
+              <option value="center">Centered</option>
+              <option value="right">Right Aligned</option>
+            </Select>
+          </Field>
+          <Field label="Heading Alignment">
+            <Select
+              aria-label="Heading Alignment"
+              value={presentation.heading_alignment}
+              onChange={(event) => onChange({ ...presentation, heading_alignment: event.target.value as PresentationSettings["heading_alignment"] })}
+            >
+              <option value="left">Left</option>
+              <option value="center">Centered</option>
+            </Select>
+          </Field>
+        </div>
+
+        <Field label="Section Divider">
+          <Select
+            aria-label="Section Divider"
+            value={presentation.divider}
+            onChange={(event) => onChange({ ...presentation, divider: event.target.value as PresentationSettings["divider"] })}
+          >
+            <option value="line">Solid Line Rule</option>
+            <option value="space">Clean Spacing Only</option>
+            <option value="none">No Divider</option>
+          </Select>
+        </Field>
+
+        <div className="rs-color-row">
+          <Field label="Accent Color">
+            <div className="rs-color-picker-wrap">
+              <input
+                type="color"
+                className="rs-color-input"
+                aria-label="Accent color"
+                value={presentation.accent_color}
+                onChange={(event) => onChange({ ...presentation, accent_color: event.target.value })}
+              />
+              <span className="rs-color-hex">{presentation.accent_color.toUpperCase()}</span>
+            </div>
+          </Field>
+        </div>
+      </div>
+
       <div className="rs-format-notes" aria-live="polite">
         {notes.map((note) => (
-          <p key={note.message} data-tone={note.tone}>
-            {note.message}
+          <p key={note.message} data-tone={note.tone} className="rs-format-note-pill">
+            <CopilotIcon name={note.tone === "caution" ? "warning" : "info"} size={14} />
+            <span>{note.message}</span>
           </p>
         ))}
       </div>
@@ -197,8 +245,15 @@ export function ResumeAtsPanel({
     do_not_claim?: string[];
     disclaimer?: string;
   };
-  const missing = ats.evidence.filter((row) => row.match_status === "not_found");
-  const partial = ats.evidence.filter((row) => row.match_status === "partial_match");
+  const missing = ats.evidence.filter(
+    (row) => row.match_status === "not_found" || row.match_status === "missing",
+  );
+  const matched = ats.evidence.filter(
+    (row) => row.match_status === "matched" || row.match_status === "full_match",
+  );
+  const partial = ats.evidence.filter(
+    (row) => row.match_status === "partial_match" || row.match_status === "partial",
+  );
   return (
     <div className="rs-ats">
       <div className="rs-pane-head">
@@ -214,18 +269,41 @@ export function ResumeAtsPanel({
         {summary.disclaimer || "This score is keyword coverage from the existing ATS engine, not a hiring prediction."}
       </p>
       {missing.length ? (
-        <div>
-          <p className="rs-kicker">Not found in this resume</p>
+        <div className="rs-ats-section">
+          <p className="rs-kicker">Missing Skills & Qualifications</p>
           <ul className="rs-issue-list">
             {missing.slice(0, 8).map((row) => (
-              <li key={row.id || row.requirement_text}>
-                <strong>{row.requirement_text}</strong>
+              <li key={row.id || row.requirement_text} className="rs-ats-evidence-row rs-evidence-card">
+                <div className="rs-evidence-header">
+                  <span className="rs-badge-missing is-missing" data-status="missing">Missing</span>
+                  <strong>{row.requirement_text}</strong>
+                </div>
                 <span>
                   {summary.do_not_claim?.some((item) =>
                     (row.requirement_text || "").toLowerCase().includes(String(item).toLowerCase()),
                   )
                     ? "Qualification gap — only add this if you can truthfully claim it."
-                    : "Not detected in the current resume text. If you already have this experience, say so more clearly."}
+                    : row.explanation || "Not detected in the current resume text. If you already have this experience, say so more clearly."}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {matched.length ? (
+        <div className="rs-ats-section">
+          <p className="rs-kicker">Matched Skills & Qualifications</p>
+          <ul className="rs-issue-list">
+            {matched.slice(0, 8).map((row) => (
+              <li key={row.id || row.requirement_text} className="rs-ats-evidence-row rs-evidence-card">
+                <div className="rs-evidence-header">
+                  <span className="rs-badge-match is-matched" data-status="matched">Matched</span>
+                  <strong>{row.requirement_text}</strong>
+                </div>
+                <span>
+                  {row.resume_evidence_text
+                    ? `Verified experience: “${row.resume_evidence_text}”`
+                    : row.explanation || "Verified match found in resume."}
                 </span>
               </li>
             ))}
@@ -233,13 +311,16 @@ export function ResumeAtsPanel({
         </div>
       ) : null}
       {partial.length ? (
-        <div>
-          <p className="rs-kicker">Weak evidence</p>
+        <div className="rs-ats-section">
+          <p className="rs-kicker">Partial Alignment</p>
           <ul className="rs-issue-list">
             {partial.slice(0, 6).map((row) => (
-              <li key={row.id || row.requirement_text}>
-                <strong>{row.requirement_text}</strong>
-                <span>{row.resume_evidence_text ? `Current quote: “${row.resume_evidence_text}”` : "Partial match only."}</span>
+              <li key={row.id || row.requirement_text} className="rs-ats-evidence-row rs-evidence-card">
+                <div className="rs-evidence-header">
+                  <span className="rs-badge-missing is-missing" data-status="missing">Partial</span>
+                  <strong>{row.requirement_text}</strong>
+                </div>
+                <span>{row.resume_evidence_text ? `Current quote: “${row.resume_evidence_text}”` : row.explanation || "Partial match only."}</span>
               </li>
             ))}
           </ul>
@@ -274,19 +355,27 @@ export function ResumeAiAssistant({
 }) {
   const actions = ACTIONS.filter((item) => item.when(section)).slice(0, 4);
   return (
-    <div className="rs-ai">
+    <div className="rs-ai rs-assistant rs-ai-panel">
       <p className="rs-kicker">Writing help</p>
       <p className="rs-hint">Suggestions stay grounded in your resume and ATS evidence. Nothing is applied until you accept it.</p>
-      <div className="rs-ai-actions">
+      <div className="rs-ai-actions rs-action-chips">
         {actions.map((item) => (
-          <Button key={item.id} type="button" variant="secondary" disabled={busy || !selectedText.trim()} onClick={() => onAction(item.id)}>
+          <Button
+            key={item.id}
+            type="button"
+            variant="secondary"
+            className="rs-suggest-btn"
+            disabled={busy}
+            onClick={() => onAction(item.id)}
+          >
             {item.label}
           </Button>
         ))}
       </div>
       {error ? <p className="field-error">{error}</p> : null}
       {suggestion ? (
-        <div className="rs-compare">
+        <div className="rs-compare rs-suggestion rs-proposal">
+          <p className="rs-kicker">Proposed Revision</p>
           <div>
             <p className="rs-kicker">Original</p>
             <p>{suggestion.original_text}</p>
@@ -295,7 +384,7 @@ export function ResumeAiAssistant({
             <p className="rs-kicker">Suggested</p>
             <Textarea value={draft} onChange={(event) => onDraft(event.target.value)} />
           </div>
-          {suggestion.reason ? <p className="rs-hint">{suggestion.reason}</p> : null}
+          {suggestion.reason ? <p className="rs-hint">Reason: {suggestion.reason}</p> : <p className="rs-hint">Proposed change aligns with target requirements.</p>}
           {suggestion.addresses ? <p className="rs-hint">Addresses: {suggestion.addresses}</p> : null}
           {suggestion.requires_confirmation || suggestion.unsupported_claims.length ? (
             <p className="rs-warn" role="status">
@@ -310,7 +399,7 @@ export function ResumeAiAssistant({
               ))}
             </ul>
           ) : null}
-          <div className="rs-ai-actions">
+          <div className="rs-ai-actions rs-action-chips">
             <Button type="button" onClick={onUse} disabled={!draft.trim()}>
               Use suggestion
             </Button>

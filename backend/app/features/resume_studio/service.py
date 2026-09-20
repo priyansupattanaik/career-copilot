@@ -35,14 +35,25 @@ def _versions_for_resume(client, user: CurrentUser, resume_id: str) -> list[dict
 def _is_studio_version(version: dict[str, Any]) -> bool:
     if str(version.get("source_type") or "") == SOURCE_TYPE_STUDIO:
         return True
-    structured = version.get("structured_content") if isinstance(version.get("structured_content"), dict) else {}
+    structured = (
+        version.get("structured_content")
+        if isinstance(version.get("structured_content"), dict)
+        else version.get("structured_sections")
+        if isinstance(version.get("structured_sections"), dict)
+        else {}
+    )
     return str(structured.get("schema_version") or "") == STUDIO_SCHEMA_VERSION and isinstance(
         structured.get("studio"), dict
     )
 
 
 def _source_id_of(version: dict[str, Any]) -> str | None:
-    document = parse_studio_document(version.get("structured_content") or {})
+    structured = (
+        version.get("structured_content")
+        or version.get("structured_sections")
+        or {}
+    )
+    document = parse_studio_document(structured)
     if document and document.source_version_id:
         return str(document.source_version_id)
     return None
@@ -116,7 +127,9 @@ def _insert_working_copy(
         "original_filename": original.get("original_filename") or "resume.pdf",
         "storage_path": original.get("storage_path"),
         "raw_text": plain,
+        "plain_text": plain,
         "structured_sections": structured,
+        "structured_content": structured,
         "extraction_status": "confirmed",
         "candidate_confirmed_at": now_iso(),
     }
@@ -141,7 +154,9 @@ def _update_working_copy(client, user: CurrentUser, version_id: str, document: S
         .update(
             {
                 "raw_text": plain,
+                "plain_text": plain,
                 "structured_sections": structured,
+                "structured_content": structured,
                 "extraction_status": "confirmed",
                 "candidate_confirmed_at": now_iso(),
                 "source_type": SOURCE_TYPE_STUDIO,
@@ -313,13 +328,13 @@ def open_session(
     working = source if _is_studio_version(source) else _find_working_copy(client, user, original)
     if working is None:
         document = document_from_structured(
-            original.get("structured_content") or {},
+            original.get("structured_content") or original.get("structured_sections") or {},
             source_version_id=str(original["id"]),
             ats_analysis_id=ats_analysis_id or (ats["analysis"]["id"] if ats else None),
         )
         working = _insert_working_copy(client, user, original, document)
     document = document_from_structured(
-        working.get("structured_content") or {},
+        working.get("structured_content") or working.get("structured_sections") or {},
         source_version_id=str(original["id"]),
         ats_analysis_id=ats_analysis_id or (ats["analysis"]["id"] if ats else None),
     )
@@ -333,7 +348,7 @@ def get_session(client, user: CurrentUser, version_id: UUID, ats_analysis_id: st
     working = owned_row(client, "resume_versions", version_id, user)
     original = resolve_original_version(client, user, working)
     document = document_from_structured(
-        working.get("structured_content") or {},
+        working.get("structured_content") or working.get("structured_sections") or {},
         source_version_id=str(original["id"]),
         ats_analysis_id=ats_analysis_id,
     )
@@ -351,7 +366,9 @@ def save_session(
 ) -> dict[str, Any]:
     working = owned_row(client, "resume_versions", version_id, user)
     original = resolve_original_version(client, user, working)
-    existing = parse_studio_document(working.get("structured_content") or {})
+    existing = parse_studio_document(
+        working.get("structured_content") or working.get("structured_sections") or {}
+    )
     document = StudioDocument(
         source_version_id=str(original["id"]),
         ats_analysis_id=existing.ats_analysis_id if existing else None,
@@ -365,9 +382,11 @@ def save_session(
 def reset_session(client, user: CurrentUser, version_id: UUID) -> dict[str, Any]:
     working = owned_row(client, "resume_versions", version_id, user)
     original = resolve_original_version(client, user, working)
-    existing = parse_studio_document(working.get("structured_content") or {})
+    existing = parse_studio_document(
+        working.get("structured_content") or working.get("structured_sections") or {}
+    )
     document = document_from_structured(
-        original.get("structured_content") or {},
+        original.get("structured_content") or original.get("structured_sections") or {},
         source_version_id=str(original["id"]),
         ats_analysis_id=existing.ats_analysis_id if existing else None,
         presentation=existing.presentation if existing else PresentationSettings(),

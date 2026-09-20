@@ -55,6 +55,12 @@ const navigation = [
     icon: "resume" as CopilotIconName,
   },
   {
+    href: routes.resumeStudio,
+    label: "Resume Studio",
+    shortLabel: "Studio",
+    icon: "edit" as CopilotIconName,
+  },
+  {
     href: routes.interview,
     label: "Mock Interview",
     shortLabel: "Interview",

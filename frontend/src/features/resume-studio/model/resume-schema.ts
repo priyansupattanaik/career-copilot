@@ -1,4 +1,4 @@
-export type TemplateId = "classic" | "modern" | "minimal";
+export type TemplateId = "classic" | "modern" | "minimal" | "swiss";
 export type PageSize = "a4" | "letter";
 export type FontId = "calibri" | "arial" | "georgia" | "garamond" | "palatino";
 export type Alignment = "left" | "center" | "right";
@@ -195,6 +195,7 @@ export const TEMPLATE_OPTIONS: { id: TemplateId; label: string; note: string }[]
   { id: "classic", label: "Classic", note: "Centered header, standard headings" },
   { id: "modern", label: "Modern", note: "Accent headings and a stronger divider" },
   { id: "minimal", label: "Minimal", note: "Quiet spacing, fewer lines" },
+  { id: "swiss", label: "Swiss", note: "Editorial grid, bold typography, mono tags, and sharp high-contrast borders" },
 ];
 
 export const CORE_SECTIONS = [

@@ -61,7 +61,9 @@ function writeReadinessDismissed(dismissed: boolean): void {
     } else {
       window.sessionStorage.removeItem(READINESS_DISMISSED_KEY);
     }
-  } catch {}
+  } catch {
+    // SessionStorage write failures (e.g., private browsing quota restrictions) are safely ignored.
+  }
 }
 
 function DashboardSkeleton() {
@@ -355,11 +357,17 @@ export function Dashboard() {
               {hasConfirmedResume ? "Confirmed for ATS & applications" : "Upload your master profile"}
             </p>
           </div>
-          <div className="dashboard-stat-footer">
+          <div className="dashboard-stat-footer" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Link className="dashboard-stat-link" href="/resume-analysis?tab=resumes">
-              Manage resumes
+              Manage
               <CopilotIcon name="go" size={13} />
             </Link>
+            {hasConfirmedResume ? (
+              <Link className="dashboard-stat-link" href="/resume-studio">
+                Open Studio
+                <CopilotIcon name="edit" size={13} />
+              </Link>
+            ) : null}
           </div>
         </article>
 

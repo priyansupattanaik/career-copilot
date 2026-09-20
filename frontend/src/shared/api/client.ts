@@ -1,8 +1,8 @@
-﻿import { createClient as createAuthClient } from "@/features/auth/api/client";
+import { createClient as createAuthClient } from "@/features/auth/api/client";
 import { demoApiRequest, isDemoSession } from "@/features/auth/demo-session";
 import { ACCESS_TOKEN_STORAGE_KEY, resolveApiBase } from "@/shared/config";
 
-export type ApiErrorBody = { error?: { code?: string; message?: string; request_id?: string } };
+export type ApiErrorBody = { error?: { code?: string; message?: string; request_id?: string }; message?: string; detail?: string };
 const inFlightGets = new Map<string, Promise<unknown>>();
 
 /** True when fetch was cancelled via AbortController (not a connectivity failure). */
@@ -82,7 +82,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
           body.error?.message || "The service is temporarily unavailable. Please try again in a moment."
         );
       }
-      throw new Error(body.error?.message || `Request failed (${response.status}).`);
+      throw new Error(body.error?.message || body.message || body.detail || `Request failed (${response.status}).`);
     }
     if (response.status === 204) return undefined as T;
     return response.json() as Promise<T>;

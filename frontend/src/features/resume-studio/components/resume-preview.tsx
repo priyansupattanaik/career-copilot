@@ -7,6 +7,7 @@ import {
   type PresentationSettings,
   type StudioDocument,
 } from "../model/resume-schema";
+import { segmentTextByKeywords } from "../model/keyword-matcher";
 
 const A4 = { width: 210, height: 297 };
 const LETTER = { width: 215.9, height: 279.4 };
@@ -32,12 +33,43 @@ function visibleKeys(content: ResumeContent) {
   return (content.section_order || []).filter((key) => !hidden.has(key));
 }
 
+function HighlightedText({
+  text,
+  keywords,
+}: {
+  text: string;
+  keywords?: Set<string>;
+}) {
+  if (!keywords || keywords.size === 0 || !text) {
+    return <>{text}</>;
+  }
+  const segments = segmentTextByKeywords(text, keywords);
+  return (
+    <>
+      {segments.map((segment, idx) =>
+        segment.isMatch ? (
+          <mark
+            key={idx}
+            className="rs-keyword-highlight bg-yellow-200 text-black px-0.5 rounded-xs"
+          >
+            {segment.text}
+          </mark>
+        ) : (
+          <span key={idx}>{segment.text}</span>
+        ),
+      )}
+    </>
+  );
+}
+
 function ResumeFlow({
   document,
   idPrefix,
+  highlightKeywords,
 }: {
   document: StudioDocument;
   idPrefix: string;
+  highlightKeywords?: Set<string>;
 }) {
   const { content, presentation } = document;
   const extraById = Object.fromEntries(content.additional.map((item) => [item.id, item]));
@@ -60,7 +92,9 @@ function ResumeFlow({
           return (
             <section className="rs-section rs-block" key={key} data-keep="section">
               <h2 className="rs-heading">{sectionLabel(key, content)}</h2>
-              <p className="rs-body">{content.summary.trim()}</p>
+              <p className="rs-body">
+                <HighlightedText text={content.summary.trim()} keywords={highlightKeywords} />
+              </p>
             </section>
           );
         }
@@ -77,11 +111,13 @@ function ResumeFlow({
             <section className="rs-section rs-block" key={key} data-keep="section">
               <h2 className="rs-heading">{sectionLabel(key, content)}</h2>
               {presentation.template === "minimal" ? (
-                <p className="rs-body">{lines.join(" · ")}</p>
+                <p className="rs-body">
+                  <HighlightedText text={lines.join(" · ")} keywords={highlightKeywords} />
+                </p>
               ) : (
                 lines.map((line) => (
                   <p className="rs-body" key={line}>
-                    {line}
+                    <HighlightedText text={line} keywords={highlightKeywords} />
                   </p>
                 ))
               )}
@@ -99,7 +135,10 @@ function ResumeFlow({
                 <article className="rs-entry rs-block" data-keep="entry" key={entry.id}>
                   <div className="rs-entry-head">
                     <p className="rs-entry-title">
-                      {[entry.title, entry.employer].filter((item) => item.trim()).join(" · ")}
+                      <HighlightedText
+                        text={[entry.title, entry.employer].filter((item) => item.trim()).join(" · ")}
+                        keywords={highlightKeywords}
+                      />
                     </p>
                     <p className="rs-entry-meta">
                       {[
@@ -116,7 +155,9 @@ function ResumeFlow({
                       {entry.bullets
                         .filter((row) => row.text.trim())
                         .map((row) => (
-                          <li key={row.id}>{row.text.trim()}</li>
+                          <li key={row.id}>
+                            <HighlightedText text={row.text.trim()} keywords={highlightKeywords} />
+                          </li>
                         ))}
                     </ul>
                   ) : null}
@@ -135,19 +176,32 @@ function ResumeFlow({
               {content.projects.map((entry) => (
                 <article className="rs-entry rs-block" data-keep="entry" key={entry.id}>
                   <p className="rs-entry-title">
-                    {entry.name.trim()}
-                    {entry.url.trim() ? ` — ${entry.url.trim()}` : ""}
+                    <HighlightedText
+                      text={`${entry.name.trim()}${entry.url.trim() ? ` — ${entry.url.trim()}` : ""}`}
+                      keywords={highlightKeywords}
+                    />
                   </p>
-                  {entry.description.trim() ? <p className="rs-body">{entry.description.trim()}</p> : null}
+                  {entry.description.trim() ? (
+                    <p className="rs-body">
+                      <HighlightedText text={entry.description.trim()} keywords={highlightKeywords} />
+                    </p>
+                  ) : null}
                   {entry.technologies.some((item) => item.trim()) ? (
-                    <p className="rs-body">{entry.technologies.filter((item) => item.trim()).join(", ")}</p>
+                    <p className="rs-body">
+                      <HighlightedText
+                        text={entry.technologies.filter((item) => item.trim()).join(", ")}
+                        keywords={highlightKeywords}
+                      />
+                    </p>
                   ) : null}
                   {entry.bullets.some((row) => row.text.trim()) ? (
                     <ul className="rs-bullets">
                       {entry.bullets
                         .filter((row) => row.text.trim())
                         .map((row) => (
-                          <li key={row.id}>{row.text.trim()}</li>
+                          <li key={row.id}>
+                            <HighlightedText text={row.text.trim()} keywords={highlightKeywords} />
+                          </li>
                         ))}
                     </ul>
                   ) : null}
@@ -166,7 +220,10 @@ function ResumeFlow({
               {content.education.map((entry) => (
                 <article className="rs-entry rs-block" data-keep="entry" key={entry.id}>
                   <p className="rs-entry-title">
-                    {[entry.degree, entry.institution, entry.specialization].filter((item) => item.trim()).join(" · ")}
+                    <HighlightedText
+                      text={[entry.degree, entry.institution, entry.specialization].filter((item) => item.trim()).join(" · ")}
+                      keywords={highlightKeywords}
+                    />
                   </p>
                   <p className="rs-entry-meta">
                     {[
@@ -177,7 +234,11 @@ function ResumeFlow({
                       .filter((item) => item.trim())
                       .join(" · ")}
                   </p>
-                  {entry.details.trim() ? <p className="rs-body">{entry.details.trim()}</p> : null}
+                  {entry.details.trim() ? (
+                    <p className="rs-body">
+                      <HighlightedText text={entry.details.trim()} keywords={highlightKeywords} />
+                    </p>
+                  ) : null}
                 </article>
               ))}
             </section>
@@ -191,7 +252,10 @@ function ResumeFlow({
               <h2 className="rs-heading">{sectionLabel(key, content)}</h2>
               {rows.map((entry) => (
                 <p className="rs-body" key={entry.id}>
-                  {[entry.name, entry.issuer, entry.date].filter((item) => item.trim()).join(" · ")}
+                  <HighlightedText
+                    text={[entry.name, entry.issuer, entry.date].filter((item) => item.trim()).join(" · ")}
+                    keywords={highlightKeywords}
+                  />
                 </p>
               ))}
             </section>
@@ -205,24 +269,32 @@ function ResumeFlow({
               <h2 className="rs-heading">{sectionLabel(key, content)}</h2>
               <ul className="rs-bullets">
                 {rows.map((row) => (
-                  <li key={row.id}>{row.text.trim()}</li>
+                  <li key={row.id}>
+                    <HighlightedText text={row.text.trim()} keywords={highlightKeywords} />
+                  </li>
                 ))}
               </ul>
             </section>
           );
         }
         if (key === "languages") {
-          const line = content.languages
-            .filter((row) => row.language.trim())
-            .map((row) =>
-              row.proficiency.trim() ? `${row.language.trim()} (${row.proficiency.trim()})` : row.language.trim(),
-            )
-            .join(" · ");
-          if (!line) return null;
+          const rows = content.languages.filter((item) => item.language.trim());
+          if (!rows.length) return null;
           return (
             <section className="rs-section rs-block" key={key} data-keep="section">
               <h2 className="rs-heading">{sectionLabel(key, content)}</h2>
-              <p className="rs-body">{line}</p>
+              <p className="rs-body">
+                <HighlightedText
+                  text={rows
+                    .map((row) =>
+                      row.proficiency.trim()
+                        ? `${row.language.trim()} (${row.proficiency.trim()})`
+                        : row.language.trim(),
+                    )
+                    .join(" · ")}
+                  keywords={highlightKeywords}
+                />
+              </p>
             </section>
           );
         }
@@ -233,7 +305,9 @@ function ResumeFlow({
             <section className="rs-section rs-block" key={key} data-keep="section">
               <h2 className="rs-heading">{sectionLabel(key, content)}</h2>
               <p className="rs-body">
-                {rows.map((item) => (item.label.trim() ? `${item.label.trim()}: ${item.url.trim()}` : item.url.trim())).join(" · ")}
+                {rows
+                  .map((item) => (item.label.trim() ? `${item.label.trim()}: ${item.url.trim()}` : item.url.trim()))
+                  .join(" · ")}
               </p>
             </section>
           );
@@ -247,7 +321,9 @@ function ResumeFlow({
               <h2 className="rs-heading">{extra.title.trim() || "Additional"}</h2>
               <ul className="rs-bullets">
                 {rows.map((row) => (
-                  <li key={row.id}>{row.text.trim()}</li>
+                  <li key={row.id}>
+                    <HighlightedText text={row.text.trim()} keywords={highlightKeywords} />
+                  </li>
                 ))}
               </ul>
             </section>
@@ -261,22 +337,35 @@ function ResumeFlow({
 
 export function ResumePreview({
   document,
+  highlightKeywords,
   onExport,
   exporting,
+  fullscreen: controlledFullscreen,
+  onToggleFullscreen,
 }: {
   document: StudioDocument;
+  highlightKeywords?: Set<string>;
   onExport: () => void;
   exporting: boolean;
+  fullscreen?: boolean;
+  onToggleFullscreen?: () => void;
 }) {
   const presentation = document.presentation;
   const size = pageSize(presentation);
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const measureRef = useRef<HTMLDivElement | null>(null);
   const [zoom, setZoom] = useState(1);
   const [mode, setMode] = useState<PreviewMode>("width");
-  const [pages, setPages] = useState<string[][]>([]);
-  const [pageIndex, setPageIndex] = useState(0);
-  const [fullscreen, setFullscreen] = useState(false);
+  const [internalFullscreen, setInternalFullscreen] = useState(false);
+
+  const isFullscreen = controlledFullscreen !== undefined ? controlledFullscreen : internalFullscreen;
+
+  function toggleFullscreen() {
+    if (onToggleFullscreen) {
+      onToggleFullscreen();
+    } else {
+      setInternalFullscreen((val) => !val);
+    }
+  }
 
   const style = useMemo(
     () =>
@@ -304,120 +393,126 @@ export function ResumePreview({
     [presentation, size.height, size.width],
   );
 
-  useEffect(() => {
-    const measure = measureRef.current;
-    if (!measure) return;
-    const innerHeight =
-      measure.clientHeight -
-      measure.querySelector(".rs-page-inner")!.clientHeight +
-      (measure.querySelector(".rs-page-inner") as HTMLElement).clientHeight;
-    const pageInner = measure.querySelector(".rs-page-inner") as HTMLElement | null;
-    const limit = pageInner?.clientHeight || 1;
-    const blocks = Array.from(measure.querySelectorAll(".rs-block")) as HTMLElement[];
-    const packed: string[][] = [[]];
-    let used = 0;
-    for (const block of blocks) {
-      const height = block.offsetHeight;
-      const last = packed[packed.length - 1];
-      if (last.length && used + height > limit) {
-        packed.push([block.outerHTML]);
-        used = height;
-      } else {
-        last.push(block.outerHTML);
-        used += height;
-      }
-    }
-    setPages(packed.filter((page) => page.length));
-    setPageIndex((current) => Math.min(current, Math.max(0, packed.length - 1)));
-    void innerHeight;
-  }, [document]);
+  const pagePxW = (size.width / 25.4) * 96;
+  const pagePxH = (size.height / 25.4) * 96;
 
   useEffect(() => {
     function apply() {
       const stage = stageRef.current;
       if (!stage) return;
-      const available = stage.clientWidth - 24;
-      const pagePx = (size.width / 25.4) * 96;
-      const pageH = (size.height / 25.4) * 96;
-      if (mode === "width") setZoom(Math.min(1.15, Math.max(0.35, available / pagePx)));
-      if (mode === "page") {
-        const availableH = Math.max(240, stage.clientHeight - 24);
-        setZoom(Math.min(available / pagePx, availableH / pageH, 1.15));
+      const availableW = stage.clientWidth - 32;
+      const availableH = stage.clientHeight - 32;
+
+      if (mode === "width") {
+        const targetZoom = Math.min(1.25, Math.max(0.28, availableW / pagePxW));
+        setZoom(Number(targetZoom.toFixed(2)));
+      } else if (mode === "page") {
+        const targetZoom = Math.min(availableW / pagePxW, availableH / pagePxH, 1.25);
+        setZoom(Number(Math.max(0.28, targetZoom).toFixed(2)));
       }
     }
     apply();
     const observer = new ResizeObserver(apply);
     if (stageRef.current) observer.observe(stageRef.current);
     return () => observer.disconnect();
-  }, [mode, size.height, size.width, fullscreen]);
+  }, [mode, pagePxH, pagePxW, isFullscreen]);
 
-  const pageCount = Math.max(1, pages.length);
+  const scaledW = Math.round(pagePxW * zoom);
+  const scaledH = Math.round(pagePxH * zoom);
 
   return (
-    <div className={`rs-preview ${fullscreen ? "is-full" : ""}`} style={style}>
+    <div className={`rs-preview ${isFullscreen ? "is-full" : ""}`} style={style}>
       <div className="rs-preview-toolbar">
         <div className="rs-zoom">
-          <button type="button" className="button button-quiet" onClick={() => { setMode("custom"); setZoom((value) => Math.max(0.4, value - 0.1)); }} aria-label="Zoom out">
+          <button
+            type="button"
+            className="button button-quiet rs-tool-btn"
+            onClick={() => {
+              setMode("custom");
+              setZoom((val) => Math.max(0.25, Number((val - 0.1).toFixed(2))));
+            }}
+            title="Zoom out"
+            aria-label="Zoom out"
+          >
             −
           </button>
-          <span>{Math.round(zoom * 100)}%</span>
-          <button type="button" className="button button-quiet" onClick={() => { setMode("custom"); setZoom((value) => Math.min(1.6, value + 0.1)); }} aria-label="Zoom in">
+          <span className="rs-zoom-label">{Math.round(zoom * 100)}%</span>
+          <button
+            type="button"
+            className="button button-quiet rs-tool-btn"
+            onClick={() => {
+              setMode("custom");
+              setZoom((val) => Math.min(2.0, Number((val + 0.1).toFixed(2))));
+            }}
+            title="Zoom in"
+            aria-label="Zoom in"
+          >
             +
           </button>
-          <button type="button" className="button button-quiet" onClick={() => setMode("width")}>
-            Fit width
+          <button
+            type="button"
+            className={`button button-quiet rs-mode-btn ${mode === "width" ? "is-active" : ""}`}
+            onClick={() => setMode("width")}
+          >
+            Fit Width
           </button>
-          <button type="button" className="button button-quiet" onClick={() => setMode("page")}>
-            Fit page
+          <button
+            type="button"
+            className={`button button-quiet rs-mode-btn ${mode === "page" ? "is-active" : ""}`}
+            onClick={() => setMode("page")}
+          >
+            Fit Page
           </button>
         </div>
-        {pageCount > 1 ? (
-          <div className="rs-page-nav">
-            <button type="button" className="button button-quiet" disabled={pageIndex === 0} onClick={() => setPageIndex((value) => Math.max(0, value - 1))} aria-label="Previous page">
-              <CopilotIcon name="back" size={14} />
-            </button>
-            <span>
-              {pageIndex + 1} / {pageCount}
-            </span>
-            <button type="button" className="button button-quiet" disabled={pageIndex >= pageCount - 1} onClick={() => setPageIndex((value) => Math.min(pageCount - 1, value + 1))} aria-label="Next page">
-              <CopilotIcon name="next" size={14} />
-            </button>
-          </div>
-        ) : null}
+
         <div className="rs-preview-actions">
-          <button type="button" className="button button-quiet" onClick={() => setFullscreen((value) => !value)}>
-            {fullscreen ? "Exit preview" : "Fullscreen"}
+          <button
+            type="button"
+            className={`button button-quiet rs-tool-btn ${isFullscreen ? "is-active" : ""}`}
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Exit focus mode" : "Focus on live preview"}
+            aria-label={isFullscreen ? "Exit focus mode" : "Focus on live preview"}
+          >
+            <CopilotIcon name={isFullscreen ? "collapse" : "expand"} size={14} />
+            <span className="rs-btn-label">{isFullscreen ? "Exit Focus" : "Focus View"}</span>
           </button>
-          <button type="button" className="button button-primary" onClick={onExport} disabled={exporting}>
-            <CopilotIcon name="resume" size={14} />
-            {exporting ? "Exporting…" : "Export PDF"}
+          <button
+            type="button"
+            className="button button-primary rs-export-btn"
+            onClick={onExport}
+            disabled={exporting}
+          >
+            <CopilotIcon name={exporting ? "loader" : "resume"} size={14} />
+            <span>{exporting ? "Generating PDF…" : "Export PDF"}</span>
           </button>
         </div>
       </div>
-      <div className="rs-stage" ref={stageRef}>
-        {pages.length ? (
-          pages.map((html, index) => (
-            <div
-              className={`rs-page ${index === pageIndex ? "is-active" : ""}`}
-              key={`page-${index}`}
-              style={{ transform: `scale(${zoom})`, transformOrigin: "top center" }}
-              aria-label={`Resume page ${index + 1} of ${pageCount}`}
-            >
-              <div className="rs-page-inner" dangerouslySetInnerHTML={{ __html: html.join("") }} />
-            </div>
-          ))
-        ) : (
-          <div className="rs-page is-active" style={{ transform: `scale(${zoom})`, transformOrigin: "top center" }}>
+
+      <div className="rs-stage rs-preview-stage rs-preview-viewport" ref={stageRef}>
+        <div
+          className="rs-page-container"
+          style={{
+            width: `${scaledW}px`,
+            minHeight: `${scaledH}px`,
+          }}
+        >
+          <div
+            className="rs-page rs-preview-sheet is-active"
+            style={{
+              width: `${pagePxW}px`,
+              minHeight: `${pagePxH}px`,
+              transform: `scale(${zoom})`,
+              transformOrigin: "top left",
+            }}
+            aria-label="Resume live paper preview"
+          >
             <div className="rs-page-inner">
-              <ResumeFlow document={document} idPrefix="rs-live-flow" />
+              <ResumeFlow
+                document={document}
+                idPrefix="rs-live-flow"
+                highlightKeywords={highlightKeywords}
+              />
             </div>
-          </div>
-        )}
-      </div>
-      <div className="rs-measure" aria-hidden ref={measureRef}>
-        <div className="rs-page">
-          <div className="rs-page-inner">
-            <ResumeFlow document={document} idPrefix="rs-measure-flow" />
           </div>
         </div>
       </div>
