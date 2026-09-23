@@ -12,7 +12,6 @@ import {
 } from "@/features/profile/model/profile-completion";
 import { isDemoSession } from "@/features/auth/demo-session";
 import { Card, PageHeader } from "@/shared/ui/primitives";
-import { Breadcrumb5 } from "@/components/breadcrumb-5";
 import {
   AnimatedNumber,
   DimensionBars,
@@ -183,30 +182,19 @@ export function Dashboard() {
       animate="visible"
       variants={containerVariants}
     >
-      {/* Navigation Breadcrumb */}
-      <motion.div variants={itemVariants} className="dashboard-breadcrumb-row" style={{ marginBottom: "var(--space-3)" }}>
-        <Breadcrumb5
-          segments={[
-            { label: "Workspace", href: "/dashboard" },
-            { label: "Dashboard", current: true },
-          ]}
-        />
-      </motion.div>
-
       {/* Header */}
       <motion.div variants={itemVariants}>
         <PageHeader
           title={`Welcome, ${first}.`}
-          description="High-signal metrics, preparation trajectory, and immediate next steps."
+          description="Scores from your saved work, and the next step to take."
           action={
             <div className="dashboard-header-actions">
               <Link className="button button-secondary" href="/mock-interview">
                 <CopilotIcon name="play" size={14} className="button-icon" />
-                <span>Practice Interview</span>
+                <span>Practice interview</span>
               </Link>
               <Link className="button button-primary" href="/resume-analysis?tab=upload">
-                <CopilotIcon name="assist" size={14} className="button-icon" />
-                <span>New ATS Run</span>
+                <span>New ATS run</span>
               </Link>
             </div>
           }
@@ -623,14 +611,6 @@ export function Dashboard() {
                   <span className="dashboard-milestone-time">{formatWhen(lastJob.at)}</span>
                 )}
               </div>
-            </div>
-
-            {/* Anchored sync footer to cleanly balance vertical height */}
-            <div className="dashboard-milestones-footer">
-              <span className="dashboard-milestones-sync-pill">
-                <CopilotIcon name="sparkles" size={12} />
-                <span>Signals synced with Copilot intelligence</span>
-              </span>
             </div>
           </div>
         </Card>

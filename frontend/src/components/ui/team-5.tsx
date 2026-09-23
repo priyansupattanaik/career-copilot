@@ -180,7 +180,7 @@ function MemberStrip({
     <article
       className={cn(
         "team5-member group relative min-w-0 flex-[1] overflow-hidden rounded-lg",
-        "cursor-pointer shadow-sm transition-all duration-500",
+        "cursor-pointer shadow-sm transition-[flex,box-shadow] duration-500",
         "hover:flex-[3] hover:shadow-xl focus-within:flex-[3] focus-within:shadow-xl",
       )}
       tabIndex={0}
@@ -192,9 +192,9 @@ function MemberStrip({
         loading="lazy"
       />
 
-      <div className="team5-shade absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100" />
+      <div className="team5-shade absolute inset-0 opacity-100 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100" />
 
-      <div className="team5-meta absolute inset-x-0 bottom-0 flex translate-y-3 flex-col gap-3 p-5 opacity-0 transition-all delay-100 duration-300 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 sm:p-6">
+      <div className="team5-meta absolute inset-x-0 bottom-0 flex translate-y-0 flex-col gap-3 p-5 opacity-100 transition-all delay-100 duration-300 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 sm:p-6">
         {member.role ? (
           <Badge variant="secondary" className="w-fit text-xs">
             {member.role}

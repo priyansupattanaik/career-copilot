@@ -240,11 +240,7 @@ export function LearningHome() {
         </div>
         <div className="lp-masthead-actions">
           <Button onClick={() => void generate()} disabled={busy || !selectedId || Boolean(deletingId)}>
-            {busy ? (
-              <CopilotIcon name="loader" size={17} loop />
-            ) : (
-              <CopilotIcon name="assist" size={17} />
-            )}
+            {busy ? <CopilotIcon name="loader" size={17} loop /> : null}
             {existingForSelected ? "Open path from this ATS" : "Generate from ATS gaps"}
           </Button>
         </div>

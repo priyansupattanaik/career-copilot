@@ -1210,6 +1210,7 @@ export function InterviewSession() {
           </article>
         ) : null}
         <aside className="interview-presence">
+          {questions.length > 0 ? (
           <div className="interview-aura-stage" aria-label={`Interviewer ${auraState}`}>
             <AgentAudioVisualizerAura
               size="md"
@@ -1229,6 +1230,7 @@ export function InterviewSession() {
                     : "Ready"}
             </span>
           </div>
+          ) : null}
           {media.camera ? (
             <div className="interview-camera-frame">
               <video
