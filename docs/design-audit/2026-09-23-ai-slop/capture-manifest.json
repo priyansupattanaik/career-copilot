@@ -1,0 +1,1799 @@
+[
+  {
+    "name": "landing",
+    "route": "/",
+    "theme": "light",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/",
+    "file": "screenshots/light/desktop/landing.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Show upready."
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "teams",
+    "route": "/teams",
+    "theme": "light",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/teams",
+    "file": "screenshots/light/desktop/teams.png",
+    "title": "Career Copilot",
+    "h1": [],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "sign-in",
+    "route": "/sign-in",
+    "theme": "light",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/sign-in",
+    "file": "screenshots/light/desktop/sign-in.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Welcome back.",
+      "Sign in"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "sign-up",
+    "route": "/sign-up",
+    "theme": "light",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/sign-up",
+    "file": "screenshots/light/desktop/sign-up.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Create your account.",
+      "Create account"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "forgot-password",
+    "route": "/forgot-password",
+    "theme": "light",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/forgot-password",
+    "file": "screenshots/light/desktop/forgot-password.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Reset your password.",
+      "Reset your password"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "reset-password",
+    "route": "/reset-password",
+    "theme": "light",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/reset-password",
+    "file": "screenshots/light/desktop/reset-password.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Choose a new password.",
+      "Choose a new password"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "verify-email",
+    "route": "/verify-email",
+    "theme": "light",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/verify-email",
+    "file": "screenshots/light/desktop/verify-email.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Confirm your email.",
+      "Check your inbox"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "not-found",
+    "route": "/this-page-does-not-exist",
+    "theme": "light",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/this-page-does-not-exist",
+    "file": "screenshots/light/desktop/not-found.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Page not found"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "public-profile-ada",
+    "route": "/ada-lovelace",
+    "theme": "light",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/ada-lovelace",
+    "file": "screenshots/light/desktop/public-profile-ada.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Page not found"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "onboarding",
+    "route": "/onboarding",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/onboarding",
+    "file": "screenshots/light/desktop/onboarding.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Build your profile"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Build your profile These details are saved to your private profile. Your sign-up name is filled in automatically when available. Full name Professional headline Phone Location Current role Bio Save profile"
+  },
+  {
+    "name": "dashboard",
+    "route": "/dashboard",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/dashboard",
+    "file": "screenshots/light/desktop/dashboard.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Welcome, Demo."
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Dashboard Workspace Dashboard Demo · no account data Workspace Dashboard Welcome, Demo. High-signal metrics, preparation trajectory, and immediate next steps. Practice Interview New ATS Run Demo Mode Active You are browsing interactive demo data. Sign in with Google or email to sync real resumes, live ATS scoring, and interview transcripts. PRIORITY NEXT STEP Upload your confirmed resume A confirmed resume powers ATS scoring, personalized mock interviews, and skill gap insights. Upload Resume ATS SCORE 64% Match against target role Open analysis INTERVIEW SCORE 76 +8 4 scored sessions logged View report ACTIVE RESUME None No Resume Upload your master profile Manage JOB PIPELINE 0 saved Tracked positions and target roles Explore opportunities PERFORMANCE TRAJECTORY Interview Improvement All Sessions 25 50 75 Sep 2 Sep 9 Sep 16 Sep 21 Skill Dimension Breakdown Communication 74 +8 Avg across sessions 61.5 Structure 78 +8 Avg across sessions 66.8 Content depth 77 +8 Avg across sessions 65.5 Camera presence 82 +14 Avg across sessions 61.8 PROFILE & MILESTONES Career Readiness Edit Profile 62 % Profile ready Profile 62% Complete Add Add your experience to sharpen ATS alignment. Complete profile LATEST RESUME No resume uploaded LATEST ATS SCAN 64% Target Role Match 64% match LATEST INTERVIEW Backend Engineer (completed) Sep 21, 11:51 PM LAST SAVED JOB No tracked jobs Signals synced with Copilot intelligence"
+  },
+  {
+    "name": "jobs",
+    "route": "/jobs",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/jobs",
+    "file": "screenshots/light/desktop/jobs.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Your next move, shortlisted"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Recommended Jobs Workspace Recommended Jobs Demo · no account data Your next move, shortlisted A focused shortlist built from your profile, preferences, and confirmed resume evidence. View pipeline (0) Less scrolling. More signal. Fresh roles are collected from the configured job-search sources, then the fit agent checks each one against the evidence in your profile. RECOMMENDATION ENGINE Profile evidence active No profile or job data is invented. Saved 0 Bookmarked for later Applied 0 Applications you tracked Rejected 0 Roles you passed on Location Work mode Min salary Refresh job search Confirm your active resume in Resume Analysis before generating recommendations. No jobs yet Confirm a resume and sync jobs to see matches."
+  },
+  {
+    "name": "jobs-saved",
+    "route": "/jobs/saved",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/jobs/saved",
+    "file": "screenshots/light/desktop/jobs-saved.png",
+    "title": "Career Copilot",
+    "h1": [
+      "My job pipeline"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Recommended Jobs Workspace Recommended Jobs Demo · no account data My job pipeline Track jobs you saved, applied to, or rejected. Counts update as you mark each role. Back to recommendations Saved 0 Bookmarked for later Applied 0 Applications you tracked Rejected 0 Roles you passed on All (0) Saved (0) Applied (0) Rejected (0) No jobs in this view Save a recommendation or mark it applied to build your pipeline."
+  },
+  {
+    "name": "job-detail",
+    "route": "/jobs/demo-job-1",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/jobs/demo-job-1",
+    "file": "screenshots/light/desktop/job-detail.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Software Engineer"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Recommended Jobs Workspace Recommended Jobs Demo · no account data Software Engineer Northstar Labs · Bengaluru Bengaluru Stored job record hybrid Build dependable product experiences with a small engineering team. Back to jobs"
+  },
+  {
+    "name": "community",
+    "route": "/community",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/community",
+    "file": "screenshots/light/desktop/community.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Find people worth learning from"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Community Workspace Community Demo · no account data Find people worth learning from Search public profiles by name, username, profession, career level, goal, or location. Use real journeys as inspiration without exposing resumes. Explore the community Matches appear as you type. Nothing is listed until you search. Search Try: AI engineer fresher designer data scientist backend Search by a real username or career term to discover public profiles. Please complete your profile 62% complete · 2 remaining Add your experience Add a professional link Complete profile"
+  },
+  {
+    "name": "learning",
+    "route": "/learning",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/learning",
+    "file": "screenshots/light/desktop/learning.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Learning path"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Learning Path Workspace Learning Path Demo · no account data Learning path Build a study plan from skill gaps in your completed ATS analysis. Watch progress is stored as you play each lesson. Skipped time is not counted. Open path from this ATS Choose a completed ATS analysis 1 COMPLETED RUNS 64 ATS Backend Engineer · Northstar Labs Resume unavailable · 1 skill gaps Sep 23, 2026, 11:22 PM Path 0% Your paths 1 SAVED Active Skill gap path · Demo ATS 0% From ATS · Software Engineer Watch progress 0% Skill gaps 1 steps Last: Docker Tutorial for Beginners — Demo Open path & track progress Delete"
+  },
+  {
+    "name": "learning-path",
+    "route": "/learning/demo-path-1",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/learning/demo-path-1",
+    "file": "screenshots/light/desktop/learning-path.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Skill gap path · Demo ATS"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Learning Path Workspace Learning Path Demo · no account data Skill gap path · Demo ATS Study plan from requirements not fully evidenced in the demo ATS analysis. All paths Delete path PROGRESS · 0/1 STEPS COMPLETE Overall path progress 0% 0% FROM ATS ANALYSIS Software Engineer Score 64 · 1 missing · Demo resume Learn Docker with guided practice 0% Watched time (unique) 0:00 Progress counts only the parts you actually play. Skipping ahead does not fill the bar. pending 45 minutes foundational Skill gap Learn Docker with guided practice Study Docker using free video lessons and articles, then practise a small container workflow. Recommended resources (videos + articles) Video lesson 0% watched freeCodeCamp.org Docker Tutorial for Beginners — Demo Demo video lesson for an ATS Docker gap (not live API). Watch in path Mark watched Article / blog 0% watched Google · educational sites Blogs & articles: Docker Free blogs and articles for the ATS Docker gap (demo). Specific post URLs are never invented. Browse articles Mark as read Mark complete Start"
+  },
+  {
+    "name": "interview-home",
+    "route": "/mock-interview",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview",
+    "file": "screenshots/light/desktop/interview-home.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Practice out loud"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Mock Interview Workspace Mock Interview Demo · no account data Practice out loud Start a practice session and review past rounds. Start a round Choose a focus, then start. Interview focus Mixed Stories and skills, the way a real screen usually goes Behavioural Ownership, conflict, and how you work with people Technical How you break a problem down out loud Screening Intro, motivation, and how you talk about yourself Role you are practicing for (optional) How many questions 3 5 8 Camera presence Voice answers Optional context Start interview The interviewer asks, listens to your answer, then follows up when the story needs more. Recent sessions Refresh Software Engineer interview behavioural · 4 questions · 9/2/2026, 11:22:24 PM Completed Open Report Delete Backend Engineer interview technical · 4 questions · 9/9/2026, 11:22:24 PM Completed Open Report Delete Software Engineer interview mixed · 4 questions · 9/16/2026, 11:22:24 PM Completed Open Report Delete Backend Engineer interview mixed · 4 questions · 9/21/2026, 11:22:24 PM Completed Open Report Delete"
+  },
+  {
+    "name": "interview-prep",
+    "route": "/mock-interview/preparation",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/preparation",
+    "file": "screenshots/light/desktop/interview-prep.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Prepare with your evidence"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Mock Interview Workspace Mock Interview Demo · no account data Prepare with your evidence Generate practice material from the confirmed resume, job description, and ATS evidence you select. This does not claim unverified skills or predict hiring outcomes. Start a mock interview Start a mock interview without documents A resume is optional. Start a round from your chosen role and focus, or upload a resume later if you want questions grounded in your work. Start a mock interview"
+  },
+  {
+    "name": "interview-setup",
+    "route": "/mock-interview/setup",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/setup",
+    "file": "screenshots/light/desktop/interview-setup.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Set the round, then begin"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Mock Interview Workspace Mock Interview Demo · no account data Set the round, then begin Choose a focus and start a practice session. Start a round Choose a focus, then start. Interview focus Mixed Stories and skills, the way a real screen usually goes Behavioural Ownership, conflict, and how you work with people Technical How you break a problem down out loud Screening Intro, motivation, and how you talk about yourself Role you are practicing for (optional) How many questions 3 5 8 Camera presence Voice answers Optional context Start interview The interviewer asks, listens to your answer, then follows up when the story needs more."
+  },
+  {
+    "name": "interview-report",
+    "route": "/mock-interview/report/demo-interview-1",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/report/demo-interview-1",
+    "file": "screenshots/light/desktop/interview-report.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Software Engineer debrief"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Mock Interview Workspace Mock Interview Feedback Report Demo · no account data Software Engineer debrief Practice coaching from this session: scores, pace, and what to try next. Not a hiring decision. All sessions Scores and coaching come only from the recorded answers and measured metrics. Dimension scores Overall 0 Communication 0 Structure 0 Content 0 Speaking delivery Average pace: not timed Fillers: 0 across ~0 words (0%) Summary No answers were recorded for this demo session, so no performance report was generated. No transcript words were recorded."
+  },
+  {
+    "name": "interview-session",
+    "route": "/mock-interview/session/demo-interview-1",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/session/demo-interview-1",
+    "file": "screenshots/light/desktop/interview-session.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Interview room"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Mock Interview Workspace Mock Interview Live Session Demo · no account data SOFTWARE ENGINEER · BEHAVIOURAL Interview room Leave Ready You Ready Hands-free No questions in this session Start a new round from the mock interview page. Start a new round Delete session"
+  },
+  {
+    "name": "resume-history",
+    "route": "/resume-analysis",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis",
+    "file": "screenshots/light/desktop/resume-history.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Resume analysis"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Resume Analysis Workspace Resume Analysis Demo · no account data Resume analysis Confirm what was extracted, then audit keyword coverage against each job. Scores use only lines your confirmed resume actually contains. Runs Library New upload 1 RUNS · 1 COMPLETED · 0 NEED ATTENTION Select all Delete selected 64% PARTIAL Resume unavailable (unavailable) → Backend Engineer · Northstar Labs 9/23/2026, 11:22:32 PM COMPLETED Report Select Delete"
+  },
+  {
+    "name": "resume-new",
+    "route": "/resume-analysis/new",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis/new",
+    "file": "screenshots/light/desktop/resume-new.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Resume and JD analysis"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Resume Analysis Workspace Resume Analysis Upload & Match Demo · no account data Resume and JD analysis Reuse a stored resume or upload a new one, add the job description, then confirm the extraction before anything is scored. Overview 1 Source files 2 Review extractions 3 Report Resume Reuse one saved from profile completion, or bring a new PDF/DOCX (max 10 MB). Saved resume Upload new Choose file PDF or DOCX Job description Paste the posting text, or upload it as a PDF/DOCX. Saved when you proceed. Paste text Upload file Job description text RESUME NEEDED JOB DESCRIPTION NEEDED Add both sources to continue. Scoring waits until you confirm the extracted text. Proceed to review"
+  },
+  {
+    "name": "resume-upload-tab",
+    "route": "/resume-analysis?tab=upload",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis?tab=upload",
+    "file": "screenshots/light/desktop/resume-upload-tab.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Resume analysis"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Resume Analysis Workspace Resume Analysis Upload & Match Demo · no account data Resume analysis Confirm what was extracted, then audit keyword coverage against each job. Scores use only lines your confirmed resume actually contains. Runs Library New upload 1 Source files 2 Review extractions 3 Report Resume Reuse one saved from profile completion, or bring a new PDF/DOCX (max 10 MB). Saved resume Upload new Choose file PDF or DOCX Job description Paste the posting text, or upload it as a PDF/DOCX. Saved when you proceed. Paste text Upload file Job description text RESUME NEEDED JOB DESCRIPTION NEEDED Add both sources to continue. Scoring waits until you confirm the extracted text. Proceed to review"
+  },
+  {
+    "name": "resume-report",
+    "route": "/resume-analysis/report/demo-ats-1",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis/report/demo-ats-1",
+    "file": "screenshots/light/desktop/resume-report.png",
+    "title": "Career Copilot",
+    "h1": [
+      "A solid base with clear gaps to close."
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Resume Analysis Workspace Resume Analysis ATS Report Demo · no account data 64% COVERAGE AUDIT SHEET · 9/23/2026, 11:22:36 PM A solid base with clear gaps to close. Each hit quotes an exact line from your confirmed resume; missing terms quote nothing because nothing supported them. Keyword coverage is not a hiring prediction. New analysis Run log RESUME USED Resume unavailable (unavailable) JOB DESCRIPTION USED Backend Engineer · Northstar Labs ANALYZED 9/23/2026, 11:22:36 PM 1 MISSING OF 3 SCORED TERMS · 2 MATCHED FOUND 0 PARTIAL 0 MISSING 1 Evidence ledger 0 FOUND · 0 PARTIAL · 1 MISSING MISSING FROM RESUME 1 Docker Not found in your confirmed resume. Requirement gaps Critical / required 1 Docker Preferred 0 No preferred terms are missing. Partial evidence 0 Every matched term had direct evidence. Upload revised resume Back to run log LLM improvement report UNAVAILABLE No narrative is shown because the configured LLM did not return a valid report. The score and evidence above remain auditable; this screen will not substitute static prose. Parsed sources EXACTLY WHAT THE PARSER STORED FOR THIS RUN Parsed resume Parsed source is unavailable for this analysis. PARSED JOB DESCRIPTION Pasted text CONFIRMED No sections were classified for this document. Show complete parsed text"
+  },
+  {
+    "name": "settings-profile",
+    "route": "/settings/profile",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/profile",
+    "file": "screenshots/light/desktop/settings-profile.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Candidate profile"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Settings Workspace Settings Profile Demo · no account data Candidate profile Keep your experience, strengths, and goals ready for every interview. DC Demo Candidate + Set username Software engineer building reliable products Bengaluru · Software Engineer Choose photo JPEG, PNG, or WebP · 3 MB 62% COMPLETE Profile completion 62% STILL NEEDED Add your experience Add a professional link Details Resume Preferences Skills Experience Education Links Basic details Name, location, and career context used across interviews and job matching. Full name* Username Choose a unique username. 3–30 letters, numbers, and underscores. Headline Phone 🇮🇳 +91 ▾ Select a country and enter 6–15 digits Location* Bengaluru Current role* Software Engineer Years of experience* Select years Career level Select career level Career goal Select career goal Bio Tip: choose 0 years if you are a fresher with no work history yet. Save profile"
+  },
+  {
+    "name": "settings-account",
+    "route": "/settings/account",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/account",
+    "file": "screenshots/light/desktop/settings-account.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Account & access"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Settings Workspace Settings Account Demo · no account data Account & access Manage your active session securely. Account Preferences Privacy Username Change the handle used for sign-in and your public profile URL. No username yet. Choose one to claim your public profile. New username 3–30 letters, numbers, and underscores. Save username Session D Account session demo@example.com Logout Danger zone Delete account Permanently removes your account and all candidate data stored with us: profile, skills, experience, education, resumes and files, job descriptions, ATS analyses, interviews, learning paths, saved jobs, activity, and preferences. This cannot be undone. I want to delete my account"
+  },
+  {
+    "name": "settings-preferences",
+    "route": "/settings/preferences",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/preferences",
+    "file": "screenshots/light/desktop/settings-preferences.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Notification preferences"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Settings Workspace Settings Profile Demo · no account data Notification preferences Stored in your account, not in browser storage. Account Preferences Privacy Notification preferences These choices are stored on your account, not in this browser. Email frequency Weekly Job alerts Email when new matching roles are available. Learning reminders Reminders for paths generated from ATS gaps. Interview reminders Reminders for unfinished practice sessions. Product updates Occasional notes about Career Copilot itself. Save settings"
+  },
+  {
+    "name": "settings-privacy",
+    "route": "/settings/privacy",
+    "theme": "light",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/privacy",
+    "file": "screenshots/light/desktop/settings-privacy.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Privacy controls"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "textSample": "Career Copilot Dashboard Resume Analysis Mock Interview Learning Path Recommended Jobs Community DC Demo 62% complete Settings Workspace Settings Profile Demo · no account data Privacy controls Consent and visibility choices are saved to your private account. Account Preferences Privacy Profile visibility Who can see your profile Private — only this account Allow resume processing Extract and score resumes you upload and confirm. Allow job recommendations Rank jobs using confirmed resume evidence. Camera and microphone These apply to mock-interview practice. The server does not invent camera data. Camera Ask each session Microphone Ask each session Recording retention (days) 0 — do not keep recordings Save settings"
+  },
+  {
+    "name": "sign-in-empty-submit",
+    "theme": "light",
+    "viewport": "desktop",
+    "file": "screenshots/light/desktop/sign-in-empty-submit.png",
+    "finalUrl": "http://127.0.0.1:3000/sign-in"
+  },
+  {
+    "name": "landing",
+    "route": "/",
+    "theme": "light",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/",
+    "file": "screenshots/light/mobile/landing.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Show upready."
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "teams",
+    "route": "/teams",
+    "theme": "light",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/teams",
+    "file": "screenshots/light/mobile/teams.png",
+    "title": "Career Copilot",
+    "h1": [],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "sign-in",
+    "route": "/sign-in",
+    "theme": "light",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/sign-in",
+    "file": "screenshots/light/mobile/sign-in.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Welcome back.",
+      "Sign in"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "sign-up",
+    "route": "/sign-up",
+    "theme": "light",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/sign-up",
+    "file": "screenshots/light/mobile/sign-up.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Create your account.",
+      "Create account"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "forgot-password",
+    "route": "/forgot-password",
+    "theme": "light",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/forgot-password",
+    "file": "screenshots/light/mobile/forgot-password.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Reset your password.",
+      "Reset your password"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "reset-password",
+    "route": "/reset-password",
+    "theme": "light",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/reset-password",
+    "file": "screenshots/light/mobile/reset-password.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Choose a new password.",
+      "Choose a new password"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "verify-email",
+    "route": "/verify-email",
+    "theme": "light",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/verify-email",
+    "file": "screenshots/light/mobile/verify-email.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Confirm your email.",
+      "Check your inbox"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "not-found",
+    "route": "/this-page-does-not-exist",
+    "theme": "light",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/this-page-does-not-exist",
+    "file": "screenshots/light/mobile/not-found.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Page not found"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "public-profile-ada",
+    "route": "/ada-lovelace",
+    "theme": "light",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/ada-lovelace",
+    "file": "screenshots/light/mobile/public-profile-ada.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Page not found"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#f5faff",
+    "primary": "#c7e0ff",
+    "primaryStrong": "#1769aa"
+  },
+  {
+    "name": "onboarding",
+    "route": "/onboarding",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/onboarding",
+    "file": "screenshots/light/mobile/onboarding.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Build your profile"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "dashboard",
+    "route": "/dashboard",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/dashboard",
+    "file": "screenshots/light/mobile/dashboard.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Welcome, Demo."
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "jobs",
+    "route": "/jobs",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/jobs",
+    "file": "screenshots/light/mobile/jobs.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Your next move, shortlisted"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "jobs-saved",
+    "route": "/jobs/saved",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/jobs/saved",
+    "file": "screenshots/light/mobile/jobs-saved.png",
+    "title": "Career Copilot",
+    "h1": [
+      "My job pipeline"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "job-detail",
+    "route": "/jobs/demo-job-1",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/jobs/demo-job-1",
+    "file": "screenshots/light/mobile/job-detail.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Software Engineer"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "community",
+    "route": "/community",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/community",
+    "file": "screenshots/light/mobile/community.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Find people worth learning from"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "learning",
+    "route": "/learning",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/learning",
+    "file": "screenshots/light/mobile/learning.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Learning path"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "learning-path",
+    "route": "/learning/demo-path-1",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/learning/demo-path-1",
+    "file": "screenshots/light/mobile/learning-path.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Skill gap path · Demo ATS"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "interview-home",
+    "route": "/mock-interview",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview",
+    "file": "screenshots/light/mobile/interview-home.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Practice out loud"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "interview-prep",
+    "route": "/mock-interview/preparation",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/preparation",
+    "file": "screenshots/light/mobile/interview-prep.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Prepare with your evidence"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "interview-setup",
+    "route": "/mock-interview/setup",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/setup",
+    "file": "screenshots/light/mobile/interview-setup.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Set the round, then begin"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "interview-report",
+    "route": "/mock-interview/report/demo-interview-1",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/report/demo-interview-1",
+    "file": "screenshots/light/mobile/interview-report.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Software Engineer debrief"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "interview-session",
+    "route": "/mock-interview/session/demo-interview-1",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/session/demo-interview-1",
+    "file": "screenshots/light/mobile/interview-session.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Interview room"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "resume-history",
+    "route": "/resume-analysis",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis",
+    "file": "screenshots/light/mobile/resume-history.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Resume analysis"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "resume-new",
+    "route": "/resume-analysis/new",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis/new",
+    "file": "screenshots/light/mobile/resume-new.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Resume and JD analysis"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "resume-upload-tab",
+    "route": "/resume-analysis?tab=upload",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis?tab=upload",
+    "file": "screenshots/light/mobile/resume-upload-tab.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Resume analysis"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "resume-report",
+    "route": "/resume-analysis/report/demo-ats-1",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis/report/demo-ats-1",
+    "file": "screenshots/light/mobile/resume-report.png",
+    "title": "Career Copilot",
+    "h1": [
+      "A solid base with clear gaps to close."
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "settings-profile",
+    "route": "/settings/profile",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/profile",
+    "file": "screenshots/light/mobile/settings-profile.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Candidate profile"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "settings-account",
+    "route": "/settings/account",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/account",
+    "file": "screenshots/light/mobile/settings-account.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Account & access"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "settings-preferences",
+    "route": "/settings/preferences",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/preferences",
+    "file": "screenshots/light/mobile/settings-preferences.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Notification preferences"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "settings-privacy",
+    "route": "/settings/privacy",
+    "theme": "light",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/privacy",
+    "file": "screenshots/light/mobile/settings-privacy.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Privacy controls"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "landing-nav-open",
+    "file": "screenshots/light/mobile/landing-nav-open.png",
+    "finalUrl": "http://127.0.0.1:3000/"
+  },
+  {
+    "name": "landing",
+    "route": "/",
+    "theme": "dark",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/",
+    "file": "screenshots/dark/desktop/landing.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Show upready."
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "teams",
+    "route": "/teams",
+    "theme": "dark",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/teams",
+    "file": "screenshots/dark/desktop/teams.png",
+    "title": "Career Copilot",
+    "h1": [],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "sign-in",
+    "route": "/sign-in",
+    "theme": "dark",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/sign-in",
+    "file": "screenshots/dark/desktop/sign-in.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Welcome back.",
+      "Sign in"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "sign-up",
+    "route": "/sign-up",
+    "theme": "dark",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/sign-up",
+    "file": "screenshots/dark/desktop/sign-up.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Create your account.",
+      "Create account"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "forgot-password",
+    "route": "/forgot-password",
+    "theme": "dark",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/forgot-password",
+    "file": "screenshots/dark/desktop/forgot-password.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Reset your password.",
+      "Reset your password"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "reset-password",
+    "route": "/reset-password",
+    "theme": "dark",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/reset-password",
+    "file": "screenshots/dark/desktop/reset-password.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Choose a new password.",
+      "Choose a new password"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "verify-email",
+    "route": "/verify-email",
+    "theme": "dark",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/verify-email",
+    "file": "screenshots/dark/desktop/verify-email.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Confirm your email.",
+      "Check your inbox"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "not-found",
+    "route": "/this-page-does-not-exist",
+    "theme": "dark",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/this-page-does-not-exist",
+    "file": "screenshots/dark/desktop/not-found.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Page not found"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "public-profile-ada",
+    "route": "/ada-lovelace",
+    "theme": "dark",
+    "viewport": "desktop",
+    "finalUrl": "http://127.0.0.1:3000/ada-lovelace",
+    "file": "screenshots/dark/desktop/public-profile-ada.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Page not found"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "onboarding",
+    "route": "/onboarding",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/onboarding",
+    "file": "screenshots/dark/desktop/onboarding.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Build your profile"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "dashboard",
+    "route": "/dashboard",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/dashboard",
+    "file": "screenshots/dark/desktop/dashboard.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Welcome, Demo."
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "jobs",
+    "route": "/jobs",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/jobs",
+    "file": "screenshots/dark/desktop/jobs.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Your next move, shortlisted"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "jobs-saved",
+    "route": "/jobs/saved",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/jobs/saved",
+    "file": "screenshots/dark/desktop/jobs-saved.png",
+    "title": "Career Copilot",
+    "h1": [
+      "My job pipeline"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "job-detail",
+    "route": "/jobs/demo-job-1",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/jobs/demo-job-1",
+    "file": "screenshots/dark/desktop/job-detail.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Software Engineer"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "community",
+    "route": "/community",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/community",
+    "file": "screenshots/dark/desktop/community.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Find people worth learning from"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "learning",
+    "route": "/learning",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/learning",
+    "file": "screenshots/dark/desktop/learning.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Learning path"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "learning-path",
+    "route": "/learning/demo-path-1",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/learning/demo-path-1",
+    "file": "screenshots/dark/desktop/learning-path.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Skill gap path · Demo ATS"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "interview-home",
+    "route": "/mock-interview",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview",
+    "file": "screenshots/dark/desktop/interview-home.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Practice out loud"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "interview-prep",
+    "route": "/mock-interview/preparation",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/preparation",
+    "file": "screenshots/dark/desktop/interview-prep.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Prepare with your evidence"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "interview-setup",
+    "route": "/mock-interview/setup",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/setup",
+    "file": "screenshots/dark/desktop/interview-setup.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Set the round, then begin"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "interview-report",
+    "route": "/mock-interview/report/demo-interview-1",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/report/demo-interview-1",
+    "file": "screenshots/dark/desktop/interview-report.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Software Engineer debrief"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "interview-session",
+    "route": "/mock-interview/session/demo-interview-1",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/session/demo-interview-1",
+    "file": "screenshots/dark/desktop/interview-session.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Interview room"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "resume-history",
+    "route": "/resume-analysis",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis",
+    "file": "screenshots/dark/desktop/resume-history.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Resume analysis"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "resume-new",
+    "route": "/resume-analysis/new",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis/new",
+    "file": "screenshots/dark/desktop/resume-new.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Resume and JD analysis"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "resume-upload-tab",
+    "route": "/resume-analysis?tab=upload",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis?tab=upload",
+    "file": "screenshots/dark/desktop/resume-upload-tab.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Resume analysis"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "resume-report",
+    "route": "/resume-analysis/report/demo-ats-1",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis/report/demo-ats-1",
+    "file": "screenshots/dark/desktop/resume-report.png",
+    "title": "Career Copilot",
+    "h1": [
+      "A solid base with clear gaps to close."
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "settings-profile",
+    "route": "/settings/profile",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/profile",
+    "file": "screenshots/dark/desktop/settings-profile.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Candidate profile"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "settings-account",
+    "route": "/settings/account",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/account",
+    "file": "screenshots/dark/desktop/settings-account.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Account & access"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "settings-preferences",
+    "route": "/settings/preferences",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/preferences",
+    "file": "screenshots/dark/desktop/settings-preferences.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Notification preferences"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "settings-privacy",
+    "route": "/settings/privacy",
+    "theme": "dark",
+    "viewport": "desktop",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/privacy",
+    "file": "screenshots/dark/desktop/settings-privacy.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Privacy controls"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "landing",
+    "route": "/",
+    "theme": "dark",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/",
+    "file": "screenshots/dark/mobile/landing.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Show upready."
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "teams",
+    "route": "/teams",
+    "theme": "dark",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/teams",
+    "file": "screenshots/dark/mobile/teams.png",
+    "title": "Career Copilot",
+    "h1": [],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "sign-in",
+    "route": "/sign-in",
+    "theme": "dark",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/sign-in",
+    "file": "screenshots/dark/mobile/sign-in.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Welcome back.",
+      "Sign in"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "sign-up",
+    "route": "/sign-up",
+    "theme": "dark",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/sign-up",
+    "file": "screenshots/dark/mobile/sign-up.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Create your account.",
+      "Create account"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "forgot-password",
+    "route": "/forgot-password",
+    "theme": "dark",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/forgot-password",
+    "file": "screenshots/dark/mobile/forgot-password.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Reset your password.",
+      "Reset your password"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "reset-password",
+    "route": "/reset-password",
+    "theme": "dark",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/reset-password",
+    "file": "screenshots/dark/mobile/reset-password.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Choose a new password.",
+      "Choose a new password"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "verify-email",
+    "route": "/verify-email",
+    "theme": "dark",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/verify-email",
+    "file": "screenshots/dark/mobile/verify-email.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Confirm your email.",
+      "Check your inbox"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "not-found",
+    "route": "/this-page-does-not-exist",
+    "theme": "dark",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/this-page-does-not-exist",
+    "file": "screenshots/dark/mobile/not-found.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Page not found"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "public-profile-ada",
+    "route": "/ada-lovelace",
+    "theme": "dark",
+    "viewport": "mobile",
+    "finalUrl": "http://127.0.0.1:3000/ada-lovelace",
+    "file": "screenshots/dark/mobile/public-profile-ada.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Page not found"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "background": "#000000",
+    "primary": "#73b7f5",
+    "primaryStrong": "#8bc8ff"
+  },
+  {
+    "name": "onboarding",
+    "route": "/onboarding",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/onboarding",
+    "file": "screenshots/dark/mobile/onboarding.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Build your profile"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "dashboard",
+    "route": "/dashboard",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/dashboard",
+    "file": "screenshots/dark/mobile/dashboard.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Welcome, Demo."
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "jobs",
+    "route": "/jobs",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/jobs",
+    "file": "screenshots/dark/mobile/jobs.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Your next move, shortlisted"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "jobs-saved",
+    "route": "/jobs/saved",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/jobs/saved",
+    "file": "screenshots/dark/mobile/jobs-saved.png",
+    "title": "Career Copilot",
+    "h1": [
+      "My job pipeline"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "job-detail",
+    "route": "/jobs/demo-job-1",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/jobs/demo-job-1",
+    "file": "screenshots/dark/mobile/job-detail.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Software Engineer"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "community",
+    "route": "/community",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/community",
+    "file": "screenshots/dark/mobile/community.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Find people worth learning from"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "learning",
+    "route": "/learning",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/learning",
+    "file": "screenshots/dark/mobile/learning.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Learning path"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "learning-path",
+    "route": "/learning/demo-path-1",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/learning/demo-path-1",
+    "file": "screenshots/dark/mobile/learning-path.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Skill gap path · Demo ATS"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "interview-home",
+    "route": "/mock-interview",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview",
+    "file": "screenshots/dark/mobile/interview-home.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Practice out loud"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "interview-prep",
+    "route": "/mock-interview/preparation",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/preparation",
+    "file": "screenshots/dark/mobile/interview-prep.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Prepare with your evidence"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "interview-setup",
+    "route": "/mock-interview/setup",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/setup",
+    "file": "screenshots/dark/mobile/interview-setup.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Set the round, then begin"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "interview-report",
+    "route": "/mock-interview/report/demo-interview-1",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/report/demo-interview-1",
+    "file": "screenshots/dark/mobile/interview-report.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Software Engineer debrief"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "interview-session",
+    "route": "/mock-interview/session/demo-interview-1",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/mock-interview/session/demo-interview-1",
+    "file": "screenshots/dark/mobile/interview-session.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Interview room"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "resume-history",
+    "route": "/resume-analysis",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis",
+    "file": "screenshots/dark/mobile/resume-history.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Resume analysis"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "resume-new",
+    "route": "/resume-analysis/new",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis/new",
+    "file": "screenshots/dark/mobile/resume-new.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Resume and JD analysis"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "resume-upload-tab",
+    "route": "/resume-analysis?tab=upload",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis?tab=upload",
+    "file": "screenshots/dark/mobile/resume-upload-tab.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Resume analysis"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "resume-report",
+    "route": "/resume-analysis/report/demo-ats-1",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/resume-analysis/report/demo-ats-1",
+    "file": "screenshots/dark/mobile/resume-report.png",
+    "title": "Career Copilot",
+    "h1": [
+      "A solid base with clear gaps to close."
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "settings-profile",
+    "route": "/settings/profile",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/profile",
+    "file": "screenshots/dark/mobile/settings-profile.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Candidate profile"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "settings-account",
+    "route": "/settings/account",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/account",
+    "file": "screenshots/dark/mobile/settings-account.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Account & access"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "settings-preferences",
+    "route": "/settings/preferences",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/preferences",
+    "file": "screenshots/dark/mobile/settings-preferences.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Notification preferences"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  {
+    "name": "settings-privacy",
+    "route": "/settings/privacy",
+    "theme": "dark",
+    "viewport": "mobile",
+    "demo": true,
+    "finalUrl": "http://127.0.0.1:3000/settings/privacy",
+    "file": "screenshots/dark/mobile/settings-privacy.png",
+    "title": "Career Copilot",
+    "h1": [
+      "Privacy controls"
+    ],
+    "font": "Outfit, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  }
+]

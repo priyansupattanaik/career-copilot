@@ -43,6 +43,10 @@ export function applyThemeToDocument(theme: ThemePreference = readStoredTheme())
     const resolved = resolveTheme(theme);
     document.documentElement.setAttribute("data-theme", resolved);
     document.documentElement.style.colorScheme = resolved;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      meta.setAttribute("content", resolved === "dark" ? "#000000" : "#f5faff");
+    }
   }
 }
 

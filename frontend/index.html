@@ -37,6 +37,8 @@
           const resolved = preference;
           document.documentElement.dataset.theme = resolved;
           document.documentElement.style.colorScheme = resolved;
+          const meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", resolved === "dark" ? "#000000" : "#f5faff");
         } catch {
           document.documentElement.dataset.theme = "light";
           document.documentElement.style.colorScheme = "light";

@@ -1047,7 +1047,7 @@
   .profile-editor
   .button-primary {
   background: var(--ps-accent) !important;
-  color: var(--text-on-primary, #071635) !important;
+  color: var(--text-on-primary, #000000) !important;
 }
 [data-theme="dark"]
   .workspace
@@ -1055,7 +1055,7 @@
   .profile-editor
   .button-primary:hover {
   background: var(--primary-hover, var(--ps-accent)) !important;
-  color: var(--text-on-primary, #071635) !important;
+  color: var(--text-on-primary, #000000) !important;
 }
 
 /* —— Reduced motion —— */
