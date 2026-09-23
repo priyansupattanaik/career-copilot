@@ -8,6 +8,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { CopilotIcon, type CopilotIconName } from "@/components/ui/copilot-icons";
+import { Breadcrumb5 } from "@/components/breadcrumb-5";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { routes } from "@/shared/routes";
@@ -53,12 +54,6 @@ const navigation = [
     label: "Resume Analysis",
     shortLabel: "Resume",
     icon: "resume" as CopilotIconName,
-  },
-  {
-    href: routes.resumeStudio,
-    label: "Resume Studio",
-    shortLabel: "Studio",
-    icon: "edit" as CopilotIconName,
   },
   {
     href: routes.interview,
@@ -195,11 +190,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
     navigation.find(
       (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
     )?.label ||
-    (pathname.startsWith("/resume-studio")
-      ? "Resume Studio"
-      : pathname.startsWith("/settings")
-        ? "Settings"
-        : "Workspace");
+    (pathname.startsWith("/settings") ? "Settings" : "Workspace");
 
   function closeMenus() {
     setProfileMenuOpen(false);
@@ -426,7 +417,9 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
           <div className="app-header-left">
             <div className="app-header-titles">
               <strong className="app-header-title">{activeNav}</strong>
-              <span className="app-header-kicker">Career workspace</span>
+              <div className="app-header-breadcrumb-wrap mt-0.5">
+                <Breadcrumb5 className="app-header-breadcrumb" />
+              </div>
             </div>
           </div>
 

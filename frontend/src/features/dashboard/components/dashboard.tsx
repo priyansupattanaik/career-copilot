@@ -12,6 +12,7 @@ import {
 } from "@/features/profile/model/profile-completion";
 import { isDemoSession } from "@/features/auth/demo-session";
 import { Card, PageHeader } from "@/shared/ui/primitives";
+import { Breadcrumb5 } from "@/components/breadcrumb-5";
 import {
   AnimatedNumber,
   DimensionBars,
@@ -182,6 +183,16 @@ export function Dashboard() {
       animate="visible"
       variants={containerVariants}
     >
+      {/* Navigation Breadcrumb */}
+      <motion.div variants={itemVariants} className="dashboard-breadcrumb-row" style={{ marginBottom: "var(--space-3)" }}>
+        <Breadcrumb5
+          segments={[
+            { label: "Workspace", href: "/dashboard" },
+            { label: "Dashboard", current: true },
+          ]}
+        />
+      </motion.div>
+
       {/* Header */}
       <motion.div variants={itemVariants}>
         <PageHeader
@@ -197,19 +208,6 @@ export function Dashboard() {
                 <CopilotIcon name="assist" size={14} className="button-icon" />
                 <span>New ATS Run</span>
               </Link>
-              {hasConfirmedResume ? (
-                <Link
-                  className="button button-secondary"
-                  href={
-                    data?.latest_ats_analysis?.id
-                      ? `/resume-studio?analysis=${encodeURIComponent(String(data.latest_ats_analysis.id))}`
-                      : "/resume-studio"
-                  }
-                >
-                  <CopilotIcon name="edit" size={14} className="button-icon" />
-                  <span>Resume Studio</span>
-                </Link>
-              ) : null}
             </div>
           }
         />
@@ -357,17 +355,11 @@ export function Dashboard() {
               {hasConfirmedResume ? "Confirmed for ATS & applications" : "Upload your master profile"}
             </p>
           </div>
-          <div className="dashboard-stat-footer" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div className="dashboard-stat-footer">
             <Link className="dashboard-stat-link" href="/resume-analysis?tab=resumes">
               Manage
               <CopilotIcon name="go" size={13} />
             </Link>
-            {hasConfirmedResume ? (
-              <Link className="dashboard-stat-link" href="/resume-studio">
-                Open Studio
-                <CopilotIcon name="edit" size={13} />
-              </Link>
-            ) : null}
           </div>
         </article>
 

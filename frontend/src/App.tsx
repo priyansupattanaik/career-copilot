@@ -138,11 +138,6 @@ const NewAnalysis = lazy(() =>
     default: m.NewAnalysis,
   })),
 );
-const ResumeStudio = lazy(() =>
-  import("@/features/resume-studio/components/resume-studio").then((m) => ({
-    default: m.ResumeStudio,
-  })),
-);
 const AccountSettings = lazy(() =>
   import("@/features/settings/components/settings").then((m) => ({
     default: m.AccountSettings,
@@ -513,7 +508,10 @@ export function App() {
               path="/resume-analysis/report/:reportId"
               element={<AtsReport />}
             />
-            <Route path="/resume-studio" element={<ResumeStudio />} />
+            <Route
+              path="/resume-studio"
+              element={<Navigate to="/resume-analysis" replace />}
+            />
             <Route
               path="/resume-analysis/review"
               element={<Navigate to="/resume-analysis?tab=upload" replace />}

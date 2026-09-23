@@ -1,11 +1,10 @@
-﻿export const routes = {
+export const routes = {
   home: "/",
   signIn: "/sign-in",
   signUp: "/sign-up",
   onboarding: "/onboarding",
   dashboard: "/dashboard",
   resume: "/resume-analysis",
-  resumeStudio: "/resume-studio",
   interview: "/mock-interview",
   learning: "/learning",
   jobs: "/jobs",

@@ -1137,7 +1137,8 @@ def database_client(settings: Settings) -> SupabaseDatabaseClient | MemoryDataba
 
 
 def _probe_with_timeout(label: str, fn, timeout_seconds: float = 3.0) -> tuple[bool, str | None]:
-    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+    from concurrent.futures import ThreadPoolExecutor
+    from concurrent.futures import TimeoutError as FuturesTimeout
 
     timeout = max(0.5, float(timeout_seconds))
     pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"probe-{label}")

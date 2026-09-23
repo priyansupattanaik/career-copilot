@@ -30,10 +30,6 @@ const routeLoaders: Array<{ match: (path: string) => boolean; load: () => Promis
     load: () => import("@/features/resume/components/resume-flow"),
   },
   {
-    match: (p) => p === "/resume-studio" || p.startsWith("/resume-studio"),
-    load: () => import("@/features/resume-studio/components/resume-studio"),
-  },
-  {
     match: (p) => p.startsWith("/settings/"),
     load: () => import("@/features/settings/components/settings"),
   },
@@ -96,7 +92,6 @@ export function prefetchRoute(href: string): void {
 const WORKSPACE_PREFETCH_HREFS = [
   "/dashboard",
   "/resume-analysis",
-  "/resume-studio",
   "/mock-interview",
   "/mock-interview/preparation",
   "/learning",

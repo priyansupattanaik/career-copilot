@@ -134,14 +134,12 @@ from app.features.profile.avatars import (
 )
 from app.features.profile.importer import insert_validated_batch
 from app.features.resume_improvement.routes import router as resume_improvement_router
-from app.features.resume_studio.routes import router as resume_studio_router
 
 _bootstrap_cache: dict[str, tuple[float, dict[str, Any]]] = {}
 _bootstrap_cache_ttl = 5.0
 
 router = APIRouter()
 router.include_router(resume_improvement_router)
-router.include_router(resume_studio_router)
 logger = logging.getLogger(__name__)
 SCORING_ALGORITHM_VERSION = ALGORITHM_VERSION
 

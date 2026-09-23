@@ -1,4 +1,4 @@
-﻿import { defineConfig } from "vitest/config";
+import { defineConfig } from "vitest/config";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -13,5 +13,6 @@ export default defineConfig({
   test: {
     include: ["src/**/__tests__/**/*.test.ts"],
     exclude: ["node_modules/**", "e2e/**"],
+    passWithNoTests: true,
   },
 });

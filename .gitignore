@@ -48,7 +48,6 @@ backend/career_copilot_api.egg-info/
 .env.*
 !.env.example
 /secrets/
-firebase-service-account*.json
 
 # Logs / OS
 *.log

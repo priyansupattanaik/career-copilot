@@ -13,7 +13,6 @@ from app.core.errors import ApiError
 from app.database.repository import owned_row
 from app.features.auth.service import CurrentUser
 from app.features.document_parsing.service import DOCX_MIME, PDF_MIME
-from app.features.resume_studio.pdf import render_studio_pdf
 
 
 def _sections(structured: dict[str, Any]) -> list[tuple[str, list[str]]]:
@@ -37,9 +36,6 @@ def render_docx(structured: dict[str, Any]) -> bytes:
     document.save(output)
     return output.getvalue()
 def render_pdf(structured: dict[str, Any]) -> bytes:
-    studio_pdf = render_studio_pdf(structured if isinstance(structured, dict) else {})
-    if studio_pdf:
-        return studio_pdf
     output = io.BytesIO()
     styles = getSampleStyleSheet()
     story: list[Any] = []

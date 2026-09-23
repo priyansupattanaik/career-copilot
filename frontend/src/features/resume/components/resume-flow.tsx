@@ -601,14 +601,6 @@ function ResumeLibrary() {
                   <span className="ra-stamp" data-tone={resume.is_active ? "active" : "stored"}>
                     {resume.is_active ? "Active" : "Stored"}
                   </span>
-                  {resume.latest_version?.extraction_status === "confirmed" ? (
-                    <Link
-                      className="button button-secondary"
-                      href={`/resume-studio?resume=${encodeURIComponent(resume.id)}&version=${encodeURIComponent(resume.latest_version.id)}`}
-                    >
-                      Open in Resume Studio
-                    </Link>
-                  ) : null}
                   <Button
                     variant="secondary"
                     disabled={previewLoading}
@@ -1777,13 +1769,7 @@ export function AtsReport() {
             {analysis.summary?.disclaimer || "Keyword coverage is not a hiring prediction."}
           </span>
           <div className="ra-hero-actions">
-            <Link
-              className="button button-primary"
-              href={`/resume-studio?analysis=${encodeURIComponent(analysis.id)}${analysis.resume_version_id ? `&version=${encodeURIComponent(analysis.resume_version_id)}` : ""}`}
-            >
-              Improve Resume
-            </Link>
-            <Link className="button button-secondary" href="/resume-analysis?tab=upload">
+            <Link className="button button-primary" href="/resume-analysis?tab=upload">
               New analysis
             </Link>
             <Link className="button button-secondary" href="/resume-analysis">
@@ -1953,18 +1939,8 @@ export function AtsReport() {
             )}
           </div>
         </div>
-        <p className="ra-hint">
-          Open Resume Studio to rebuild a working copy of this resume, then recalculate coverage
-          against the same job description. The original uploaded file is not changed.
-        </p>
         <div className="ra-hero-actions">
-          <Link
-            className="button button-primary"
-            href={`/resume-studio?analysis=${encodeURIComponent(analysis.id)}${analysis.resume_version_id ? `&version=${encodeURIComponent(analysis.resume_version_id)}` : ""}`}
-          >
-            Open in Resume Studio
-          </Link>
-          <Link className="button button-secondary" href="/resume-analysis?tab=upload">
+          <Link className="button button-primary" href="/resume-analysis?tab=upload">
             Upload revised resume
           </Link>
           <Link className="button button-secondary" href="/resume-analysis?tab=ats">
