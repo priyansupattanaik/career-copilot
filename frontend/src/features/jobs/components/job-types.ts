@@ -14,15 +14,6 @@ export type Job = {
   application_count?: number | null;
 };
 
-export type PublicProfileResult = {
-  username: string;
-  full_name?: string | null;
-  headline?: string | null;
-  current_role?: string | null;
-  career_level?: string | null;
-  location?: string | null;
-};
-
 export type SavedJobStatus =
   | "saved"
   | "applied"

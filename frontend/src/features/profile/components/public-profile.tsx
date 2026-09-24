@@ -13,7 +13,15 @@ import {
 
 type PublicProfilePayload = {
   profile: Record<string, unknown>;
-  sections: Record<string, Array<Record<string, unknown>>>;
+  sections: {
+    links?: Array<{ id?: string; url?: string; link_type?: string; label?: string; display_order?: number }>;
+    projects?: Array<{ id?: string; title?: string; role?: string; description?: string; github_url?: string; github?: string; live_url?: string; live?: string; url?: string }>;
+    skills?: Array<{ id?: string; name?: string }>;
+    experiences?: Array<{ id?: string; role_title?: string; company_name?: string; location?: string; start_date?: string; end_date?: string; is_current?: boolean; summary?: string }>;
+    education?: Array<{ id?: string; institution?: string; degree?: string; field_of_study?: string }>;
+    certifications?: Array<{ id?: string; name?: string; issuer?: string }>;
+    languages?: Array<{ id?: string; language?: string; proficiency?: string }>;
+  };
 };
 
 function isValidHttpUrl(value: unknown): boolean {
@@ -134,12 +142,12 @@ export function PublicProfile({ username }: { username: string }) {
     .map((part) => part[0]?.toUpperCase() || "")
     .join("") || "?";
 
-  const projects: Array<Record<string, unknown>> = (data.sections.projects as any) || [];
-  const skills: Array<Record<string, unknown>> = (data.sections.skills as any) || [];
-  const experiences: Array<Record<string, unknown>> = (data.sections.experiences as any) || [];
-  const education: Array<Record<string, unknown>> = (data.sections.education as any) || [];
-  const certifications: Array<Record<string, unknown>> = (data.sections.certifications as any) || [];
-  const languages: Array<Record<string, unknown>> = (data.sections.languages as any) || [];
+  const projects = data.sections.projects || [];
+  const skills = data.sections.skills || [];
+  const experiences = data.sections.experiences || [];
+  const education = data.sections.education || [];
+  const certifications = data.sections.certifications || [];
+  const languages = data.sections.languages || [];
 
   const hasHeaderFacts = Boolean(profile.current_role || profile.location || profile.years_experience != null || profile.career_level);
   const handle = String(profile.username || username);
@@ -267,8 +275,8 @@ export function PublicProfile({ username }: { username: string }) {
                 const title = String(row.title || "Untitled project");
                 const role = String(row.role || "").trim();
                 const desc = String(row.description || "").trim();
-                const github = String((row as any).github_url || (row as any).github || "").trim();
-                const live = String((row as any).live_url || (row as any).live || (row as any).url || "").trim();
+                const github = String(row.github_url || row.github || "").trim();
+                const live = String(row.live_url || row.live || row.url || "").trim();
                 const hasGithub = isValidHttpUrl(github);
                 const hasLive = isValidHttpUrl(live);
                 return (
@@ -336,10 +344,10 @@ export function PublicProfile({ username }: { username: string }) {
                   <article key={String(row.id || index)}>
                     <strong>{String(row.role_title || "Experience")}</strong>
                     <span className="public-profile-record-meta">{[row.company_name, row.location].filter(Boolean).join(" · ")}</span>
-                    {(row.start_date || row.end_date || (row as any).is_current) ? (
+                    {(row.start_date || row.end_date || row.is_current) ? (
                       <span className="public-profile-record-dates">
-                        {String((row as any).start_date || "").slice(0, 10) || "—"} –{" "}
-                        {(row as any).is_current ? "Present" : String((row as any).end_date || "").slice(0, 10) || "—"}
+                        {String(row.start_date || "").slice(0, 10) || "—"} –{" "}
+                        {row.is_current ? "Present" : String(row.end_date || "").slice(0, 10) || "—"}
                       </span>
                     ) : null}
                     {row.summary ? <span>{String(row.summary)}</span> : null}

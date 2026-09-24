@@ -227,4 +227,3 @@ export function SystemErrorPanel({
 }
 
 export default SystemErrorPanel;
-export const Error6 = SystemErrorPanel;

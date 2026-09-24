@@ -70,4 +70,4 @@ export class ErrorBoundary extends Component<
   }
 }
 
-export { SystemErrorPanel, Error6 } from "./error-6";
+export { SystemErrorPanel } from "./error-6";

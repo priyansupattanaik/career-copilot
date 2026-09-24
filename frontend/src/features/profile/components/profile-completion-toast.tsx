@@ -9,7 +9,6 @@ import {
   type ProfileMissingItem,
 } from "@/features/profile/model/profile-completion";
 
-export type { ProfileMissingItem };
 
 type Props = {
   completion: number;
