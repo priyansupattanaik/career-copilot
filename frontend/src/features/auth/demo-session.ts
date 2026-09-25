@@ -780,12 +780,28 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
     return state.preferences as T;
   }
   if (path === "/settings" && method === "GET") {
-    return { notifications: state.notificationPreferences, privacy: state.privacyPreferences } as T;
+    return {
+      notifications: state.notificationPreferences,
+      privacy: state.privacyPreferences,
+      career_preferences: state.preferences,
+    } as T;
+  }
+  if (parts[0] === "settings" && method === "GET") {
+    if (parts[1] === "notifications") return state.notificationPreferences as T;
+    if (parts[1] === "privacy") return state.privacyPreferences as T;
+    if (parts[1] === "career-preferences") return state.preferences as T;
   }
   if (parts[0] === "settings" && method === "PUT") {
     if (parts[1] === "notifications") state.notificationPreferences = { ...state.notificationPreferences, ...body };
     if (parts[1] === "privacy") state.privacyPreferences = { ...state.privacyPreferences, ...body };
-    return (parts[1] === "notifications" ? state.notificationPreferences : state.privacyPreferences) as T;
+    if (parts[1] === "career-preferences") state.preferences = { ...state.preferences, ...body };
+    return (
+      parts[1] === "notifications"
+        ? state.notificationPreferences
+        : parts[1] === "privacy"
+        ? state.privacyPreferences
+        : state.preferences
+    ) as T;
   }
   if (parts[0] === "profile" && parts.length === 2) {
     const rows = resource(parts[1]);

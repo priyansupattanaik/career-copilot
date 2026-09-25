@@ -40,6 +40,7 @@
   --duration-cinematic: 1.4s;
   --blur-chrome: 20px;
   --blur-sheet: 28px;
+  --app-header-height: 64px;
 }
 
 * {
@@ -2639,10 +2640,163 @@ p {
     width: 100%;
   }
 }
+
+/* Public Profile Nav & Enhancements */
+.public-profile-body {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+}
+.public-profile-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.public-profile-navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.public-profile-navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.public-profile-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+.public-profile-share-btn:hover {
+  background: var(--surface-muted);
+  border-color: var(--border-hover, var(--border));
+}
+.public-profile-share-btn:focus-visible {
+  outline: 2px solid var(--primary-strong);
+  outline-offset: 2px;
+}
+.public-profile-nav-cta {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 16px !important;
+  font-size: 0.82rem !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+.public-profile-nav-secondary {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 14px !important;
+  font-size: 0.82rem !important;
+  border-radius: 999px !important;
+}
+.public-profile-skeleton-card {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  padding: 32px;
+  display: grid;
+  gap: 24px;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.04);
+}
+.public-profile-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.public-profile-skeleton-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--surface-muted);
+  animation: publicProfilePulse 1.4s ease-in-out infinite;
+}
+.public-profile-skeleton-lines {
+  flex: 1;
+  display: grid;
+  gap: 12px;
+}
+.public-profile-skeleton-line {
+  border-radius: 8px;
+  background: var(--surface-muted);
+  animation: publicProfilePulse 1.4s ease-in-out infinite;
+}
+@keyframes publicProfilePulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.9; }
+}
+.public-profile-error-card {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  padding: 56px 28px;
+  text-align: center;
+  display: grid;
+  place-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+}
+.public-profile-error-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary-strong) 12%, transparent);
+  color: var(--primary-strong);
+  display: grid;
+  place-items: center;
+}
+.public-profile-error-card h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0;
+  line-height: 1.2;
+}
+.public-profile-error-card p {
+  color: var(--muted);
+  max-width: 48ch;
+  margin: 0;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+.public-profile-error-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 12px;
+}
+
 .auth-switch {
   margin: 0;
   text-align: center;
   font-size: var(--text-sm);
+
   color: var(--muted);
 }
 .auth-switch a {
@@ -10524,17 +10678,28 @@ select option {
 }
 
 
-/* ===== Landing beams background ==========================================
-   Canvas sits above the page paper but below every content layer. Hero and
-   system sections turn translucent so the brand-blue/lime beams glow through;
-   the dark practice chamber lets a faint drift through; profile/final stay
-   solid editorial surfaces. Reduced motion hides the canvas entirely. ====== */
+/* Teams page ambient layer. The landing page does not use it. */
 .home-beams {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+}
+/* Viewport-fixed Magic UI glow field. One grid follows the screen so every
+   section shows the same living dots without mounting a circle per page pixel. */
+.home-dot-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.home-page .home-dot-field .home-dot-pattern {
+  color: rgb(58 58 58 / 0.9);
+}
+[data-theme="dark"] .home-page .home-dot-field .home-dot-pattern {
+  color: rgb(186 186 186 / 0.82);
 }
 .home-page > main,
 .home-page > .home-footer {
@@ -10544,20 +10709,20 @@ select option {
 .home-hero {
   background: linear-gradient(
     125deg,
-    rgb(247 247 245 / 86%),
-    rgb(240 241 235 / 72%)
+    rgb(247 247 245 / 64%),
+    rgb(240 241 235 / 46%)
   );
 }
 .home-system {
-  background: rgb(247 247 245 / 82%);
+  background: rgb(247 247 245 / 62%);
 }
 .home-practice {
-  background: rgb(11 11 11 / 90%);
+  background: rgb(11 11 11 / 74%);
 }
 .home-profile,
 .home-final,
 .home-footer {
-  background: rgb(233 236 227 / 88%);
+  background: rgb(233 236 227 / 70%);
 }
 [data-theme="light"] .home-page .home-window,
 [data-theme="light"] .home-page .home-practice-card {
@@ -10569,12 +10734,12 @@ select option {
     rgb(25 26 24 / 94%);
 }
 [data-theme="dark"] .home-page .home-practice {
-  background: rgb(11 11 11 / 86%);
+  background: rgb(11 11 11 / 72%);
 }
 [data-theme="dark"] .home-page .home-profile,
 [data-theme="dark"] .home-page .home-final,
 [data-theme="dark"] .home-page .home-footer {
-  background: rgb(9 10 9 / 86%);
+  background: rgb(9 10 9 / 70%);
 }
 [data-theme="dark"] .home-page .home-window,
 [data-theme="dark"] .home-page .home-practice-card {
@@ -10589,10 +10754,10 @@ select option {
   background: rgb(17 17 17 / 91%);
 }
 [data-theme="dark"] .home-page .home-hero {
-  background: rgb(0 0 0 / 82%);
+  background: rgb(0 0 0 / 62%);
 }
 [data-theme="dark"] .home-page .home-system {
-  background: rgb(0 0 0 / 84%);
+  background: rgb(0 0 0 / 64%);
 }
 @media (prefers-reduced-motion: reduce) {
   .home-beams canvas {
@@ -15470,8 +15635,15 @@ select option {
    ========================================================================== */
 .workspace .feature-page.settings-page {
   --settings-gap: 20px;
-  --settings-pad: 20px;
-  --settings-radius: var(--radius-lg);
+  --settings-pad: 28px;
+  --settings-radius: var(--radius-lg, 20px);
+  --settings-row: 12px;
+}
+
+.workspace .feature-page.settings-page:not(.profile-v2) {
+  --settings-gap: 20px;
+  --settings-pad: 28px;
+  --settings-radius: var(--radius-lg, 20px);
   --settings-row: 12px;
   --profile-paper: var(--background);
   --profile-surface: var(--surface);
@@ -15485,7 +15657,7 @@ select option {
   padding-bottom: 72px;
 }
 
-.workspace .feature-page.settings-page .page-heading {
+.workspace .feature-page.settings-page:not(.profile-v2) .page-heading {
   align-items: end;
   width: 100%;
   max-width: none;
@@ -15494,7 +15666,7 @@ select option {
   border-bottom: 0 !important;
 }
 
-.workspace .feature-page.settings-page .page-heading h1 {
+.workspace .feature-page.settings-page:not(.profile-v2) .page-heading h1 {
   max-width: none !important;
   margin-bottom: 10px;
   color: var(--app-text) !important;
@@ -15505,12 +15677,12 @@ select option {
   line-height: 0.92 !important;
 }
 
-.workspace .feature-page.settings-page .page-heading .eyebrow {
+.workspace .feature-page.settings-page:not(.profile-v2) .page-heading .eyebrow {
   margin-bottom: 6px;
   color: var(--app-blue) !important;
 }
 
-.workspace .feature-page.settings-page .page-heading p {
+.workspace .feature-page.settings-page:not(.profile-v2) .page-heading p {
   max-width: 56ch;
   color: var(--app-muted) !important;
   font-size: 1rem;
@@ -15518,19 +15690,19 @@ select option {
 }
 
 @media (max-width: 900px) {
-  .workspace .feature-page.settings-page .page-heading h1 {
+  .workspace .feature-page.settings-page:not(.profile-v2) .page-heading h1 {
     font-size: clamp(2.7rem, 12vw, 4.5rem) !important;
   }
 }
 
-.workspace .feature-page.settings-page .page-heading p {
+.workspace .feature-page.settings-page:not(.profile-v2) .page-heading p {
   max-width: 42rem;
   margin-top: 0;
   font-size: 0.95rem;
   line-height: 1.5;
 }
 
-.workspace .feature-page.settings-page .settings-nav {
+.workspace .feature-page.settings-page:not(.profile-v2) .settings-nav {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
@@ -15544,7 +15716,7 @@ select option {
   box-shadow: none !important;
 }
 
-.workspace .feature-page.settings-page .settings-nav .button {
+.workspace .feature-page.settings-page:not(.profile-v2) .settings-nav .button {
   min-width: 0;
   min-height: 38px;
   padding: 7px 12px;
@@ -15559,22 +15731,22 @@ select option {
   text-overflow: ellipsis;
 }
 
-.workspace .feature-page.settings-page .settings-nav .button-secondary,
-.workspace .feature-page.settings-page .settings-nav a.button-secondary {
+.workspace .feature-page.settings-page:not(.profile-v2) .settings-nav .button-secondary,
+.workspace .feature-page.settings-page:not(.profile-v2) .settings-nav a.button-secondary {
   background: transparent !important;
   color: var(--app-muted) !important;
 }
 
-.workspace .feature-page.settings-page .settings-nav .button-secondary:hover,
-.workspace .feature-page.settings-page .settings-nav a.button-secondary:hover {
+.workspace .feature-page.settings-page:not(.profile-v2) .settings-nav .button-secondary:hover,
+.workspace .feature-page.settings-page:not(.profile-v2) .settings-nav a.button-secondary:hover {
   background: var(--app-panel) !important;
   color: var(--app-text) !important;
 }
 
-.workspace .feature-page.settings-page .settings-nav .button-primary,
-.workspace .feature-page.settings-page .settings-nav .button.is-active,
+.workspace .feature-page.settings-page:not(.profile-v2) .settings-nav .button-primary,
+.workspace .feature-page.settings-page:not(.profile-v2) .settings-nav .button.is-active,
 .workspace
-  .feature-page.settings-page
+  .feature-page.settings-page:not(.profile-v2)
   .settings-nav
   a.button[aria-current="page"] {
   background: var(--app-text) !important;
@@ -15582,21 +15754,21 @@ select option {
   box-shadow: none !important;
 }
 
-.workspace .feature-page.settings-page .stack {
+.workspace .feature-page.settings-page:not(.profile-v2) .stack {
   gap: 16px;
 }
 
-.workspace .feature-page.settings-page .grid-2 {
+.workspace .feature-page.settings-page:not(.profile-v2) .grid-2 {
   gap: 16px;
 }
 
-.workspace .feature-page.settings-page .cluster {
+.workspace .feature-page.settings-page:not(.profile-v2) .cluster {
   gap: 8px;
 }
 
 .workspace .settings-canvas,
 .workspace .profile-page-body,
-.workspace .feature-page.settings-page .profile-page-body {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-page-body {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) !important;
   grid-template-areas: none !important;
@@ -15666,7 +15838,7 @@ select option {
   grid-area: nav;
 }
 
-.workspace .feature-page.settings-page .profile-avatar-preview {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-avatar-preview {
   width: 64px;
   height: 64px;
   border: 0 !important;
@@ -15777,18 +15949,24 @@ select option {
   scroll-margin-top: 88px;
 }
 
+.workspace .feature-page.settings-page .settings-card,
+.feature-page.settings-page .settings-card,
+.workspace .settings-canvas .settings-card,
+.settings-canvas .settings-card,
+.settings-card,
 .workspace .settings-canvas > .settings-card,
 .workspace .profile-main > .profile-card,
 .workspace .profile-main > .profile-feedback-card {
   min-width: 0;
   max-width: 100%;
-  padding: 20px var(--settings-pad) 22px !important;
-  border: 1px solid var(--app-line) !important;
-  border-radius: var(--settings-radius) !important;
-  background: var(--app-panel) !important;
-  color: var(--app-text) !important;
-  box-shadow: var(--app-shadow-soft) !important;
+  padding: 24px var(--settings-pad, 28px) 24px !important;
+  border: 1px solid var(--app-line, var(--border)) !important;
+  border-radius: var(--settings-radius, 20px) !important;
+  background: var(--app-panel, var(--surface)) !important;
+  color: var(--app-text, var(--text)) !important;
+  box-shadow: var(--app-shadow-soft, var(--shadow-sm)) !important;
   transform: none !important;
+  box-sizing: border-box !important;
 }
 
 .workspace .profile-main > .profile-card:hover {
@@ -15800,22 +15978,44 @@ select option {
   transform: none !important;
 }
 
+.workspace .feature-page.settings-page .settings-card h2,
+.feature-page.settings-page .settings-card h2,
+.workspace .settings-canvas .settings-card h2,
+.settings-canvas .settings-card h2,
+.settings-card h2,
 .workspace .settings-canvas > .settings-card h2,
 .workspace .profile-main > .profile-card h2 {
-  margin: 0 0 4px !important;
+  margin: 0 0 6px !important;
   color: var(--text) !important;
   font-size: 1.125rem;
   letter-spacing: -0.025em;
   line-height: 1.25;
 }
 
+.workspace .feature-page.settings-page .settings-card .eyebrow,
+.feature-page.settings-page .settings-card .eyebrow,
+.workspace .settings-canvas .settings-card .eyebrow,
+.settings-canvas .settings-card .eyebrow,
+.settings-card .eyebrow,
 .workspace .settings-canvas > .settings-card .eyebrow,
 .workspace .profile-main > .profile-card .eyebrow {
-  margin-bottom: 2px;
+  margin: 0 0 6px !important;
   color: var(--muted) !important;
   font-size: 0.68rem;
 }
 
+.workspace .feature-page.settings-page .settings-card p,
+.workspace .feature-page.settings-page .settings-card small,
+.workspace .feature-page.settings-page .settings-card .muted,
+.workspace .settings-canvas .settings-card p,
+.workspace .settings-canvas .settings-card small,
+.workspace .settings-canvas .settings-card .muted,
+.settings-canvas .settings-card p,
+.settings-canvas .settings-card small,
+.settings-canvas .settings-card .muted,
+.settings-card p,
+.settings-card small,
+.settings-card .muted,
 .workspace .settings-canvas > .settings-card p,
 .workspace .settings-canvas > .settings-card small,
 .workspace .settings-canvas > .settings-card .muted,
@@ -15825,6 +16025,18 @@ select option {
   color: var(--muted) !important;
 }
 
+.workspace .feature-page.settings-page .settings-card .field-label,
+.workspace .feature-page.settings-page .settings-card label,
+.workspace .feature-page.settings-page .settings-card strong,
+.workspace .settings-canvas .settings-card .field-label,
+.workspace .settings-canvas .settings-card label,
+.workspace .settings-canvas .settings-card strong,
+.settings-canvas .settings-card .field-label,
+.settings-canvas .settings-card label,
+.settings-canvas .settings-card strong,
+.settings-card .field-label,
+.settings-card label,
+.settings-card strong,
 .workspace .settings-canvas > .settings-card .field-label,
 .workspace .settings-canvas > .settings-card label,
 .workspace .settings-canvas > .settings-card strong,
@@ -15834,10 +16046,10 @@ select option {
   color: var(--text) !important;
 }
 
-.workspace .feature-page.settings-page .field,
-.workspace .feature-page.settings-page input,
-.workspace .feature-page.settings-page select,
-.workspace .feature-page.settings-page textarea {
+.workspace .feature-page.settings-page:not(.profile-v2) .field,
+.workspace .feature-page.settings-page:not(.profile-v2) input,
+.workspace .feature-page.settings-page:not(.profile-v2) select,
+.workspace .feature-page.settings-page:not(.profile-v2) textarea {
   min-width: 0;
   border-color: var(--app-line) !important;
   border-radius: var(--radius-md) !important;
@@ -15845,23 +16057,23 @@ select option {
   color: var(--app-text) !important;
 }
 
-.workspace .feature-page.settings-page .field:focus,
-.workspace .feature-page.settings-page input:focus,
-.workspace .feature-page.settings-page select:focus,
-.workspace .feature-page.settings-page textarea:focus {
+.workspace .feature-page.settings-page:not(.profile-v2) .field:focus,
+.workspace .feature-page.settings-page:not(.profile-v2) input:focus,
+.workspace .feature-page.settings-page:not(.profile-v2) select:focus,
+.workspace .feature-page.settings-page:not(.profile-v2) textarea:focus {
   border-color: var(--app-blue) !important;
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--app-blue) 18%, transparent) !important;
 }
 
-.workspace .feature-page.settings-page .stack > .button,
-.workspace .feature-page.settings-page .cluster > .button {
+.workspace .feature-page.settings-page:not(.profile-v2) .stack > .button,
+.workspace .feature-page.settings-page:not(.profile-v2) .cluster > .button {
   width: auto;
   justify-self: start;
 }
 
-.workspace .feature-page.settings-page .button-primary,
-.workspace .feature-page.settings-page a.button-primary,
-.workspace .feature-page.settings-page .button.button-primary {
+.workspace .feature-page.settings-page:not(.profile-v2) .button-primary,
+.workspace .feature-page.settings-page:not(.profile-v2) a.button-primary,
+.workspace .feature-page.settings-page:not(.profile-v2) .button.button-primary {
   width: auto;
   min-height: 42px;
   border-color: transparent !important;
@@ -15870,16 +16082,16 @@ select option {
   color: var(--app-paper) !important;
 }
 
-.workspace .feature-page.settings-page .button-primary:hover,
-.workspace .feature-page.settings-page a.button-primary:hover,
-.workspace .feature-page.settings-page .button.button-primary:hover {
+.workspace .feature-page.settings-page:not(.profile-v2) .button-primary:hover,
+.workspace .feature-page.settings-page:not(.profile-v2) a.button-primary:hover,
+.workspace .feature-page.settings-page:not(.profile-v2) .button.button-primary:hover {
   border-color: transparent !important;
   background: #30302e !important;
   color: var(--app-paper) !important;
 }
 
-.workspace .feature-page.settings-page .button-secondary,
-.workspace .feature-page.settings-page a.button-secondary {
+.workspace .feature-page.settings-page:not(.profile-v2) .button-secondary,
+.workspace .feature-page.settings-page:not(.profile-v2) a.button-secondary {
   width: auto;
   min-height: 42px;
   border-color: var(--app-line) !important;
@@ -15888,13 +16100,13 @@ select option {
   color: var(--app-text) !important;
 }
 
-.workspace .feature-page.settings-page .button-secondary:hover,
-.workspace .feature-page.settings-page a.button-secondary:hover {
+.workspace .feature-page.settings-page:not(.profile-v2) .button-secondary:hover,
+.workspace .feature-page.settings-page:not(.profile-v2) a.button-secondary:hover {
   background: var(--app-panel-soft) !important;
   border-color: var(--app-text) !important;
 }
 
-.workspace .feature-page.settings-page .button:active {
+.workspace .feature-page.settings-page:not(.profile-v2) .button:active {
   transform: scale(0.98);
 }
 
@@ -16053,36 +16265,36 @@ select option {
   }
 
   .workspace .profile-resume-studio-grid,
-  .workspace .feature-page.settings-page .grid-2 {
+  .workspace .feature-page.settings-page:not(.profile-v2) .grid-2 {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 560px) {
-  .workspace .feature-page.settings-page .page-heading h1 {
+  .workspace .feature-page.settings-page:not(.profile-v2) .page-heading h1 {
     font-size: 1.75rem !important;
   }
 
-  .workspace .feature-page.settings-page .settings-nav .button {
+  .workspace .feature-page.settings-page:not(.profile-v2) .settings-nav .button {
     padding: 7px 4px;
     font-size: 0.7rem;
   }
 
-  .workspace .settings-canvas > .settings-card,
+  .workspace .feature-page.settings-page:not(.profile-v2) .settings-canvas > .settings-card,
   .workspace .profile-main > .profile-card,
   .workspace .profile-main > .profile-feedback-card {
     padding: 14px 16px 18px !important;
   }
 
-  .workspace .feature-page.settings-page {
+  .workspace .feature-page.settings-page:not(.profile-v2) {
     padding-bottom: 120px;
   }
 
-  .workspace .feature-page.settings-page .button-primary,
-  .workspace .feature-page.settings-page .button-secondary,
-  .workspace .feature-page.settings-page .stack > .button,
-  .workspace .feature-page.settings-page .cluster > .button,
-  .workspace .settings-danger-card .button-danger {
+  .workspace .feature-page.settings-page:not(.profile-v2) .button-primary,
+  .workspace .feature-page.settings-page:not(.profile-v2) .button-secondary,
+  .workspace .feature-page.settings-page:not(.profile-v2) .stack > .button,
+  .workspace .feature-page.settings-page:not(.profile-v2) .cluster > .button,
+  .workspace .feature-page.settings-page:not(.profile-v2) .settings-danger-card .button-danger {
     width: 100%;
     justify-self: stretch;
   }
@@ -16098,7 +16310,7 @@ select option {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .workspace .feature-page.settings-page .button:active {
+  .workspace .feature-page.settings-page:not(.profile-v2) .button:active {
     transform: none;
   }
 }
@@ -16444,17 +16656,17 @@ select option {
 
 [data-theme="dark"]
   .workspace
-  .feature-page.settings-page
+  .feature-page.settings-page:not(.profile-v2)
   .settings-nav
   .button-primary,
 [data-theme="dark"]
   .workspace
-  .feature-page.settings-page
+  .feature-page.settings-page:not(.profile-v2)
   .settings-nav
   .button.is-active,
 [data-theme="dark"]
   .workspace
-  .feature-page.settings-page
+  .feature-page.settings-page:not(.profile-v2)
   .settings-nav
   a.button[aria-current="page"] {
   background: var(--app-text) !important;
@@ -16462,11 +16674,11 @@ select option {
 }
 
 @media (max-width: 480px) {
-  .workspace .feature-page.settings-page .settings-nav {
+  .workspace .feature-page.settings-page:not(.profile-v2) .settings-nav {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .workspace .feature-page.settings-page .settings-nav .button {
+  .workspace .feature-page.settings-page:not(.profile-v2) .settings-nav .button {
     text-align: center;
   }
 }
@@ -16509,7 +16721,7 @@ select option {
   min-width: 0;
 }
 
-.workspace .feature-page.settings-page .profile-loading {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-loading {
   display: grid;
   place-items: center;
   min-height: 240px;
@@ -16519,7 +16731,7 @@ select option {
   background: var(--app-panel);
 }
 
-.workspace .feature-page.settings-page .profile-rail {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-rail {
   position: relative;
   top: auto;
   display: grid;
@@ -16538,96 +16750,96 @@ select option {
   box-shadow: var(--app-shadow-soft);
 }
 
-.workspace .feature-page.settings-page .profile-rail-photo {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-rail-photo {
   grid-area: photo;
   display: grid;
   justify-items: start;
   gap: 10px;
 }
 
-.workspace .feature-page.settings-page .profile-rail-copy {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-rail-copy {
   grid-area: copy;
   min-width: 0;
   padding-top: 2px;
 }
 
-.workspace .feature-page.settings-page .profile-rail-score {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-rail-score {
   grid-area: score;
   min-width: 0;
   padding-top: 0;
   border-top: 0;
 }
 
-.workspace .feature-page.settings-page .profile-identity-actions {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-identity-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
 
-.workspace .feature-page.settings-page .profile-main {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-main {
   display: grid;
   min-width: 0;
   gap: 16px;
 }
 
-.workspace .feature-page.settings-page .profile-section-head {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-section-head {
   display: grid;
   gap: 6px;
 }
 
-.workspace .feature-page.settings-page .profile-section-head h2 {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-section-head h2 {
   margin: 0 !important;
 }
 
-.workspace .feature-page.settings-page .profile-section-lede,
-.workspace .feature-page.settings-page .profile-hint,
-.workspace .feature-page.settings-page .profile-empty {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-section-lede,
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-hint,
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-empty {
   margin: 0;
   color: var(--muted);
   font-size: 0.88rem;
   line-height: 1.5;
 }
 
-.workspace .feature-page.settings-page .profile-fields {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
   gap: 16px 18px;
 }
 
-.workspace .feature-page.settings-page .profile-fields > * {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-fields > * {
   min-width: 0;
 }
 
-.workspace .feature-page.settings-page .profile-field {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-field {
   display: grid;
   gap: 8px;
   min-width: 0;
 }
 
-.workspace .feature-page.settings-page .profile-field-span {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-field-span {
   grid-column: 1 / -1;
 }
 
-.workspace .feature-page.settings-page .profile-fields .field,
-.workspace .feature-page.settings-page .profile-fields input,
-.workspace .feature-page.settings-page .profile-fields select,
-.workspace .feature-page.settings-page .profile-fields textarea {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-fields .field,
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-fields input,
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-fields select,
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-fields textarea {
   width: 100%;
   min-width: 0;
 }
 
-.workspace .feature-page.settings-page .phone-field {
+.workspace .feature-page.settings-page:not(.profile-v2) .phone-field {
   width: 100%;
   min-width: 0;
 }
 
-.workspace .feature-page.settings-page .phone-country-trigger {
+.workspace .feature-page.settings-page:not(.profile-v2) .phone-country-trigger {
   flex: 0 0 auto;
 }
 
-.workspace .feature-page.settings-page .profile-choice-group {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-choice-group {
   display: grid;
   gap: 10px;
   min-width: 0;
@@ -16638,39 +16850,39 @@ select option {
   background: color-mix(in srgb, var(--app-panel-soft) 70%, var(--app-panel));
 }
 
-.workspace .feature-page.settings-page .profile-choice-group legend {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-choice-group legend {
   padding: 0 6px;
   font-size: 0.82rem;
   font-weight: 650;
 }
 
-.workspace .feature-page.settings-page .profile-composer {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-composer {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   gap: 12px;
 }
 
-.workspace .feature-page.settings-page .profile-composer-actions,
-.workspace .feature-page.settings-page .profile-section-actions,
-.workspace .feature-page.settings-page .profile-record-actions {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-composer-actions,
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-section-actions,
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-record-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
 
-.workspace .feature-page.settings-page .profile-composer-actions {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-composer-actions {
   padding-bottom: 1px;
 }
 
-.workspace .feature-page.settings-page .profile-section-actions {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-section-actions {
   padding-top: 12px;
   margin-top: 4px;
   border-top: 1px solid var(--border-subtle);
 }
 
-.workspace .feature-page.settings-page .profile-check-row {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-check-row {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -16679,7 +16891,7 @@ select option {
 }
 
 .workspace
-  .feature-page.settings-page
+  .feature-page.settings-page:not(.profile-v2)
   .profile-check-row
   input[type="checkbox"] {
   width: 18px;
@@ -16687,14 +16899,14 @@ select option {
   flex: 0 0 auto;
 }
 
-.workspace .feature-page.settings-page .profile-chip-list {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-chip-list {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
 
-.workspace .feature-page.settings-page .profile-record-row {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-record-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -16703,65 +16915,65 @@ select option {
   border-top: 1px solid var(--border-subtle);
 }
 
-.workspace .feature-page.settings-page .profile-record-row > div:first-child {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-record-row > div:first-child {
   min-width: 0;
 }
 
-.workspace .feature-page.settings-page .profile-record-row p {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-record-row p {
   margin: 4px 0 0;
   overflow-wrap: anywhere;
 }
 
-.workspace .feature-page.settings-page .profile-draft {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-draft {
   display: grid;
   gap: 14px;
   padding-top: 4px;
 }
 
-.workspace .feature-page.settings-page .profile-draft-group {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-draft-group {
   display: grid;
   gap: 8px;
 }
 
-.workspace .feature-page.settings-page .profile-draft-note {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-draft-note {
   margin: 0;
   color: var(--muted);
   font-size: var(--text-sm);
 }
 
-.workspace .feature-page.settings-page .profile-resume-actions {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-resume-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(180px, 280px);
   align-items: center;
   gap: 12px 16px;
 }
 
-.workspace .feature-page.settings-page .profile-resume-actions .field {
+.workspace .feature-page.settings-page:not(.profile-v2) .profile-resume-actions .field {
   width: 100%;
 }
 
 @media (max-width: 820px) {
-  .workspace .feature-page.settings-page .profile-rail {
+  .workspace .feature-page.settings-page:not(.profile-v2) .profile-rail {
     grid-template-columns: auto minmax(0, 1fr);
     grid-template-areas:
       "photo copy"
       "score score";
   }
 
-  .workspace .feature-page.settings-page .profile-fields,
-  .workspace .feature-page.settings-page .profile-resume-studio-grid,
-  .workspace .feature-page.settings-page .profile-resume-actions,
-  .workspace .feature-page.settings-page .profile-composer {
+  .workspace .feature-page.settings-page:not(.profile-v2) .profile-fields,
+  .workspace .feature-page.settings-page:not(.profile-v2) .profile-resume-studio-grid,
+  .workspace .feature-page.settings-page:not(.profile-v2) .profile-resume-actions,
+  .workspace .feature-page.settings-page:not(.profile-v2) .profile-composer {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .workspace .feature-page.settings-page .profile-composer-actions {
+  .workspace .feature-page.settings-page:not(.profile-v2) .profile-composer-actions {
     justify-content: flex-start;
   }
 }
 
 @media (max-width: 560px) {
-  .workspace .feature-page.settings-page .profile-rail {
+  .workspace .feature-page.settings-page:not(.profile-v2) .profile-rail {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "photo"
@@ -16770,20 +16982,20 @@ select option {
     padding: 16px;
   }
 
-  .workspace .feature-page.settings-page .profile-record-row {
+  .workspace .feature-page.settings-page:not(.profile-v2) .profile-record-row {
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
   }
 
-  .workspace .feature-page.settings-page .profile-record-actions,
-  .workspace .feature-page.settings-page .profile-section-actions,
-  .workspace .feature-page.settings-page .profile-composer-actions {
+  .workspace .feature-page.settings-page:not(.profile-v2) .profile-record-actions,
+  .workspace .feature-page.settings-page:not(.profile-v2) .profile-section-actions,
+  .workspace .feature-page.settings-page:not(.profile-v2) .profile-composer-actions {
     width: 100%;
   }
 
-  .workspace .feature-page.settings-page .profile-record-actions .button,
-  .workspace .feature-page.settings-page .profile-section-actions .button,
-  .workspace .feature-page.settings-page .profile-composer-actions .button {
+  .workspace .feature-page.settings-page:not(.profile-v2) .profile-record-actions .button,
+  .workspace .feature-page.settings-page:not(.profile-v2) .profile-section-actions .button,
+  .workspace .feature-page.settings-page:not(.profile-v2) .profile-composer-actions .button {
     flex: 1 1 auto;
   }
 }
@@ -16840,7 +17052,7 @@ body,
 }
 
 .workspace .page-heading h1,
-.workspace .feature-page.settings-page .page-heading h1,
+.workspace .feature-page.settings-page:not(.profile-v2) .page-heading h1,
 .section:has(.page-heading) .page-heading h1 {
   font-family: var(--font-ui) !important;
   font-size: clamp(1.7rem, 2.2vw, 2.25rem) !important;

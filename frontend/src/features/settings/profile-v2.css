@@ -19,11 +19,13 @@
   --ps-accent-soft: color-mix(in srgb, var(--ps-accent) 10%, white);
   /* spacing scale — single source of truth */
   --ps-4: 4px;
+  --ps-6: 6px;
   --ps-8: 8px;
   --ps-12: 12px;
   --ps-16: 16px;
   --ps-20: 20px;
   --ps-24: 24px;
+  --ps-28: 28px;
   --ps-32: 32px;
   --ps-48: 48px;
   --ps-radius-sm: 12px;
@@ -421,38 +423,47 @@
 }
 
 /* —— Tabs — sticky translucent pill with spring indicator —— */
+/* —— Tabs — sticky translucent pill with spring indicator —— */
 .workspace .feature-page.settings-page.profile-v2 .profile-tabs {
   position: sticky;
-  top: 64px;
-  z-index: 5;
+  top: var(--app-header-height, 64px);
+  z-index: 20;
   min-width: 0;
   width: 100%;
   padding: 6px;
   border: 1px solid var(--ps-line);
   border-radius: var(--ps-radius);
-  background: var(--ps-panel);
-  box-shadow: 0 2px 12px rgb(15 23 42 / 06%);
+  background: color-mix(in srgb, var(--ps-panel) 94%, var(--background));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 4px 16px rgb(15 23 42 / 06%), 0 1px 2px rgb(15 23 42 / 04%);
 }
 .workspace .feature-page.settings-page.profile-v2 .profile-tabs-track {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
   width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.workspace .feature-page.settings-page.profile-v2 .profile-tabs-track::-webkit-scrollbar {
+  display: none;
 }
 .workspace .feature-page.settings-page.profile-v2 .profile-tab {
   display: inline-flex;
-  flex: 1 1 0;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-width: 0;
-  min-height: 40px;
-  padding: 8px 12px;
+  min-width: max-content;
+  min-height: 42px;
+  padding: 8px 16px;
   border: 1px solid transparent;
   border-radius: 10px;
   background: transparent;
   color: var(--ps-muted);
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 650;
   line-height: 1;
   white-space: nowrap;
@@ -464,6 +475,8 @@
     box-shadow 200ms ease,
     transform 100ms ease;
   position: relative;
+  touch-action: manipulation;
+  cursor: pointer;
 }
 .workspace .feature-page.settings-page.profile-v2 .profile-tab svg {
   flex: 0 0 auto;
@@ -503,7 +516,7 @@
 .workspace .feature-page.settings-page.profile-v2 .profile-editor > [hidden] {
   display: none !important;
 }
-.workspace .feature-page.settings-page.profile-v2 .profile-editor > .panel,
+.workspace .feature-page.settings-page.profile-v2 .profile-editor > .panel:not(.profile-feedback-card),
 .workspace
   .feature-page.settings-page.profile-v2
   .profile-editor
@@ -596,12 +609,11 @@
 .workspace .feature-page.settings-page.profile-v2 .field,
 .workspace
   .feature-page.settings-page.profile-v2
-  .profile-editor
   input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not(
     [type="hidden"]
   ),
-.workspace .feature-page.settings-page.profile-v2 .profile-editor select,
-.workspace .feature-page.settings-page.profile-v2 .profile-editor textarea {
+.workspace .feature-page.settings-page.profile-v2 select,
+.workspace .feature-page.settings-page.profile-v2 textarea {
   width: 100%;
   min-width: 0;
   min-height: 46px;
@@ -621,7 +633,7 @@
     background 180ms ease,
     transform 100ms ease;
 }
-.workspace .feature-page.settings-page.profile-v2 .profile-editor textarea {
+.workspace .feature-page.settings-page.profile-v2 textarea {
   min-height: 104px;
   resize: vertical;
   line-height: 1.5;
@@ -629,12 +641,10 @@
 }
 .workspace
   .feature-page.settings-page.profile-v2
-  .profile-editor
   input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):hover,
-.workspace .feature-page.settings-page.profile-v2 .profile-editor select:hover,
+.workspace .feature-page.settings-page.profile-v2 select:hover,
 .workspace
   .feature-page.settings-page.profile-v2
-  .profile-editor
   textarea:hover {
   border-color: color-mix(
     in srgb,
@@ -645,12 +655,10 @@
 }
 .workspace
   .feature-page.settings-page.profile-v2
-  .profile-editor
   input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
-.workspace .feature-page.settings-page.profile-v2 .profile-editor select:focus,
+.workspace .feature-page.settings-page.profile-v2 select:focus,
 .workspace
   .feature-page.settings-page.profile-v2
-  .profile-editor
   textarea:focus,
 .workspace .feature-page.settings-page.profile-v2 .field:focus {
   border-color: var(--ps-accent) !important;
@@ -891,6 +899,37 @@
   border-color: var(--ps-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ps-accent) 12%, transparent);
 }
+.workspace .feature-page.settings-page.profile-v2 .profile-resume-rename {
+  min-height: 32px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 999px;
+  border: 1px solid var(--ps-line);
+  background: var(--ps-panel);
+  color: var(--ps-muted);
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+.workspace .feature-page.settings-page.profile-v2 .profile-resume-rename:hover {
+  color: var(--ps-text);
+  border-color: color-mix(in srgb, var(--ps-accent) 30%, var(--ps-line));
+}
+.workspace .feature-page.settings-page.profile-v2 .profile-resume-rename-form {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: var(--ps-8) !important;
+  align-items: center !important;
+  padding-top: var(--ps-12) !important;
+  margin-top: var(--ps-8) !important;
+  border-top: 1px solid color-mix(in srgb, var(--ps-line) 65%, transparent) !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .profile-resume-rename-form input {
+  flex: 1 1 200px !important;
+  min-width: 180px !important;
+}
 .workspace .feature-page.settings-page.profile-v2 .profile-resume-select {
   display: flex;
   align-items: center;
@@ -1100,17 +1139,19 @@
     align-self: stretch;
   }
   .workspace .feature-page.settings-page.profile-v2 .profile-tabs {
+    overflow-x: visible;
+  }
+  .workspace .feature-page.settings-page.profile-v2 .profile-tabs-track {
+    width: 100%;
+    min-width: 0;
     overflow-x: auto;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
   }
   .workspace
     .feature-page.settings-page.profile-v2
-    .profile-tabs::-webkit-scrollbar {
+    .profile-tabs-track::-webkit-scrollbar {
     display: none;
-  }
-  .workspace .feature-page.settings-page.profile-v2 .profile-tabs-track {
-    width: max-content;
-    min-width: 100%;
   }
   .workspace .feature-page.settings-page.profile-v2 .profile-tab {
     flex: 0 0 auto;
@@ -1125,6 +1166,9 @@
 @media (max-width: 720px) {
   .workspace .feature-page.settings-page.profile-v2 {
     --ps-pad: 20px;
+    --ps-28: 20px;
+    --ps-24: 20px;
+    --ps-6: 6px;
     --ps-gap: 12px;
     gap: 16px !important;
     width: min(1080px, calc(100% - 20px)) !important;
@@ -1163,3 +1207,377 @@
     padding: var(--ps-20) !important;
   }
 }
+
+/* —— Unified Settings Navigation —— */
+.workspace .feature-page.settings-page.profile-v2 .settings-nav {
+  display: flex !important;
+  gap: var(--ps-8) !important;
+  width: 100% !important;
+  padding: 6px !important;
+  border-radius: var(--ps-radius, 16px) !important;
+  border: 1px solid var(--ps-line) !important;
+  background: var(--ps-panel) !important;
+  box-shadow: 0 2px 12px rgb(15 23 42 / 05%) !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-nav::-webkit-scrollbar {
+  display: none !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-nav .settings-nav-tab {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+  touch-action: manipulation !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 42px !important;
+  padding: 8px 18px !important;
+  border-radius: 12px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--ps-muted) !important;
+  font-size: 0.86rem !important;
+  font-weight: 650 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  text-decoration: none !important;
+  position: relative !important;
+  transition: color 160ms ease, background 160ms ease !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-nav .settings-nav-tab:hover {
+  color: var(--ps-text) !important;
+  background: color-mix(in srgb, var(--ps-text) 04%, transparent) !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-nav .settings-nav-tab.is-active {
+  color: var(--ps-text) !important;
+  font-weight: 700 !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-nav .settings-nav-tab:focus-visible {
+  outline: 2px solid var(--ps-accent) !important;
+  outline-offset: 2px !important;
+}
+
+/* —— Settings Canvas & Cards in Profile-v2 Design Language —— */
+.workspace .feature-page.settings-page.profile-v2 .settings-canvas,
+.feature-page.settings-page .settings-canvas,
+.settings-canvas {
+  display: grid !important;
+  gap: var(--ps-20, 20px) !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-card,
+.feature-page.settings-page.profile-v2 .settings-card,
+.feature-page.settings-page .settings-card,
+.workspace .settings-canvas .settings-card,
+.settings-canvas > .settings-card,
+.settings-canvas .settings-card,
+.settings-card {
+  padding: var(--ps-24, 24px) var(--ps-28, var(--ps-pad, 28px)) !important;
+  border-radius: var(--ps-radius-lg, 20px) !important;
+  border: 1px solid var(--ps-line, var(--border)) !important;
+  background: var(--ps-panel, var(--surface)) !important;
+  box-shadow: var(--ps-shadow, var(--shadow-sm)) !important;
+  transition: border-color 200ms ease, box-shadow 200ms ease !important;
+  box-sizing: border-box !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-card:hover,
+.feature-page.settings-page .settings-card:hover,
+.workspace .settings-canvas .settings-card:hover,
+.settings-canvas > .settings-card:hover,
+.settings-canvas .settings-card:hover {
+  border-color: color-mix(in srgb, var(--ps-accent, var(--primary-strong)) 25%, var(--ps-line, var(--border))) !important;
+  box-shadow: var(--ps-shadow-hover, var(--shadow-md)) !important;
+}
+
+.workspace .feature-page.settings-page.profile-v2 .settings-card h2,
+.feature-page.settings-page .settings-card h2,
+.workspace .settings-canvas .settings-card h2,
+.settings-canvas > .settings-card h2,
+.settings-canvas .settings-card h2 {
+  margin: 0 0 var(--ps-6, 6px) !important;
+  color: var(--ps-text, var(--text)) !important;
+  font-size: 1.25rem !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.025em !important;
+  line-height: 1.3 !important;
+}
+
+.workspace .feature-page.settings-page.profile-v2 h3,
+.feature-page.settings-page h3,
+.workspace .feature-page.settings-page.profile-v2 .profile-resume-upload h3,
+.settings-card h3 {
+  margin: 0 0 var(--ps-6, 6px) !important;
+  color: var(--ps-text, var(--text)) !important;
+  font-size: 1.05rem !important;
+  font-weight: 650 !important;
+  line-height: 1.3 !important;
+}
+
+.workspace .feature-page.settings-page.profile-v2 .eyebrow,
+.feature-page.settings-page .eyebrow,
+.workspace .feature-page.settings-page.profile-v2 .settings-card .eyebrow,
+.feature-page.settings-page .settings-card .eyebrow,
+.workspace .settings-canvas .settings-card .eyebrow,
+.settings-canvas > .settings-card .eyebrow,
+.settings-canvas .settings-card .eyebrow {
+  margin: 0 0 var(--ps-6, 6px) !important;
+  color: var(--ps-muted, var(--muted)) !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+}
+
+.workspace .feature-page.settings-page.profile-v2 .settings-card p.muted,
+.workspace .feature-page.settings-page.profile-v2 .settings-card .muted,
+.feature-page.settings-page .settings-card p.muted,
+.feature-page.settings-page .settings-card .muted,
+.workspace .settings-canvas .settings-card p.muted,
+.workspace .settings-canvas .settings-card .muted,
+.settings-canvas > .settings-card p.muted,
+.settings-canvas > .settings-card .muted,
+.settings-canvas .settings-card p.muted,
+.settings-canvas .settings-card .muted {
+  margin: 0 0 var(--ps-12, 12px) !important;
+  color: var(--ps-muted, var(--muted)) !important;
+  font-size: 0.9rem !important;
+  line-height: 1.5 !important;
+}
+
+@media (max-width: 720px) {
+  .workspace .feature-page.settings-page.profile-v2 .settings-card,
+  .feature-page.settings-page.profile-v2 .settings-card,
+  .feature-page.settings-page .settings-card,
+  .workspace .settings-canvas .settings-card,
+  .settings-canvas > .settings-card,
+  .settings-canvas .settings-card,
+  .settings-card {
+    padding: 20px 20px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .workspace .feature-page.settings-page.profile-v2 .settings-card,
+  .feature-page.settings-page.profile-v2 .settings-card,
+  .feature-page.settings-page .settings-card,
+  .workspace .settings-canvas .settings-card,
+  .settings-canvas > .settings-card,
+  .settings-canvas .settings-card,
+  .settings-card {
+    padding: 18px 16px !important;
+  }
+}
+
+/* —— Masthead Public Showcase Affordances —— */
+.workspace .feature-page.settings-page.profile-v2 .profile-masthead-showcase {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: var(--ps-12) !important;
+  padding-top: var(--ps-16) !important;
+  border-top: 1px solid color-mix(in srgb, var(--ps-line) 75%, transparent) !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .profile-masthead-showcase-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: var(--ps-8) !important;
+  align-items: center !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .profile-showcase-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-height: 36px !important;
+  padding: 0 16px !important;
+  border-radius: 999px !important;
+  font-size: 0.8rem !important;
+  font-weight: 650 !important;
+  text-decoration: none !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .profile-copy-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-height: 36px !important;
+  padding: 0 14px !important;
+  border-radius: 999px !important;
+  font-size: 0.8rem !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .profile-claim-prompt {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: var(--ps-12) !important;
+  width: 100% !important;
+  padding: var(--ps-12) var(--ps-16) !important;
+  border-radius: var(--ps-radius-sm) !important;
+  background: color-mix(in srgb, var(--ps-accent) 06%, var(--ps-panel)) !important;
+  border: 1px dashed color-mix(in srgb, var(--ps-accent) 30%, var(--ps-line)) !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .profile-claim-text {
+  margin: 0 !important;
+  font-size: 0.82rem !important;
+  color: var(--ps-muted) !important;
+  line-height: 1.4 !important;
+}
+
+/* —— 100% Complete Badge —— */
+.workspace .feature-page.settings-page.profile-v2 .profile-complete-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 5px 14px !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, #10b981 12%, var(--ps-panel)) !important;
+  border: 1px solid color-mix(in srgb, #10b981 30%, transparent) !important;
+  color: #059669 !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
+[data-theme="dark"] .workspace .feature-page.settings-page.profile-v2 .profile-complete-badge {
+  background: color-mix(in srgb, #10b981 18%, black) !important;
+  color: #34d399 !important;
+  border-color: color-mix(in srgb, #10b981 40%, transparent) !important;
+}
+
+/* —— Settings Toggle Lists & Options —— */
+.workspace .feature-page.settings-page.profile-v2 .settings-toggle-list {
+  display: grid !important;
+  gap: 0 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-toggle {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: var(--ps-16) !important;
+  align-items: center !important;
+  min-height: 52px !important;
+  padding: var(--ps-12) 0 !important;
+  border-top: 1px solid color-mix(in srgb, var(--ps-line) 65%, transparent) !important;
+  cursor: pointer !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-toggle:first-child {
+  border-top: 0 !important;
+  padding-top: 4px !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-toggle-copy {
+  display: grid !important;
+  gap: 2px !important;
+  min-width: 0 !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-toggle-copy strong {
+  font-size: 0.92rem !important;
+  font-weight: 650 !important;
+  color: var(--ps-text) !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-toggle-copy small {
+  font-size: 0.78rem !important;
+  color: var(--ps-muted) !important;
+  line-height: 1.4 !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-toggle input[type="checkbox"] {
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  accent-color: var(--ps-accent) !important;
+  cursor: pointer !important;
+}
+
+/* —— Session & Danger Zone Cards —— */
+.workspace .feature-page.settings-page.profile-v2 .settings-session-identity {
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--ps-16) !important;
+  padding: var(--ps-16) !important;
+  border-radius: var(--ps-radius) !important;
+  border: 1px solid var(--ps-line) !important;
+  background: color-mix(in srgb, var(--ps-soft) 45%, var(--ps-panel)) !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-session-mark {
+  display: grid !important;
+  place-items: center !important;
+  width: 48px !important;
+  height: 48px !important;
+  flex: 0 0 auto !important;
+  border-radius: 14px !important;
+  background: var(--ps-accent-soft) !important;
+  color: var(--ps-accent) !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-danger-card {
+  border-color: color-mix(in srgb, var(--danger, #dc2626) 30%, var(--ps-line)) !important;
+  background: color-mix(in srgb, var(--danger, #dc2626) 03%, var(--ps-panel)) !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .settings-save-card {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: var(--ps-16) !important;
+}
+
+/* —— SelectWithOther helper —— */
+.workspace .feature-page.settings-page.profile-v2 .profile-other-field {
+  display: grid !important;
+  gap: var(--ps-6, 6px) !important;
+  margin-top: var(--ps-8) !important;
+}
+
+/* —— Dedicated Settings Actions Bar —— */
+.workspace .feature-page.settings-page.profile-v2 .settings-actions-bar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: var(--ps-16) !important;
+  padding: var(--ps-4) 0 !important;
+}
+
+/* —— Resume Library Row Elements —— */
+.workspace .feature-page.settings-page.profile-v2 .profile-resume-row-copy {
+  display: grid !important;
+  gap: 2px !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .profile-resume-row-copy strong {
+  font-size: 0.88rem !important;
+  font-weight: 650 !important;
+  color: var(--ps-text) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .profile-resume-row-copy small {
+  font-size: 0.74rem !important;
+  color: var(--ps-muted) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.workspace .feature-page.settings-page.profile-v2 .profile-resume-active {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 2px 8px !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, #10b981 12%, var(--ps-panel)) !important;
+  border: 1px solid color-mix(in srgb, #10b981 30%, transparent) !important;
+  color: #059669 !important;
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: uppercase !important;
+  flex: 0 0 auto !important;
+}
+[data-theme="dark"] .workspace .feature-page.settings-page.profile-v2 .profile-resume-active {
+  background: color-mix(in srgb, #10b981 18%, black) !important;
+  color: #34d399 !important;
+}
+

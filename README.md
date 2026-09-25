@@ -174,7 +174,7 @@ Browser (Vite + React)
 | `backend/app/database/` | Supabase PostgREST + storage adapters, ownership helpers |
 | `backend/app/agents/` | Provider clients, prompts, preferred-provider routing |
 | `backend/app/features/` | Domain logic (auth, parsing, ATS, interview, …) |
-| `docs/DOCUMENTATION.md` | Unified technical documentation |
+| `docs/database/` | Supabase PostgreSQL schema DDL and migrations |
 
 > [!NOTE]
 > Leave `VITE_API_BASE_URL` unset for local dev so the app uses the same-origin `/api/backend` proxy. Set it only for static hosting that cannot proxy.
@@ -208,7 +208,7 @@ ATS, learning generation, interview prep evidence, and job-match evidence requir
 
 ### Agents
 
-Prefer `LLM_PROVIDER` (default **groq**), then the other configured provider. Status: `GET /api/v1/agents/status`. Full agent table, prompts, crews, and end-to-end how-it-works: [docs/DOCUMENTATION.md](./docs/DOCUMENTATION.md).
+Prefer `LLM_PROVIDER` (default **groq**), then the other configured provider. Status: `GET /api/v1/agents/status`. Built-in sequential orchestrators and agent prompts manage resume improvement and ATS workflows.
 
 ---
 
@@ -245,17 +245,15 @@ Browser base in local dev: **`/api/backend`** → FastAPI **`/api/v1`**.
 | Jobs | `/jobs`, recommendations, saved jobs, optional external sync |
 | Files | `GET /files/{bucket}/{path}` (JWT; path under `{user_id}/`) |
 
-Full map: [docs/api-reference.md](./docs/api-reference.md) · deep dive: [docs/DOCUMENTATION.md](./docs/DOCUMENTATION.md).
+Full interactive OpenAPI exploration: `http://127.0.0.1:8000/docs`.
 
 ---
 
 ## Documentation
 
-**Single source of truth:** [docs/DOCUMENTATION.md](./docs/DOCUMENTATION.md)
+This `README.md` serves as the primary technical specification and operational guide for Career Copilot, detailing architecture, configuration, APIs, and operational guidelines.
 
-Covers aim, problem statement, tech stack, **how every subsystem works**, agents, data model, full API map, code map, frontend architecture, operations, Mermaid diagrams, and known contracts.
-
-Satellite docs under `docs/` (architecture, API, data model, frontend, flows, operations, deployment, features/*) summarize and link back to that file. Production deployment instructions are in [docs/deployment.md](./docs/deployment.md).
+Interactive API documentation and schema specifications are served automatically via FastAPI OpenAPI at `/docs` (`http://127.0.0.1:8000/docs`). Database migration scripts and DDL definitions are located in `docs/database/`.
 
 ---
 
@@ -294,4 +292,3 @@ cd frontend && npm run test && npm run typecheck
 3. **Deterministic product ATS** — LLMs enrich; they do not own the score.  
 4. **Degrade gracefully** — missing LLM/YouTube/FreeHire reduces features, not the whole app.
 
-Full technical detail: [docs/DOCUMENTATION.md](./docs/DOCUMENTATION.md).

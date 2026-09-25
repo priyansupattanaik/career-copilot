@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@/shared/ui/router-link";
-import { resolveApiBase } from "@/shared/config";
+import { ACCESS_TOKEN_STORAGE_KEY, resolveApiBase } from "@/shared/config";
 import { demoApiRequest, isDemoSession } from "@/features/auth/demo-session";
 import { isAbortError } from "@/shared/api/client";
+import { BrandMark } from "@/components/ui/brand-mark";
+import { ThemeToggle } from "@/shared/ui/theme-toggle";
+import { CopilotIcon } from "@/components/ui/copilot-icons";
+import { copyTextToClipboard } from "@/shared/utils/clipboard";
+import { isProfileOwner } from "@/features/profile/model/public-profile-username";
 import { motion, useReducedMotion } from "motion/react";
 import {
   staggerContainerVariants,
@@ -70,10 +75,69 @@ function LinkTypeIcon({ type, size = 14 }: { type: string; size?: number }) {
   return <ExternalIcon size={size} />;
 }
 
+function getInitialSession(): { isLoggedIn: boolean; initialHandle: string | null } {
+  if (typeof window === "undefined") return { isLoggedIn: false, initialHandle: null };
+  if (isDemoSession()) return { isLoggedIn: true, initialHandle: "demo" };
+  const hasToken = Boolean(window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY));
+  if (!hasToken) return { isLoggedIn: false, initialHandle: null };
+  try {
+    const raw = window.sessionStorage.getItem("career_copilot_bootstrap_cache");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const handle = parsed?.profile?.username || parsed?.workspace?.profile?.username;
+      if (handle) return { isLoggedIn: true, initialHandle: String(handle) };
+    }
+  } catch {
+    // storage errors ignored
+  }
+  return { isLoggedIn: true, initialHandle: null };
+}
+
 export function PublicProfile({ username }: { username: string }) {
   const shouldReduceMotion = useReducedMotion();
   const [data, setData] = useState<PublicProfilePayload | null>(null);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [initialSession] = useState(getInitialSession);
+  const isLoggedIn = initialSession.isLoggedIn;
+  const [sessionUsername, setSessionUsername] = useState<string | null>(initialSession.initialHandle);
+
+  useEffect(() => {
+    if (isLoggedIn && sessionUsername === null) {
+      let active = true;
+      const token = window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+      if (token) {
+        fetch(`${resolveApiBase()}/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((res) => {
+            if (active && res?.profile?.username) {
+              setSessionUsername(res.profile.username);
+            }
+          })
+          .catch(() => undefined);
+      }
+      return () => {
+        active = false;
+      };
+    }
+  }, [isLoggedIn, sessionUsername]);
+
+  const isOwner = useMemo(() => {
+    return isProfileOwner(sessionUsername, username);
+  }, [sessionUsername, username]);
+
+  function handleShare() {
+    if (typeof window === "undefined") return;
+    const url = window.location.href;
+    void copyTextToClipboard(url).then((success) => {
+      if (success) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2200);
+      }
+    });
+  }
 
   const displayLinks = useMemo(() => {
     const links = data?.sections.links ?? [];
@@ -114,23 +178,92 @@ export function PublicProfile({ username }: { username: string }) {
     };
   }, [username]);
 
-  if (error)
+  if (error) {
     return (
       <main className="public-profile-page">
         <div className="public-profile-container">
-          <h1>{error}</h1>
-          <Link className="button button-secondary" href="/">Return home</Link>
+          <header className="public-profile-navbar" aria-label="Page navigation">
+            <Link href={isLoggedIn ? "/dashboard" : "/"} className="public-profile-navbar-brand">
+              <BrandMark compact />
+              <span>Career Copilot</span>
+            </Link>
+            <div className="public-profile-navbar-actions">
+              <ThemeToggle compact />
+              {isLoggedIn ? (
+                <Link className="button button-secondary public-profile-nav-secondary" href="/dashboard">
+                  Dashboard
+                </Link>
+              ) : (
+                <Link className="button button-primary public-profile-nav-cta" href="/sign-in">
+                  Sign in
+                </Link>
+              )}
+            </div>
+          </header>
+          <section className="public-profile-error-card" role="alert">
+            <div className="public-profile-error-icon" aria-hidden="true">
+              <CopilotIcon name="alert" size={28} />
+            </div>
+            <h1>Candidate profile not found</h1>
+            <p>
+              The candidate profile <strong>@{username}</strong> could not be found or is set to private.
+            </p>
+            <div className="public-profile-error-actions">
+              <Link className="button button-primary" href="/community">
+                Explore community
+              </Link>
+              {isLoggedIn ? (
+                <Link className="button button-secondary" href="/dashboard">
+                  Go to dashboard
+                </Link>
+              ) : null}
+              <Link className="button button-secondary" href="/">
+                Return home
+              </Link>
+            </div>
+          </section>
         </div>
       </main>
     );
-  if (!data)
+  }
+
+  if (!data) {
     return (
       <main className="public-profile-page">
         <div className="public-profile-container">
-          <h1>Loading profile…</h1>
+          <header className="public-profile-navbar" aria-label="Page navigation">
+            <Link href={isLoggedIn ? "/dashboard" : "/"} className="public-profile-navbar-brand">
+              <BrandMark compact />
+              <span>Career Copilot</span>
+            </Link>
+            <div className="public-profile-navbar-actions">
+              <ThemeToggle compact />
+              {isLoggedIn ? (
+                <Link className="button button-secondary public-profile-nav-secondary" href="/dashboard">
+                  Dashboard
+                </Link>
+              ) : (
+                <Link className="button button-primary public-profile-nav-cta" href="/sign-in">
+                  Sign in
+                </Link>
+              )}
+            </div>
+          </header>
+          <div className="public-profile-skeleton-card" role="status" aria-live="polite">
+            <div className="public-profile-skeleton-row">
+              <div className="public-profile-skeleton-avatar" />
+              <div className="public-profile-skeleton-lines">
+                <div className="public-profile-skeleton-line" style={{ width: "45%", height: 28 }} />
+                <div className="public-profile-skeleton-line" style={{ width: "70%", height: 16 }} />
+                <div className="public-profile-skeleton-line" style={{ width: "30%", height: 14 }} />
+              </div>
+            </div>
+            <p className="sr-only">Loading candidate profile…</p>
+          </div>
         </div>
       </main>
     );
+  }
 
   const profile = data.profile;
   const avatarUrl = typeof profile.avatar_url === "string" ? (profile.avatar_url as string) : null;
@@ -154,63 +287,128 @@ export function PublicProfile({ username }: { username: string }) {
 
   return (
     <main className="public-profile-page">
-      <motion.div
-        className="public-profile-container"
-        variants={staggerContainerVariants}
-        initial={shouldReduceMotion ? false : "hidden"}
-        animate="visible"
-      >
-        <motion.header
-          className="public-profile-hero"
-          variants={staggerItemVariants}
-          transition={FLUID_SPRING_TRANSITION}
+      <div className="public-profile-container">
+        <header className="public-profile-navbar" aria-label="Page navigation">
+          <Link href={isLoggedIn ? "/dashboard" : "/"} className="public-profile-navbar-brand">
+            <BrandMark compact />
+            <span>Career Copilot</span>
+          </Link>
+          <div className="public-profile-navbar-actions">
+            <ThemeToggle compact />
+            <button
+              type="button"
+              className="public-profile-share-btn"
+              onClick={handleShare}
+              aria-label="Copy candidate profile link"
+              title="Copy candidate profile link"
+            >
+              <CopilotIcon name={copied ? "check" : "link"} size={14} />
+              <span>{copied ? "Link copied!" : "Share profile"}</span>
+            </button>
+            {isOwner ? (
+              <>
+                <Link className="button button-primary public-profile-nav-cta" href="/settings/profile">
+                  <CopilotIcon name="edit" size={14} />
+                  <span>Edit profile</span>
+                </Link>
+                <Link className="button button-secondary public-profile-nav-secondary" href="/dashboard">
+                  Dashboard
+                </Link>
+              </>
+            ) : isLoggedIn ? (
+              <>
+                <Link className="button button-secondary public-profile-nav-secondary" href="/settings/profile">
+                  My profile
+                </Link>
+                <Link className="button button-primary public-profile-nav-cta" href="/dashboard">
+                  Dashboard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link className="button button-secondary public-profile-nav-secondary" href="/jobs">
+                  Explore jobs
+                </Link>
+                <Link className="button button-primary public-profile-nav-cta" href="/sign-up">
+                  Build your own
+                </Link>
+              </>
+            )}
+          </div>
+        </header>
+
+        <motion.div
+          className="public-profile-body"
+          variants={staggerContainerVariants}
+          initial={shouldReduceMotion ? false : "hidden"}
+          animate="visible"
         >
-          <div className="public-profile-hero-main">
-            <div className="public-profile-avatar" aria-hidden={avatarUrl ? undefined : true}>
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={`${String(profile.full_name || profile.username || "Profile")} avatar`}
-                  width={112}
-                  height={112}
-                  loading="eager"
-                  decoding="async"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    const target = e.currentTarget as HTMLImageElement;
-                    target.style.display = "none";
-                    const fallback = target.nextElementSibling as HTMLElement | null;
-                    if (fallback) fallback.style.display = "grid";
-                  }}
-                />
-              ) : null}
-              <span
-                className="public-profile-avatar-fallback"
-                style={avatarUrl ? { display: "none" } : undefined}
-                aria-label={avatarUrl ? undefined : `${String(profile.full_name || profile.username || "Profile")} initials`}
-              >
-                {initials}
-              </span>
+          <motion.header
+            className="public-profile-hero"
+            variants={staggerItemVariants}
+            transition={FLUID_SPRING_TRANSITION}
+          >
+            <div className="public-profile-hero-main">
+              <div className="public-profile-avatar" aria-hidden={avatarUrl ? undefined : true}>
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={`${String(profile.full_name || profile.username || "Profile")} avatar`}
+                    width={112}
+                    height={112}
+                    loading="eager"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const target = e.currentTarget as HTMLImageElement;
+                      target.style.display = "none";
+                      const fallback = target.nextElementSibling as HTMLElement | null;
+                      if (fallback) fallback.style.display = "grid";
+                    }}
+                  />
+                ) : null}
+                <span
+                  className="public-profile-avatar-fallback"
+                  style={avatarUrl ? { display: "none" } : undefined}
+                  aria-label={avatarUrl ? undefined : `${String(profile.full_name || profile.username || "Profile")} initials`}
+                >
+                  {initials}
+                </span>
+              </div>
+              <div className="public-profile-hero-copy">
+                <h1>{String(profile.full_name || profile.username || "Career profile")}</h1>
+                {profile.headline ? <p className="public-profile-headline">{String(profile.headline)}</p> : null}
+                <p className="public-profile-handle">/{handle}</p>
+                {hasHeaderFacts ? (
+                  <div className="public-profile-facts">
+                    {[profile.current_role, profile.location, profile.career_level, profile.years_experience != null ? `${profile.years_experience} years` : null]
+                      .filter(Boolean)
+                      .map((fact) => (
+                        <span key={String(fact)}>{String(fact)}</span>
+                      ))}
+                  </div>
+                ) : null}
+              </div>
             </div>
-            <div className="public-profile-hero-copy">
-              <h1>{String(profile.full_name || profile.username || "Career profile")}</h1>
-              {profile.headline ? <p className="public-profile-headline">{String(profile.headline)}</p> : null}
-              <p className="public-profile-handle">/{handle}</p>
-              {hasHeaderFacts ? (
-                <div className="public-profile-facts">
-                  {[profile.current_role, profile.location, profile.career_level, profile.years_experience != null ? `${profile.years_experience} years` : null]
-                    .filter(Boolean)
-                    .map((fact) => (
-                      <span key={String(fact)}>{String(fact)}</span>
-                    ))}
-                </div>
-              ) : null}
+            <div className="public-profile-hero-actions">
+              {isOwner ? (
+                <Link className="public-profile-cta" href="/settings/profile">
+                  <CopilotIcon name="edit" size={14} />
+                  <span>Edit profile</span>
+                </Link>
+              ) : isLoggedIn ? (
+                <Link className="public-profile-cta" href="/community">
+                  <CopilotIcon name="community" size={14} />
+                  <span>Explore community</span>
+                </Link>
+              ) : (
+                <Link className="public-profile-cta" href="/sign-up">
+                  Build your own
+                </Link>
+              )}
             </div>
-          </div>
-          <div className="public-profile-hero-actions">
-            <Link className="public-profile-cta" href="/sign-in">Build your own</Link>
-          </div>
-        </motion.header>
+          </motion.header>
+
 
         {profile.bio ? (
           <motion.section
@@ -427,6 +625,7 @@ export function PublicProfile({ username }: { username: string }) {
           </motion.section>
         ) : null}
       </motion.div>
+      </div>
     </main>
   );
 }

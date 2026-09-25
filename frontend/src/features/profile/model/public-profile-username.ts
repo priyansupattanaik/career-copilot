@@ -58,3 +58,15 @@ export function isPublicProfileUsername(value: string | undefined): boolean {
   const username = normalizePublicProfileUsername(value);
   return USERNAME_PATTERN.test(username) && !RESERVED_USERNAMES.has(username);
 }
+
+/** Returns true when the currently authenticated handle matches the profile being viewed. */
+export function isProfileOwner(
+  currentUsername: string | null | undefined,
+  profileUsername: string | null | undefined,
+): boolean {
+  if (!currentUsername || !profileUsername) return false;
+  const a = normalizePublicProfileUsername(currentUsername);
+  const b = normalizePublicProfileUsername(profileUsername);
+  return Boolean(a && b && a === b);
+}
+

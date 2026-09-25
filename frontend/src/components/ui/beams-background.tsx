@@ -1,11 +1,10 @@
 "use client";
 
-// BeamsBackground — adapted for the Career Copilot landing design language.
+// BeamsBackground — used by the team page.
 // Canvas light-beams in the brand palette (blue #526bff / #9eacff with rare
 // lime #e7ff62 accents), theme-aware (paper in light, black in dark), sized to
-// its container, and fully static under `prefers-reduced-motion` or when the
-// page's motion pause is active. Original beams concept: ruixen/aceternity-style
-// beams background.
+// the viewport, and fully static under `prefers-reduced-motion` or when the
+// page's motion pause is active.
 
 import { useEffect, useRef } from "react";
 import { motion } from "motion/react";
@@ -33,6 +32,7 @@ interface Beam {
   lightness: number;
   pulse: number;
   pulseSpeed: number;
+  gradient?: CanvasGradient;
 }
 
 function cn(...parts: Array<string | false | null | undefined>): string {
@@ -52,7 +52,7 @@ function createBeam(width: number, height: number, index: number): Beam {
     x: Math.random() * width * 1.4 - width * 0.2,
     y: Math.random() * height * 1.4 - height * 0.2,
     width: 26 + Math.random() * 54,
-    length: height * 2.2,
+    length: height * 1.15,
     angle: -35 + Math.random() * 10,
     speed: 0.35 + Math.random() * 0.8,
     opacity: 0.16 + Math.random() * 0.2,
@@ -96,20 +96,24 @@ export function BeamsBackground({
     const dim = THEME_DIM[theme] * OPACITY_MAP[intensity];
     const totalBeams = 16;
 
-    // The canvas is viewport-fixed: ambient beams always fill the visible
-    // screen while painting only viewport-sized pixels, instead of the whole
-    // (much taller) page — the per-frame blur makes tall canvases expensive.
+    // Paint a half-resolution viewport canvas and let the browser upscale it.
+    // A full-device-pixel canvas plus a per-frame blur filter is what made
+    // scrolling hitch. Softness comes from the upscale, not from ctx.filter.
+    let paintedWidth = 0;
+    let paintedHeight = 0;
     const resize = () => {
-      const dpr = window.devicePixelRatio || 1;
       const w = window.innerWidth || 1;
       const h = window.innerHeight || 1;
+      if (w === paintedWidth && h === paintedHeight && canvas.width > 0) return;
+      paintedWidth = w;
+      paintedHeight = h;
+      const scale = 0.5;
       sizeRef.current = { w, h };
-      canvas.width = Math.round(w * dpr);
-      canvas.height = Math.round(h * dpr);
+      canvas.width = Math.max(1, Math.round(w * scale));
+      canvas.height = Math.max(1, Math.round(h * scale));
       canvas.style.width = `${w}px`;
       canvas.style.height = `${h}px`;
-      // Reset instead of compounding the previous scale on every resize.
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.setTransform(scale, 0, 0, scale, 0, 0);
       beamsRef.current = Array.from({ length: totalBeams }, (_, i) =>
         createBeam(w, h, i),
       );
@@ -128,6 +132,7 @@ export function BeamsBackground({
       beam.saturation = tone.saturation;
       beam.lightness = tone.lightness;
       beam.opacity = 0.12 + Math.random() * 0.1;
+      beam.gradient = undefined;
     }
 
     function draw(beam: Beam) {
@@ -135,16 +140,19 @@ export function BeamsBackground({
       ctx!.translate(beam.x, beam.y);
       ctx!.rotate((beam.angle * Math.PI) / 180);
       const pulsing = beam.opacity * (0.8 + Math.sin(beam.pulse) * 0.2) * dim;
-      const gradient = ctx!.createLinearGradient(0, 0, 0, beam.length);
-      const hsla = (alpha: number) =>
-        `hsla(${beam.hue}, ${beam.saturation}%, ${beam.lightness}%, ${alpha})`;
-      gradient.addColorStop(0, hsla(0));
-      gradient.addColorStop(0.1, hsla(pulsing * 0.5));
-      gradient.addColorStop(0.4, hsla(pulsing));
-      gradient.addColorStop(0.6, hsla(pulsing));
-      gradient.addColorStop(0.9, hsla(pulsing * 0.5));
-      gradient.addColorStop(1, hsla(0));
-      ctx!.fillStyle = gradient;
+      if (!beam.gradient) {
+        const gradient = ctx!.createLinearGradient(0, 0, 0, beam.length);
+        const hsla = (alpha: number) =>
+          `hsla(${beam.hue}, ${beam.saturation}%, ${beam.lightness}%, ${alpha})`;
+        gradient.addColorStop(0, hsla(0));
+        gradient.addColorStop(0.15, hsla(0.55));
+        gradient.addColorStop(0.5, hsla(1));
+        gradient.addColorStop(0.85, hsla(0.55));
+        gradient.addColorStop(1, hsla(0));
+        beam.gradient = gradient;
+      }
+      ctx!.fillStyle = beam.gradient;
+      ctx!.globalAlpha = pulsing;
       ctx!.fillRect(-beam.width / 2, 0, beam.width, beam.length);
       ctx!.restore();
     }
@@ -152,37 +160,52 @@ export function BeamsBackground({
     function frame() {
       const { w, h } = sizeRef.current;
       ctx!.clearRect(0, 0, w, h);
-      ctx!.filter = "blur(26px)";
-      beamsRef.current.forEach((beam, index) => {
+      const beams = beamsRef.current;
+      for (let index = 0; index < beams.length; index += 1) {
+        const beam = beams[index];
         beam.y -= beam.speed;
         beam.pulse += beam.pulseSpeed;
         if (beam.y + beam.length < -120) resetBeam(beam, index);
         draw(beam);
-      });
-      ctx!.filter = "none";
+      }
     }
 
     function loop() {
+      if (document.hidden) {
+        frameRef.current = 0;
+        return;
+      }
       frame();
       frameRef.current = requestAnimationFrame(loop);
     }
 
     resize();
     if (reducedMotion || paused) {
-      // Single static frame: the page stays decorated but nothing moves.
       frame();
     } else {
       loop();
     }
 
-    const observer = new ResizeObserver(() => {
+    const onResize = () => {
       resize();
       if (reducedMotion || paused) frame();
-    });
-    observer.observe(wrapper);
+    };
+    window.addEventListener("resize", onResize);
+
+    const onVisibility = () => {
+      if (reducedMotion || paused) return;
+      if (document.hidden) {
+        if (frameRef.current) cancelAnimationFrame(frameRef.current);
+        frameRef.current = 0;
+        return;
+      }
+      if (!frameRef.current) loop();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
-      observer.disconnect();
+      window.removeEventListener("resize", onResize);
+      document.removeEventListener("visibilitychange", onVisibility);
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
     };
   }, [theme, paused, intensity]);
@@ -197,14 +220,18 @@ export function BeamsBackground({
           position: "fixed",
           inset: 0,
           width: "100vw",
-          height: "100vh",
-          filter: "blur(14px)",
+          height: "100dvh",
           pointerEvents: "none",
         }}
       />
       <motion.div
-        className="absolute inset-0"
-        style={{ backgroundColor: veil }}
+        aria-hidden
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: veil,
+          pointerEvents: "none",
+        }}
         animate={{ opacity: paused ? 0.6 : [0.35, 0.7, 0.35] }}
         transition={{ duration: 10, ease: "easeInOut", repeat: Number.POSITIVE_INFINITY }}
       />

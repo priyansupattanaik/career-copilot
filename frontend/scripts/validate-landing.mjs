@@ -210,8 +210,8 @@ async function main() {
     ".globe-loading, .globe-fallback-container, [data-testid='mock-globe']"
   ).count();
   const canvasCount = await page.locator("canvas").count();
-  const beamsCanvasCount = await page.locator(".home-beams canvas").count();
-  const globeTraceTotal = hasGlobeTrace + (canvasCount - beamsCanvasCount);
+  const dotCanvasCount = await page.locator(".home-dot-pattern").count();
+  const globeTraceTotal = hasGlobeTrace + (canvasCount - dotCanvasCount);
   if (globeTraceTotal === 0) {
     pass("no-globe-trace");
   } else {

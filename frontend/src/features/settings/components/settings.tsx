@@ -34,13 +34,9 @@ import {
   isPublicProfileUsername,
   normalizePublicProfileUsername,
 } from "@/features/profile/model/public-profile-username";
+import { copyTextToClipboard } from "@/shared/utils/clipboard";
+import { SETTINGS_TABS } from "../model/settings-tabs";
 import "../profile-v2.css";
-
-const tabs = [
-  ["/settings/account", "Account"],
-  ["/settings/preferences", "Preferences"],
-  ["/settings/privacy", "Privacy"],
-] as const;
 
 const PROFILE_NAV = [
   {
@@ -51,7 +47,7 @@ const PROFILE_NAV = [
   { id: "profile-resume", label: "Resume", icon: "resume" as CopilotIconName },
   {
     id: "profile-preferences",
-    label: "Preferences",
+    label: "Career Preferences",
     icon: "jobs" as CopilotIconName,
   },
   { id: "profile-skills", label: "Skills", icon: "skills" as CopilotIconName },
@@ -335,44 +331,61 @@ function Frame({
   const shouldReduceMotion = useReducedMotion();
   const path = usePathname();
   return (
-    <div className={cn("feature-page settings-page", className)}>
+    <div className={cn("feature-page settings-page profile-v2", className)}>
       <PageHeader title={title} description={description} />
-      {path !== "/settings/profile" ? (
-        <nav className="settings-nav" aria-label="Settings sections">
-          {tabs.map(([href, label]) => {
-            const active = path === href;
-            return (
-              <Link
-                key={href}
-                className={`button ${active ? "button-primary is-active" : "button-secondary"}`}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                style={{ position: "relative" }}
+      <nav className="settings-nav" aria-label="Settings sections">
+        {SETTINGS_TABS.map((tab) => {
+          const active = path === tab.href;
+          return (
+            <Link
+              key={tab.href}
+              className={cn("settings-nav-tab", active && "is-active")}
+              href={tab.href}
+              aria-current={active ? "page" : undefined}
+              style={{ position: "relative" }}
+            >
+              {active && (
+                <motion.span
+                  layoutId="settings-tab-pill"
+                  transition={
+                    shouldReduceMotion
+                      ? { duration: 0 }
+                      : FLUID_SPRING_TRANSITION
+                  }
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: "inherit",
+                    background: "var(--ps-panel, var(--surface))",
+                    border: "1px solid var(--ps-line, var(--border))",
+                    boxShadow:
+                      "0 1px 4px rgb(15 23 42 / 08%), 0 2px 8px rgb(15 23 42 / 06%)",
+                    pointerEvents: "none",
+                    zIndex: 0,
+                  }}
+                />
+              )}
+              <span
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
               >
-                {active && (
-                  <motion.span
-                    layoutId="settings-tab-pill"
-                    transition={shouldReduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION}
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      borderRadius: "inherit",
-                      background: "var(--primary-strong, #6366f1)",
-                      pointerEvents: "none",
-                      zIndex: 0,
-                    }}
-                  />
-                )}
-                <span style={{ position: "relative", zIndex: 1 }}>{label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-      ) : null}
+                <CopilotIcon name={tab.icon} size={15} />
+                {tab.label}
+              </span>
+            </Link>
+          );
+        })}
+      </nav>
       {children}
     </div>
   );
 }
+
 
 function ProfileSectionHead({
   icon,
@@ -382,7 +395,7 @@ function ProfileSectionHead({
 }: {
   icon: CopilotIconName;
   title: string;
-  lede?: string;
+  lede?: React.ReactNode;
   required?: boolean;
 }) {
   return (
@@ -565,7 +578,7 @@ function SelectWithOther({
         </Select>
       </label>
       {inOther && (
-        <label className="field-label">
+        <label className="field-label profile-other-field">
           Specify other
           <Input
             type="text"
@@ -803,6 +816,166 @@ type ProfileDraft = {
   };
 };
 
+function CareerPreferencesFields({
+  prefDraft,
+  setPrefDraft,
+  onSave,
+  saving,
+  message,
+  error,
+  inProfileCard = false,
+}: {
+  prefDraft: PrefDraft;
+  setPrefDraft: React.Dispatch<React.SetStateAction<PrefDraft>>;
+  onSave: () => void | Promise<void>;
+  saving: boolean;
+  message?: string;
+  error?: string;
+  inProfileCard?: boolean;
+}) {
+  return (
+    <>
+      <div className="profile-fields">
+        <MultiOptionGroup
+          legend="Target roles"
+          options={TARGET_ROLE_OPTIONS}
+          selected={prefDraft.target_roles}
+          onChange={(target_roles) =>
+            setPrefDraft((prev) => ({ ...prev, target_roles }))
+          }
+          allowOther
+          otherPlaceholder="Enter another target role"
+          required
+        />
+        <MultiOptionGroup
+          legend="Preferred industries"
+          options={INDUSTRY_OPTIONS}
+          selected={prefDraft.preferred_industries}
+          onChange={(preferred_industries) =>
+            setPrefDraft((prev) => ({ ...prev, preferred_industries }))
+          }
+          allowOther
+          otherPlaceholder="Enter another industry"
+        />
+        <MultiOptionGroup
+          legend="Preferred locations"
+          options={LOCATION_OPTIONS}
+          selected={prefDraft.preferred_locations}
+          onChange={(preferred_locations) =>
+            setPrefDraft((prev) => ({ ...prev, preferred_locations }))
+          }
+          allowOther
+          otherPlaceholder="Enter another location"
+          required
+        />
+        <MultiOptionGroup
+          legend="Work modes"
+          options={WORK_MODE_OPTIONS}
+          selected={prefDraft.work_modes}
+          onChange={(work_modes) =>
+            setPrefDraft((prev) => ({ ...prev, work_modes }))
+          }
+          required
+        />
+        <MultiOptionGroup
+          legend="Employment types"
+          options={EMPLOYMENT_TYPE_OPTIONS}
+          selected={prefDraft.employment_types}
+          onChange={(employment_types) =>
+            setPrefDraft((prev) => ({ ...prev, employment_types }))
+          }
+          allowOther
+          otherPlaceholder="Enter another employment type"
+        />
+      </div>
+      <div className="profile-fields">
+        <SelectWithOther
+          label="Work authorization"
+          options={WORK_AUTHORIZATION_OPTIONS}
+          value={prefDraft.work_authorization}
+          onChange={(work_authorization) =>
+            setPrefDraft((prev) => ({ ...prev, work_authorization }))
+          }
+          emptyLabel="Select work authorization"
+          otherPlaceholder="Describe work authorization"
+        />
+        <SelectWithOther
+          label="Notice period"
+          options={NOTICE_PERIOD_OPTIONS.filter(
+            (option) => option.value !== "",
+          )}
+          value={prefDraft.notice_period_days}
+          onChange={(notice_period_days) =>
+            setPrefDraft((prev) => ({ ...prev, notice_period_days }))
+          }
+          emptyLabel="Select notice period"
+          otherPlaceholder="Enter notice period in days"
+          inputType="number"
+        />
+        <SelectWithOther
+          label="Salary currency"
+          options={CURRENCY_OPTIONS}
+          value={prefDraft.salary_currency}
+          onChange={(salary_currency) =>
+            setPrefDraft((prev) => ({
+              ...prev,
+              salary_currency: salary_currency.toUpperCase(),
+            }))
+          }
+          emptyLabel="Select currency"
+          otherPlaceholder="Enter 3-letter currency code"
+        />
+        <label className="field-label">
+          Minimum salary
+          <Input
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
+            value={prefDraft.salary_min}
+            onChange={(e: any) =>
+              setPrefDraft((prev) => ({ ...prev, salary_min: e.target.value }))
+            }
+            placeholder="e.g. 600000"
+          />
+        </label>
+      </div>
+      <label className="profile-check-row">
+        <input
+          type="checkbox"
+          checked={prefDraft.willing_to_relocate}
+          onChange={(e: any) =>
+            setPrefDraft((prev) => ({
+              ...prev,
+              willing_to_relocate: e.target.checked,
+            }))
+          }
+        />
+        <span>Willing to relocate</span>
+      </label>
+      {inProfileCard && (
+        <p className="muted" style={{ margin: 0, fontSize: "0.82rem" }}>
+          These career preferences directly steer AI recommendations and can also be adjusted under Settings &gt; Preferences.
+        </p>
+      )}
+      <div className="profile-section-actions">
+        <Button onClick={() => void onSave()} disabled={saving}>
+          {saving ? "Saving preferences…" : "Save career preferences"}
+        </Button>
+        {message ? (
+          <p role="status" style={{ margin: 0, fontSize: "0.86rem" }}>
+            {message}
+          </p>
+        ) : null}
+        {error ? (
+          <p role="alert" className="field-error" style={{ margin: 0, fontSize: "0.86rem" }}>
+            {error}
+          </p>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
 export function ProfileSettings() {
   const [form, setForm] = useState<ProfileRecord>({});
   const [prefDraft, setPrefDraft] = useState<PrefDraft>(emptyPrefDraft());
@@ -936,6 +1109,20 @@ export function ProfileSettings() {
   const [avatarBusy, setAvatarBusy] = useState(false);
   const AVATAR_MAX_BYTES = 3 * 1024 * 1024;
   const shouldReduceMotion = useReducedMotion();
+  const [publicUrlCopied, setPublicUrlCopied] = useState(false);
+
+  function copyPublicProfileUrl() {
+    const handle = normalizePublicProfileUsername(String(form.username || ""));
+    if (!handle) return;
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const url = `${origin}/${handle}`;
+    void copyTextToClipboard(url).then((success) => {
+      if (success) {
+        setPublicUrlCopied(true);
+        setTimeout(() => setPublicUrlCopied(false), 2200);
+      }
+    });
+  }
 
   const [activeProfileSection, setActiveProfileSection] = useState<string>(
     () => {
@@ -1986,7 +2173,57 @@ export function ProfileSettings() {
                 ))}
               </p>
             ) : null}
+            <div className="profile-masthead-showcase">
+              {form.username ? (
+                <div className="profile-masthead-showcase-actions">
+                  <Link
+                    href={`/${encodeURIComponent(String(form.username))}`}
+                    className="button button-primary profile-showcase-btn"
+                    title="Open your live public candidate profile"
+                  >
+                    <CopilotIcon name="external" size={14} />
+                    <span>View public profile</span>
+                  </Link>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={copyPublicProfileUrl}
+                    className="profile-copy-btn"
+                    title="Copy public candidate profile URL"
+                  >
+                    <CopilotIcon name={publicUrlCopied ? "check" : "link"} size={14} />
+                    <span>{publicUrlCopied ? "URL copied!" : "Copy link"}</span>
+                  </Button>
+                </div>
+              ) : (
+                <div className="profile-claim-prompt">
+                  <p className="profile-claim-text">
+                    Set a personal username to unlock your public candidate profile and shareable URL.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      openProfileSection("profile-details");
+                      window.setTimeout(() => {
+                        document.getElementById("profile-username-input")?.focus();
+                      }, 60);
+                    }}
+                  >
+                    <CopilotIcon name="add" size={14} />
+                    Claim handle
+                  </Button>
+                </div>
+              )}
+              {profileComplete && (
+                <div className="profile-complete-badge" role="status">
+                  <CopilotIcon name="check" size={14} />
+                  <span>100% Complete · Ready for recruiters</span>
+                </div>
+              )}
+            </div>
           </header>
+
 
           <nav className="profile-tabs" aria-label="Profile sections">
             <div className="profile-tabs-track">
@@ -2040,6 +2277,20 @@ export function ProfileSettings() {
           </nav>
 
           <div className="profile-editor">
+            {(message || error) && (
+              <Card className="stack profile-feedback-card" style={{ marginBottom: "var(--ps-16)" }}>
+                {error ? (
+                  <p role="alert" className="field-error" style={{ margin: 0 }}>
+                    {error}
+                  </p>
+                ) : null}
+                {message ? (
+                  <p role="status" style={{ margin: 0 }}>
+                    {message}
+                  </p>
+                ) : null}
+              </Card>
+            )}
             <Card
               id="profile-resume"
               className="profile-resume-studio profile-card"
@@ -2065,7 +2316,11 @@ export function ProfileSettings() {
                 >
                   <div className="profile-resume-section-head">
                     <div>
-                      <p className="eyebrow" id="saved-resumes-title">
+                      <p
+                        className="eyebrow"
+                        id="saved-resumes-title"
+                        style={{ margin: 0 }}
+                      >
                         Your library
                       </p>
                       <p className="muted" style={{ margin: 0 }}>
@@ -2187,11 +2442,15 @@ export function ProfileSettings() {
                   className="profile-resume-upload"
                   aria-labelledby="upload-resume-title"
                 >
-                  <p className="eyebrow" id="upload-resume-title">
+                  <p
+                    className="eyebrow"
+                    id="upload-resume-title"
+                    style={{ margin: 0 }}
+                  >
                     Add a source
                   </p>
-                  <h3>Upload a new resume</h3>
-                  <p className="muted">
+                  <h3 style={{ margin: 0 }}>Upload a new resume</h3>
+                  <p className="muted" style={{ margin: 0 }}>
                     Name it by role, company, or version before it enters your
                     private library.
                   </p>
@@ -2406,17 +2665,6 @@ export function ProfileSettings() {
               ) : null}
             </Card>
 
-            {(message || error) && (
-              <Card className="stack profile-feedback-card">
-                {error ? (
-                  <p role="alert" className="field-error">
-                    {error}
-                  </p>
-                ) : null}
-                {message ? <p role="status">{message}</p> : null}
-              </Card>
-            )}
-
             <Card
               id="profile-details"
               className="stack profile-card profile-details-card"
@@ -2569,132 +2817,22 @@ export function ProfileSettings() {
               <ProfileSectionHead
                 icon="jobs"
                 title="Career preferences"
-                lede="These preferences are saved to your account. Use each dropdown to add options; remove tags with ×."
+                lede={
+                  <>
+                    These preferences train AI job recommendations and searches. You can also manage notification channels in the{" "}
+                    <Link href="/settings/preferences" style={{ color: "var(--ps-accent)", textDecoration: "underline" }}>
+                      Preferences tab
+                    </Link>.
+                  </>
+                }
               />
-              <div className="profile-fields">
-                <MultiOptionGroup
-                  legend="Target roles"
-                  options={TARGET_ROLE_OPTIONS}
-                  selected={prefDraft.target_roles}
-                  onChange={(target_roles) =>
-                    setPrefDraft({ ...prefDraft, target_roles })
-                  }
-                  allowOther
-                  otherPlaceholder="Enter another target role"
-                  required
-                />
-                <MultiOptionGroup
-                  legend="Preferred industries"
-                  options={INDUSTRY_OPTIONS}
-                  selected={prefDraft.preferred_industries}
-                  onChange={(preferred_industries) =>
-                    setPrefDraft({ ...prefDraft, preferred_industries })
-                  }
-                  allowOther
-                  otherPlaceholder="Enter another industry"
-                />
-                <MultiOptionGroup
-                  legend="Preferred locations"
-                  options={LOCATION_OPTIONS}
-                  selected={prefDraft.preferred_locations}
-                  onChange={(preferred_locations) =>
-                    setPrefDraft({ ...prefDraft, preferred_locations })
-                  }
-                  allowOther
-                  otherPlaceholder="Enter another location"
-                  required
-                />
-                <MultiOptionGroup
-                  legend="Work modes"
-                  options={WORK_MODE_OPTIONS}
-                  selected={prefDraft.work_modes}
-                  onChange={(work_modes) =>
-                    setPrefDraft({ ...prefDraft, work_modes })
-                  }
-                  required
-                />
-                <MultiOptionGroup
-                  legend="Employment types"
-                  options={EMPLOYMENT_TYPE_OPTIONS}
-                  selected={prefDraft.employment_types}
-                  onChange={(employment_types) =>
-                    setPrefDraft({ ...prefDraft, employment_types })
-                  }
-                  allowOther
-                  otherPlaceholder="Enter another employment type"
-                />
-              </div>
-              <div className="profile-fields">
-                <SelectWithOther
-                  label="Work authorization"
-                  options={WORK_AUTHORIZATION_OPTIONS}
-                  value={prefDraft.work_authorization}
-                  onChange={(work_authorization) =>
-                    setPrefDraft({ ...prefDraft, work_authorization })
-                  }
-                  emptyLabel="Select work authorization"
-                  otherPlaceholder="Describe work authorization"
-                />
-                <SelectWithOther
-                  label="Notice period"
-                  options={NOTICE_PERIOD_OPTIONS.filter(
-                    (option) => option.value !== "",
-                  )}
-                  value={prefDraft.notice_period_days}
-                  onChange={(notice_period_days) =>
-                    setPrefDraft({ ...prefDraft, notice_period_days })
-                  }
-                  emptyLabel="Select notice period"
-                  otherPlaceholder="Enter notice period in days"
-                  inputType="number"
-                />
-                <SelectWithOther
-                  label="Salary currency"
-                  options={CURRENCY_OPTIONS}
-                  value={prefDraft.salary_currency}
-                  onChange={(salary_currency) =>
-                    setPrefDraft({
-                      ...prefDraft,
-                      salary_currency: salary_currency.toUpperCase(),
-                    })
-                  }
-                  emptyLabel="Select currency"
-                  otherPlaceholder="Enter 3-letter currency code"
-                />
-                <label className="field-label">
-                  Minimum salary
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    autoComplete="off"
-                    value={prefDraft.salary_min}
-                    onChange={(e: any) =>
-                      setPrefDraft({ ...prefDraft, salary_min: e.target.value })
-                    }
-                    placeholder="e.g. 600000"
-                  />
-                </label>
-              </div>
-              <label className="profile-check-row">
-                <input
-                  type="checkbox"
-                  checked={prefDraft.willing_to_relocate}
-                  onChange={(e: any) =>
-                    setPrefDraft({
-                      ...prefDraft,
-                      willing_to_relocate: e.target.checked,
-                    })
-                  }
-                />
-                <span>Willing to relocate</span>
-              </label>
-              <div className="profile-section-actions">
-                <Button onClick={savePreferences} disabled={preferencesSaving}>
-                  {preferencesSaving
-                    ? "Saving preferences…"
-                    : "Save career preferences"}
-                </Button>
-              </div>
+              <CareerPreferencesFields
+                prefDraft={prefDraft}
+                setPrefDraft={setPrefDraft}
+                onSave={savePreferences}
+                saving={preferencesSaving}
+                inProfileCard
+              />
             </Card>
 
             <Card
@@ -3466,7 +3604,7 @@ export function AccountSettings() {
         </Card>
 
         <Card className="stack settings-card settings-danger-card">
-          <p className="eyebrow">Danger zone</p>
+          <p className="eyebrow" style={{ margin: 0 }}>Danger zone</p>
           <h2 style={{ margin: 0 }}>Delete account</h2>
           <p
             className="muted"
@@ -3551,7 +3689,13 @@ export function AccountSettings() {
   );
 }
 
-function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
+function StoredSettings({
+  kind,
+  wrapCanvas = true,
+}: {
+  kind: "notifications" | "privacy";
+  wrapCanvas?: boolean;
+}) {
   const [data, setData] = useState<any>({});
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -3617,7 +3761,11 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
         method: "PUT",
         body: JSON.stringify(payload),
       });
-      setMessage("Settings saved.");
+      setMessage(
+        kind === "notifications"
+          ? "Notification preferences saved successfully."
+          : "Privacy controls saved successfully.",
+      );
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -3662,18 +3810,19 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
   ] as const;
 
   if (!loaded) {
-    return (
-      <div className="settings-canvas">
-        <Card className="settings-card">
-          <LoadingState label="Loading settings" variant="Dots" />
-        </Card>
-      </div>
+    const loadingCard = (
+      <Card className="settings-card">
+        <LoadingState label="Loading settings" variant="Dots" />
+      </Card>
+    );
+    return wrapCanvas ? (
+      <div className="settings-canvas">{loadingCard}</div>
+    ) : (
+      loadingCard
     );
   }
 
-  return (
-    <div className="settings-canvas">
-      {kind === "notifications" ? (
+  const content = kind === "notifications" ? (
         <Card className="stack settings-card">
           <h2 style={{ margin: 0 }}>Notification preferences</h2>
           <p className="muted" style={{ margin: 0 }}>
@@ -3710,7 +3859,7 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
             ))}
           </div>
           <Button disabled={saving} onClick={() => void save()}>
-            {saving ? "Saving settings…" : "Save settings"}
+            {saving ? "Saving preferences…" : "Save notification preferences"}
           </Button>
           {error ? (
             <p role="alert" className="field-error" style={{ margin: 0 }}>
@@ -3830,9 +3979,9 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
               </label>
             </div>
           </Card>
-          <Card className="stack settings-card settings-save-card">
+          <div className="settings-actions-bar">
             <Button disabled={saving} onClick={() => void save()}>
-              {saving ? "Saving settings…" : "Save settings"}
+              {saving ? "Saving privacy controls…" : "Save privacy controls"}
             </Button>
             {error ? (
               <p role="alert" className="field-error" style={{ margin: 0 }}>
@@ -3844,20 +3993,127 @@ function StoredSettings({ kind }: { kind: "notifications" | "privacy" }) {
                 {message}
               </p>
             ) : null}
-          </Card>
+          </div>
         </>
+      );
+
+  return wrapCanvas ? <div className="settings-canvas">{content}</div> : content;
+}
+
+function CareerPreferencesSettingsCard() {
+  const [prefDraft, setPrefDraft] = useState<PrefDraft>(emptyPrefDraft());
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    apiRequest<{
+      preferences?: Record<string, any>;
+      career_preferences?: Record<string, any>;
+    }>("/settings")
+      .then((res) => {
+        if (!active) return;
+        const prefs = res?.career_preferences || res?.preferences;
+        if (prefs) {
+          setPrefDraft(prefsToDraft(prefs));
+        }
+      })
+      .catch((e: any) => {
+        if (!active) return;
+        setError(e.message || "Failed to load career preferences.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function handleSave() {
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      const payload = {
+        target_roles: prefDraft.target_roles,
+        preferred_industries: prefDraft.preferred_industries,
+        preferred_locations: prefDraft.preferred_locations,
+        work_modes: prefDraft.work_modes,
+        employment_types: prefDraft.employment_types,
+        notice_period_days:
+          prefDraft.notice_period_days === ""
+            ? null
+            : Number(prefDraft.notice_period_days),
+        willing_to_relocate: Boolean(prefDraft.willing_to_relocate),
+        work_authorization: prefDraft.work_authorization || null,
+        salary_min:
+          prefDraft.salary_min === "" ? null : Number(prefDraft.salary_min),
+        salary_currency: prefDraft.salary_currency
+          ? prefDraft.salary_currency.toUpperCase()
+          : null,
+      };
+      if (
+        payload.notice_period_days !== null &&
+        Number.isNaN(payload.notice_period_days)
+      ) {
+        throw new Error("Notice period must be a number.");
+      }
+      if (payload.salary_min !== null && Number.isNaN(payload.salary_min)) {
+        throw new Error("Minimum salary must be a number.");
+      }
+      if (
+        payload.salary_currency &&
+        !/^[A-Z]{3}$/.test(payload.salary_currency)
+      ) {
+        throw new Error("Currency must be a 3-letter code such as INR or USD.");
+      }
+      await apiRequest("/settings/career-preferences", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+      setMessage("Career preferences saved to your account.");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card className="stack settings-card">
+      <h2 style={{ margin: 0 }}>Career preferences</h2>
+      <p className="muted" style={{ margin: 0 }}>
+        Target roles, locations, work modes, and compensation to train AI job matches and recommendations.
+      </p>
+      {loading ? (
+        <LoadingState label="Loading career preferences" variant="Dots" />
+      ) : (
+        <CareerPreferencesFields
+          prefDraft={prefDraft}
+          setPrefDraft={setPrefDraft}
+          onSave={handleSave}
+          saving={saving}
+          message={message}
+          error={error}
+        />
       )}
-    </div>
+    </Card>
   );
 }
 
 export function PreferenceSettings() {
   return (
     <Frame
-      title="Notification preferences"
-      description="Stored in your account, not in browser storage."
+      title="Preferences"
+      description="Manage your career search criteria and notification channels in one place."
     >
-      <StoredSettings kind="notifications" />
+      <div className="settings-canvas">
+        <CareerPreferencesSettingsCard />
+        <StoredSettings kind="notifications" wrapCanvas={false} />
+      </div>
     </Frame>
   );
 }

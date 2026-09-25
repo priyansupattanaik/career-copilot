@@ -16,4 +16,23 @@ describe("Breadcrumb5", () => {
     expect(segments[0].label).toBe("Workspace");
     expect(segments[1].current).toBe(true);
   });
+
+  it("produces correct breadcrumbs for each settings tab", async () => {
+    const { getAutoBreadcrumbs } = await import("../auto-breadcrumbs");
+    
+    const profileCrumbs = getAutoBreadcrumbs("/settings/profile", "");
+    expect(profileCrumbs).toHaveLength(3);
+    expect(profileCrumbs[1]).toEqual({ label: "Settings", href: "/settings/profile" });
+    expect(profileCrumbs[2]).toEqual({ label: "Candidate Profile", current: true });
+
+    const accountCrumbs = getAutoBreadcrumbs("/settings/account", "");
+    expect(accountCrumbs[2]).toEqual({ label: "Account & Access", current: true });
+
+    const prefCrumbs = getAutoBreadcrumbs("/settings/preferences", "");
+    expect(prefCrumbs[2]).toEqual({ label: "Preferences", current: true });
+
+    const privacyCrumbs = getAutoBreadcrumbs("/settings/privacy", "");
+    expect(privacyCrumbs[2]).toEqual({ label: "Privacy Controls", current: true });
+  });
 });
+

@@ -120,6 +120,12 @@
       "sourceType": "github",
       "skillPath": "skills/remotion-upgrade/SKILL.md",
       "computedHash": "91be6728c2a2f4830754e3b4cfd5f49284c055bae724a60f70b9ac8afe43758c"
+    },
+    "ux-psych-design": {
+      "source": "priyansupattanaik/ux-psych-design",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "49b6526224fd6abd43d4e45b2ab17424c21aaf77bb7f72b0b8827768b1052d03"
     }
   }
 }

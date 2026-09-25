@@ -15,12 +15,12 @@ import {
 
 import { BrandMark } from "@/components/ui/brand-mark";
 import { Navigation5 } from "@/components/ui/navigation-5";
-import { BeamsBackground } from "@/components/ui/beams-background";
+import { DotPattern } from "@/components/ui/dot-pattern";
 import { RuixenGradientFooter } from "@/components/ui/ruixen-gradient-footer";
+import { cn } from "@/shared/utils";
 
 import { MotionProvider, useMotion } from "../motion-context";
 import { useReveal } from "../use-reveal";
-import { useTheme } from "@/shared/theme";
 import { ButtonLink } from "@/shared/ui/primitives";
 import { Link } from "@/shared/ui/router-link";
 import { prefetchRoute, warmUpBackend } from "@/shared/route-prefetch";
@@ -104,7 +104,6 @@ function Reveal({
 function HeroCopy() {
   return (
     <div className="home-hero-copy">
-      <p className="home-kicker">A calmer way to get ready</p>
       <h1 id="home-hero-title">
         Show up
         <br />
@@ -331,9 +330,31 @@ function FinalCard() {
   );
 }
 
+function HomeDotField() {
+  const { isMotionPaused } = useMotion();
+  const reduce = useReducedMotion();
+  const glow = !isMotionPaused && !reduce;
+
+  return (
+    <div className="home-dot-field" aria-hidden="true">
+      <DotPattern
+        glow={glow}
+        width={28}
+        height={28}
+        cx={1}
+        cy={1}
+        cr={1.15}
+        className={cn(
+          "home-dot-pattern",
+          "[mask-image:radial-gradient(ellipse_at_center,white,transparent_78%)]",
+        )}
+      />
+    </div>
+  );
+}
+
 function LandingInner() {
   const { isMotionPaused } = useMotion();
-  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     warmUpBackend();
@@ -347,12 +368,7 @@ function LandingInner() {
       className="home-page"
       data-motion={isMotionPaused ? "paused" : "running"}
     >
-      <BeamsBackground
-        theme={resolvedTheme}
-        paused={isMotionPaused}
-        intensity="subtle"
-        className="home-beams"
-      />
+      <HomeDotField />
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>

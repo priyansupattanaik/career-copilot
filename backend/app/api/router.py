@@ -392,7 +392,7 @@ def bootstrap(
     def _read_latest_analysis():
         latest = (
             client.table("ats_analyses")
-            .select("id,overall_score,status,created_at,started_at,completed_at")
+            .select("id,overall_score,status,created_at,started_at,completed_at,score_breakdown,summary")
             .eq("user_id", uid)
             .eq("status", "completed")
             # Keep ordering client-side for the same index-independent path.
@@ -406,7 +406,7 @@ def bootstrap(
             return latest
         rows = (
             client.table("ats_analyses")
-            .select("id,overall_score,status,created_at,started_at,completed_at")
+            .select("id,overall_score,status,created_at,started_at,completed_at,score_breakdown,summary")
             .eq("user_id", uid)
             .eq("status", "completed")
             .execute()
@@ -4910,7 +4910,16 @@ def get_settings_records(
     return {
         "notifications": ensure_preference_row(client, "notification_preferences", str(user.id)),
         "privacy": ensure_preference_row(client, "privacy_preferences", str(user.id)),
+        "career_preferences": ensure_preference_row(client, "candidate_preferences", str(user.id)),
     }
+
+
+@router.get("/settings/notifications")
+def get_notifications_settings(
+    user: CurrentUser = Depends(get_current_user), settings: Settings = Depends(get_settings)
+):
+    client = client_for(settings, user)
+    return ensure_preference_row(client, "notification_preferences", str(user.id))
 
 
 @router.put("/settings/notifications")
@@ -4928,6 +4937,14 @@ def update_notifications(
     return result[0]
 
 
+@router.get("/settings/privacy")
+def get_privacy_settings(
+    user: CurrentUser = Depends(get_current_user), settings: Settings = Depends(get_settings)
+):
+    client = client_for(settings, user)
+    return ensure_preference_row(client, "privacy_preferences", str(user.id))
+
+
 @router.put("/settings/privacy")
 def update_privacy(
     payload: PrivacySettings,
@@ -4941,6 +4958,24 @@ def update_privacy(
     if not result:
         raise ApiError(500, "privacy_save_failed", "Privacy settings could not be saved.")
     return result[0]
+
+
+@router.get("/settings/career-preferences")
+def get_career_preferences_settings(
+    user: CurrentUser = Depends(get_current_user), settings: Settings = Depends(get_settings)
+):
+    client = client_for(settings, user)
+    return ensure_preference_row(client, "candidate_preferences", str(user.id))
+
+
+@router.put("/settings/career-preferences")
+def update_settings_career_preferences(
+    payload: PreferencesUpdate,
+    user: CurrentUser = Depends(get_current_user),
+    settings: Settings = Depends(get_settings),
+):
+    return update_preferences(payload=payload, user=user, settings=settings)
+
 
 
 @router.delete("/account", status_code=204)

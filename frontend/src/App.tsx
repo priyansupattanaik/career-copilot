@@ -516,6 +516,10 @@ export function App() {
               path="/resume-analysis/review"
               element={<Navigate to="/resume-analysis?tab=upload" replace />}
             />
+            <Route
+              path="/settings"
+              element={<Navigate to="/settings/profile" replace />}
+            />
             <Route path="/settings/profile" element={<ProfileSettings />} />
             <Route path="/settings/account" element={<AccountSettings />} />
             <Route

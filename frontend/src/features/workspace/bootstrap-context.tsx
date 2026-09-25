@@ -32,11 +32,30 @@ export type WorkspaceBootstrap = {
   } | null;
   active_resume: { id: string } | null;
   counts?: Record<string, number>;
-  active_job_description?: { title: string; role_title?: string | null } | null;
+  active_job_description?: {
+    id?: string;
+    title: string;
+    role_title?: string | null;
+    company?: string | null;
+    location?: string | null;
+    salary_range?: string | null;
+  } | null;
   latest_ats_analysis?: {
     id: string;
     overall_score: number | null;
     status: string;
+    score_breakdown?: {
+      matched_terms?: string[];
+      missing_terms?: string[];
+      partial_terms?: string[];
+      total_terms?: number;
+    } | null;
+    summary?: {
+      matched?: number;
+      missing?: number;
+      total?: number;
+      missing_terms?: string[];
+    } | null;
   } | null;
   latest_actions?: {
     last_resume_upload?: {

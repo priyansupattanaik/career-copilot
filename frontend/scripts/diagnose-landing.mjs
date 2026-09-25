@@ -68,8 +68,6 @@ async function collectPageSignals(page, label) {
       ".home-profile-sheet",
       ".home-final-card",
       ".home-footer",
-      ".home-beams",
-      ".home-beams canvas",
     ];
 
     const boxes = selectors.flatMap((selector) =>
@@ -142,19 +140,6 @@ async function collectPageSignals(page, label) {
         }
       : null;
 
-    const beams = document.querySelector(".home-beams canvas");
-    let beamPixels = 0;
-    if (beams) {
-      const ctx = beams.getContext("2d");
-      if (ctx) {
-        const w = Math.min(beams.width, 800);
-        const h = Math.min(beams.height, 500);
-        const data = ctx.getImageData(0, 0, w, h).data;
-        for (let i = 3; i < data.length; i += 4)
-          if (data[i] > 8) beamPixels += 1;
-      }
-    }
-
     const featurePad = Array.from(
       document.querySelectorAll(".home-feature"),
     ).map((el, i) => ({
@@ -190,8 +175,7 @@ async function collectPageSignals(page, label) {
       boxes,
       contrastChecks,
       videoState,
-      beamPixels,
-      beamCanvas: beams ? { width: beams.width, height: beams.height } : null,
+
       featurePad,
       reveal,
       images,
@@ -286,14 +270,6 @@ async function main() {
   else if (hero.videoState?.paused)
     note("warn", "video-paused", JSON.stringify(hero.videoState));
   else note("info", "video", JSON.stringify(hero.videoState));
-
-  if (hero.beamPixels < 20)
-    note(
-      "warn",
-      "beams-faint",
-      `pixels=${hero.beamPixels} canvas=${JSON.stringify(hero.beamCanvas)}`,
-    );
-  else note("info", "beams", `pixels=${hero.beamPixels}`);
 
   for (const check of hero.contrastChecks) {
     if (check.missing) note("error", "contrast-missing", check.selector);
