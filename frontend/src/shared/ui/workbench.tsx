@@ -21,6 +21,7 @@ import {
 } from "radix-ui";
 import { useReducedMotion } from "motion/react";
 import { CopilotIcon } from "@/components/ui/copilot-icons";
+import { isDevBuild } from "@/shared/config/env";
 import { cn } from "@/shared/utils";
 
 /* ==========================================================================
@@ -586,7 +587,7 @@ export function InlineNotice({
     >
       <div style={{ flex: 1 }}>
         <p style={{ margin: 0 }}>{message}</p>
-        {details && import.meta.env.DEV ? (
+        {details && isDevBuild ? (
           <div style={{ marginTop: 8 }}>
             <button
               type="button"

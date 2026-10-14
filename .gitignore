@@ -46,7 +46,16 @@ backend/career_copilot_api.egg-info/
 # Env / secrets (never commit)
 .env
 .env.*
+*.env
+*.env.*
 !.env.example
+!*.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
 /secrets/
 
 # Logs / OS

@@ -1,5 +1,6 @@
 """Smoke tests for backend API endpoints, verifying status codes and response shapes."""
 from fastapi.testclient import TestClient
+
 from app.main import app
 
 client = TestClient(app)

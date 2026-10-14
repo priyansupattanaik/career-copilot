@@ -1,5 +1,6 @@
 """Tests for pure business logic in ATS scoring and analysis."""
 import pytest
+
 from app.features.ats.ats_score import (
     AtsScore,
     ats_source_fingerprint,

@@ -1,9 +1,18 @@
-﻿
+import {
+  isProductionBuild,
+  VITE_API_BASE_URL,
+  VITE_API_V1_PREFIX,
+  VITE_PUBLIC_APP_ORIGIN,
+  VITE_SUPABASE_PUBLISHABLE_KEY,
+  VITE_SUPABASE_URL,
+} from "./config/env";
+
+export { isProductionBuild };
+export * from "./config/env";
 
 export const BROWSER_API_PROXY_PREFIX = "/api/backend";
 
-export const API_V1_PREFIX =
-  import.meta.env.VITE_API_V1_PREFIX?.trim() || "/api/v1";
+export const API_V1_PREFIX = VITE_API_V1_PREFIX;
 
 export const ACCESS_TOKEN_STORAGE_KEY = "career_copilot_access_token";
 
@@ -11,22 +20,15 @@ export const DEMO_COOKIE_NAME = "career_copilot_demo";
 export const DEMO_COOKIE_VALUE = "1";
 export const DEMO_COOKIE_PAIR = `${DEMO_COOKIE_NAME}=${DEMO_COOKIE_VALUE}`;
 
-/** True for production Vite builds. Feature code should read this instead of import.meta.env. */
-export const isProductionBuild = import.meta.env.PROD;
-
-function readViteEnv(value: string | undefined): string {
-  return value?.trim() || "";
-}
-
 /** Browser Supabase project URL. Empty when the build was not given VITE_SUPABASE_URL. */
-export const supabaseUrl = readViteEnv(import.meta.env.VITE_SUPABASE_URL);
+export const supabaseUrl = VITE_SUPABASE_URL;
 
 /** Browser Supabase publishable key. Empty when the build was not given one. */
-export const supabasePublishableKey = readViteEnv(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+export const supabasePublishableKey = VITE_SUPABASE_PUBLISHABLE_KEY;
 
 /** Public site origin from VITE_PUBLIC_APP_ORIGIN, without a trailing slash. */
 export function vitePublicAppOrigin(): string {
-  return readViteEnv(import.meta.env.VITE_PUBLIC_APP_ORIGIN).replace(/\/$/, "");
+  return VITE_PUBLIC_APP_ORIGIN;
 }
 
 /**
@@ -37,19 +39,13 @@ export function vitePublicAppOrigin(): string {
  * or reverse-proxy /api/backend and /api/files to the FastAPI service.
  */
 export function resolveApiBase(): string {
-  const url = import.meta.env.VITE_API_BASE_URL?.trim();
-  if (url) return `${url.replace(/\/$/, "")}${API_V1_PREFIX}`;
-  if (isProductionBuild && typeof window !== "undefined") {
-    // Same-origin proxy path is intentional for vite preview / reverse-proxied deploys.
-    // Direct static file hosts without a reverse proxy will fail fetch with a clear network error.
-  }
+  if (VITE_API_BASE_URL) return `${VITE_API_BASE_URL}${API_V1_PREFIX}`;
   return BROWSER_API_PROXY_PREFIX;
 }
 
 export function resolveUpstreamApiOrigin(): string {
-  const url = import.meta.env.VITE_API_BASE_URL?.trim();
-  if (!url) throw new Error("API base URL is not configured.");
-  return url.replace(/\/$/, "");
+  if (!VITE_API_BASE_URL) throw new Error("API base URL is not configured.");
+  return VITE_API_BASE_URL;
 }
 
 export function isDemoCookiePresent(cookieSource?: string): boolean {
