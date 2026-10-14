@@ -5,12 +5,20 @@ import uuid
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from starlette.exceptions import HTTPException
 
 from app.api.router import router
 from app.core.config import get_settings
-from app.core.errors import ApiError, api_error_handler, unexpected_error_handler
+from app.core.errors import (
+    ApiError,
+    api_error_handler,
+    http_exception_handler,
+    unexpected_error_handler,
+    validation_exception_handler,
+)
 from app.features.ats.routes import router as ats_scoring_router
 
 settings = get_settings()
@@ -58,6 +66,8 @@ app.add_middleware(
     expose_headers=["X-Request-ID"],
 )
 app.add_exception_handler(ApiError, api_error_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, unexpected_error_handler)
 
 

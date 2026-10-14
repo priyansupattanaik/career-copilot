@@ -1,77 +1,158 @@
-# Architecture
+# Career Copilot Architecture Guide
 
-Career Copilot is a Vite + React frontend and a FastAPI backend. The browser never holds database or LLM keys. Product behavior (confirmed resume text, scores, interviews, jobs) lives in feature modules. This file is the map of those modules.
+This guide details the structural design, module responsibilities, data flow, and development workflows for the Career Copilot application.
 
-## Layout
+---
 
-```text
-frontend/src/
-  features/<feature>/
-    api.ts            HTTP calls for that feature
-    components/       Screens
-    model/            Types and pure rules, when a feature has them
-  shared/
-    config.ts         The only frontend module that reads import.meta.env
-    api/client.ts     Authenticated fetch, demo-session switch, ApiRequestError
-    api/errors.ts     Status, code, and message for a failed response
-    theme.tsx         Theme state
-    ui/               Controls used by more than one feature
-  components/ui/      Visual treatments (ribbons, beams, icons, error panel)
+## 1. System Overview
 
-backend/app/
-  main.py             App, CORS, request id, exception handlers
-  api/router.py       Mounts feature routers at API_V1_PREFIX
-  api/routers/        One module per area (health, profile, resumes, jobs, …)
-  api/support.py      Helpers shared by more than one router
-  api/schemas.py      Request bodies
-  core/config.py      The only backend module that reads the process environment
-  core/errors.py      ApiError and the JSON error body
-  features/           Domain logic (scoring, parsing, interview, learning, FreeHire client)
-  database/           Supabase adapters
+Career Copilot operates as a decoupled architecture tailored for free-tier cloud deployment:
+- **Frontend**: Single Page Application built with React 19, TypeScript, Vite, Tailwind CSS v4, deployed to **Vercel**.
+- **Backend**: Asynchronous REST API built with FastAPI, Python 3.12, Uvicorn, deployed to **Render** free tier.
+- **Data & Auth**: Managed PostgreSQL, Auth, and Object Storage provided by **Supabase**.
+
+```
+[Browser Client (Vercel)]
+       │  (HTTPS / REST)
+       ▼
+[FastAPI Backend (Render Free Tier)]
+  ├── /health/live (Immediate probe)
+  ├── /api/v1/ (Authenticated endpoints)
+  └── Integrations: Groq, NVIDIA, FreeHire, YouTube
+       │
+       ▼
+[Supabase (Database, Auth, Storage)]
 ```
 
-Root `scripts/design/` holds unused logo experiments. They are not imported by the app.
+---
 
-## Environment
+## 2. Directory Structure
 
-One root `.env`. Backend settings are `backend/app/core/config.py` (`Settings` via pydantic-settings). Browser values are only `VITE_*`, read in `frontend/src/shared/config.ts`:
+```text
+career-copilot/
+├── frontend/
+│   ├── src/
+│   │   ├── app/                # Application entry, router, and route guards
+│   │   ├── features/           # Domain feature modules
+│   │   │   ├── auth/           # Authentication, sign-in, session state
+│   │   │   ├── community/      # Public candidate directory & search
+│   │   │   ├── dashboard/      # User metrics, action items, activity feed
+│   │   │   ├── interview/      # Mock interview sessions, STT/TTS, evaluation
+│   │   │   ├── jobs/           # Job discovery, FreeHire sync, saved jobs
+│   │   │   ├── learning/       # Curated paths, YouTube video tracking
+│   │   │   ├── marketing/      # Public landing page & marketing assets
+│   │   │   ├── onboarding/     # Post-signup initial setup wizard
+│   │   │   ├── profile/        # Candidate resume data & public profiles
+│   │   │   ├── resume/         # Resume upload, ATS scoring & suggestions
+│   │   │   ├── settings/       # Account, privacy, notification preferences
+│   │   │   └── workspace/      # Shell layout, navigation, workspace bootstrap
+│   │   └── shared/             # Cross-feature infrastructure
+│   │       ├── config/         # Environment variables (env.ts) and constants
+│   │       ├── lib/            # HTTP client, TanStack Query, error classes
+│   │       ├── styles/         # Global themes, CSS variables, design tokens
+│   │       ├── ui/             # Reusable design system primitives (workbench.tsx)
+│   │       └── utils/          # General helpers (cn, formatting, clipboard)
+│   ├── package.json
+│   └── vite.config.mjs
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── router.py       # Versioned router composition
+│   │   │   ├── routers/        # Resource-specific route modules
+│   │   │   ├── schemas.py      # Input validation schemas (Pydantic)
+│   │   │   └── support.py      # Shared router helpers
+│   │   ├── core/
+│   │   │   ├── config.py       # Pydantic Settings & environment validation
+│   │   │   └── errors.py       # ApiError exception and central handlers
+│   │   ├── database/
+│   │   │   ├── client.py       # Supabase PostgREST & Storage client
+│   │   │   └── repository.py   # Database query abstraction
+│   │   ├── features/           # Pure domain services (ATS, LLM, Interview)
+│   │   └── main.py             # Server boot, CORS, middleware, health endpoints
+│   └── pyproject.toml
+├── docs/                       # Technical architecture & operational manuals
+└── scripts/                    # Development runners, diagnostics, smoke tests
+```
 
-| Export | Source |
-| --- | --- |
-| `resolveApiBase()` | `VITE_API_BASE_URL`, else same-origin `/api/backend` |
-| `supabaseUrl`, `supabasePublishableKey` | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` |
-| `vitePublicAppOrigin()` | `VITE_PUBLIC_APP_ORIGIN` |
-| `isProductionBuild` | Vite `PROD` |
+---
 
-Feature code imports those exports. It does not read `import.meta.env` itself.
+## 3. Request Lifecycle
 
-## API
+The application enforces a strictly unidirectional request lifecycle:
 
-`backend/app/api/router.py` includes the routers in `backend/app/api/routers/`. Each router owns its paths. Shared upload and profile helpers live in `backend/app/api/support.py` so profile and resume routes do not import each other except where settings reuses `update_preferences`.
+```text
+[User Interaction]
+       │
+       ▼
+[React UI Component] ─── (calls custom hook or mutation)
+       │
+       ▼
+[Feature API Function] ─── (src/features/<feature>/api.ts)
+       │
+       ▼
+[Shared HTTP Client] ─── (src/shared/lib/client.ts)
+  - Injects Bearer token
+  - Enforces timeout (75s cold start / 30s subsequent)
+  - Retries idempotent GETs on network failure
+       │
+       ▼ (HTTPS / JSON)
+[FastAPI Router] ─── (app/api/routers/<resource>.py)
+  - Validates request payload against Pydantic schema
+  - Injects authenticated CurrentUser via Depends()
+       │
+       ▼
+[Domain Service] ─── (app/features/<feature>/service.py)
+  - Executes pure business rules, scoring, external LLM calls
+       │
+       ▼
+[Repository Layer] ─── (app/database/client.py)
+  - Executes PostgREST / Storage queries against Supabase
+  - Maps database aliases and column types
+       │
+       ▼
+[Database / Storage] ─── Supabase PostgreSQL
+```
 
-`app/main.py` mounts that router at `settings.api_v1_prefix` and also mounts `features/ats/routes.py` for `POST /ats/score`. Resume improvement stays on `features/resume_improvement/routes.py`.
+---
 
-Failed requests use `ApiError` (`code`, `message`, `details`, `request_id`). The browser client turns that body into `ApiRequestError` (`status`, `code`, `message`, `requestId`). Callers still read `error.message`. Abort is not rewritten into a network error.
+## 4. Error Handling Flow
 
-OpenAPI at `/docs` is the path list. `backend/tests/test_settings.py` checks that settings, account, health, jobs sync, and resumes stay registered.
+1. **Backend**:
+   - Handled exceptions raise `ApiError(status_code, code, message, details)`.
+   - FastApi returns JSON: `{ "error": { "code": string, "message": string, "details": any, "request_id": string }, "detail": string }`.
+   - Unhandled exceptions are caught by `unexpected_error_handler`, logging a full traceback with `request_id` and returning a generic 500 error without leaking internal state.
+2. **Frontend**:
+   - Network timeouts and failures are caught in `shared/lib/client.ts`.
+   - Mapped into an `ApiError` instance.
+   - User-facing UI displays userMessage; technical details are hidden in production and revealed via disclosures in dev mode.
 
-## State
+---
 
-There is no global store library.
+## 5. Guide: How to Add a Feature
 
-| State | Where |
-| --- | --- |
-| Theme | `shared/theme.tsx` |
-| Signed-in workspace payload | `features/workspace/bootstrap-context.tsx` (`GET /me/bootstrap`) |
-| Screen state | `useState` in the feature screen |
-| Server calls | `features/<feature>/api.ts`, then `shared/api/client.ts` |
+1. **Create the Feature Folder**:
+   Under `frontend/src/features/<new-feature>/`, create:
+   - `api.ts`: Functions that call `apiRequest()` from `@/shared/lib/client`.
+   - `model/`: TypeScript interfaces and pure domain calculation functions.
+   - `components/`: UI components for this feature.
+   - `index.ts`: The public feature entry point exporting only what other modules need.
+2. **Register Routes**:
+   In `frontend/src/App.tsx`, lazy-load the feature's primary view with `React.lazy` and add the `<Route>` entry inside `<WorkspaceRoute>` or `<ProtectedRoute>`.
+3. **Add Query Keys**:
+   Register a new query key factory in `frontend/src/shared/lib/query-keys.ts`.
 
-Some older screens still call `apiRequest` for reads (settings profile loads, resume check flow, interview session). New calls go through the feature `api.ts`.
+---
 
-A workspace page crash is caught by an error boundary inside the shell. The shell stays mounted. The outer boundary in `App` still catches failures outside a page.
+## 6. Guide: How to Add an Endpoint
 
-## Naming
-
-- Frontend features: `features/<name>/{api.ts,components,model}`.
-- Backend HTTP: `api/routers/<name>.py`. Domain logic: `features/<name>/`.
-- UI class helper: `shared/utils.ts` `cn`. Do not add a second `cn`.
+1. **Define Request/Response Schemas**:
+   Add Pydantic models in `backend/app/api/schemas.py`.
+2. **Add Domain Logic**:
+   Implement pure processing in `backend/app/features/<domain>/`.
+3. **Create the Route Handler**:
+   In `backend/app/api/routers/<resource>.py`, add the endpoint function decorated with `@router.get`, `@router.post`, etc.
+   Use `user: CurrentUser = Depends(get_current_user)` for protected endpoints.
+4. **Register in Router**:
+   If creating a new router module, mount it in `backend/app/api/router.py`.
+5. **Add Smoke Test**:
+   Add a test case in `backend/tests/test_api_smoke.py` verifying status codes and response structures.

@@ -87,13 +87,17 @@ cd career-copilot
 cp .env.example .env   # Windows: copy .env.example .env
 ```
 
+For platform-specific environment setup:
+- Frontend (Vercel): Refer to [frontend/.env.example](frontend/.env.example) and [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)
+- Backend (Render): Refer to [backend/.env.example](backend/.env.example) and [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)
+
 Set at least:
 
 | Variable | Role |
 |----------|------|
 | `AUTH_SECRET` | JWT signing secret |
 | `SUPABASE_URL` | Supabase project URL |
-| `SUPABASE_SECRET_KEY` | Server-only secret / service role key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only secret / service role key |
 | `SUPABASE_STORAGE_BUCKET` | Private bucket name |
 | `VITE_SUPABASE_URL` | Browser Supabase URL |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Browser Supabase publishable key |

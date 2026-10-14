@@ -7,7 +7,7 @@ import { CopilotIcon } from "@/components/ui/copilot-icons";
 import { createClient } from "@/features/auth/api/client";
 import { safeRedirectPath } from "@/features/auth/safe-path";
 import { armSignInLightBend } from "@/features/auth/signin-light-bend";
-import { prefetchRoute } from "@/shared/route-prefetch";
+import { prefetchRoute, warmUpBackend } from "@/shared/route-prefetch";
 import { Button, Input } from "@/shared/ui/primitives";
 import {
   PhoneField,
@@ -310,6 +310,11 @@ function GoogleMark() {
 export function AuthRoute() {
   const { pathname } = useLocation();
   const signup = pathname === "/sign-up";
+
+  useEffect(() => {
+    warmUpBackend();
+  }, []);
+
   return (
     <Shell
       pair

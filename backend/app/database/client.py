@@ -855,9 +855,12 @@ class SupabaseQuery:
                     "Supabase tables exist, but the API role cannot access them. "
                     "Run docs/database/supabase-grants.sql in the Supabase SQL Editor.",
                 ) from exc
-            detail = f"Supabase query failed: HTTP {exc.response.status_code}"
-            if body_snippet:
-                detail = f"{detail} ({body_snippet})"
+            if str(self.client.settings.app_env).lower() == "production":
+                detail = "The database is temporarily unavailable. If you are using a Supabase free tier project, please confirm it has not paused due to inactivity."
+            else:
+                detail = f"Supabase query failed: HTTP {exc.response.status_code}"
+                if body_snippet:
+                    detail = f"{detail} ({body_snippet})"
             raise ApiError(503, "database_unavailable", detail) from exc
         except httpx.RequestError as exc:
             logger.error("supabase_request_error table=%s error=%s", self.table_name, exc)
