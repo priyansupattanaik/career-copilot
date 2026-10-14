@@ -1,12 +1,11 @@
-from uuid import uuid4
-from pydantic import ValidationError
 import pytest
+from pydantic import ValidationError
 
 from app.api.schemas import (
-    NotificationSettings,
-    PrivacySettings,
-    PreferencesUpdate,
     AccountDeleteRequest,
+    NotificationSettings,
+    PreferencesUpdate,
+    PrivacySettings,
     UsernameChange,
 )
 
