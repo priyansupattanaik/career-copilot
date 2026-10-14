@@ -24,7 +24,7 @@ SOFTWARE.
 */
 
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
-import { cn } from "@/lib/cn";
+import { cn } from "@/shared/utils";
 
 export interface DarkMidnightMeshBackgroundProps extends HTMLAttributes<HTMLDivElement> {
   children?: ReactNode;
