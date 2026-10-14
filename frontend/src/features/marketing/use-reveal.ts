@@ -19,7 +19,8 @@ export interface RevealOptions {
  */
 export function useReveal<T extends HTMLElement>(options: RevealOptions = {}) {
   const ref = useRef<T | null>(null);
-  const { delay = 0, y = 22, threshold = 0, onReveal } = options;
+  const { delay = 0, y = 8, threshold = 0, onReveal } = options;
+  const travel = Math.min(8, Math.max(0, y));
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -49,7 +50,7 @@ export function useReveal<T extends HTMLElement>(options: RevealOptions = {}) {
     }
 
     el.style.setProperty("--reveal-delay", `${delay}ms`);
-    el.style.setProperty("--reveal-y", `${y}px`);
+    el.style.setProperty("--reveal-y", `${travel}px`);
     el.classList.add("home-reveal");
 
     let revealed = false;

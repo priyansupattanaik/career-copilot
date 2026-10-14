@@ -654,7 +654,7 @@ def _deterministic_session_report(
     improvements = improvements[:8] or ["Add clearer results to each answer."]
     role = (target_role or "this role").strip() or "this role"
     summary = (
-        f"Mock interview debrief for {role}: average answer score {overall}/100 "
+        f"Practice report for {role}: average answer score {overall}/100 "
         f"across {len(turns)} response(s). "
         f"Communication score {communication}/100 based on filler density "
         f"({total_fillers} fillers in ~{word_total or 0} words)."

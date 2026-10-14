@@ -5,8 +5,8 @@ import {
   modalBackdropVariants,
   modalPanelVariants,
 } from "@/components/ui/motion-system";
-import type { Job, Recommendation, SavedJobStatus } from "./job-types";
-import { statusLabel, statusTone } from "./job-types";
+import type { Job, Recommendation, SavedJobStatus } from "../model/job-types";
+import { statusLabel, statusTone } from "../model/job-types";
 import { Button } from "@/shared/ui/primitives";
 
 

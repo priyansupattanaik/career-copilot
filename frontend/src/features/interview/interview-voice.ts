@@ -228,8 +228,8 @@ export function buildProceedPrompt(options: {
 }): string {
   if (options.isLastQuestion) {
     return options.autoContinue
-      ? "That was the last question. I'll wrap up your debrief now."
-      : "That was the last question. Say proceed when you are ready for your debrief, or press Continue.";
+      ? "That was the last question. I'll open your report now."
+      : "That was the last question. Say proceed when you are ready for your report, or press Continue.";
   }
   if (options.autoContinue) {
     return "Moving to the next question.";

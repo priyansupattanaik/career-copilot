@@ -47,10 +47,10 @@ export type PieSlice = {
 };
 
 const PIE_PALETTE = [
-  "var(--primary-strong, var(--app-blue, #1769aa))",
-  "var(--text, var(--app-text, #0b2942))",
-  "var(--muted, var(--app-muted, #526b80))",
-  "color-mix(in srgb, var(--primary-strong, var(--app-blue, #1769aa)) 55%, var(--text, #0b2942))",
+  "var(--accent)",
+  "var(--ink)",
+  "var(--ink-2)",
+  "var(--border-control)",
 ];
 
 function clampScore(value: number) {
@@ -294,9 +294,9 @@ export function WorkspaceMixChart({
 }) {
   const slices: PieSlice[] = withVisiblePalette([
     { key: "resumes", label: "Resumes", value: Number(resumes) || 0, color: PIE_PALETTE[0] },
-    { key: "ats", label: "ATS runs", value: Number(analyses) || 0, color: PIE_PALETTE[1] },
+    { key: "ats", label: "Resume checks", value: Number(analyses) || 0, color: PIE_PALETTE[1] },
     { key: "interviews", label: "Interviews", value: Number(interviews) || 0, color: PIE_PALETTE[2] },
-    { key: "jobs", label: "Job pipeline", value: Number(jobs) || 0, color: PIE_PALETTE[3] },
+    { key: "jobs", label: "Saved jobs", value: Number(jobs) || 0, color: PIE_PALETTE[3] },
   ]);
   const total = slices.reduce((sum, slice) => sum + slice.value, 0);
 
@@ -308,7 +308,7 @@ export function WorkspaceMixChart({
       </div>
       {total <= 0 ? (
         <p className="muted" style={{ margin: 0, fontSize: "var(--text-sm)" }}>
-          Mix appears after you save a resume, ATS run, interview, or job.
+          This chart appears after you save a resume, resume check, interview, or job.
         </p>
       ) : (
         <div className="dash-pie-layout">
@@ -343,10 +343,10 @@ export function MiniMetricRing({
 
   const strokeColor =
     tone === "success"
-      ? "var(--success, #22c55e)"
+      ? "var(--ok)"
       : tone === "warning"
-      ? "var(--warning, #eab308)"
-      : "var(--primary-strong, var(--accent, #1769aa))";
+      ? "var(--warn)"
+      : "var(--accent)";
 
   return (
     <div ref={ref} className="mini-metric-ring" style={{ width: size, height: size }} aria-hidden="true">
@@ -467,7 +467,7 @@ export function ScoreTrendChart({ history }: { history: InterviewHistoryPoint[] 
   if (points.length === 0) {
     return (
       <p className="muted" style={{ margin: 0, fontSize: "var(--text-sm)" }}>
-        No plotted scores yet. Complete a session debrief to unlock the trend line.
+        No scores yet. Finish a practice session to see the trend.
       </p>
     );
   }
@@ -713,8 +713,7 @@ export function InterviewProgressPanel({ progress }: { progress?: InterviewProgr
           <div>
             <h2>See how your answers improve</h2>
             <p className="muted">
-              Complete practice sessions to unlock score trends, dimension bars, and session-to-session
-              deltas.
+              Finish practice sessions to see score trends and how each session compares with the last.
             </p>
           </div>
           <Link className="button button-primary" href="/mock-interview/setup">
@@ -730,8 +729,8 @@ export function InterviewProgressPanel({ progress }: { progress?: InterviewProgr
             <span />
           </div>
           <p className="muted" style={{ margin: 0, fontSize: "var(--text-sm)" }}>
-            Your overall, communication, structure, and content scores will plot here after the first
-            completed debrief.
+            Overall, communication, structure, and content scores appear here after the first
+            finished session.
           </p>
         </div>
       </section>
@@ -748,7 +747,7 @@ export function InterviewProgressPanel({ progress }: { progress?: InterviewProgr
               {(progress.sessions_total || 0) === 1 ? "" : "s"} · scores pending
             </h2>
             <p className="muted">
-              Finish a session to generate a debrief report. Scores appear here once a report is stored.
+              Finish a session to save a report. Scores appear here once a report is stored.
             </p>
           </div>
           <Link className="button button-primary" href="/mock-interview">
@@ -765,8 +764,8 @@ export function InterviewProgressPanel({ progress }: { progress?: InterviewProgr
         <div>
           <h2>How your interviews are improving</h2>
           <p className="muted">
-            Scores from completed debriefs: overall trend plus communication, structure, content, and
-            camera presence when measured.
+            Scores from finished sessions: overall trend, plus communication, structure, content, and
+            camera presence when those were measured.
           </p>
         </div>
         <div className="interview-progress-actions">

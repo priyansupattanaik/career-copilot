@@ -123,7 +123,7 @@ async def run_resume_improvement_crew(
         raise ApiError(
             502,
             "crew_gap_analysis_failed",
-            "Resume improvement could not analyze ATS gaps. Fix the ATS analysis source and retry.",
+            "Resume suggestions could not read the missing words from this resume check. Retry the check.",
         ) from exc
     try:
         raw = await tool_generate_resume_suggestions(settings, context)

@@ -123,7 +123,7 @@
 }
 
 .ra-segnav-item:active {
-  transform: scale(0.97);
+  transform: scale(0.985);
 }
 
 .ra-segnav-item[aria-current="page"] {
@@ -1489,30 +1489,25 @@
   display: grid;
   place-items: center;
   align-content: center;
-  gap: 10px;
+  gap: 12px;
   text-align: center;
-  min-height: 260px;
+  min-height: 220px;
   padding: clamp(28px, 4vw, 48px);
-  border: 1px dashed
-    color-mix(in srgb, var(--primary-strong) 34%, var(--border));
-  border-radius: var(--radius-xl);
-  background:
-    radial-gradient(
-      ellipse 60% 70% at 50% 0%,
-      color-mix(in srgb, var(--primary) 14%, transparent),
-      transparent 70%
-    ),
-    var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-surface);
+  background-color: var(--surface);
 }
 
 .ra-empty svg {
-  color: var(--primary-strong);
+  color: var(--ink-3);
 }
 
 .ra-empty h2 {
   margin: 0;
-  font-size: 1.3rem;
-  letter-spacing: -0.02em;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
 }
 
 .ra-empty p {

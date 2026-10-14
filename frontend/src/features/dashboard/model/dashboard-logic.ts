@@ -99,29 +99,29 @@ export function computeCareerReadiness(
 export function getReadinessTier(score: number): ReadinessTier {
   if (score >= 85) {
     return {
-      label: "Elite Ready",
-      color: "var(--success, #10b981)",
-      description: "Optimal readiness across tracked milestones",
+      label: "High",
+      color: "var(--ok)",
+      description: "Resume match and practice scores are both high.",
     };
   }
   if (score >= 70) {
     return {
-      label: "Job Ready",
-      color: "var(--accent, #6366f1)",
-      description: "Competitive readiness across resume & interview",
+      label: "On track",
+      color: "var(--accent)",
+      description: "Resume match and practice scores are in a usable range.",
     };
   }
   if (score >= 45) {
     return {
-      label: "Advancing",
-      color: "var(--warning, #f59e0b)",
-      description: "Advancing foundation; continue targeted practice",
+      label: "In progress",
+      color: "var(--warn)",
+      description: "Keep going. The next step is below.",
     };
   }
   return {
-    label: "Foundational",
-    color: "var(--muted, #94a3b8)",
-    description: "Follow the recommended step below to increase readiness",
+    label: "Just started",
+    color: "var(--ink-3)",
+    description: "Follow the next step below.",
   };
 }
 
@@ -140,12 +140,12 @@ export function resolveNextAction(params: {
   if (!params.hasConfirmedResume) {
     return {
       step: 1,
-      badge: "Priority Step 1 · Foundation",
-      title: "Upload your confirmed master resume",
+      badge: "Step 1",
+      title: "Upload a resume",
       description:
-        "Activate precision ATS scoring, skill gap diagnostics, and customized interview scenarios.",
-      actionLabel: "Upload Resume",
-      cta: "Upload Resume",
+        "Job matches and practice questions use the resume you confirm. Nothing is added that is not in the file.",
+      actionLabel: "Upload resume",
+      cta: "Upload resume",
       actionHref: "/resume-analysis?tab=upload",
       secondaryLabel: "Or paste text",
       secondaryHref: "/resume-analysis",
@@ -155,14 +155,14 @@ export function resolveNextAction(params: {
   if (params.atsScore == null) {
     return {
       step: 2,
-      badge: "Priority Step 2 · Alignment",
-      title: "Run your first ATS match scan",
+      badge: "Step 2",
+      title: "Compare your resume with a job",
       description:
-        "Match your resume against a target job description to diagnose keyword gaps and calculate role compatibility.",
-      actionLabel: "Run ATS Scan",
-      cta: "Run ATS Scan",
+        "Paste a job description to see which required words appear in your resume.",
+      actionLabel: "Compare resume",
+      cta: "Compare resume",
       actionHref: "/resume-analysis?tab=upload",
-      secondaryLabel: "Explore target jobs",
+      secondaryLabel: "View jobs",
       secondaryHref: "/jobs",
     };
   }
@@ -170,10 +170,10 @@ export function resolveNextAction(params: {
   if (!params.hasInterviewScores && params.interviewLatest == null) {
     return {
       step: 3,
-      badge: "Priority Step 3 · Delivery",
-      title: "Complete your first AI mock interview",
+      badge: "Step 3",
+      title: "Start a practice interview",
       description:
-        "Practice answering behavioral questions with real-time feedback on communication and structure.",
+        "Answer questions out loud and get a score for this session.",
       actionLabel: "Start Mock Interview",
       cta: "Start Mock Interview",
       actionHref: "/mock-interview/setup",
@@ -185,12 +185,12 @@ export function resolveNextAction(params: {
   if (params.atsScore < 75) {
     return {
       step: 4,
-      badge: "Calibration · Keyword Gaps",
-      title: "Close keyword gaps on target ATS profile",
+      badge: "Resume gaps",
+      title: "Review words missing from your resume",
       description:
-        "Review missed technical competencies and re-scan against your priority role to reach 80%+ match.",
-      actionLabel: "Optimize ATS Score",
-      cta: "Optimize ATS Score",
+        "This job uses words your resume does not include. Change the resume only where the experience is true, then compare again.",
+      actionLabel: "Review report",
+      cta: "Review report",
       actionHref: params.atsReportId
         ? `/resume-analysis/report/${params.atsReportId}`
         : "/resume-analysis",
@@ -202,10 +202,10 @@ export function resolveNextAction(params: {
   if (params.interviewLatest != null && params.interviewLatest < 75) {
     return {
       step: 5,
-      badge: "Calibration · Interview Delivery",
-      title: "Elevate your mock interview performance",
+      badge: "Practice",
+      title: "Practice the interview again",
       description:
-        "Strengthen behavioral STAR structure and communication clarity to push your interview readiness score above 80/100.",
+        "Your last practice score was under 75. Read the report, then try another session.",
       actionLabel: "Practice Interview",
       cta: "Practice Interview",
       actionHref: "/mock-interview/setup",
@@ -216,14 +216,14 @@ export function resolveNextAction(params: {
 
   return {
     step: 6,
-    badge: "Continuous Mastery",
-    title: "Run a 10-minute technical interview drill",
+    badge: "Keep practicing",
+    title: "Run another practice interview",
     description:
-      "Maintain peak fluency and target 90+ across Communication, Content, and Behavioral Structure.",
-    actionLabel: "Launch Practice Drill",
-    cta: "Launch Practice Drill",
+      "Your resume match and last practice score are both at least 75. Another session is optional.",
+    actionLabel: "Start practice",
+    cta: "Start practice",
     actionHref: "/mock-interview/setup",
-    secondaryLabel: "View all debriefs",
+    secondaryLabel: "View reports",
     secondaryHref: "/mock-interview",
   };
 }

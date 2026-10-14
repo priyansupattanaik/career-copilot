@@ -1,3 +1,5 @@
+import { vitePublicAppOrigin } from "@/shared/config";
+
 /**
  * Canonical public origin for auth emails and OAuth continue URLs.
  * Loopback hosts must never be written into verification emails — those links
@@ -23,11 +25,7 @@ export function publicAppOrigin(options?: {
   envOrigin?: string | null;
   currentOrigin?: string | null;
 }): string {
-  const envOrigin = String(
-    options?.envOrigin ??
-      (typeof import.meta !== "undefined" ? import.meta.env.VITE_PUBLIC_APP_ORIGIN : "") ??
-      "",
-  )
+  const envOrigin = String(options?.envOrigin ?? vitePublicAppOrigin())
     .trim()
     .replace(/\/$/, "");
   if (envOrigin && !isLoopbackOrigin(envOrigin)) return envOrigin;

@@ -1,0 +1,399 @@
+{
+  "screens": [
+    {
+      "name": "dashboard",
+      "viewport": "360x640",
+      "filename": "dashboard_360x640.png"
+    },
+    {
+      "name": "resume-analysis",
+      "viewport": "360x640",
+      "filename": "resume-analysis_360x640.png"
+    },
+    {
+      "name": "mock-interview",
+      "viewport": "360x640",
+      "filename": "mock-interview_360x640.png"
+    },
+    {
+      "name": "learning",
+      "viewport": "360x640",
+      "filename": "learning_360x640.png"
+    },
+    {
+      "name": "jobs",
+      "viewport": "360x640",
+      "filename": "jobs_360x640.png"
+    },
+    {
+      "name": "community",
+      "viewport": "360x640",
+      "filename": "community_360x640.png"
+    },
+    {
+      "name": "dashboard",
+      "viewport": "390x844",
+      "filename": "dashboard_390x844.png"
+    },
+    {
+      "name": "resume-analysis",
+      "viewport": "390x844",
+      "filename": "resume-analysis_390x844.png"
+    },
+    {
+      "name": "mock-interview",
+      "viewport": "390x844",
+      "filename": "mock-interview_390x844.png"
+    },
+    {
+      "name": "learning",
+      "viewport": "390x844",
+      "filename": "learning_390x844.png"
+    },
+    {
+      "name": "jobs",
+      "viewport": "390x844",
+      "filename": "jobs_390x844.png"
+    },
+    {
+      "name": "community",
+      "viewport": "390x844",
+      "filename": "community_390x844.png"
+    },
+    {
+      "name": "dashboard",
+      "viewport": "768x1024",
+      "filename": "dashboard_768x1024.png"
+    },
+    {
+      "name": "resume-analysis",
+      "viewport": "768x1024",
+      "filename": "resume-analysis_768x1024.png"
+    },
+    {
+      "name": "mock-interview",
+      "viewport": "768x1024",
+      "filename": "mock-interview_768x1024.png"
+    },
+    {
+      "name": "learning",
+      "viewport": "768x1024",
+      "filename": "learning_768x1024.png"
+    },
+    {
+      "name": "jobs",
+      "viewport": "768x1024",
+      "filename": "jobs_768x1024.png"
+    },
+    {
+      "name": "community",
+      "viewport": "768x1024",
+      "filename": "community_768x1024.png"
+    },
+    {
+      "name": "dashboard",
+      "viewport": "1024x768",
+      "filename": "dashboard_1024x768.png"
+    },
+    {
+      "name": "resume-analysis",
+      "viewport": "1024x768",
+      "filename": "resume-analysis_1024x768.png"
+    },
+    {
+      "name": "mock-interview",
+      "viewport": "1024x768",
+      "filename": "mock-interview_1024x768.png"
+    },
+    {
+      "name": "learning",
+      "viewport": "1024x768",
+      "filename": "learning_1024x768.png"
+    },
+    {
+      "name": "jobs",
+      "viewport": "1024x768",
+      "filename": "jobs_1024x768.png"
+    },
+    {
+      "name": "community",
+      "viewport": "1024x768",
+      "filename": "community_1024x768.png"
+    },
+    {
+      "name": "dashboard",
+      "viewport": "1280x720",
+      "filename": "dashboard_1280x720.png"
+    },
+    {
+      "name": "resume-analysis",
+      "viewport": "1280x720",
+      "filename": "resume-analysis_1280x720.png"
+    },
+    {
+      "name": "mock-interview",
+      "viewport": "1280x720",
+      "filename": "mock-interview_1280x720.png"
+    },
+    {
+      "name": "learning",
+      "viewport": "1280x720",
+      "filename": "learning_1280x720.png"
+    },
+    {
+      "name": "jobs",
+      "viewport": "1280x720",
+      "filename": "jobs_1280x720.png"
+    },
+    {
+      "name": "community",
+      "viewport": "1280x720",
+      "filename": "community_1280x720.png"
+    },
+    {
+      "name": "dashboard",
+      "viewport": "1440x900",
+      "filename": "dashboard_1440x900.png"
+    },
+    {
+      "name": "resume-analysis",
+      "viewport": "1440x900",
+      "filename": "resume-analysis_1440x900.png"
+    },
+    {
+      "name": "mock-interview",
+      "viewport": "1440x900",
+      "filename": "mock-interview_1440x900.png"
+    },
+    {
+      "name": "learning",
+      "viewport": "1440x900",
+      "filename": "learning_1440x900.png"
+    },
+    {
+      "name": "jobs",
+      "viewport": "1440x900",
+      "filename": "jobs_1440x900.png"
+    },
+    {
+      "name": "community",
+      "viewport": "1440x900",
+      "filename": "community_1440x900.png"
+    },
+    {
+      "name": "dashboard",
+      "viewport": "1920x1080",
+      "filename": "dashboard_1920x1080.png"
+    },
+    {
+      "name": "resume-analysis",
+      "viewport": "1920x1080",
+      "filename": "resume-analysis_1920x1080.png"
+    },
+    {
+      "name": "mock-interview",
+      "viewport": "1920x1080",
+      "filename": "mock-interview_1920x1080.png"
+    },
+    {
+      "name": "learning",
+      "viewport": "1920x1080",
+      "filename": "learning_1920x1080.png"
+    },
+    {
+      "name": "jobs",
+      "viewport": "1920x1080",
+      "filename": "jobs_1920x1080.png"
+    },
+    {
+      "name": "community",
+      "viewport": "1920x1080",
+      "filename": "community_1920x1080.png"
+    },
+    {
+      "name": "dashboard",
+      "viewport": "844x390-landscape",
+      "filename": "dashboard_844x390-landscape.png"
+    },
+    {
+      "name": "resume-analysis",
+      "viewport": "844x390-landscape",
+      "filename": "resume-analysis_844x390-landscape.png"
+    },
+    {
+      "name": "mock-interview",
+      "viewport": "844x390-landscape",
+      "filename": "mock-interview_844x390-landscape.png"
+    },
+    {
+      "name": "learning",
+      "viewport": "844x390-landscape",
+      "filename": "learning_844x390-landscape.png"
+    },
+    {
+      "name": "jobs",
+      "viewport": "844x390-landscape",
+      "filename": "jobs_844x390-landscape.png"
+    },
+    {
+      "name": "community",
+      "viewport": "844x390-landscape",
+      "filename": "community_844x390-landscape.png"
+    }
+  ],
+  "oledSampling": {
+    "topLeft": {
+      "r": 254,
+      "g": 255,
+      "b": 255,
+      "a": 0
+    },
+    "topRight": {
+      "r": 1,
+      "g": 1,
+      "b": 0,
+      "a": 1
+    },
+    "bottomLeft": {
+      "r": 0,
+      "g": 0,
+      "b": 0,
+      "a": 0
+    },
+    "bottomRight": {
+      "r": 0,
+      "g": 0,
+      "b": 0,
+      "a": 0
+    },
+    "centerMesh": {
+      "r": 0,
+      "g": 0,
+      "b": 0,
+      "a": 1
+    },
+    "bareOledBlackSample": {
+      "r": 0,
+      "g": 0,
+      "b": 1,
+      "a": 0
+    }
+  },
+  "scrollBudget": {
+    "dashboard@390x844": {
+      "selector": ".wb-button-primary",
+      "visibleWithoutScroll": true
+    },
+    "resume-analysis@390x844": {
+      "selector": ".wb-tabs",
+      "visibleWithoutScroll": true
+    },
+    "mock-interview@390x844": {
+      "selector": "button[type=\"submit\"]",
+      "visibleWithoutScroll": false
+    },
+    "learning@390x844": {
+      "selector": ".wb-page-header-actions button",
+      "visibleWithoutScroll": true
+    },
+    "jobs@390x844": {
+      "selector": "[data-testid=\"freehire-sync\"]",
+      "visibleWithoutScroll": true
+    },
+    "community@390x844": {
+      "selector": ".wb-community-search-bar button",
+      "visibleWithoutScroll": true
+    },
+    "dashboard@1280x720": {
+      "selector": ".wb-button-primary",
+      "visibleWithoutScroll": true
+    },
+    "resume-analysis@1280x720": {
+      "selector": ".wb-tabs",
+      "visibleWithoutScroll": true
+    },
+    "mock-interview@1280x720": {
+      "selector": "button[type=\"submit\"]",
+      "visibleWithoutScroll": false
+    },
+    "learning@1280x720": {
+      "selector": ".wb-page-header-actions button",
+      "visibleWithoutScroll": true
+    },
+    "jobs@1280x720": {
+      "selector": "[data-testid=\"freehire-sync\"]",
+      "visibleWithoutScroll": true
+    },
+    "community@1280x720": {
+      "selector": ".wb-community-search-bar button",
+      "visibleWithoutScroll": true
+    }
+  },
+  "horizontalScrollIssues": [],
+  "phoneLandscape": {
+    "sidebarDisplay": "none",
+    "bottomBarDisplay": "flex",
+    "bottomBarHeight": "44px",
+    "labelsHidden": true
+  },
+  "moreSheet": {
+    "opened": true,
+    "closedOnEscape": true
+  },
+  "accountMenu": {
+    "opened": true
+  },
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+    "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+  ]
+}

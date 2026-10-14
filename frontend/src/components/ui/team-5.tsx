@@ -180,7 +180,7 @@ function MemberStrip({
     <article
       className={cn(
         "team5-member group relative min-w-0 flex-[1] overflow-hidden rounded-lg",
-        "cursor-pointer shadow-sm transition-[flex,box-shadow] duration-500",
+        "cursor-pointer shadow-sm transition-[flex,box-shadow] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
         "hover:flex-[3] hover:shadow-xl focus-within:flex-[3] focus-within:shadow-xl",
       )}
       tabIndex={0}
@@ -188,7 +188,7 @@ function MemberStrip({
       <img
         src={member.image}
         alt={`Portrait of ${member.name}`}
-        className="team5-photo absolute inset-0 h-full w-full object-cover grayscale transition-all duration-500 group-hover:grayscale-0 group-focus-within:grayscale-0"
+        className="team5-photo absolute inset-0 h-full w-full object-cover grayscale transition-[filter] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:grayscale-0 group-focus-within:grayscale-0"
         loading="lazy"
       />
 

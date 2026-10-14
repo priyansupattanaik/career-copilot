@@ -6,7 +6,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 
 import { apiRequest } from "@/shared/api/client";
-import { Badge, Button, Card, EmptyState, ErrorState, PageHeader, Progress, Select, Skeleton } from "@/shared/ui/primitives";
+import { Badge, Button, Card, EmptyState, ErrorState, Progress, Select, Skeleton } from "@/shared/ui/primitives";
+import { PageHeader } from "@/shared/ui/workbench";
 import { motion, useReducedMotion } from "motion/react";
 import {
   FAST_SPRING_TRANSITION,
@@ -51,7 +52,7 @@ function QuestionList({ title, description, questions }: { title: string; descri
               key={`${item.question}-${index}`}
               className="suggestion"
               variants={staggerItemVariants}
-              whileHover={shouldReduceMotion ? undefined : { x: 3 }}
+              whileHover={shouldReduceMotion ? undefined : { y: -1 }}
               transition={FAST_SPRING_TRANSITION}
             >
               <p style={{ margin: 0 }}>{item.question}</p>
@@ -63,7 +64,7 @@ function QuestionList({ title, description, questions }: { title: string; descri
             </motion.li>
           ))}
         </motion.ol>
-      ) : <p className="muted" style={{ margin: 0 }}>No evidence-grounded questions are available for this section.</p>}
+      ) : <p className="muted" style={{ margin: 0 }}>No questions are available for this section.</p>}
     </Card>
   );
 }
@@ -136,9 +137,9 @@ export function InterviewPreparationHome() {
   return (
     <div className="feature-page interview-hub">
       <PageHeader
-        title="Prepare with your evidence"
-        description="Generate practice material from the confirmed resume, job description, and ATS evidence you select. This does not claim unverified skills or predict hiring outcomes."
-        action={<Link className="button button-primary" href="/mock-interview">Start a mock interview</Link>}
+        title="Practice from your *resume*"
+        description="Questions come from the resume and job description you select. Missing skills are not added, and this does not predict a hiring decision."
+        actions={<Link className="wb-button wb-button-primary" href="/mock-interview">Start a mock interview</Link>}
       />
       {sourceLoading ? <div className="stack"><Skeleton lines={5} /><Skeleton lines={6} /></div> : sourceError ? <ErrorState onRetry={() => void loadSources()} /> : !confirmedResumes.length || !confirmedJobs.length ? (
         <EmptyState
@@ -156,7 +157,7 @@ export function InterviewPreparationHome() {
           <div>
             <h2 style={{ margin: 0 }}>Preparation context</h2>
             <p className="muted" style={{ marginBottom: 0 }}>
-              Your active confirmed resume is pre-selected when available. Use the same documents as ATS analysis when possible.
+              Your saved resume is selected when one is confirmed. Use the same resume and job as the resume check when you can.
             </p>
           </div>
           <div className="grid-2">
@@ -192,24 +193,24 @@ export function InterviewPreparationHome() {
           <Card className="stack">
             <div className="row">
               <div>
-                <h2 style={{ margin: 0 }}>{data.interview_readiness.score}% evidence coverage</h2>
+                <h2 style={{ margin: 0 }}>{data.interview_readiness.score}% of the job words are in the resume</h2>
                 <p className="muted" style={{ marginBottom: 0 }}>{data.interview_readiness.summary}</p>
               </div>
-              <Badge variant={data.interview_readiness.missing_skills.length ? "outline" : "default"}>{data.interview_readiness.source_analysis_id ? "ATS evidence" : "Confirmed documents"}</Badge>
+              <Badge variant={data.interview_readiness.missing_skills.length ? "outline" : "default"}>{data.interview_readiness.source_analysis_id ? "From resume check" : "From saved documents"}</Badge>
             </div>
-            <Progress value={data.interview_readiness.score} label="Preparation readiness" />
+            <Progress value={data.interview_readiness.score} label="Job words found in the resume" />
             <div className="grid-2">
               <div className="suggestion"><strong>Matched requirements</strong><div className="cluster" style={{ marginTop: 8 }}>{data.interview_readiness.matched_skills.length ? data.interview_readiness.matched_skills.map((skill) => <Badge key={skill} variant="default">{skill}</Badge>) : <span className="muted">No matched requirements were returned.</span>}</div></div>
               <div className="suggestion"><strong>Focus areas</strong><div className="cluster" style={{ marginTop: 8 }}>{data.interview_readiness.missing_skills.length ? data.interview_readiness.missing_skills.map((skill) => <Badge key={skill} variant="outline">{skill}</Badge>) : <span className="muted">No not-found requirements were returned.</span>}</div></div>
             </div>
           </Card>
           <Card className="stack">
-            <div><h2 style={{ margin: 0 }}>Study plan</h2><p className="muted" style={{ marginBottom: 0 }}>Focus areas are requirements not found in the selected resume evidence.</p></div>
-            {data.study_topics.length ? data.study_topics.map((topic) => <article key={topic.topic} className="suggestion"><div className="row"><strong>{topic.topic}</strong><Badge variant={topic.priority === "high" ? "destructive" : topic.priority === "medium" ? "outline" : "secondary"}>{topic.priority} priority</Badge></div><p className="muted" style={{ margin: "8px 0 0" }}>{topic.reason}</p></article>) : <p className="muted" style={{ margin: 0 }}>No focus areas were identified from the selected evidence.</p>}
+            <div><h2 style={{ margin: 0 }}>Study plan</h2><p className="muted" style={{ marginBottom: 0 }}>These are job requirements that were not found in the selected resume.</p></div>
+            {data.study_topics.length ? data.study_topics.map((topic) => <article key={topic.topic} className="suggestion"><div className="row"><strong>{topic.topic}</strong><Badge variant={topic.priority === "high" ? "destructive" : topic.priority === "medium" ? "outline" : "secondary"}>{topic.priority} priority</Badge></div><p className="muted" style={{ margin: "8px 0 0" }}>{topic.reason}</p></article>) : <p className="muted" style={{ margin: 0 }}>No missing requirements were found in the selected resume.</p>}
           </Card>
           <QuestionList title="Resume questions" description="Explain only skills and experience documented in the selected resume." questions={data.resume_questions} />
           {data.project_questions.map((project) => <QuestionList key={project.project_name} title={`${project.project_name} project questions`} description="Discuss your responsibilities, decisions, and next improvements honestly." questions={project.questions} />)}
-          <QuestionList title="Job-description questions" description="Practise questions tied to selected job requirements and ATS evidence." questions={data.jd_questions} />
+          <QuestionList title="Job-description questions" description="Questions from the job description you selected." questions={data.jd_questions} />
           <QuestionList title="Focus-area questions" description="Use these requirements to guide preparation; missing means not found in the selected resume, not that you lack the skill." questions={data.missing_skill_questions} />
           <QuestionList title="Coding questions" description="State your approach, edge cases, tests, and complexity before implementation." questions={data.coding_questions} />
           <QuestionList title="HR questions" description="Use concise, truthful examples from your experience." questions={data.hr_questions} />

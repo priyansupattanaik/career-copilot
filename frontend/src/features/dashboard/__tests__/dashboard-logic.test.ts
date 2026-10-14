@@ -43,14 +43,14 @@ describe("Dashboard Psychological Decision Engine", () => {
   });
 
   it("maps readiness score to appropriate motivational tier boundaries", () => {
-    expect(getReadinessTier(100).label).toBe("Elite Ready");
-    expect(getReadinessTier(85).label).toBe("Elite Ready");
-    expect(getReadinessTier(84).label).toBe("Job Ready");
-    expect(getReadinessTier(70).label).toBe("Job Ready");
-    expect(getReadinessTier(69).label).toBe("Advancing");
-    expect(getReadinessTier(45).label).toBe("Advancing");
-    expect(getReadinessTier(44).label).toBe("Foundational");
-    expect(getReadinessTier(0).label).toBe("Foundational");
+    expect(getReadinessTier(100).label).toBe("High");
+    expect(getReadinessTier(85).label).toBe("High");
+    expect(getReadinessTier(84).label).toBe("On track");
+    expect(getReadinessTier(70).label).toBe("On track");
+    expect(getReadinessTier(69).label).toBe("In progress");
+    expect(getReadinessTier(45).label).toBe("In progress");
+    expect(getReadinessTier(44).label).toBe("Just started");
+    expect(getReadinessTier(0).label).toBe("Just started");
   });
 
   it("strictly enforces monotonicity: completing new milestones never decreases readiness score", () => {
@@ -69,10 +69,10 @@ describe("Dashboard Psychological Decision Engine", () => {
   });
 
   it("returns honest readiness hints without fabricated percentiles or cohort claims", () => {
-    expect(getReadinessHint(90)).toBe("Optimal readiness across tracked milestones");
-    expect(getReadinessHint(75)).toBe("Competitive readiness across resume & interview");
-    expect(getReadinessHint(55)).toBe("Advancing foundation; continue targeted practice");
-    expect(getReadinessHint(30)).toBe("Follow the recommended step below to increase readiness");
+    expect(getReadinessHint(90)).toBe("Resume match and practice scores are both high.");
+    expect(getReadinessHint(75)).toBe("Resume match and practice scores are in a usable range.");
+    expect(getReadinessHint(55)).toBe("Keep going. The next step is below.");
+    expect(getReadinessHint(30)).toBe("Follow the next step below.");
   });
 
   it("prioritizes Step 1 (Upload Resume) when no confirmed resume exists (Hick's Law)", () => {
@@ -83,7 +83,7 @@ describe("Dashboard Psychological Decision Engine", () => {
       atsScore: null,
     });
     expect(action.step).toBe(1);
-    expect(action.cta).toBe("Upload Resume");
+    expect(action.cta).toBe("Upload resume");
   });
 
   it("prioritizes Step 2 (Run ATS Scan) when resume exists but no ATS scan performed", () => {
@@ -94,7 +94,7 @@ describe("Dashboard Psychological Decision Engine", () => {
       atsScore: null,
     });
     expect(action.step).toBe(2);
-    expect(action.cta).toBe("Run ATS Scan");
+    expect(action.cta).toBe("Compare resume");
   });
 
   it("prioritizes Step 3 (First Mock Interview) when resume & ATS scan exist but no interview completed", () => {
@@ -116,7 +116,7 @@ describe("Dashboard Psychological Decision Engine", () => {
       atsScore: 68,
     });
     expect(action.step).toBe(4);
-    expect(action.cta).toBe("Optimize ATS Score");
+    expect(action.cta).toBe("Review report");
   });
 
   it("prioritizes Step 5 (Interview Calibration) when ATS is high but interview score < 75", () => {
@@ -138,6 +138,6 @@ describe("Dashboard Psychological Decision Engine", () => {
       atsScore: 84,
     });
     expect(action.step).toBe(6);
-    expect(action.cta).toBe("Launch Practice Drill");
+    expect(action.cta).toBe("Start practice");
   });
 });

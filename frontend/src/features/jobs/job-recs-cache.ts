@@ -1,4 +1,4 @@
-import type { Job, Recommendation, SavedJobStatus } from "./components/job-types";
+import type { Job, Recommendation, SavedJobStatus } from "./model/job-types";
 
 const PREFIX = "career_copilot_job_recs_v1:";
 const MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes stale-while-revalidate

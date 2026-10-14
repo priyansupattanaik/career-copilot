@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./styles/workbench.css";
 
 :root {
   --space-1: 4px;
@@ -31,13 +32,19 @@
   --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-full: 999px;
-  /* Critically damped “spring” feel (Apple response ~0.3–0.4) */
-  --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
-  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
-  --ease-press: ease-out;
-  --duration-press: 100ms;
-  --duration-ui: 320ms;
-  --duration-cinematic: 1.4s;
+  /* Premium identity: one curve, no overshoot. Entrances decelerate, exits accelerate. */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: var(--ease-enter);
+  --ease-spring: var(--ease-standard);
+  --ease-press: var(--ease-standard);
+  --duration-micro: 120ms;
+  --duration-press: 140ms;
+  --duration-quick: 180ms;
+  --duration-ui: 380ms;
+  --duration-slow: 520ms;
+  --duration-cinematic: 1.05s;
   --blur-chrome: 20px;
   --blur-sheet: 28px;
   --app-header-height: 64px;
@@ -145,8 +152,8 @@ button {
 }
 @keyframes ci-tassel {
   0%, 100% { transform: rotate(0deg); }
-  40% { transform: rotate(10deg); }
-  70% { transform: rotate(-5deg); }
+  40% { transform: rotate(4deg); }
+  70% { transform: rotate(-2deg); }
 }
 
 .copilot-icon:hover[data-icon="jobs"] .ci-b,
@@ -155,7 +162,7 @@ button {
 }
 @keyframes ci-radar {
   0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.22); opacity: 0.6; }
+  50% { transform: scale(1.06); opacity: 0.82; }
 }
 
 .copilot-icon:hover[data-icon="community"] .ci-a,
@@ -178,7 +185,7 @@ button {
 }
 @keyframes ci-gear-turn {
   0% { transform: rotate(0deg); }
-  100% { transform: rotate(45deg); }
+  100% { transform: rotate(18deg); }
 }
 
 .copilot-icon:hover[data-icon="evidence"] .ci-a,
@@ -215,7 +222,7 @@ button {
 }
 @keyframes ci-pop {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+  50% { transform: scale(1.04); }
 }
 
 .copilot-icon:hover[data-icon="skills"] .ci-a,
@@ -235,7 +242,7 @@ button {
 }
 @keyframes ci-bar-rise {
   0%, 100% { transform: scaleY(1); }
-  50% { transform: scaleY(0.68); }
+  50% { transform: scaleY(0.88); }
 }
 
 .copilot-icon:hover[data-icon="projects"] .ci-a,
@@ -249,7 +256,7 @@ button {
 }
 @keyframes ci-sparkle {
   0%, 100% { transform: scale(1) rotate(0deg); }
-  50% { transform: scale(1.12) rotate(12deg); }
+  50% { transform: scale(1.04) rotate(6deg); }
 }
 
 .copilot-icon:hover[data-icon="scan"] .ci-a,
@@ -257,8 +264,8 @@ button {
   animation: ci-scan-beam 480ms var(--ease-out);
 }
 @keyframes ci-scan-beam {
-  0%, 100% { transform: translateY(0); opacity: 0.7; }
-  50% { transform: translateY(3px); opacity: 1; }
+  0%, 100% { transform: translateY(0); opacity: 0.75; }
+  50% { transform: translateY(1.5px); opacity: 1; }
 }
 
 .copilot-icon:hover[data-icon="search"] .ci-a,
@@ -268,7 +275,7 @@ button {
 }
 @keyframes ci-search-handle {
   0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(-8deg); }
+  50% { transform: rotate(-4deg); }
 }
 
 .copilot-icon:hover[data-icon="close"],
@@ -279,7 +286,7 @@ button {
 }
 @keyframes ci-spin-step {
   0% { transform: rotate(0deg); }
-  100% { transform: rotate(90deg); }
+  100% { transform: rotate(18deg); }
 }
 
 .copilot-icon:hover[data-icon="edit"] .ci-a,
@@ -289,7 +296,7 @@ button {
 }
 @keyframes ci-pencil-wiggle {
   0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(6deg); }
+  50% { transform: rotate(3deg); }
 }
 
 .copilot-icon:hover[data-icon="trash"] .ci-a,
@@ -313,7 +320,7 @@ button {
 }
 @keyframes ci-eye-blink {
   0%, 100% { transform: scaleY(1); }
-  50% { transform: scaleY(0.2); }
+  50% { transform: scaleY(0.72); }
 }
 
 .copilot-icon:hover[data-icon="upload"] .ci-a,
@@ -331,7 +338,7 @@ button {
 }
 @keyframes ci-clock-rewind {
   0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(-30deg); }
+  50% { transform: rotate(-12deg); }
 }
 
 .copilot-icon:hover[data-icon="play"] .ci-a,
@@ -390,8 +397,8 @@ button {
 }
 @keyframes ci-subtle-shake {
   0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(-5deg); }
-  75% { transform: rotate(5deg); }
+  25% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
 }
 
 .copilot-icon:hover[data-icon="mail"] .ci-a,
@@ -436,7 +443,7 @@ button {
 }
 @keyframes ci-bar-shorten {
   0%, 100% { transform: scaleX(1); }
-  50% { transform: scaleX(0.7); }
+  50% { transform: scaleX(0.88); }
 }
 
 .copilot-icon:hover[data-icon="sun"] .ci-b,
@@ -445,7 +452,7 @@ button {
 }
 @keyframes ci-sun-turn {
   0% { transform: rotate(0deg); }
-  100% { transform: rotate(45deg); }
+  100% { transform: rotate(18deg); }
 }
 
 .copilot-icon:hover[data-icon="moon"] .ci-a,
@@ -454,7 +461,7 @@ button {
 }
 @keyframes ci-moon-rock {
   0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(-10deg); }
+  50% { transform: rotate(-6deg); }
 }
 
 .copilot-icon:hover[data-icon="compass"] .ci-a,
@@ -463,8 +470,8 @@ button {
 }
 @keyframes ci-compass-spin {
   0%, 100% { transform: rotate(0deg); }
-  40% { transform: rotate(18deg); }
-  70% { transform: rotate(-8deg); }
+  40% { transform: rotate(8deg); }
+  70% { transform: rotate(-3deg); }
 }
 
 /* Common directionals & states */
@@ -511,11 +518,11 @@ button > svg {
 }
 a:hover > svg,
 button:hover > svg {
-  transform: scale(1.04);
+  transform: translateY(-1px);
 }
 a:active > svg,
 button:active > svg {
-  transform: scale(0.96);
+  transform: scale(0.985);
 }
 [data-motion-paused="true"] a:hover > svg,
 [data-motion-paused="true"] button:hover > svg {
@@ -711,7 +718,7 @@ button:active > svg {
   border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
 }
 .community-chip:active {
-  transform: scale(0.97);
+  transform: scale(0.985);
 }
 
 /* Results grid */
@@ -1342,7 +1349,7 @@ p {
 /* Instant press feedback (Apple Ã‚Â§1) Ã¢â‚¬â€ interruptible; no input lock */
 .button:active {
   box-shadow: var(--shadow-sm);
-  transform: scale(0.97);
+  transform: scale(0.985);
   transition-duration: var(--duration-press);
 }
 .button-primary {
@@ -1793,16 +1800,16 @@ p {
 }
 
 .page-enter {
-  animation: page-enter 220ms var(--ease-out);
+  animation: page-enter var(--duration-ui) var(--ease-enter);
 }
 @keyframes page-enter {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 .nav-inner {
@@ -2688,7 +2695,7 @@ p {
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 160ms ease;
+  transition: color 160ms var(--ease-standard), background-color 160ms var(--ease-standard), border-color 160ms var(--ease-standard);
 }
 .public-profile-share-btn:hover {
   background: var(--surface-muted);
@@ -3066,6 +3073,151 @@ p {
   min-width: 200px;
   z-index: 70;
 }
+
+/* ==========================================================================
+   Frost Mesh Background System (Theme Adaptive Light & Dark)
+   ========================================================================== */
+.frost-mesh-root {
+  background: transparent;
+  transition: background-color 300ms var(--ease-standard);
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+}
+
+.frost-mesh-canvas {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: var(--sidebar-width, 272px);
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  transition: left 240ms var(--ease-out);
+}
+@media (max-width: 900px) {
+  .frost-mesh-canvas {
+    left: 0 !important;
+  }
+}
+.sidebar-collapsed .frost-mesh-canvas {
+  left: var(--sidebar-width, 88px);
+}
+
+.frost-mesh-base {
+  background: linear-gradient(
+    135deg,
+    #fafcfd 0%,
+    #f2f8fa 50%,
+    #eaf4f6 100%
+  );
+}
+
+.frost-mesh-pattern-layer {
+  opacity: 0.5;
+  transition: opacity 300ms var(--ease-standard);
+}
+
+.frost-mesh-grid-coarse {
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.22) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.22) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.70;
+}
+
+.frost-mesh-grid-fine {
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.14) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.14) 1px, transparent 1px);
+  background-size: 4px 4px;
+  opacity: 0.45;
+}
+
+.frost-orb-1 {
+  width: clamp(380px, 46vw, 680px);
+  height: clamp(380px, 46vw, 680px);
+  background: #a5f3fc;
+  opacity: 0.35;
+}
+
+.frost-orb-2 {
+  width: clamp(340px, 42vw, 620px);
+  height: clamp(340px, 42vw, 620px);
+  background: #6ee7b7;
+  opacity: 0.28;
+}
+
+.frost-orb-3 {
+  width: clamp(320px, 40vw, 580px);
+  height: clamp(320px, 40vw, 580px);
+  background: #99f6e4;
+  opacity: 0.22;
+}
+
+.frost-mesh-stipple {
+  background-image: radial-gradient(circle at center, #0f172a 1px, transparent 1px);
+  background-size: 6px 6px;
+  opacity: 0.03;
+}
+
+/* Dark Theme Overrides for Frost Mesh */
+[data-theme="dark"] .frost-mesh-root {
+  background: transparent;
+}
+
+[data-theme="dark"] .frost-mesh-base {
+  background: linear-gradient(135deg, #020617 0%, #060e1d 50%, #030816 100%);
+}
+
+[data-theme="dark"] .frost-mesh-pattern-layer {
+  opacity: 0.5;
+}
+
+[data-theme="dark"] .frost-mesh-grid-coarse {
+  background-image:
+    linear-gradient(to right, rgba(56, 189, 248, 0.20) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(56, 189, 248, 0.20) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.80;
+}
+
+[data-theme="dark"] .frost-mesh-grid-fine {
+  background-image:
+    linear-gradient(to right, rgba(56, 189, 248, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(56, 189, 248, 0.12) 1px, transparent 1px);
+  background-size: 4px 4px;
+  opacity: 0.60;
+}
+
+[data-theme="dark"] .frost-orb-1 {
+  width: clamp(380px, 46vw, 680px);
+  height: clamp(380px, 46vw, 680px);
+  background: #38bdf8;
+  opacity: 0.36;
+}
+
+[data-theme="dark"] .frost-orb-2 {
+  width: clamp(340px, 42vw, 620px);
+  height: clamp(340px, 42vw, 620px);
+  background: #60a5fa;
+  opacity: 0.30;
+}
+
+[data-theme="dark"] .frost-orb-3 {
+  width: clamp(320px, 40vw, 580px);
+  height: clamp(320px, 40vw, 580px);
+  background: #818cf8;
+  opacity: 0.26;
+}
+
+[data-theme="dark"] .frost-mesh-stipple {
+  background-image: radial-gradient(circle at center, rgba(255, 255, 255, 0.3) 1px, transparent 1px);
+  background-size: 6px 6px;
+  opacity: 0.06;
+}
+
 /* Modern top chrome shell */
 .top-chrome {
   position: sticky;
@@ -3123,7 +3275,7 @@ p {
   background: color-mix(in srgb, var(--text) 5%, transparent);
 }
 .top-nav-link:active {
-  transform: scale(0.97);
+  transform: scale(0.985);
 }
 .top-nav-link.active {
   color: var(--primary-deep);
@@ -3227,7 +3379,7 @@ p {
   display: grid;
   gap: 12px;
   transform-origin: top right;
-  animation: apple-sheet-in 280ms var(--ease-out);
+  animation: apple-sheet-in 320ms var(--ease-enter);
 }
 .account-panel-head {
   display: flex;
@@ -3349,7 +3501,7 @@ p {
     transform 100ms var(--ease-press);
 }
 .bottom-dock-link:active {
-  transform: scale(0.96);
+  transform: scale(0.985);
 }
 .bottom-dock-link.active {
   color: var(--primary-deep);
@@ -3478,13 +3630,8 @@ p {
 }
 .workspace-main {
   min-width: 0;
-  background:
-    radial-gradient(
-      ellipse 80% 40% at 50% -5%,
-      color-mix(in srgb, var(--primary-strong) 7%, transparent),
-      transparent 55%
-    ),
-    var(--background);
+  display: flex;
+  flex-direction: column;
 }
 .app-header {
   position: sticky;
@@ -3497,7 +3644,7 @@ p {
   gap: 12px;
   padding: 10px clamp(16px, 3vw, 32px);
   background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-subtle);
 }
 .app-header-left {
   display: flex;
@@ -3553,7 +3700,7 @@ p {
   transform: none;
 }
 .icon-button:active {
-  transform: scale(0.97);
+  transform: scale(0.985);
 }
 
 .mobile-menu-button {
@@ -3684,7 +3831,7 @@ p {
   display: grid;
   gap: 12px;
   transform-origin: top right;
-  animation: apple-sheet-in 240ms var(--ease-out);
+  animation: apple-sheet-in 320ms var(--ease-enter);
 }
 .profile-menu-head {
   display: flex;
@@ -4177,8 +4324,8 @@ td {
   color: color-mix(in srgb, var(--success) 75%, var(--text));
 }
 .job-tag-gap {
-  border-color: color-mix(in srgb, var(--warning, #d4a017) 40%, var(--border));
-  background: color-mix(in srgb, var(--warning, #d4a017) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--warn) 40%, var(--border));
+  background: color-mix(in srgb, var(--warn) 10%, var(--surface));
   color: var(--muted);
 }
 .job-card-footer {
@@ -4231,11 +4378,11 @@ td {
   line-height: 1;
 }
 .job-score[data-tone="mid"] {
-  border-color: color-mix(in srgb, var(--warning, #d4a017) 45%, var(--border));
+  border-color: color-mix(in srgb, var(--warn) 45%, var(--border));
   background: linear-gradient(
     160deg,
-    color-mix(in srgb, var(--warning, #d4a017) 80%, #fff) 0%,
-    var(--warning, #d4a017) 100%
+    color-mix(in srgb, var(--warn) 80%, #fff) 0%,
+    var(--warn) 100%
   );
 }
 .job-score[data-tone="low"] {
@@ -4718,7 +4865,7 @@ html {
   border-radius: 16px;
   background: var(--surface);
   box-shadow: var(--shadow-lg);
-  animation: page-enter 180ms ease-out;
+  animation: page-enter var(--duration-ui) var(--ease-enter);
 }
 .profile-toast-header {
   display: flex;
@@ -4945,7 +5092,9 @@ html {
   background: color-mix(in srgb, var(--surface-raised) 92%, var(--background));
   color: var(--text);
 }
-[data-theme="dark"] .workspace .app-header,
+[data-theme="dark"] .workspace .app-header {
+  background: transparent !important;
+}
 [data-theme="dark"] .workspace .top-chrome {
   background: color-mix(in srgb, var(--background) 88%, transparent);
 }
@@ -4980,7 +5129,7 @@ html {
   border-color: var(--border-strong);
 }
 .theme-toggle:active {
-  transform: scale(0.97);
+  transform: scale(0.985);
 }
 .theme-toggle-compact {
   width: 40px;
@@ -5004,6 +5153,33 @@ html {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 12px;
+}
+
+/* Theme wash: the outgoing page fades on the exit curve, the incoming page
+   settles 2px and a touch of brightness. One shot, no overshoot. */
+::view-transition-old(root) {
+  animation: theme-wash-out 400ms var(--ease-exit) both;
+}
+::view-transition-new(root) {
+  animation: theme-wash-in 480ms var(--ease-standard) both;
+}
+@keyframes theme-wash-out {
+  to {
+    opacity: 0;
+    filter: brightness(0.97);
+  }
+}
+@keyframes theme-wash-in {
+  from {
+    opacity: 0;
+    filter: brightness(1.05);
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    filter: brightness(1);
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -5527,7 +5703,7 @@ select option {
   color: var(--success, #2f6f4e);
 }
 .metric-inline-score small[data-tone="down"] {
-  color: var(--danger, #a33b3b);
+  color: var(--danger);
 }
 .metric-inline-score small[data-tone="flat"] {
   color: var(--muted);
@@ -5600,8 +5776,8 @@ select option {
   background: color-mix(in srgb, var(--success, #2f6f4e) 12%, var(--surface));
 }
 .progress-delta-badge[data-tone="down"] {
-  border-color: color-mix(in srgb, var(--danger, #a33b3b) 35%, var(--border));
-  background: color-mix(in srgb, var(--danger, #a33b3b) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
 }
 .progress-delta-value {
   font-family: var(--font-code);
@@ -5615,7 +5791,7 @@ select option {
   color: var(--success, #2f6f4e);
 }
 .progress-delta-badge[data-tone="down"] .progress-delta-value {
-  color: var(--danger, #a33b3b);
+  color: var(--danger);
 }
 .progress-delta-caption {
   font-size: 0.68rem;
@@ -5818,7 +5994,7 @@ select option {
   color: var(--success, #2f6f4e);
 }
 .dimension-delta[data-tone="down"] {
-  color: var(--danger, #a33b3b);
+  color: var(--danger);
 }
 .dimension-delta[data-tone="flat"] {
   color: var(--muted);
@@ -5936,9 +6112,9 @@ select option {
   color: var(--primary-strong);
 }
 .session-score-chip[data-tone="low"] {
-  background: color-mix(in srgb, var(--danger, #a33b3b) 10%, var(--surface));
-  border-color: color-mix(in srgb, var(--danger, #a33b3b) 28%, var(--border));
-  color: var(--danger, #a33b3b);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--border));
+  color: var(--danger);
 }
 
 .interview-progress-empty-visual {
@@ -6381,7 +6557,7 @@ select option {
 .auth-shell .icon-button:active,
 .workspace .sidebar-link:active,
 .workspace .avatar:active {
-  transform: scale(0.97);
+  transform: scale(0.985);
 }
 
 .workspace .icon-button {
@@ -6417,7 +6593,7 @@ select option {
   border: 1px solid var(--border-subtle);
   background: var(--surface);
   box-shadow: var(--shadow-lg);
-  animation: apple-sheet-in var(--duration-ui) var(--ease-out);
+  animation: apple-sheet-in 320ms var(--ease-enter);
 }
 .workspace .sidebar-account-menu {
   background: var(--surface);
@@ -6426,11 +6602,11 @@ select option {
 @keyframes apple-sheet-in {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(-4px);
+    transform: scale(0.985) translateY(6px);
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: none;
   }
 }
 
@@ -6589,7 +6765,17 @@ select option {
   border-radius: 20px;
   border-color: var(--border-subtle);
   box-shadow: var(--shadow-lg);
-  animation: apple-sheet-in var(--duration-ui) var(--ease-out);
+}
+.cc-dialog-backdrop {
+  animation: cc-fade-in 280ms var(--ease-standard);
+}
+.cc-dialog-panel {
+  transform-origin: center top;
+  animation: apple-sheet-in 400ms var(--ease-enter);
+}
+@keyframes cc-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .workspace .progress {
   height: 6px;
@@ -6693,7 +6879,7 @@ select option {
   border: 1px solid var(--border-subtle);
   background: var(--surface);
   box-shadow: var(--shadow-lg);
-  animation: apple-sheet-in var(--duration-ui) var(--ease-out);
+  animation: apple-sheet-in var(--duration-ui) var(--ease-enter);
 }
 .auth-shell .auth-card h1 {
   letter-spacing: -0.035em;
@@ -6802,7 +6988,7 @@ select option {
     background: color-mix(in srgb, #f2f2f7 94%, transparent);
   }
   .workspace .sidebar.open {
-    animation: apple-sheet-in var(--duration-ui) var(--ease-out);
+    animation: apple-sheet-in var(--duration-ui) var(--ease-enter);
   }
 }
 
@@ -7802,40 +7988,40 @@ select option {
 
 /* Dashboard control room styles remain scoped to the dashboard route. */
 .dashboard-page {
-  --dashboard-text: #0b2942;
-  --dashboard-muted: #6d627c;
-  --dashboard-line: #dfd7cc;
-  --dashboard-paper: #f8f4ec;
-  --dashboard-surface: #fffdf8;
-  --dashboard-surface-soft: #f1ece3;
-  --dashboard-accent: #ef694e;
-  --dashboard-accent-dark: #c84e3b;
-  --dashboard-success: #b8e1c7;
-  --dashboard-warning: #f5d66d;
-  --dashboard-blue: #a8cfe2;
+  --dashboard-text: var(--ink);
+  --dashboard-muted: var(--ink-2);
+  --dashboard-line: var(--hairline);
+  --dashboard-paper: var(--surface-1);
+  --dashboard-surface: var(--surface-1);
+  --dashboard-surface-soft: var(--surface-2);
+  --dashboard-accent: var(--accent);
+  --dashboard-accent-dark: var(--accent-pressed);
+  --dashboard-success: var(--ok);
+  --dashboard-warning: var(--warn);
+  --dashboard-blue: var(--accent);
   position: relative;
   isolation: isolate;
   color: var(--dashboard-text);
-  background: var(--dashboard-paper);
+  background: transparent !important;
 }
 
 .workspace:has(.dashboard-page) {
-  background: #f8f4ec;
+  background: transparent;
 }
 
 .workspace:has(.dashboard-page) .workspace-main,
 .workspace:has(.dashboard-page) .workspace-content {
-  background: #f8f4ec;
+  background: transparent !important;
 }
 
 .workspace:has(.dashboard-page) .app-header {
-  background: rgb(248 244 236 / 92%) !important;
-  border-bottom-color: #dfd7cc;
+  background: var(--surface) !important;
+  border-bottom-color: var(--border-subtle);
 }
 
 .workspace:has(.dashboard-page) .sidebar {
-  background: #f1ece3 !important;
-  border-right-color: #dfd7cc;
+  background: var(--surface-1) !important;
+  border-right-color: var(--hairline);
 }
 
 .workspace:has(.dashboard-page) .sidebar-link.active,
@@ -7846,7 +8032,7 @@ select option {
 }
 
 .workspace:has(.dashboard-page) .sidebar-link.active svg {
-  color: #ef694e;
+  color: var(--accent);
 }
 
 .dashboard-page::before {
@@ -7981,7 +8167,7 @@ select option {
 .workspace .dashboard-page .metric-card,
 .workspace .dashboard-page .dashboard-panel,
 .workspace .dashboard-page .activity-feed {
-  background: #fffdf8 !important;
+  background: var(--surface-1) !important;
 }
 
 .dashboard-page .metric-card::before {
@@ -8137,23 +8323,23 @@ select option {
   --dashboard-surface-soft: var(--surface);
   --dashboard-accent: var(--accent);
   --dashboard-accent-dark: var(--primary-hover);
-  --dashboard-success: #b8e1c7;
-  --dashboard-warning: #f5d66d;
+  --dashboard-success: var(--ok);
+  --dashboard-warning: var(--warn);
   --dashboard-blue: #86bfdc;
 }
 
 [data-theme="dark"] .workspace:has(.dashboard-page) {
-  background: var(--background);
+  background: transparent;
 }
 
 [data-theme="dark"] .workspace:has(.dashboard-page) .workspace-main,
 [data-theme="dark"] .workspace:has(.dashboard-page) .workspace-content {
-  background: var(--background);
+  background: transparent !important;
 }
 
 [data-theme="dark"] .workspace:has(.dashboard-page) .app-header {
-  background: color-mix(in srgb, var(--background) 92%, transparent) !important;
-  border-bottom-color: var(--border);
+  background: #000000 !important;
+  border-bottom-color: var(--border, rgba(255, 255, 255, 0.08)) !important;
 }
 
 [data-theme="dark"] .workspace:has(.dashboard-page) .sidebar {
@@ -8422,13 +8608,13 @@ select option {
 
 .workspace .workspace-main,
 .workspace .workspace-content {
-  background: var(--atlas-work-paper);
+  background: transparent !important;
 }
 
 .workspace .app-header {
-  min-height: 72px;
-  background: rgb(248 244 236 / 92%) !important;
-  border-bottom: 1px solid var(--atlas-work-line);
+  min-height: 64px;
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--border-subtle);
   box-shadow: none;
 }
 
@@ -8730,7 +8916,8 @@ select option {
 }
 
 [data-theme="dark"] .workspace .app-header {
-  background: rgb(0 0 0 / 92%) !important;
+  background: #000000 !important;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08)) !important;
 }
 
 [data-theme="dark"] .workspace .sidebar {
@@ -8970,7 +9157,7 @@ select option {
     0 2px 8px 0 rgba(0, 0, 0, 0.04);
 }
 .nav5-link:active {
-  transform: scale(0.97);
+  transform: scale(0.985);
 }
 /* Liquid Fill Navigation Item Effects */
 .nav5-liquid-link {
@@ -10438,22 +10625,22 @@ select option {
 @keyframes cc-rise {
   from {
     opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 @keyframes cc-pulse {
   0%,
   100% {
-    opacity: 0.35;
+    opacity: 0.45;
     transform: scale(1);
   }
   50% {
     opacity: 1;
-    transform: scale(1.5);
+    transform: scale(1.12);
   }
 }
 @keyframes cc-bob {
@@ -10465,33 +10652,33 @@ select option {
 
 /* Hero entrance — staggered rise on first paint. */
 .home-hero-copy > * {
-  animation: cc-rise 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+  animation: cc-rise var(--duration-slow) var(--ease-enter) backwards;
 }
 .home-hero-copy > :nth-child(1) {
-  animation-delay: 0.05s;
+  animation-delay: 0.04s;
 }
 .home-hero-copy > :nth-child(2) {
-  animation-delay: 0.14s;
+  animation-delay: 0.08s;
 }
 .home-hero-copy > :nth-child(3) {
-  animation-delay: 0.23s;
+  animation-delay: 0.12s;
 }
 .home-hero-copy > :nth-child(4) {
-  animation-delay: 0.32s;
+  animation-delay: 0.16s;
 }
 .home-hero-copy > :nth-child(5) {
-  animation-delay: 0.41s;
+  animation-delay: 0.2s;
 }
 .home-hero-visual {
-  animation: cc-rise 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) 0.3s backwards;
+  animation: cc-rise var(--duration-slow) var(--ease-enter) 0.12s backwards;
 }
 .home-hero-bottom {
-  animation: cc-rise 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) 0.55s backwards;
+  animation: cc-rise var(--duration-slow) var(--ease-enter) 0.2s backwards;
 }
 
 /* Ambient life inside the hero mock window. */
 .home-live-label i {
-  animation: cc-pulse 2.4s ease-in-out infinite;
+  animation: cc-pulse 2.8s ease-in-out infinite;
 }
 .home-float-card {
   animation: none !important;
@@ -10508,11 +10695,10 @@ select option {
 /* Scroll reveals (driven by useReveal). */
 .home-reveal {
   opacity: 0;
-  transform: translateY(var(--reveal-y, 22px));
+  transform: translateY(var(--reveal-y, 8px));
   transition:
-    opacity 0.75s ease var(--reveal-delay, 0ms),
-    transform 0.75s cubic-bezier(0.22, 0.61, 0.36, 1) var(--reveal-delay, 0ms);
-  will-change: opacity, transform;
+    opacity var(--duration-slow) var(--ease-standard) var(--reveal-delay, 0ms),
+    transform var(--duration-slow) var(--ease-enter) var(--reveal-delay, 0ms);
 }
 .home-reveal.home-revealed {
   opacity: 1;
@@ -10528,10 +10714,10 @@ select option {
 }
 .home-reveal .home-check-list span {
   opacity: 0;
-  transform: translateX(-8px);
+  transform: translateX(-6px);
   transition:
-    opacity 0.5s ease,
-    transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+    opacity var(--duration-ui) var(--ease-standard),
+    transform var(--duration-ui) var(--ease-enter);
 }
 .home-revealed .home-check-list span {
   opacity: 1;
@@ -10548,10 +10734,10 @@ select option {
 }
 .home-reveal .home-sheet-items > span {
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(6px);
   transition:
-    opacity 0.45s ease,
-    transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+    opacity var(--duration-ui) var(--ease-standard),
+    transform var(--duration-ui) var(--ease-enter);
 }
 .home-revealed .home-sheet-items > span {
   opacity: 1;
@@ -10586,43 +10772,43 @@ select option {
   }
 }
 
-/* Practice bars spring up once their card is revealed. Hidden state applies
+/* Practice bars rise once their card is revealed. Hidden state applies
    only while a reveal is armed, so no-JS pages keep full bars. */
 .home-bars i {
   transform-origin: bottom center;
-  transition: transform 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform var(--duration-slow) var(--ease-enter);
 }
 .home-reveal:not(.home-revealed) .home-bars i {
   transform: scaleY(0);
 }
 .home-revealed .home-bars i:nth-child(1) {
-  transition-delay: 0.18s;
+  transition-delay: 0.04s;
 }
 .home-revealed .home-bars i:nth-child(2) {
-  transition-delay: 0.26s;
+  transition-delay: 0.08s;
 }
 .home-revealed .home-bars i:nth-child(3) {
-  transition-delay: 0.34s;
+  transition-delay: 0.12s;
 }
 .home-revealed .home-bars i:nth-child(4) {
-  transition-delay: 0.42s;
+  transition-delay: 0.16s;
 }
 .home-revealed .home-bars i:nth-child(5) {
-  transition-delay: 0.5s;
+  transition-delay: 0.2s;
 }
 .home-revealed .home-bars i:nth-child(6) {
-  transition-delay: 0.58s;
+  transition-delay: 0.24s;
 }
 .home-revealed .home-bars i:nth-child(7) {
-  transition-delay: 0.66s;
+  transition-delay: 0.28s;
 }
 
 /* Feature cards respond to hover with a gentle lift of the icon tile. */
 .home-feature-icon {
-  transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition: transform var(--duration-quick) var(--ease-enter);
 }
 .home-feature:hover .home-feature-icon {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
 }
 
 /* Footer layout above the gradient glow band. Content stacks in a raised
@@ -10961,9 +11147,9 @@ select option {
   background: var(--app-panel-soft) !important;
 }
 .workspace .app-header {
-  min-height: 72px;
-  border-bottom: 1px solid var(--app-line) !important;
-  background: var(--app-paper) !important;
+  min-height: 64px;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  background: transparent !important;
 }
 .workspace .app-header-title {
   color: var(--app-text) !important;
@@ -11043,7 +11229,7 @@ select option {
 }
 .workspace .button:active,
 .workspace a.button:active {
-  transform: scale(0.97);
+  transform: scale(0.985);
 }
 .workspace .button-primary,
 .workspace a.button-primary {
@@ -11391,13 +11577,13 @@ select option {
 }
 
 @media (max-width: 900px) {
-  .auth-shell:has(.atlas-auth-signup-card) .auth-aside {
+  .auth-shell[data-auth-active="signup"] .auth-aside {
     min-height: 112px;
   }
-  .auth-shell:has(.atlas-auth-signup-card) .auth-aside-copy {
+  .auth-shell[data-auth-active="signup"] .auth-aside-copy {
     display: none;
   }
-  .auth-shell:has(.atlas-auth-signup-card) .aurora-background-content {
+  .auth-shell[data-auth-active="signup"] .aurora-background-content {
     justify-content: center;
     padding: 18px 24px;
   }
@@ -11412,38 +11598,38 @@ select option {
 }
 
 @media (max-width: 560px) {
-  .auth-shell:has(.atlas-auth-signup-card) .auth-aside {
+  .auth-shell[data-auth-active="signup"] .auth-aside {
     min-height: 82px;
   }
-  .auth-shell:has(.atlas-auth-signup-card) .aurora-background-content {
+  .auth-shell[data-auth-active="signup"] .aurora-background-content {
     padding: 16px 18px;
   }
   .auth-shell .atlas-auth-signup-card {
     padding: 18px !important;
   }
-  .auth-shell:has(.atlas-auth-signup-card) .auth-main {
+  .auth-shell[data-auth-active="signup"] .auth-main {
     padding: 10px 14px 12px;
   }
-  .auth-shell:has(.atlas-auth-signup-card) .auth-main-inner {
+  .auth-shell[data-auth-active="signup"] .auth-main-inner {
     gap: 8px;
   }
-  .auth-shell:has(.atlas-auth-signup-card) .auth-theme-control {
+  .auth-shell[data-auth-active="signup"] .auth-theme-control {
     margin-bottom: 0;
   }
 }
 
 @media (max-width: 900px) and (max-height: 760px) {
-  .auth-shell:has(.atlas-auth-signup-card) .auth-aside {
+  .auth-shell[data-auth-active="signup"] .auth-aside {
     display: none;
   }
-  .auth-shell:has(.atlas-auth-signup-card) .auth-main {
+  .auth-shell[data-auth-active="signup"] .auth-main {
     min-height: 100dvh;
     padding: 8px 10px;
   }
-  .auth-shell:has(.atlas-auth-signup-card) .auth-main-inner {
+  .auth-shell[data-auth-active="signup"] .auth-main-inner {
     gap: 4px;
   }
-  .auth-shell:has(.atlas-auth-signup-card) .auth-theme-control {
+  .auth-shell[data-auth-active="signup"] .auth-theme-control {
     position: absolute;
     top: 8px;
     right: 10px;
@@ -11553,14 +11739,9 @@ select option {
   min-height: 52px;
 }
 .workspace .app-header {
-  min-height: 76px;
-  background: color-mix(
-    in srgb,
-    var(--workspace-paper) 86%,
-    transparent
-  ) !important;
-  border-bottom: 1px solid
-    color-mix(in srgb, var(--workspace-line) 85%, transparent) !important;
+  min-height: 64px;
+  background: transparent !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
 }
 .workspace .app-header-inner {
   max-width: none;
@@ -11717,16 +11898,16 @@ select option {
   }
 }
 
-/* Beat the legacy route-specific surfaces so both themes truly inherit landing tokens. */
-.workspace:has(.dashboard-page),
+/* Allow the frost mesh background to show through seamlessly across all workspace pages */
+.workspace .workspace-main,
+.workspace .workspace-content,
+.workspace .workspace-page,
+.workspace .feature-page,
+.workspace .dashboard-page,
 .workspace:has(.dashboard-page) .workspace-main,
 .workspace:has(.dashboard-page) .workspace-content,
-.workspace:has(.dashboard-page) .app-header,
 .workspace:has(.dashboard-page) .dashboard-page {
-  background: var(--app-paper) !important;
-}
-.workspace:has(.dashboard-page) .sidebar {
-  background: color-mix(in srgb, var(--app-paper) 92%, transparent) !important;
+  background: transparent !important;
 }
 .workspace .dashboard-page h1,
 .workspace .dashboard-page h2,
@@ -11734,16 +11915,20 @@ select option {
 .workspace .dashboard-page .app-header-title {
   font-family: var(--font-ui) !important;
 }
-[data-theme="dark"] .workspace,
-[data-theme="dark"] .workspace:has(.dashboard-page),
+[data-theme="dark"] .workspace .workspace-main,
+[data-theme="dark"] .workspace .workspace-content,
+[data-theme="dark"] .workspace .workspace-page,
+[data-theme="dark"] .workspace .feature-page,
+[data-theme="dark"] .workspace .dashboard-page,
 [data-theme="dark"] .workspace:has(.dashboard-page) .workspace-main,
 [data-theme="dark"] .workspace:has(.dashboard-page) .workspace-content,
-[data-theme="dark"] .workspace:has(.dashboard-page) .app-header,
 [data-theme="dark"] .workspace:has(.dashboard-page) .dashboard-page {
-  background: #000 !important;
+  background: transparent !important;
 }
+[data-theme="dark"] .workspace .sidebar,
 [data-theme="dark"] .workspace:has(.dashboard-page) .sidebar {
-  background: #0a0a0a !important;
+  background: #090d16 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 [data-theme="dark"]
   .workspace:has(.dashboard-page)
@@ -12404,14 +12589,20 @@ select option {
   min-height: 46px;
 }
 
-[data-theme="dark"] .workspace,
 [data-theme="dark"] .workspace .workspace-main,
 [data-theme="dark"] .workspace .workspace-content,
+[data-theme="dark"] .workspace .workspace-page,
+[data-theme="dark"] .workspace .feature-page,
+[data-theme="dark"] .workspace .dashboard-page {
+  background: transparent !important;
+}
 [data-theme="dark"] .workspace .app-header {
   background: #000000 !important;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08)) !important;
 }
 [data-theme="dark"] .workspace .sidebar {
-  background: #0a0a0a !important;
+  background: #090d16 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 [data-theme="dark"] .workspace .feature-page .panel-blue,
 [data-theme="dark"] .workspace .feature-page .filters-bar,
@@ -14177,6 +14368,14 @@ select option {
   color: #f5f5f0;
 }
 
+.auth-shell .auth-ribbon .aurora-background-content {
+  z-index: 1;
+}
+
+.auth-shell .auth-ribbon.auth-aurora::after {
+  content: none;
+}
+
 .auth-shell .aurora-background-field {
   position: absolute;
   inset: -20%;
@@ -14276,15 +14475,15 @@ select option {
 }
 
 @media (max-width: 900px) and (max-height: 760px) {
-  .auth-shell:has(.atlas-auth-signup-card) .auth-aside {
+  .auth-shell[data-auth-active="signup"] .auth-aside {
     display: none;
     min-height: 0;
   }
-  .auth-shell:has(.atlas-auth-signup-card) .auth-main {
+  .auth-shell[data-auth-active="signup"] .auth-main {
     min-height: 100dvh;
     padding: 8px 10px;
   }
-  .auth-shell:has(.atlas-auth-signup-card) .auth-main-inner {
+  .auth-shell[data-auth-active="signup"] .auth-main-inner {
     gap: 4px;
   }
   .auth-shell .atlas-auth-signup-card {
@@ -14319,15 +14518,15 @@ select option {
 }
 
 @media (max-width: 600px) {
-  .auth-shell:has(.atlas-auth-signup-card) .auth-aside {
+  .auth-shell[data-auth-active="signup"] .auth-aside {
     display: none;
     min-height: 0;
   }
-  .auth-shell:has(.atlas-auth-signup-card) .auth-main {
+  .auth-shell[data-auth-active="signup"] .auth-main {
     min-height: 100dvh;
     padding-block: 12px;
   }
-  .auth-shell:has(.atlas-auth-signup-card) .auth-main-inner {
+  .auth-shell[data-auth-active="signup"] .auth-main-inner {
     gap: 6px;
   }
   .auth-shell .atlas-auth-signup-card {
@@ -14805,6 +15004,10 @@ select option {
   font-size: 10px;
   opacity: 0.7;
   flex-shrink: 0;
+  transition: transform var(--duration-quick) var(--ease-standard);
+}
+.phone-country-trigger[aria-expanded="true"] .phone-country-caret {
+  transform: rotate(180deg);
 }
 .phone-country-pop {
   position: absolute;
@@ -14822,6 +15025,8 @@ select option {
   box-shadow: 0 12px 32px rgb(0 0 0 / 14%);
   overflow: hidden;
   box-sizing: border-box;
+  transform-origin: top left;
+  animation: apple-sheet-in 320ms var(--ease-enter);
 }
 .phone-country-search {
   border: 0;
@@ -14856,6 +15061,7 @@ select option {
   cursor: pointer;
   box-sizing: border-box;
   min-width: 0;
+  transition: background-color var(--duration-quick) var(--ease-standard);
 }
 .phone-country-option:hover {
   background: var(--surface-selected);
@@ -17747,10 +17953,10 @@ body,
   min-height: 100dvh;
 }
 .auth-bezel {
-  padding: 6px;
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--border);
-  background: var(--surface-muted);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 .auth-bezel > .auth-card {
   border-radius: var(--radius-lg) !important;
@@ -17759,9 +17965,79 @@ body,
   box-shadow: var(--shadow-lg) !important;
   color: var(--text);
 }
-.auth-shell:has(.atlas-auth-signup-card) .auth-bezel {
-  padding: 3px;
-  border-radius: var(--radius-lg);
+.auth-shell[data-auth-active="signup"] .auth-bezel {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+/* Both forms stay mounted on one track. The track slides; the card never unmounts. */
+.auth-ribbon-stack,
+.auth-ribbon-layer {
+  position: absolute;
+  inset: 0;
+}
+.auth-ribbon-layer[data-role="signup"] {
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 420ms var(--ease-standard);
+}
+.auth-ribbon-stack[data-active="signup"] .auth-ribbon-layer[data-role="signup"] {
+  opacity: 1;
+}
+.auth-copy-stack {
+  display: grid;
+}
+.auth-copy-layer {
+  grid-area: 1 / 1;
+}
+.auth-copy-layer[data-active="false"] {
+  opacity: 0;
+  visibility: hidden;
+}
+.auth-copy-layer[data-active="true"] {
+  animation: auth-pair-settle 320ms var(--ease-enter);
+}
+.auth-pair .auth-bezel,
+.auth-pair .auth-card {
+  animation: none !important;
+}
+.auth-pair-card {
+  overflow: visible !important;
+  padding: 0 !important;
+}
+.auth-pair-viewport {
+  overflow: clip;
+  border-radius: inherit;
+}
+.auth-pair-track {
+  display: grid;
+}
+.auth-pair-pane {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+.auth-pair-track[data-active="signin"] .auth-pair-pane:last-child,
+.auth-pair-track[data-active="signup"] .auth-pair-pane:first-child {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.auth-pair-track[data-active="signin"] .auth-pair-pane:first-child,
+.auth-pair-track[data-active="signup"] .auth-pair-pane:last-child {
+  opacity: 1;
+  visibility: visible;
+  animation: auth-pair-settle 320ms var(--ease-enter);
+}
+@keyframes auth-pair-settle {
+  from { transform: translateY(8px); }
+  to { transform: none; }
+}
+.auth-pair-pane > .auth-card {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
 }
 @media (prefers-reduced-motion: no-preference) {
   .auth-bezel {
@@ -17885,6 +18161,79 @@ body,
 [data-theme="dark"] .auth-aside {
   background: #000000 !important;
 }
+.auth-aside::before,
+.auth-aside::after,
+.auth-shell .auth-aside::before,
+.auth-shell .auth-aside::after {
+  content: none !important;
+  display: none !important;
+}
+.auth-shell:has(.auth-ribbon) {
+  background: var(--background) !important;
+}
+.auth-shell:has(.auth-ribbon) .auth-aside {
+  background: var(--background) !important;
+  overflow: visible !important;
+}
+.auth-shell:has(.auth-ribbon) .auth-aurora.auth-ribbon {
+  background: var(--background) !important;
+  overflow: visible !important;
+}
+:root:not([data-theme="dark"]) .auth-shell .auth-aurora.auth-ribbon .atlas-auth-brand,
+:root:not([data-theme="dark"]) .auth-shell .auth-aurora.auth-ribbon .auth-aside-copy,
+:root:not([data-theme="dark"]) .auth-shell .auth-aurora.auth-ribbon .auth-aside-copy h1 {
+  color: var(--text) !important;
+}
+:root:not([data-theme="dark"]) .auth-shell .auth-aurora.auth-ribbon .auth-aside-copy p {
+  color: color-mix(in srgb, var(--text) 78%, transparent) !important;
+}
+.auth-shell:has(.auth-ribbon) .auth-aurora.auth-ribbon > div:first-child {
+  inset: 0 -22vw 0 0 !important;
+  width: auto !important;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    #000000 0%,
+    #000000 46%,
+    rgb(0 0 0 / 0.72) 66%,
+    rgb(0 0 0 / 0.24) 84%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    #000000 0%,
+    #000000 46%,
+    rgb(0 0 0 / 0.72) 66%,
+    rgb(0 0 0 / 0.24) 84%,
+    transparent 100%
+  );
+}
+.auth-shell:has(.auth-ribbon) .auth-main {
+  background: transparent !important;
+  position: relative;
+  z-index: 2;
+}
+@media (max-width: 768px) {
+  .auth-shell:has(.auth-ribbon) .auth-aside,
+  .auth-shell:has(.auth-ribbon) .auth-aurora.auth-ribbon {
+    overflow: hidden !important;
+  }
+  .auth-shell:has(.auth-ribbon) .auth-aurora.auth-ribbon > div:first-child {
+    inset: 0 !important;
+    width: 100% !important;
+    -webkit-mask-image: linear-gradient(
+      180deg,
+      #000000 0%,
+      #000000 62%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      180deg,
+      #000000 0%,
+      #000000 62%,
+      transparent 100%
+    );
+  }
+}
 [data-theme="dark"] .auth-shell .aurora-background-field {
   background: none !important;
   animation: none !important;
@@ -17898,7 +18247,7 @@ body,
 }
 
 @media (max-width: 900px) and (max-height: 760px) {
-  .auth-shell:has(.atlas-auth-signup-card) .auth-bezel {
+  .auth-shell[data-auth-active="signup"] .auth-bezel {
     padding: 0;
     border: 0;
     background: transparent;
@@ -17936,10 +18285,8 @@ body,
 }
 .workspace .app-header {
   background: var(--surface) !important;
-  border-bottom: 1px solid var(--border) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
 }
 .workspace .sidebar-link {
   border-radius: var(--radius-md) !important;
@@ -18028,8 +18375,8 @@ body,
   background: transparent !important;
 }
 .workspace:has(.dashboard-page) .app-header {
-  background: color-mix(in srgb, var(--background) 88%, transparent) !important;
-  border-bottom-color: var(--border) !important;
+  background: transparent !important;
+  border-bottom-color: var(--border-subtle) !important;
   box-shadow: none !important;
 }
 .workspace:has(.dashboard-page) .sidebar {
@@ -18164,21 +18511,22 @@ body,
   box-shadow: none !important;
 }
 
-[data-theme="dark"] .workspace,
 [data-theme="dark"] .workspace .workspace-main,
 [data-theme="dark"] .workspace .workspace-content,
+[data-theme="dark"] .workspace .workspace-page,
+[data-theme="dark"] .workspace .feature-page,
+[data-theme="dark"] .workspace .dashboard-page,
 [data-theme="dark"] .workspace:has(.dashboard-page),
 [data-theme="dark"] .workspace:has(.dashboard-page) .workspace-main,
 [data-theme="dark"] .workspace:has(.dashboard-page) .workspace-content,
+[data-theme="dark"] .workspace:has(.dashboard-page) .workspace-page,
 [data-theme="dark"] .workspace:has(.dashboard-page) .dashboard-page {
-  background: var(--background) !important;
+  background: transparent !important;
 }
 [data-theme="dark"] .workspace .app-header,
 [data-theme="dark"] .workspace:has(.dashboard-page) .app-header {
-  background: color-mix(in srgb, var(--background) 88%, transparent) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom-color: var(--border) !important;
+  background: #000000 !important;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08)) !important;
   box-shadow: none !important;
 }
 [data-theme="dark"] .workspace .sidebar,
@@ -18688,7 +19036,7 @@ body,
   color: var(--success, #10b981);
   border: 1px solid color-mix(in srgb, var(--success, #10b981) 32%, transparent);
   cursor: pointer;
-  transition: all 180ms ease;
+  transition: color 180ms var(--ease-standard), background-color 180ms var(--ease-standard), border-color 180ms var(--ease-standard), transform 180ms var(--ease-enter);
   line-height: 1;
   user-select: none;
 }
@@ -18736,7 +19084,7 @@ body,
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  transition: all 150ms ease;
+  transition: color 150ms var(--ease-standard), background-color 150ms var(--ease-standard);
   flex-shrink: 0;
 }
 
@@ -19266,6 +19614,7 @@ body,
 .workspace-page {
   width: 100%;
   min-width: 0;
+  transform-origin: top center;
 }
 .sidebar-active-pill,
 .mobile-nav-active-pill {
@@ -19397,7 +19746,6 @@ body,
 .workspace,
 .workspace .panel,
 .workspace .sidebar,
-.workspace .app-header,
 .top-chrome,
 .account-panel,
 .profile-menu,
@@ -19420,7 +19768,7 @@ body,
 .theme-toggle:active,
 .sidebar-profile-card:active,
 .mobile-bottom-nav a:active {
-  transform: scale(0.97);
+  transform: scale(0.985);
 }
 
 @media (max-width: 900px) {
@@ -19856,7 +20204,8 @@ body,
   background-color: var(--surface);
   color: var(--text);
   isolation: isolate;
-  animation: apple-sheet-in var(--duration-ui) var(--ease-out);
+  transform-origin: top center;
+  animation: apple-sheet-in 320ms var(--ease-enter);
 }
 [data-theme="dark"] .cc-select-menu {
   background-color: var(--surface-raised);
@@ -19877,6 +20226,7 @@ body,
   text-align: left;
   cursor: pointer;
   text-wrap: pretty;
+  transition: background-color var(--duration-quick) var(--ease-standard);
 }
 .cc-select-option:hover,
 .cc-select-option.is-active {
@@ -19968,9 +20318,36 @@ select.field,
 @media (prefers-reduced-motion: reduce) {
   .cc-select-menu,
   .cc-select-trigger .copilot-icon,
+  .phone-country-pop,
+  .phone-country-caret,
+  .cc-dialog-backdrop,
+  .cc-dialog-panel,
   .interview-extras summary::after {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* Quiet floor: controls with no own transition still change color on hover and focus.
+   Transform and opacity stay out of this rule so motion components are not fought. */
+@media (prefers-reduced-motion: no-preference) {
+  :where(
+    button,
+    a,
+    summary,
+    label,
+    [role="button"],
+    [role="tab"],
+    [role="menuitem"],
+    [role="option"],
+    [role="switch"],
+    input,
+    select,
+    textarea
+  ) {
+    transition-property: color, background-color, border-color, outline-color;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--ease-standard);
   }
 }
 

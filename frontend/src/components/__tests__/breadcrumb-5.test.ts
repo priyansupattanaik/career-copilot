@@ -23,16 +23,16 @@ describe("Breadcrumb5", () => {
     const profileCrumbs = getAutoBreadcrumbs("/settings/profile", "");
     expect(profileCrumbs).toHaveLength(3);
     expect(profileCrumbs[1]).toEqual({ label: "Settings", href: "/settings/profile" });
-    expect(profileCrumbs[2]).toEqual({ label: "Candidate Profile", current: true });
+    expect(profileCrumbs[2]).toEqual({ label: "Profile", current: true });
 
     const accountCrumbs = getAutoBreadcrumbs("/settings/account", "");
-    expect(accountCrumbs[2]).toEqual({ label: "Account & Access", current: true });
+    expect(accountCrumbs[2]).toEqual({ label: "Account", current: true });
 
     const prefCrumbs = getAutoBreadcrumbs("/settings/preferences", "");
     expect(prefCrumbs[2]).toEqual({ label: "Preferences", current: true });
 
     const privacyCrumbs = getAutoBreadcrumbs("/settings/privacy", "");
-    expect(privacyCrumbs[2]).toEqual({ label: "Privacy Controls", current: true });
+    expect(privacyCrumbs[2]).toEqual({ label: "Privacy", current: true });
   });
 });
 

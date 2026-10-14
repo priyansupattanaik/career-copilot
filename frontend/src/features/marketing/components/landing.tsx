@@ -28,21 +28,21 @@ import { prefetchRoute, warmUpBackend } from "@/shared/route-prefetch";
 const features = [
   {
     icon: "resume" as const,
-    label: "Resume evidence",
-    title: "Know what your experience already proves.",
-    text: "Turn projects, wins, and skills into a clear story you can carry into every application.",
+    label: "Resume",
+    title: "Compare your resume with a job.",
+    text: "See which words from the job description appear in the resume you upload.",
   },
   {
     icon: "learning" as const,
-    label: "Focused preparation",
-    title: "Close the gap with a plan you can follow.",
-    text: "See the next skill, example, or practice session that makes your target role more reachable.",
+    label: "Practice",
+    title: "Practice the questions.",
+    text: "Study the missing words from that comparison, then answer practice questions.",
   },
   {
     icon: "jobs" as const,
-    label: "Role fit",
-    title: "Choose opportunities with context.",
-    text: "Connect your profile to roles that make sense for your evidence, goals, and work style.",
+    label: "Jobs",
+    title: "Save roles.",
+    text: "Keep a list of jobs and mark which ones you applied to.",
   },
 ];
 
@@ -83,7 +83,7 @@ function usePracticeClock(paused: boolean) {
 function Reveal({
   as: Tag,
   delay = 0,
-  y = 22,
+  y = 8,
   className,
   children,
 }: {
@@ -105,13 +105,12 @@ function HeroCopy() {
   return (
     <div className="home-hero-copy">
       <h1 id="home-hero-title">
-        Show up
+        Check your resume.
         <br />
-        <span>ready.</span>
+        <span>Practice the interview.</span>
       </h1>
       <p className="home-hero-lede">
-        Career Copilot helps you understand your experience, practise the
-        interview on video, and take your next step with confidence.
+        Upload a resume, compare it with a job, and practice answers on video.
       </p>
       <div className="home-actions">
         <span
@@ -124,7 +123,7 @@ function HeroCopy() {
         </span>
         <a href="#practice" className="home-text-cta">
           <CopilotIcon name="play" size={14} />{" "}
-          See the practice room
+          See an example
         </a>
       </div>
     </div>
@@ -136,30 +135,29 @@ function PracticeCopy() {
   return (
     <div ref={ref} className="home-practice-copy">
       <h2 id="practice-title">
-        Confidence is
+        Practice
         <br />
-        <span>a practice habit.</span>
+        <span>on camera.</span>
       </h2>
       <p>
-        Answer realistic questions on camera before the real conversation.
-        Review the moments that matter and come back with a better answer.
+        Answer questions before the real interview. You can review the session afterward.
       </p>
       <div className="home-check-list">
         <span>
           <CopilotIcon name="check" size={15} /> Camera and
-          microphone readiness
+          microphone check
         </span>
         <span>
-          <CopilotIcon name="check" size={15} /> Clear feedback
-          after every answer
+          <CopilotIcon name="check" size={15} /> Notes after
+          each answer
         </span>
         <span>
-          <CopilotIcon name="check" size={15} /> Evidence, pace,
-          and clarity signals
+          <CopilotIcon name="check" size={15} /> A score for
+          the session
         </span>
       </div>
       <Link href="/mock-interview/preparation" className="home-inline-link">
-        Start a video practice session{" "}
+        Start a practice interview{" "}
         <CopilotIcon name="go" size={15} />
       </Link>
     </div>
@@ -169,16 +167,16 @@ function PracticeCopy() {
 function PracticeCard() {
   const [live, setLive] = useState(false);
   const ref = useReveal<HTMLDivElement>({
-    delay: 120,
-    y: 28,
+    delay: 80,
+    y: 8,
     onReveal: () => setLive(true),
   });
   const sessions = useCountUp(3, live);
   return (
     <div ref={ref} className="home-practice-card">
       <div className="home-practice-card-top">
-        <span>illustrative practice history</span>
-        <b>sample week</b>
+        <span>Example</span>
+        <b>Not your data</b>
       </div>
       <div className="home-practice-stat">
         <strong>{sessions}</strong>
@@ -201,25 +199,25 @@ function PracticeCard() {
       <div className="home-practice-row">
         <CopilotIcon name="confidence" size={19} />
         <span>
-          <b>Confidence</b>
-          <small>steadier than last session</small>
+          <b>Camera</b>
+          <small>checked before you start</small>
         </span>
-        <strong>+18%</strong>
+        <strong>On</strong>
       </div>
       <div className="home-practice-row">
         <CopilotIcon name="skills" size={19} />
         <span>
-          <b>Clarity</b>
-          <small>strong opening, sharper close</small>
+          <b>Review</b>
+          <small>saved with the session</small>
         </span>
-        <strong>+11%</strong>
+        <strong>Yes</strong>
       </div>
     </div>
   );
 }
 
 function SystemSteps() {
-  const ref = useReveal<HTMLDivElement>({ delay: 80, y: 24 });
+  const ref = useReveal<HTMLDivElement>({ delay: 60, y: 8 });
   return (
     <div ref={ref} className="home-steps">
       {features.map((feature) => (
@@ -242,16 +240,15 @@ function ProfileIntro() {
   return (
     <div ref={ref}>
       <h2 id="profile-title">
-        Your progress,
+        Resume, practice,
         <br />
-        <span>in one place.</span>
+        <span>and jobs.</span>
       </h2>
       <p>
-        Keep the resume you are shaping, the answers you are practising, the
-        skills you are learning, and the roles you are considering connected.
+        The resume you upload is reused for job matches and practice questions.
       </p>
       <Link href="/resume-analysis?tab=upload" className="home-inline-link">
-        Bring in my resume{" "}
+        Upload a resume{" "}
         <CopilotIcon name="go" size={15} />
       </Link>
     </div>
@@ -259,45 +256,45 @@ function ProfileIntro() {
 }
 
 function ProfileSheet() {
-  const ref = useReveal<HTMLDivElement>({ delay: 140, y: 28 });
+  const ref = useReveal<HTMLDivElement>({ delay: 80, y: 8 });
   return (
     <div ref={ref} className="home-profile-sheet">
       <div className="home-sheet-head">
-        <span>illustrative profile preview</span>
-        <b>sample data</b>
+        <span>Example</span>
+        <b>Not your account</b>
       </div>
       <div className="home-sheet-main">
         <div className="home-avatar">YP</div>
         <div>
-          <h3>Your profile</h3>
-          <p>Backend engineer, Bengaluru</p>
+          <h3>Sample profile</h3>
+          <p>Example only</p>
         </div>
-        <span className="home-sheet-status">78% ready</span>
+        <span className="home-sheet-status">Sample</span>
       </div>
       <div className="home-sheet-items">
         <span>
           <CopilotIcon name="resume" size={17} />
           <span className="home-sheet-copy">
-            <b>Resume evidence</b>
-            <small>12 confirmed signals</small>
+            <b>Resume</b>
+            <small>One file uploaded</small>
           </span>
-          <i>ready</i>
+          <i>saved</i>
         </span>
         <span>
           <CopilotIcon name="interview" size={17} />
           <span className="home-sheet-copy">
-            <b>Video practice</b>
-            <small>3 sessions this week</small>
+            <b>Practice</b>
+            <small>3 example sessions</small>
           </span>
-          <i>growing</i>
+          <i>sample</i>
         </span>
         <span>
           <CopilotIcon name="learning" size={17} />
           <span className="home-sheet-copy">
-            <b>Next skill route</b>
-            <small>Make system design visible</small>
+            <b>Saved jobs</b>
+            <small>1 example role</small>
           </span>
-          <i>next</i>
+          <i>sample</i>
         </span>
       </div>
     </div>
@@ -305,18 +302,17 @@ function ProfileSheet() {
 }
 
 function FinalCard() {
-  const ref = useReveal<HTMLDivElement>({ delay: 60, y: 30 });
+  const ref = useReveal<HTMLDivElement>({ delay: 40, y: 8 });
   return (
     <div ref={ref} className="home-frame home-final-card">
-      <p className="home-kicker">The next interview is a little less unknown</p>
+      <p className="home-kicker">Create an account</p>
       <h2>
-        Start with
+        Upload a resume
         <br />
-        one good answer.
+        to begin.
       </h2>
       <p>
-        Build a profile that helps you see what you bring, what to practise, and
-        where to go next.
+        You can compare it with a job and start a practice interview.
       </p>
       <span
         onMouseEnter={() => prefetchRoute("/sign-up")}
@@ -403,13 +399,12 @@ function LandingInner() {
           <div className="home-frame">
             <Reveal as="div" className="home-system-copy" delay={0}>
               <h2 id="system-title">
-                From “I’m not sure”
+                Three things
                 <br />
-                <span>to “I know my next move.”</span>
+                <span>you can do.</span>
               </h2>
               <p>
-                Every part of Career Copilot points back to one question: what
-                would make you more ready for the role you want?
+                Compare a resume with a job, practice an interview, and save roles.
               </p>
             </Reveal>
             <SystemSteps />
@@ -462,34 +457,19 @@ const TYPING_SPEED = 32; // ms per character
 
 const INTERVIEW_QUESTIONS = [
   {
-    topic: "Behavioural",
-    q: "Tell me about a time you led a project under a tight deadline.",
-    a: "Last quarter I led a database migration with three days to go-live. I broke the scope into daily checkpoints, ran a short sync every morning, and we shipped on time with zero rollbacks.",
+    topic: "Example",
+    q: "Tell me about a project you shipped.",
+    a: "This is an example answer, not a recording. In a real session, your own answer is saved.",
   },
   {
-    topic: "Situational",
-    q: "How do you prioritise when everything feels urgent?",
-    a: "I ask what actually breaks if each task slips by a day. Most things that feel urgent can wait. The ones that truly can't get my full focus — everything else gets queued or delegated.",
+    topic: "Example",
+    q: "How do you decide what to do first?",
+    a: "This preview does not use your resume or invent your experience.",
   },
   {
-    topic: "Technical",
-    q: "Walk me through a technical decision you'd make differently today.",
-    a: "I once reached for NoSQL early in a project. The data turned out to be deeply relational. I'd validate the data model more carefully before committing to a storage choice now.",
-  },
-  {
-    topic: "Behavioural",
-    q: "Describe a moment you received difficult feedback. What did you do?",
-    a: "My manager said my code reviews were too critical in tone. I asked for specific examples, then shifted to leading with questions instead of corrections. The dynamic improved fast.",
-  },
-  {
-    topic: "Culture",
-    q: "What does good collaboration look like to you?",
-    a: "Being clear about what you own, asking early when you're stuck, and making it safe to disagree. A short uncomfortable conversation is always better than a long, expensive one.",
-  },
-  {
-    topic: "Growth",
-    q: "How do you keep up with fast-changing tools in your field?",
-    a: "I follow a few trusted sources, but mostly I stay current by building small things with new tools. Reading about them is one thing — actually using them reveals what matters.",
+    topic: "Example",
+    q: "What would you change about a past technical choice?",
+    a: "Practice sessions store the answer you give. This text is only a sample.",
   },
 ];
 
@@ -640,7 +620,7 @@ function InterviewStage({
 
       {/* Live pill */}
       <div className="home-live-label">
-        <i /> live practice
+        <i /> Example
       </div>
 
       {/* Question card — shown while question is being read */}
@@ -718,7 +698,7 @@ function HeroVisual() {
       ref={wrapRef}
       className="home-hero-visual"
       role="img"
-      aria-label="Video interview practice workspace preview"
+      aria-label="Example of a practice interview"
     >
       <motion.div className="home-hero-visual-shift" style={{ y }}>
         <div className="home-window">
@@ -728,7 +708,7 @@ function HeroVisual() {
               <i />
               <i />
             </span>
-            <span>practice room</span>
+            <span>Practice</span>
             <PracticeClock />
           </div>
           <InterviewStage blockVideoInteraction={blockVideoInteraction} />

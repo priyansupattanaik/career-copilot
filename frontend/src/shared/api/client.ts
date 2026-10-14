@@ -1,8 +1,9 @@
 import { createClient as createAuthClient } from "@/features/auth/api/client";
 import { demoApiRequest, isDemoSession } from "@/features/auth/demo-session";
+import { apiRequestErrorFromBody, ApiRequestError, type ApiErrorBody } from "@/shared/api/errors";
 import { ACCESS_TOKEN_STORAGE_KEY, resolveApiBase } from "@/shared/config";
 
-export type ApiErrorBody = { error?: { code?: string; message?: string; request_id?: string }; message?: string; detail?: string };
+export { ApiRequestError, type ApiErrorBody };
 const inFlightGets = new Map<string, Promise<unknown>>();
 
 /** True when fetch was cancelled via AbortController (not a connectivity failure). */
@@ -35,7 +36,12 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     } = await authClient.auth.getSession();
     accessToken = session?.access_token || "";
   }
-  if (!accessToken) throw new Error("Your session has expired. Sign in again.");
+  if (!accessToken) {
+    throw new ApiRequestError("Your session has expired. Sign in again.", {
+      status: 401,
+      code: "session_expired",
+    });
+  }
   const method = (init.method || "GET").toUpperCase();
   const hasAbortSignal = Boolean(init.signal);
   // Never share in-flight GETs that carry AbortSignal: React Strict Mode (and
@@ -66,23 +72,19 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
         // Preserve abort semantics so callers can ignore cancelled work.
         throw error instanceof Error ? error : new DOMException("Aborted", "AbortError");
       }
-      throw new Error(networkUnreachableMessage(base), { cause: error });
+      throw new ApiRequestError(networkUnreachableMessage(base), {
+        status: 0,
+        code: "network_unreachable",
+        cause: error,
+      });
     }
     if (!response.ok) {
       const body = (await response.json().catch(() => ({}))) as ApiErrorBody;
       if (response.status === 401) {
-        window.localStorage.removeItem("career_copilot_access_token");
+        window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
         window.dispatchEvent(new CustomEvent("career-copilot:auth-expired"));
-        const error = new Error(body.error?.message || "Your session has expired. Sign in again.") as Error & { status?: number };
-        error.status = response.status;
-        throw error;
       }
-      if (response.status === 503) {
-        throw new Error(
-          body.error?.message || "The service is temporarily unavailable. Please try again in a moment."
-        );
-      }
-      throw new Error(body.error?.message || body.message || body.detail || `Request failed (${response.status}).`);
+      throw apiRequestErrorFromBody(response.status, body);
     }
     if (response.status === 204) return undefined as T;
     return response.json() as Promise<T>;

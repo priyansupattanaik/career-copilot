@@ -8,7 +8,7 @@
 
 # Career Copilot
 
-**Private career workspace for candidates** — evidence-grounded resume analysis, ATS scoring, interview practice, learning paths, and job matching.
+**Private workspace** — compare a resume with a job, practice interviews, study missing words, and match jobs.
 
 [Features](#features) · [Getting started](#getting-started) · [Architecture](#architecture) · [Configuration](#configuration) · [API](#api) · [Docs](#documentation) · [Testing](#testing)
 
@@ -27,10 +27,10 @@ Career Copilot is a monorepo web app where a candidate can:
 
 1. Build a profile and upload a resume (PDF/DOCX)  
 2. Confirm extracted sections (nothing unreviewed drives scoring)  
-3. Score the resume against a confirmed job description with **exact keyword evidence**  
+3. Compare the resume with a job description you confirm. The score counts job words that appear in the resume.  
 4. Practice mock interviews (optional browser voice Q&A)  
-5. Generate YouTube learning paths from ATS gaps  
-6. Browse job recommendations grounded in confirmed resume text  
+5. Build a study plan from words the resume is missing, with free lesson links  
+6. Browse jobs scored from the resume you confirmed  
 
 > [!IMPORTANT]
 > **Do not invent the candidate’s career.**  
@@ -168,12 +168,17 @@ Browser (Vite + React)
 
 | Path | Responsibility |
 |------|----------------|
-| `frontend/src/` | UI features: auth, dashboard, resume, interview, learning, jobs, settings |
+| `frontend/src/features/` | Screens in `components/`, HTTP in `api.ts`, pure rules in `model/` |
+| `frontend/src/shared/config.ts` | Browser environment (`VITE_*` only) |
+| `frontend/src/shared/api/` | Authenticated fetch and `ApiRequestError` |
 | `backend/app/main.py` | FastAPI app, CORS, request IDs |
-| `backend/app/api/` | HTTP routes and schemas |
+| `backend/app/api/router.py` | Mounts one router per area |
+| `backend/app/api/routers/` | HTTP routes (profile, resumes, jobs, interviews, …) |
+| `backend/app/core/config.py` | Process environment |
 | `backend/app/database/` | Supabase PostgREST + storage adapters, ownership helpers |
 | `backend/app/agents/` | Provider clients, prompts, preferred-provider routing |
 | `backend/app/features/` | Domain logic (auth, parsing, ATS, interview, …) |
+| `docs/ARCHITECTURE.md` | Module map, env seam, API, and state |
 | `docs/database/` | Supabase PostgreSQL schema DDL and migrations |
 
 > [!NOTE]
@@ -251,7 +256,7 @@ Full interactive OpenAPI exploration: `http://127.0.0.1:8000/docs`.
 
 ## Documentation
 
-This `README.md` serves as the primary technical specification and operational guide for Career Copilot, detailing architecture, configuration, APIs, and operational guidelines.
+This `README.md` is the operational guide. The module map is [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 Interactive API documentation and schema specifications are served automatically via FastAPI OpenAPI at `/docs` (`http://127.0.0.1:8000/docs`). Database migration scripts and DDL definitions are located in `docs/database/`.
 

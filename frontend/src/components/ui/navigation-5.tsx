@@ -13,6 +13,7 @@ import { CopilotIcon } from "@/components/ui/copilot-icons";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { prefetchRoute } from "@/shared/route-prefetch";
 import { cn } from "@/shared/utils";
+import { premiumTransition } from "@/components/ui/motion-system";
 import {
   AnimatePresence,
   motion,
@@ -25,8 +26,8 @@ import {
 const megaMenuVariants: Variants = {
   initial: {
     opacity: 0,
-    scale: 0.97,
-    y: 8,
+    scale: 0.985,
+    y: 6,
     x: "-50%",
   },
   animate: {
@@ -34,22 +35,14 @@ const megaMenuVariants: Variants = {
     scale: 1,
     y: 0,
     x: "-50%",
-    transition: {
-      type: "spring",
-      stiffness: 420,
-      damping: 30,
-      mass: 0.8,
-    },
+    transition: premiumTransition.card,
   },
   exit: {
     opacity: 0,
-    scale: 0.98,
-    y: 6,
+    scale: 0.992,
+    y: 4,
     x: "-50%",
-    transition: {
-      duration: 0.15,
-      ease: [0.4, 0, 1, 1],
-    },
+    transition: premiumTransition.exit,
   },
 };
 
@@ -106,18 +99,11 @@ function LiquidNavLink({
           initial={false}
           animate={
             hovered
-              ? { y: "0%", opacity: 1, scaleY: 1 }
-              : { y: "105%", opacity: 0.25, scaleY: 0.85 }
+              ? { y: "0%", opacity: 1 }
+              : { y: "100%", opacity: 0 }
           }
           transition={
-            reduceMotion
-              ? { duration: 0.15 }
-              : {
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 26,
-                  mass: 0.5,
-                }
+            reduceMotion ? premiumTransition.micro : premiumTransition.card
           }
           style={{ originY: 1 }}
         />
@@ -128,7 +114,7 @@ function LiquidNavLink({
           animate={
             hovered ? { opacity: 0.95, y: 0 } : { opacity: 0, y: 12 }
           }
-          transition={{ duration: 0.2, ease: "easeOut" }}
+          transition={premiumTransition.quick}
         />
       </span>
 
@@ -140,7 +126,7 @@ function LiquidNavLink({
   );
 
   const sharedClasses = cn(
-    "nav5-liquid-link nav5-link group relative inline-flex items-center justify-center rounded-full px-3.5 py-1.5 text-sm font-medium text-[var(--text-muted)] transition-all duration-200 hover:text-[var(--text)] active:scale-95 select-none",
+    "nav5-liquid-link nav5-link group relative inline-flex items-center justify-center rounded-full px-3.5 py-1.5 text-sm font-medium text-[var(--text-muted)] transition-all duration-200 hover:text-[var(--text)] active:scale-[0.985] select-none",
     className,
   );
 
@@ -295,18 +281,12 @@ export function Navigation5({ className }: { className?: string }) {
         "home-nav nav5-wrapper sticky top-0 z-50 w-full pointer-events-none",
         className,
       )}
-      initial={reduceMotion ? { opacity: 0 } : { y: -70, opacity: 0 }}
+      initial={reduceMotion ? { opacity: 0 } : { y: -12, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={
         reduceMotion
-          ? { duration: 0.2 }
-          : {
-              type: "spring",
-              stiffness: 240,
-              damping: 22,
-              mass: 0.85,
-              delay: 0.05,
-            }
+          ? premiumTransition.micro
+          : { ...premiumTransition.slow, delay: 0.04 }
       }
     >
       <nav
@@ -366,7 +346,7 @@ export function Navigation5({ className }: { className?: string }) {
                 <button
                   type="button"
                   className={cn(
-                    "nav5-liquid-link nav5-link group relative inline-flex items-center justify-center rounded-full px-3.5 py-1.5 text-sm font-medium text-[var(--text-muted)] transition-all duration-200 hover:text-[var(--text)] active:scale-95 select-none",
+                    "nav5-liquid-link nav5-link group relative inline-flex items-center justify-center rounded-full px-3.5 py-1.5 text-sm font-medium text-[var(--text-muted)] transition-all duration-200 hover:text-[var(--text)] active:scale-[0.985] select-none",
                     solutionsOpen && "text-[var(--text)]",
                   )}
                   aria-expanded={solutionsOpen}
@@ -386,18 +366,13 @@ export function Navigation5({ className }: { className?: string }) {
                       initial={false}
                       animate={
                         solutionsOpen || solutionsBtnHovered
-                          ? { y: "0%", opacity: 1, scaleY: 1 }
-                          : { y: "105%", opacity: 0.25, scaleY: 0.85 }
+                          ? { y: "0%", opacity: 1 }
+                          : { y: "100%", opacity: 0 }
                       }
                       transition={
                         reduceMotion
-                          ? { duration: 0.15 }
-                          : {
-                              type: "spring",
-                              stiffness: 400,
-                              damping: 26,
-                              mass: 0.5,
-                            }
+                          ? premiumTransition.micro
+                          : premiumTransition.card
                       }
                       style={{ originY: 1 }}
                     />
@@ -409,7 +384,7 @@ export function Navigation5({ className }: { className?: string }) {
                           ? { opacity: 0.95, y: 0 }
                           : { opacity: 0, y: 12 }
                       }
-                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      transition={premiumTransition.quick}
                     />
                   </span>
 
@@ -432,7 +407,7 @@ export function Navigation5({ className }: { className?: string }) {
                     <motion.div
                       className="nav5-dropdown absolute top-full left-1/2 pt-3 w-[720px] max-w-[calc(100vw-48px)]"
                       role="menu"
-                      aria-label="Platform solutions"
+                      aria-label="Product"
                       variants={megaMenuVariants}
                       initial={reduceMotion ? false : "initial"}
                       animate="animate"
@@ -440,17 +415,16 @@ export function Navigation5({ className }: { className?: string }) {
                     >
                       <div className="nav5-menu overflow-hidden rounded-3xl border p-6">
                         <div className="grid grid-cols-3 gap-6 divide-x divide-[var(--divider)]">
-                          {/* Column 1: Resume & ATS */}
                           <div className="flex flex-col gap-3 pr-4">
                             <div className="mb-1 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-muted)] text-[var(--primary-strong)]">
                               <CopilotIcon name="resume" size={18} />
                             </div>
                             <h4 className="text-sm font-semibold text-[var(--text)]">
-                              ATS & Evidence
+                              Resume check
                             </h4>
                             <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                              Extract verified skills, score resume fit against real
-                              job descriptions, and close gaps.
+                              Upload a resume and see which words from a job
+                              description appear in it.
                             </p>
                             <div className="mt-1 flex flex-col gap-1">
                               <Link
@@ -458,14 +432,14 @@ export function Navigation5({ className }: { className?: string }) {
                                 className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--primary-strong)] transition-colors"
                                 onClick={() => setSolutionsOpen(false)}
                               >
-                                Analyze Resume
+                                Compare resume
                               </Link>
                               <Link
                                 href="/resume-analysis"
                                 className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--primary-strong)] transition-colors"
                                 onClick={() => setSolutionsOpen(false)}
                               >
-                                Score Breakdown
+                                Past checks
                               </Link>
                             </div>
                           </div>
@@ -479,8 +453,8 @@ export function Navigation5({ className }: { className?: string }) {
                               Interview & Skills
                             </h4>
                             <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                              Real-time AI video interviews with voice, turn-taking,
-                              and tailored gap curriculum.
+                              Practice questions on camera. Questions can use
+                              your resume and a job description.
                             </p>
                             <div className="mt-1 flex flex-col gap-1">
                               <Link
@@ -488,14 +462,14 @@ export function Navigation5({ className }: { className?: string }) {
                                 className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--primary-strong)] transition-colors"
                                 onClick={() => setSolutionsOpen(false)}
                               >
-                                Video Practice Room
+                                Practice interview
                               </Link>
                               <Link
                                 href="/learning"
                                 className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--primary-strong)] transition-colors"
                                 onClick={() => setSolutionsOpen(false)}
                               >
-                                Learning Path
+                                Study plan
                               </Link>
                             </div>
                           </div>
@@ -515,18 +489,18 @@ export function Navigation5({ className }: { className?: string }) {
                             >
                               <div>
                                 <span className="badge badge-info mb-2 text-[10px] uppercase tracking-wider">
-                                  Live AI Studio
+                                  Practice
                                 </span>
                                 <h5 className="text-xs font-bold text-[var(--text)]">
-                                  Camera & Mic Readiness
+                                  Camera and microphone
                                 </h5>
                                 <p className="mt-1 text-[11px] text-[var(--text-muted)] leading-normal">
-                                  Test lighting, speech pace, and receive instant
-                                  feedback.
+                                  Check your camera and microphone, then start a
+                                  practice session.
                                 </p>
                               </div>
                               <div className="mt-3 flex items-center text-xs font-semibold text-[var(--primary-strong)]">
-                                <span>Try session</span>
+                                <span>Start practice</span>
                                 <CopilotIcon name="external" size={13} className="ml-1" />
                               </div>
                             </Link>
@@ -585,7 +559,7 @@ export function Navigation5({ className }: { className?: string }) {
                 <button
                   ref={menuButtonRef}
                   type="button"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--surface-muted)_65%,transparent)] transition-colors active:scale-95"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--surface-muted)_65%,transparent)] transition-colors active:scale-[0.985]"
                   aria-label="Open navigation"
                   aria-expanded={mobileOpen}
                   onClick={() => setMobileOpen(true)}
@@ -626,9 +600,7 @@ export function Navigation5({ className }: { className?: string }) {
               animate={reduceMotion ? { opacity: 1 } : { y: 0 }}
               exit={reduceMotion ? { opacity: 0 } : { y: "100%" }}
               transition={
-                reduceMotion
-                  ? { duration: 0.15 }
-                  : { type: "spring", stiffness: 380, damping: 34 }
+                reduceMotion ? premiumTransition.micro : premiumTransition.standard
               }
             >
               {/* Drag Handle Indicator */}
@@ -681,7 +653,7 @@ export function Navigation5({ className }: { className?: string }) {
                     onClick={() => setMobileSolutionsOpen((v) => !v)}
                     aria-expanded={mobileSolutionsOpen}
                   >
-                    <span>Platform Modules</span>
+                    <span>Product</span>
                     <CopilotIcon
                       name="expand"
                       size={16}
@@ -698,28 +670,28 @@ export function Navigation5({ className }: { className?: string }) {
                         className="rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary-strong)]"
                         onClick={closeMobileMenu}
                       >
-                        Resume Analysis
+                        Resume check
                       </Link>
                       <Link
                         href="/mock-interview/preparation"
                         className="rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary-strong)]"
                         onClick={closeMobileMenu}
                       >
-                        Mock Interview Studio
+                        Practice interview
                       </Link>
                       <Link
                         href="/learning"
                         className="rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary-strong)]"
                         onClick={closeMobileMenu}
                       >
-                        Learning Path
+                        Study plan
                       </Link>
                       <Link
                         href="/jobs"
                         className="rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary-strong)]"
                         onClick={closeMobileMenu}
                       >
-                        Recommended Jobs
+                        Jobs
                       </Link>
                     </div>
                   )}

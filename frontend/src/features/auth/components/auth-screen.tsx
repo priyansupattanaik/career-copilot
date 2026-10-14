@@ -1,7 +1,7 @@
 import { Link } from "@/shared/ui/router-link";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useSearchParams } from "@/shared/router";
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { CopilotIcon } from "@/components/ui/copilot-icons";
 
 import { createClient } from "@/features/auth/api/client";
@@ -19,56 +19,191 @@ import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { BrandMark } from "@/components/ui/brand-mark";
 
 import { AuroraBackground } from "@/components/ui/aurora-background";
+import { RibbonGlow } from "@/components/ui/ribbon-glow";
+import { RibbonGlow02 } from "@/components/ui/ribbon-glow-02";
+import { useTheme } from "@/shared/theme";
 import { resolveApiBase } from "@/shared/config";
 import { authCallbackUrl } from "@/features/auth/public-origin";
 import { motion, useReducedMotion } from "motion/react";
 import { FLUID_SPRING_TRANSITION } from "@/components/ui/motion-system";
 
+function AuthPairLink({
+  href,
+  children,
+}: {
+  href: string;
+  direction?: "to-signup" | "to-signin";
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={(event) => {
+        event.currentTarget.blur();
+      }}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function AuthPairTrack({ signup }: { signup: boolean }) {
+  const signInPane = useRef<HTMLDivElement>(null);
+  const signUpPane = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    const nodes = [signInPane.current, signUpPane.current].filter(
+      (node): node is HTMLDivElement => node != null,
+    );
+    if (nodes.length === 0) return;
+    const measure = () => {
+      const next = Math.max(...nodes.map((node) => node.offsetHeight));
+      setHeight(next || null);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    nodes.forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div className="auth-card panel stack atlas-auth-card auth-pair-card">
+      <div className="auth-pair-viewport" style={height == null ? undefined : { height }}>
+        <div className="auth-pair-track" data-active={signup ? "signup" : "signin"}>
+          <div className="auth-pair-pane" ref={signInPane} inert={signup}>
+            <SignInScreen embedded />
+          </div>
+          <div className="auth-pair-pane" ref={signUpPane} inert={!signup}>
+            <SignUpScreen embedded />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AsideIntro({
+  title,
+  description,
+}: {
+  title: string;
+  description?: string;
+}) {
+  const shouldReduceMotion = useReducedMotion();
+  return (
+    <>
+      <Link className="brand atlas-auth-brand" href="/">
+        <BrandMark />
+        <span>Career Copilot</span>
+      </Link>
+      <motion.div
+        className="auth-aside-copy"
+        initial={shouldReduceMotion ? false : { opacity: 0, x: -16 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={FLUID_SPRING_TRANSITION}
+      >
+        <h1>{title}</h1>
+        {description ? <p>{description}</p> : null}
+      </motion.div>
+    </>
+  );
+}
+
 function Shell({
   children,
   title,
   description,
+  backdrop = "aurora",
+  pair = false,
+  active = "signin",
 }: {
   children: React.ReactNode;
   title: string;
-  description: string;
+  description?: string;
+  backdrop?: "aurora" | "ribbon" | "ribbon-02";
+  pair?: boolean;
+  active?: "signin" | "signup";
 }) {
   const shouldReduceMotion = useReducedMotion();
+  const { resolvedTheme } = useTheme();
+  const intro = <AsideIntro title={title} description={description} />;
+  const ribbonStyle = {
+    position: "absolute" as const,
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    minWidth: 0,
+    minHeight: 0,
+  };
+  const ribbonBackground = resolvedTheme === "dark" ? "#000000" : "#f5faff";
   return (
-    <main id="main-content" className="auth-shell atlas-auth-shell">
+    <main
+      id="main-content"
+      data-auth-active={pair ? active : undefined}
+      className={`auth-shell atlas-auth-shell${pair ? " auth-pair" : ""}`}
+    >
       <aside
         className="auth-aside atlas-auth-aside"
         aria-label="Product overview"
       >
-        <AuroraBackground className="auth-aurora">
-          <Link className="brand atlas-auth-brand" href="/">
-            <BrandMark />
-            <span>Career Copilot</span>
-          </Link>
-          <motion.div
-            className="auth-aside-copy"
-            initial={shouldReduceMotion ? false : { opacity: 0, x: -16 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={FLUID_SPRING_TRANSITION}
-          >
-            <h1>{title}</h1>
-            <p>{description}</p>
-            <ul className="auth-aside-points">
-              <li>
-                <CopilotIcon name="evidence" size={17} />{" "}
-                <span>Review every score against evidence you control</span>
-              </li>
-              <li>
-                <CopilotIcon name="interview" size={17} />{" "}
-                <span>Practice interviews with a live transcript</span>
-              </li>
-              <li>
-                <CopilotIcon name="jobs" size={17} />{" "}
-                <span>See roles matched to your confirmed profile</span>
-              </li>
-            </ul>
-          </motion.div>
-        </AuroraBackground>
+        {backdrop === "aurora" && !pair ? (
+          <AuroraBackground className="auth-aurora">{intro}</AuroraBackground>
+        ) : (
+          <div className="auth-aurora auth-ribbon">
+            {pair ? (
+              <div className="auth-ribbon-stack" data-active={active}>
+                <div className="auth-ribbon-layer" data-role="signin">
+                  <RibbonGlow02
+                    background={ribbonBackground}
+                    speed={shouldReduceMotion ? 0 : 50}
+                    style={ribbonStyle}
+                  />
+                </div>
+                <div className="auth-ribbon-layer" data-role="signup">
+                  <RibbonGlow
+                    background={ribbonBackground}
+                    speed={shouldReduceMotion ? 0 : 50}
+                    style={ribbonStyle}
+                  />
+                </div>
+              </div>
+            ) : backdrop === "ribbon-02" ? (
+              <RibbonGlow02
+                background={ribbonBackground}
+                speed={shouldReduceMotion ? 0 : 50}
+                style={ribbonStyle}
+              />
+            ) : (
+              <RibbonGlow
+                background={ribbonBackground}
+                speed={shouldReduceMotion ? 0 : 50}
+                style={ribbonStyle}
+              />
+            )}
+            <div className="aurora-background-content">
+              {pair ? (
+                <>
+                  <Link className="brand atlas-auth-brand" href="/">
+                    <BrandMark />
+                    <span>Career Copilot</span>
+                  </Link>
+                  <div className="auth-aside-copy auth-copy-stack">
+                    <div className="auth-copy-layer" data-active={active === "signin"}>
+                      <h1>Welcome back.</h1>
+                      <p>Sign in to open your saved resume, practice, and jobs.</p>
+                    </div>
+                    <div className="auth-copy-layer" data-active={active === "signup"}>
+                      <h1>Create your account.</h1>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                intro
+              )}
+            </div>
+          </div>
+        )}
       </aside>
       <section className="auth-main atlas-auth-main">
         <div className="auth-main-inner">
@@ -77,7 +212,7 @@ function Shell({
           </div>
           <motion.div
             className="auth-bezel"
-            initial={shouldReduceMotion ? false : { opacity: 0, y: 16, scale: 0.98 }}
+            initial={shouldReduceMotion || pair ? false : { opacity: 0, y: 16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={FLUID_SPRING_TRANSITION}
           >
@@ -172,7 +307,26 @@ function GoogleMark() {
   );
 }
 
-export function SignInScreen() {
+export function AuthRoute() {
+  const { pathname } = useLocation();
+  const signup = pathname === "/sign-up";
+  return (
+    <Shell
+      pair
+      active={signup ? "signup" : "signin"}
+      title={signup ? "Create your account." : "Welcome back."}
+      description={
+        signup
+          ? undefined
+          : "Sign in to open your saved resume, practice, and jobs."
+      }
+    >
+      <AuthPairTrack signup={signup} />
+    </Shell>
+  );
+}
+
+export function SignInScreen({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate = useNavigate();
   const search = useSearchParams();
   const nextParam = search.get("next");
@@ -278,11 +432,7 @@ export function SignInScreen() {
       setBusy(false);
     }
   }
-  return (
-    <Shell
-      title="Welcome back."
-      description="Sign in to open your private career records and continue where you left off."
-    >
+  const form = (
       <form
         className="auth-card panel stack atlas-auth-card"
         onSubmit={submit}
@@ -389,14 +539,26 @@ export function SignInScreen() {
           </Button>
         </div>
         <p className="auth-switch">
-          New here? <Link href="/sign-up">Create an account</Link>
+          New here?{" "}
+          <AuthPairLink href="/sign-up" direction="to-signup">
+            Create an account
+          </AuthPairLink>
         </p>
       </form>
+  );
+  if (embedded) return form;
+  return (
+    <Shell
+      backdrop="ribbon-02"
+      title="Welcome back."
+      description="Sign in to open your saved resume, practice, and jobs."
+    >
+      {form}
     </Shell>
   );
 }
 
-export function SignUpScreen() {
+export function SignUpScreen({ embedded = false }: { embedded?: boolean } = {}) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -523,12 +685,7 @@ export function SignUpScreen() {
       setBusy(false);
     }
   }
-  return (
-    <Shell
-      title="Create your account."
-      description="Your records stay private. Review what is saved before it powers another workflow."
-    >
-      {sent ? (
+  const body = sent ? (
         <div className="auth-card panel empty-state atlas-auth-card">
           <CopilotIcon name="mail" size={44} />
           <h1>Check your inbox</h1>
@@ -671,10 +828,17 @@ export function SignUpScreen() {
             )}
           </Button>
           <p className="auth-switch">
-            Already registered? <Link href="/sign-in">Sign in</Link>
+            Already registered?{" "}
+            <AuthPairLink href="/sign-in" direction="to-signin">
+              Sign in
+            </AuthPairLink>
           </p>
         </form>
-      )}
+  );
+  if (embedded) return body;
+  return (
+    <Shell backdrop="ribbon" title="Create your account.">
+      {body}
     </Shell>
   );
 }

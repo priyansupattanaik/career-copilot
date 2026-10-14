@@ -1,0 +1,401 @@
+{
+  "screenshots": [
+    {
+      "screen": "dashboard",
+      "viewport": "390x844",
+      "filename": "dashboard_390x844.png"
+    },
+    {
+      "screen": "resume-analysis",
+      "viewport": "390x844",
+      "filename": "resume-analysis_390x844.png"
+    },
+    {
+      "screen": "mock-interview",
+      "viewport": "390x844",
+      "filename": "mock-interview_390x844.png"
+    },
+    {
+      "screen": "learning",
+      "viewport": "390x844",
+      "filename": "learning_390x844.png"
+    },
+    {
+      "screen": "jobs",
+      "viewport": "390x844",
+      "filename": "jobs_390x844.png"
+    },
+    {
+      "screen": "community",
+      "viewport": "390x844",
+      "filename": "community_390x844.png"
+    },
+    {
+      "screen": "dashboard",
+      "viewport": "1024x768",
+      "filename": "dashboard_1024x768.png"
+    },
+    {
+      "screen": "resume-analysis",
+      "viewport": "1024x768",
+      "filename": "resume-analysis_1024x768.png"
+    },
+    {
+      "screen": "mock-interview",
+      "viewport": "1024x768",
+      "filename": "mock-interview_1024x768.png"
+    },
+    {
+      "screen": "learning",
+      "viewport": "1024x768",
+      "filename": "learning_1024x768.png"
+    },
+    {
+      "screen": "jobs",
+      "viewport": "1024x768",
+      "filename": "jobs_1024x768.png"
+    },
+    {
+      "screen": "community",
+      "viewport": "1024x768",
+      "filename": "community_1024x768.png"
+    },
+    {
+      "screen": "dashboard",
+      "viewport": "1440x900",
+      "filename": "dashboard_1440x900.png"
+    },
+    {
+      "screen": "resume-analysis",
+      "viewport": "1440x900",
+      "filename": "resume-analysis_1440x900.png"
+    },
+    {
+      "screen": "mock-interview",
+      "viewport": "1440x900",
+      "filename": "mock-interview_1440x900.png"
+    },
+    {
+      "screen": "learning",
+      "viewport": "1440x900",
+      "filename": "learning_1440x900.png"
+    },
+    {
+      "screen": "jobs",
+      "viewport": "1440x900",
+      "filename": "jobs_1440x900.png"
+    },
+    {
+      "screen": "community",
+      "viewport": "1440x900",
+      "filename": "community_1440x900.png"
+    }
+  ],
+  "meshSampling": {
+    "topLeftBloom": {
+      "pixel": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "contrastInk": 18.250658464522445,
+      "contrastInk2": 9.854149907307166,
+      "contrastInk3": 6.7052288218241385
+    },
+    "topRightBloom": {
+      "pixel": {
+        "r": 2,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "contrastInk": 18.203671267152245,
+      "contrastInk2": 9.828779924765975,
+      "contrastInk3": 6.687965887959267
+    },
+    "bottomCentreBloom": {
+      "pixel": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "contrastInk": 18.250658464522445,
+      "contrastInk2": 9.854149907307166,
+      "contrastInk3": 6.7052288218241385
+    }
+  },
+  "keyboardWalkthrough": {
+    "dashboard": {
+      "testedTabs": 8,
+      "sampleElements": [
+        {
+          "tagName": "a",
+          "className": "wb-skip-link",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-logo-link",
+          "outline": "rgb(165, 201, 252) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(165, 201, 252)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-nav-item is-active",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-nav-item ",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        }
+      ]
+    },
+    "resume-analysis": {
+      "testedTabs": 8,
+      "sampleElements": [
+        {
+          "tagName": "a",
+          "className": "wb-skip-link",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-logo-link",
+          "outline": "rgb(195, 218, 250) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(195, 218, 250)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-nav-item ",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-nav-item is-active",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        }
+      ]
+    },
+    "mock-interview": {
+      "testedTabs": 8,
+      "sampleElements": [
+        {
+          "tagName": "a",
+          "className": "wb-skip-link",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-logo-link",
+          "outline": "rgb(195, 218, 250) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(195, 218, 250)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-nav-item ",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-nav-item ",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        }
+      ]
+    },
+    "learning": {
+      "testedTabs": 8,
+      "sampleElements": [
+        {
+          "tagName": "a",
+          "className": "wb-skip-link",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-logo-link",
+          "outline": "rgb(195, 218, 250) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(195, 218, 250)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-nav-item ",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-nav-item ",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        }
+      ]
+    },
+    "jobs": {
+      "testedTabs": 8,
+      "sampleElements": [
+        {
+          "tagName": "a",
+          "className": "wb-skip-link",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-logo-link",
+          "outline": "rgb(195, 218, 250) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(195, 218, 250)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-nav-item ",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-nav-item ",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        }
+      ]
+    },
+    "community": {
+      "testedTabs": 8,
+      "sampleElements": [
+        {
+          "tagName": "a",
+          "className": "wb-skip-link",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-logo-link",
+          "outline": "rgb(195, 218, 250) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(195, 218, 250)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-nav-item ",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        },
+        {
+          "tagName": "a",
+          "className": "workbench-nav-item ",
+          "outline": "rgb(110, 168, 255) solid 2px",
+          "outlineOffset": "2px",
+          "outlineColor": "rgb(110, 168, 255)",
+          "outlineWidth": "2px",
+          "outlineStyle": "solid",
+          "visible": true
+        }
+      ]
+    }
+  }
+}

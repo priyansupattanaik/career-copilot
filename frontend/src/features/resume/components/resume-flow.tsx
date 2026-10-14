@@ -15,10 +15,12 @@ import {
 import "../resume.css";
 
 import { apiRequest } from "@/shared/api/client";
+import { deleteAtsAnalysis, deleteResume as deleteResumeRequest } from "../api";
 import { jdLabel, resumeLabel } from "@/features/resume/analysis-labels";
 import { isValidCareerFile } from "@/shared/utils";
 import { BookLoader } from "@/shared/ui/book-loader";
 import { Button, Input, Select, Textarea } from "@/shared/ui/primitives";
+import { PageHeader, EmptyState, InlineNotice, Surface } from "@/shared/ui/workbench";
 
 type StructuredContent = {
   schema_version?: string;
@@ -200,9 +202,9 @@ function scoreTileLabel(band: ReturnType<typeof scoreBand>) {
 function coverageVerdict(score: number | null) {
   if (score == null) return "No score was recorded for this run.";
   const value = Math.round(Number(score));
-  if (value >= 80) return "Strong coverage of this job description.";
-  if (value >= 55) return "A solid base with clear gaps to close.";
-  return "Coverage is thin — treat this report as your rewrite brief.";
+  if (value >= 80) return "Most of the job's words appear in this resume.";
+  if (value >= 55) return "Some of the job's words appear in this resume. Others are missing.";
+  return "Many of the job's words are missing from this resume.";
 }
 
 function statusStamp(status: string): { tone: "done" | "wait" | "failed"; label: string } {
@@ -336,60 +338,29 @@ export function AnalysisHistory() {
 
   return (
     <div className="ra-page">
-      <header className="ra-masthead">
-        <div>
-          <h1 className="ra-title">Resume analysis</h1>
-          <p className="ra-sub">
-            Confirm what was extracted, then audit keyword coverage against each job. Scores use only
-            lines your confirmed resume actually contains.
-          </p>
-        </div>
-        <nav className="ra-segnav" aria-label="Resume analysis sections">
-          {segments.map((segment) => {
-            const isSelected = tab === segment.key;
-            return (
-              <motion.button
-                key={segment.key}
-                type="button"
-                className="ra-segnav-item"
-                style={{ position: "relative" }}
-                onClick={() => selectTab(segment.key)}
-                aria-current={isSelected ? "page" : undefined}
-                whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
-              >
-                {isSelected && (
-                  <motion.span
-                    layoutId="ra-segnav-active-pill"
-                    transition={shouldReduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION}
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      borderRadius: "inherit",
-                      background: "var(--surface)",
-                      border: "1px solid var(--border-strong)",
-                      boxShadow: "var(--shadow-sm)",
-                      pointerEvents: "none",
-                      zIndex: 0,
-                    }}
-                  />
-                )}
-                <span
-                  style={{
-                    position: "relative",
-                    zIndex: 1,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  {segment.icon}
-                  <span className="ra-seg-label">{segment.label}</span>
-                </span>
-              </motion.button>
-            );
-          })}
-        </nav>
-      </header>
+      <PageHeader
+        title="Resume *analysis*"
+        description="Confirm what was extracted, then audit keyword coverage against each job. Scores use only lines your confirmed resume actually contains."
+      />
+
+      <div role="tablist" className="wb-tabs" aria-label="Resume analysis sections">
+        {segments.map((segment) => {
+          const isSelected = tab === segment.key;
+          return (
+            <button
+              key={segment.key}
+              type="button"
+              role="tab"
+              aria-selected={isSelected}
+              className={`wb-tab-item ${isSelected ? "is-active" : ""}`}
+              onClick={() => selectTab(segment.key)}
+            >
+              <span>{segment.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
       <AnimatePresence mode="wait">
         <motion.div
           key={tab}
@@ -516,7 +487,7 @@ function ResumeLibrary() {
     setError("");
     setMessage("");
     try {
-      await apiRequest(`/resumes/${resumeId}`, { method: "DELETE" });
+      await deleteResumeRequest(resumeId);
       setResumes((current) => current.filter((row) => row.id !== resumeId));
       if (preview?.resume.id === resumeId) closePreview();
       setMessage("Resume deleted.");
@@ -537,35 +508,38 @@ function ResumeLibrary() {
 
   return (
     <section className="ra-section" aria-label="Stored resumes">
-      {error ? <ErrorBanner>{error}</ErrorBanner> : null}
+      {error ? <InlineNotice tone="error" message={error} /> : null}
       {message ? <StatusNote>{message}</StatusNote> : null}
       {!resumes.length && !error ? (
-        <div className="ra-empty">
-          <CopilotIcon name="library" size={30} />
-          <h2>No resumes yet</h2>
-          <p>Upload a resume once and reuse it for every analysis. Saved files appear here.</p>
-          <Link className="button button-primary" href="/resume-analysis?tab=upload">
-            New upload
-          </Link>
-        </div>
+        <EmptyState
+          headline="No resumes yet"
+          description="Upload a resume once and reuse it for every analysis. Saved files appear here."
+          cta={
+            <Link className="wb-button wb-button-primary" href="/resume-analysis?tab=upload">
+              New upload
+            </Link>
+          }
+        />
       ) : null}
       {!resumes.length && error ? (
-        <div className="ra-empty">
-          <CopilotIcon name="alert" size={30} />
-          <h2>Could not load resumes</h2>
-          <p>Confirm the backend is running and object storage is configured, then retry.</p>
-          <Button
-            onClick={() => {
-              setLoading(true);
-              setError("");
-              void loadResumes()
-                .catch((reason: Error) => setError(reason.message))
-                .finally(() => setLoading(false));
-            }}
-          >
-            Retry
-          </Button>
-        </div>
+        <InlineNotice
+          tone="error"
+          message="Could not load resumes. Check that the backend is running and retry."
+          action={
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setLoading(true);
+                setError("");
+                void loadResumes()
+                  .catch((reason: Error) => setError(reason.message))
+                  .finally(() => setLoading(false));
+              }}
+            >
+              Retry
+            </Button>
+          }
+        />
       ) : null}
       {resumes.length ? (
         <>
@@ -626,12 +600,12 @@ function ResumeLibrary() {
 
       {preview && pdfUrl ? (
         <div
-          className="modal-backdrop"
+          className="modal-backdrop cc-dialog-backdrop"
           role="presentation"
           onClick={closePreview}
         >
           <div
-            className="modal-panel modal-panel-wide"
+            className="modal-panel modal-panel-wide cc-dialog-panel"
             role="dialog"
             aria-modal="true"
             aria-label={`PDF preview: ${preview.resume.title}`}
@@ -682,7 +656,7 @@ function AtsHistoryList() {
     loadAnalyses()
       .catch((reason: Error) => {
         if (active) {
-          setError(reason.message || "Could not load ATS analyses.");
+          setError(reason.message || "Could not load resume checks.");
           setAnalyses([]);
         }
       })
@@ -698,8 +672,8 @@ function AtsHistoryList() {
     const uniqueIds = [...new Set(ids)].filter((id) => !deletingIds.has(id));
     if (!uniqueIds.length) return;
     const confirmation = uniqueIds.length === 1
-      ? "Delete this ATS analysis? This cannot be undone."
-      : `Delete ${uniqueIds.length} ATS analyses? This cannot be undone.`;
+      ? "Delete this resume check? This cannot be undone."
+      : `Delete ${uniqueIds.length} resume checks? This cannot be undone.`;
     if (askForConfirmation && !window.confirm(confirmation)) return;
     const previousRows = analyses.filter((row) => uniqueIds.includes(row.id));
     setDeletingIds((current) => new Set([...current, ...uniqueIds]));
@@ -714,7 +688,7 @@ function AtsHistoryList() {
     setMessage(uniqueIds.length === 1 ? "Analysis removed. Syncing deletion…" : `${uniqueIds.length} analyses removed. Syncing deletions…`);
     try {
       const results = await Promise.allSettled(
-        uniqueIds.map((analysisId) => apiRequest(`/ats-analyses/${analysisId}`, { method: "DELETE" })),
+        uniqueIds.map((analysisId) => deleteAtsAnalysis(analysisId)),
       );
       const failedRows = results.flatMap((result, index) =>
         result.status === "rejected" ? [previousRows.find((row) => row.id === uniqueIds[index])] : [],
@@ -727,7 +701,7 @@ function AtsHistoryList() {
         });
         setError(`${failedRows.length} deletion${failedRows.length === 1 ? "" : "s"} failed. Affected analyses were restored.`);
       } else {
-        setMessage(uniqueIds.length === 1 ? "ATS analysis deleted." : `${uniqueIds.length} ATS analyses deleted.`);
+        setMessage(uniqueIds.length === 1 ? "Resume check deleted." : `${uniqueIds.length} resume checks deleted.`);
       }
     } catch (reason) {
       setAnalyses((current) => {
@@ -735,7 +709,7 @@ function AtsHistoryList() {
         previousRows.forEach((row) => byId.set(row.id, row));
         return analyses.filter((row) => byId.has(row.id)).map((row) => byId.get(row.id) as Analysis);
       });
-      setError((reason as Error).message || "Could not delete ATS analyses.");
+      setError((reason as Error).message || "Could not delete resume checks.");
     } finally {
       setDeletingIds((current) => {
         const next = new Set(current);
@@ -757,12 +731,12 @@ function AtsHistoryList() {
   const otherCount = analyses.length - completedCount;
 
   return (
-    <section className="ra-section" aria-label="Past ATS runs">
+    <section className="ra-section" aria-label="Past resume checks">
       {error ? <ErrorBanner>{error}</ErrorBanner> : null}
       {message ? <StatusNote>{message}</StatusNote> : null}
       {analyses.length ? (
         <div className="ra-section-head">
-          <p className="ra-summary-line" aria-label="ATS analysis summary">
+          <p className="ra-summary-line" aria-label="Resume check summary">
             <strong>{analyses.length}</strong> runs · <strong>{completedCount}</strong> completed ·{" "}
             <strong>{otherCount}</strong> need attention
           </p>
@@ -772,7 +746,7 @@ function AtsHistoryList() {
                 type="checkbox"
                 checked={analyses.every((analysis) => selectedIds.has(analysis.id))}
                 onChange={(event) => setSelectedIds(event.target.checked ? new Set(analyses.map((analysis) => analysis.id)) : new Set())}
-                aria-label="Select all ATS analyses"
+                aria-label="Select all resume checks"
               />
               Select all
             </label>
@@ -788,32 +762,50 @@ function AtsHistoryList() {
         </div>
       ) : null}
       {!analyses.length && !error ? (
-        <div className="ra-empty">
-          <CopilotIcon name="history" size={30} />
-          <h2>No ATS analyses yet</h2>
-          <p>Upload a resume and a job description to produce your first audited coverage report.</p>
-          <Link className="button button-primary" href="/resume-analysis?tab=upload">
-            Start one now
-          </Link>
-        </div>
-      ) : null}
-      {!analyses.length && error ? (
-        <div className="ra-empty">
-          <CopilotIcon name="alert" size={30} />
-          <h2>Could not load analyses</h2>
-          <p>Check that the backend is running and your session is still valid, then retry.</p>
-          <Button
-            onClick={() => {
-              setLoading(true);
-              setError("");
-              void loadAnalyses()
-                .catch((reason: Error) => setError(reason.message))
-                .finally(() => setLoading(false));
+        <Surface style={{ padding: 32, textAlign: "center" }}>
+          <EmptyState
+            headline="No resume checks yet"
+            description="Upload a resume and a job description to see which job words appear in the resume."
+            cta={
+              <Link className="wb-button wb-button-primary" href="/resume-analysis?tab=upload">
+                Start one now
+              </Link>
+            }
+          />
+          <p
+            style={{
+              fontSize: 13,
+              lineHeight: "20px",
+              color: "var(--ink-2)",
+              marginTop: 16,
+              maxWidth: 480,
+              marginLeft: "auto",
+              marginRight: "auto",
             }}
           >
-            Retry
-          </Button>
-        </div>
+            Scores use only lines your confirmed resume actually contains.
+          </p>
+        </Surface>
+      ) : null}
+      {!analyses.length && error ? (
+        <InlineNotice
+          tone="error"
+          message="Could not load analyses. Check that the backend is running and retry."
+          action={
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setLoading(true);
+                setError("");
+                void loadAnalyses()
+                  .catch((reason: Error) => setError(reason.message))
+                  .finally(() => setLoading(false));
+              }}
+            >
+              Retry
+            </Button>
+          }
+        />
       ) : null}
       {analyses.length ? (
         <div className="ra-ledger">
@@ -859,7 +851,7 @@ function AtsHistoryList() {
                         else next.delete(analysis.id);
                         return next;
                       })}
-                      aria-label={`Select ATS analysis from ${formatDate(analysis.created_at)}`}
+                      aria-label={`Select resume check from ${formatDate(analysis.created_at)}`}
                     />
                     Select
                   </label>
@@ -1154,7 +1146,7 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
     if (!resume || !resumeVersion || !job || !reviewed) return;
     setBusy(true);
     setError("");
-    setMessage("Confirming extractions and calculating ATS score…");
+    setMessage("Saving the extracted text and comparing words…");
     try {
       let confirmedVersion = resumeVersion;
       if (JSON.stringify(editedResumeSections) !== JSON.stringify(resumeVersion.structured_content?.sections || {})) {
@@ -1260,16 +1252,16 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
           <BookLoader
             title={
               step === "review"
-                ? "Calculating ATS score"
+                ? "Comparing words"
                 : message.toLowerCase().includes("analyz")
-                  ? "Analyzing your resume"
+                  ? "Reading your resume"
                   : "Preparing your documents"
             }
             message={
               message ||
               (step === "review"
-                ? "Matching keywords and building your evidence report…"
-                : "Flipping through your resume so scoring feels snappy when ready…")
+                ? "Comparing words and saving the report…"
+                : "Reading the file you uploaded.")
             }
           />
         </div>
@@ -1555,8 +1547,8 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
             <span className="ra-chip">
               <CopilotIcon name="scan" size={18} />
               <span>
-                <strong>Evidence-first scoring</strong>
-                <small>No unsupported experience is added.</small>
+                <strong>Only your resume</strong>
+                <small>Nothing is added that is not in the file.</small>
               </span>
             </span>
             <span className="ra-chip">
@@ -1600,11 +1592,11 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
               />
               <span>
                 <strong>I reviewed both documents</strong>
-                <small>I confirm this extracted content can be used for ATS keyword coverage.</small>
+                <small>I confirm this text can be used to compare words with the job.</small>
               </span>
             </label>
             <Button disabled={busy || !reviewed} onClick={runAnalysis}>
-              {busy ? "Calculating…" : "Confirm and calculate ATS score"}
+              {busy ? "Comparing…" : "Confirm and compare"}
             </Button>
           </div>
         </section>
@@ -1616,22 +1608,19 @@ export function NewAnalysis({ embedded = false }: { embedded?: boolean }) {
 export function ExtractionReview() {
   return (
     <div className="ra-page">
-      <header className="ra-masthead">
-        <div>
-          <h1 className="ra-title">Review extracted content</h1>
-          <p className="ra-sub">
-            Upload a resume and job description, then confirm the extraction before scoring.
-          </p>
-        </div>
-      </header>
-      <div className="ra-empty">
-        <CopilotIcon name="upload" size={30} />
-        <h2>Use new upload</h2>
-        <p>Extraction review happens inside the upload flow once your files are stored.</p>
-        <Link className="button button-primary" href="/resume-analysis?tab=upload">
-          Go to new upload
-        </Link>
-      </div>
+      <PageHeader
+        title="Review extracted *content*"
+        description="Upload a resume and job description, then confirm the extraction before scoring."
+      />
+      <EmptyState
+        headline="Use new upload"
+        description="Extraction review happens inside the upload flow once your files are stored."
+        cta={
+          <Link className="wb-button wb-button-primary" href="/resume-analysis?tab=upload">
+            Go to new upload
+          </Link>
+        }
+      />
     </div>
   );
 }
@@ -1657,19 +1646,16 @@ export function AtsReport() {
   if (error) {
     return (
       <div className="ra-page">
-        <header className="ra-masthead">
-          <div>
-            <h1 className="ra-title">Report unavailable</h1>
-            <p className="ra-sub">This analysis report could not be loaded.</p>
-          </div>
-          <nav className="ra-segnav" aria-label="Back to overview">
-            <Link className="ra-segnav-item" href="/resume-analysis">
-              <CopilotIcon name="history" size={16} />
-              <span className="ra-seg-label">Overview</span>
-            </Link>
-          </nav>
-        </header>
-        <ErrorBanner>{error}</ErrorBanner>
+      <PageHeader
+        title="Report *unavailable*"
+        description="This analysis report could not be loaded."
+        actions={
+          <Link className="wb-button wb-button-secondary" href="/resume-analysis">
+            Overview
+          </Link>
+        }
+      />
+      <InlineNotice tone="error" message={error} />
       </div>
     );
   }
@@ -1679,7 +1665,7 @@ export function AtsReport() {
         <div className="ra-loading">
           <BookLoader
             title="Opening your report"
-            message="Gathering scores and keyword evidence…"
+            message="Loading the score and word matches…"
           />
         </div>
       </div>
@@ -1731,22 +1717,22 @@ export function AtsReport() {
     statuses: AtsEvidence["match_status"][];
   }[] = [
     { key: "found", title: "Found — exact line quoted", statuses: ["strong_match"] },
-    { key: "partial", title: "Partial evidence", statuses: ["partial_match"] },
+    { key: "partial", title: "Partial match", statuses: ["partial_match"] },
     { key: "missing", title: "Missing from resume", statuses: ["not_found"] },
-    { key: "other", title: "Needs manual verification", statuses: ["unverified", "not_applicable"] },
+    { key: "other", title: "Check these yourself", statuses: ["unverified", "not_applicable"] },
   ];
 
   return (
     <div className="ra-page">
-      <section className="ra-hero" aria-label="ATS coverage result">
+      <section className="ra-hero" aria-label="Word coverage result">
         <div
           className="ra-gauge"
           style={{ "--pct": String(Math.max(0, Math.min(100, Math.round(Number(analysis.overall_score) || 0)))) } as React.CSSProperties}
           role="img"
           aria-label={
             analysis.overall_score == null
-              ? "No ATS coverage score recorded"
-              : `ATS keyword coverage ${Math.round(Number(analysis.overall_score))}%`
+              ? "No coverage score recorded"
+              : `Job word coverage ${Math.round(Number(analysis.overall_score))}%`
           }
         >
           <span className="ra-gauge-inner">
@@ -1758,7 +1744,7 @@ export function AtsReport() {
           </span>
         </div>
         <div className="ra-hero-copy">
-          <p className="ra-hero-kicker">Audit sheet · {formatDate(analysis.created_at)}</p>
+          <p className="ra-hero-kicker">Report · {formatDate(analysis.created_at)}</p>
           <h1 className="ra-verdict">{coverageVerdict(analysis.overall_score)}</h1>
           <p className="ra-hero-note">
             Each hit quotes an exact line from your confirmed resume; missing terms quote nothing
@@ -1773,7 +1759,7 @@ export function AtsReport() {
               New analysis
             </Link>
             <Link className="button button-secondary" href="/resume-analysis">
-              Run log
+              Past checks
             </Link>
           </div>
         </div>
@@ -1782,14 +1768,14 @@ export function AtsReport() {
       {domainGate?.decision === "REJECT" ? (
         <ErrorBanner>
           <strong>Not eligible for this role. </strong>
-          {domainGate.reason || "The LLM domain gate found a clear mismatch between the resume and job description."}
+          {domainGate.reason || "The resume and job description look like different kinds of work."}
         </ErrorBanner>
       ) : domainGate?.decision === "UNVERIFIED" ? (
         <p role="status" className="ra-warn">
           <CopilotIcon name="alert" size={17} />
           <span>
             <strong>Domain match not verified. </strong>
-            {domainGate.reason || "The LLM domain gate was unavailable. Treat this score as unverified for domain fit."}
+            {domainGate.reason || "The field check did not run. This score does not confirm the resume matches the job's field."}
           </span>
         </p>
       ) : null}
@@ -1836,9 +1822,9 @@ export function AtsReport() {
         </div>
       </div>
 
-      <section className="ra-section" aria-label="Keyword evidence">
+      <section className="ra-section" aria-label="Word matches">
         <div className="ra-section-head">
-          <h2 className="ra-section-title">Evidence ledger</h2>
+          <h2 className="ra-section-title">Word matches</h2>
           <p className="ra-summary-line">
             {evidence.length
               ? `${evidenceCounts.found} found · ${evidenceCounts.partial} partial · ${evidenceCounts.missing} missing`
@@ -1846,7 +1832,7 @@ export function AtsReport() {
           </p>
         </div>
         {evidence.length === 0 ? (
-          <p className="ra-gap-none">No match rows were stored for this analysis.</p>
+          <p className="ra-gap-none">No word matches were stored for this check.</p>
         ) : (
           evidenceGroups
             .map((group) => ({
@@ -1924,7 +1910,7 @@ export function AtsReport() {
           </div>
           <div className="ra-gapcol">
             <h3>
-              Partial evidence <span>{partialTerms.length}</span>
+              Partial match <span>{partialTerms.length}</span>
             </h3>
             {partialTerms.length ? (
               <ul className="ra-gapterms">
@@ -1935,7 +1921,7 @@ export function AtsReport() {
                 ))}
               </ul>
             ) : (
-              <p className="ra-gap-none">Every matched term had direct evidence.</p>
+              <p className="ra-gap-none">No partial matches.</p>
             )}
           </div>
         </div>
@@ -1944,14 +1930,14 @@ export function AtsReport() {
             Upload revised resume
           </Link>
           <Link className="button button-secondary" href="/resume-analysis?tab=ats">
-            Back to run log
+            Back to past checks
           </Link>
         </div>
       </section>
 
       <section className="ra-section" aria-label="Improvement report">
         <div className="ra-section-head">
-          <h2 className="ra-section-title">LLM improvement report</h2>
+          <h2 className="ra-section-title">Written notes</h2>
           <span className="ra-stamp" data-tone={overallReportStatus === "generated" ? "done" : "stored"}>
             {overallReportStatus === "generated"
               ? `Generated${analysis.summary?.inference_provider ? ` · ${analysis.summary.inference_provider}` : ""}`
@@ -1962,8 +1948,7 @@ export function AtsReport() {
           <div className="ra-letter">{overallInference}</div>
         ) : (
           <p className="ra-gap-none">
-            No narrative is shown because the configured LLM did not return a valid report. The score
-            and evidence above remain auditable; this screen will not substitute static prose.
+            No written notes were returned. The score and word matches above are unchanged.
           </p>
         )}
         {overallReportStatus === "generated" && (focusAreas.length > 0 || priorityActions.length > 0 || sectionGuidance.length > 0 || doNotClaim.length > 0) ? (
@@ -2002,7 +1987,7 @@ export function AtsReport() {
               ) : null}
               {doNotClaim.length > 0 ? (
                 <div className="ra-guidance-col">
-                  <h4>Evidence safeguards</h4>
+                  <h4>Do not claim</h4>
                   <ul>
                     {doNotClaim.map((item) => (
                       <li key={item}>{item}</li>

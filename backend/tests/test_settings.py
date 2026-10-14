@@ -91,12 +91,15 @@ def test_username_change_schema():
 
 
 def test_settings_routes_registered():
-    from app.api.router import router
+    from app.main import app
 
-    paths = {getattr(route, "path", None) for route in router.routes}
-    assert "/settings" in paths
-    assert "/settings/notifications" in paths
-    assert "/settings/privacy" in paths
-    assert "/settings/career-preferences" in paths
-    assert "/account" in paths
+    paths = set(app.openapi()["paths"])
+    assert "/api/v1/settings" in paths
+    assert "/api/v1/settings/notifications" in paths
+    assert "/api/v1/settings/privacy" in paths
+    assert "/api/v1/settings/career-preferences" in paths
+    assert "/api/v1/account" in paths
+    assert "/api/v1/health/live" in paths
+    assert "/api/v1/jobs/external/sync" in paths
+    assert "/api/v1/resumes" in paths
 

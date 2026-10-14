@@ -29,6 +29,7 @@ import {
 import { SignInLightBend } from "@/features/auth/components/signin-light-bend";
 import { armSignInLightBend } from "@/features/auth/signin-light-bend";
 import { prefetchRoute } from "@/shared/route-prefetch";
+import { DarkMidnightMeshBackground } from "@/components/background-gradient/dark-midnight-mesh-background";
 
 function ThemeFavicon() {
   const { resolvedTheme } = useTheme();
@@ -43,14 +44,9 @@ function ThemeFavicon() {
   return null;
 }
 
-const SignInScreen = lazy(() =>
+const AuthScreens = lazy(() =>
   import("@/features/auth/components/auth-screen").then((m) => ({
-    default: m.SignInScreen,
-  })),
-);
-const SignUpScreen = lazy(() =>
-  import("@/features/auth/components/auth-screen").then((m) => ({
-    default: m.SignUpScreen,
+    default: m.AuthRoute,
   })),
 );
 const PasswordScreen = lazy(() =>
@@ -271,10 +267,16 @@ function ProtectedRoute() {
 function WorkspaceRoute() {
   return (
     <WorkspaceBootstrapProvider>
+      <DarkMidnightMeshBackground
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10"
+      />
       <WorkspaceShell>
-        <Suspense fallback={<WorkspacePageFallback />}>
-          <Outlet />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={<WorkspacePageFallback />}>
+            <Outlet />
+          </Suspense>
+        </ErrorBoundary>
       </WorkspaceShell>
     </WorkspaceBootstrapProvider>
   );
@@ -426,21 +428,15 @@ export function App() {
           }
         />
         <Route
-          path="/sign-in"
           element={
             <LazyBoundary fallback={<RouteFallback label="Loading sign-in…" />}>
-              <SignInScreen />
+              <AuthScreens />
             </LazyBoundary>
           }
-        />
-        <Route
-          path="/sign-up"
-          element={
-            <LazyBoundary fallback={<RouteFallback label="Loading sign-up…" />}>
-              <SignUpScreen />
-            </LazyBoundary>
-          }
-        />
+        >
+          <Route path="/sign-in" element={null} />
+          <Route path="/sign-up" element={null} />
+        </Route>
         <Route
           path="/forgot-password"
           element={

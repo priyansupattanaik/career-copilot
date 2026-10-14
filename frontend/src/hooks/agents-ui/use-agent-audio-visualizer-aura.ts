@@ -19,10 +19,13 @@ const DEFAULT_AMPLITUDE = 2;
 const DEFAULT_FREQUENCY = 0.5;
 const DEFAULT_SCALE = 0.2;
 const DEFAULT_BRIGHTNESS = 1.5;
-const DEFAULT_TRANSITION: ValueAnimationTransition = { duration: 0.5, ease: 'easeOut' };
+const DEFAULT_TRANSITION: ValueAnimationTransition = {
+  duration: 0.52,
+  ease: [0.4, 0, 0.2, 1],
+};
 const DEFAULT_PULSE_TRANSITION: ValueAnimationTransition = {
-  duration: 0.35,
-  ease: 'easeOut',
+  duration: 0.7,
+  ease: [0.4, 0, 0.2, 1],
   repeat: Infinity,
   repeatType: 'mirror',
 };
@@ -78,7 +81,7 @@ export function useAgentAudioVisualizerAura(
       case 'listening':
       case 'pre-connect-buffering':
         setSpeed(20);
-        animateScale(0.3, { type: 'spring', duration: 1.0, bounce: 0.35 });
+        animateScale(0.3, { duration: 0.7, ease: [0.4, 0, 0.2, 1] });
         animateAmplitude(1.0, DEFAULT_TRANSITION);
         animateFrequency(0.7, DEFAULT_TRANSITION);
         animateBrightness([1.5, 2.0], DEFAULT_PULSE_TRANSITION);

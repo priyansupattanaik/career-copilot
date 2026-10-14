@@ -5,9 +5,10 @@ type Props = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & {
   href: string;
   children?: ReactNode;
   replace?: boolean;
+  viewTransition?: boolean;
 };
 
-export function Link({ href, children, replace, className, ...rest }: Props) {
+export function Link({ href, children, replace, className, viewTransition, ...rest }: Props) {
   const external = /^(https?:)?\/\//i.test(href);
   if (external) {
     return (
@@ -20,6 +21,7 @@ export function Link({ href, children, replace, className, ...rest }: Props) {
     to: href,
     replace,
     className,
+    viewTransition,
     ...rest,
   };
   return <RouterLink {...linkProps}>{children}</RouterLink>;

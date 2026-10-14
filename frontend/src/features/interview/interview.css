@@ -1128,7 +1128,7 @@
 }
 
 .interview-preview-placeholder.error {
-  color: #f87171;
+  color: var(--danger);
 }
 
 .interview-spinner {
@@ -1255,13 +1255,13 @@
 }
 
 .interview-vu-fill.is-active {
-  background: linear-gradient(90deg, #10b981, #06b6d4);
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+  background: var(--ok);
+  box-shadow: none;
 }
 
 .interview-vu-fill.is-loud {
-  background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+  background: var(--warn);
+  box-shadow: none;
 }
 
 .interview-vu-caption {
@@ -1275,7 +1275,7 @@
   align-items: center;
   gap: 8px;
   font-size: 0.75rem;
-  color: #ef4444;
+  color: var(--danger);
   margin-top: 4px;
 }
 
@@ -1526,7 +1526,7 @@
   font-weight: 600;
   color: var(--text);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: color 180ms var(--ease-standard), background-color 180ms var(--ease-standard), border-color 180ms var(--ease-standard);
   user-select: none;
   white-space: nowrap;
 }
@@ -1613,9 +1613,9 @@
   gap: 8px;
   padding: 10px 14px;
   border-radius: 10px;
-  background: color-mix(in srgb, #ef4444 10%, var(--surface));
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  background: var(--danger-soft);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+  color: var(--danger);
   font-size: 0.85rem;
 }
 
@@ -1682,15 +1682,15 @@
 }
 
 .interview-check-badge.is-ok {
-  background: color-mix(in srgb, #10b981 12%, var(--surface));
-  color: #059669;
-  border-color: color-mix(in srgb, #10b981 30%, transparent);
+  background: var(--ok-soft);
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 30%, transparent);
 }
 
 .interview-check-badge.is-warn {
-  background: color-mix(in srgb, #f59e0b 12%, var(--surface));
-  color: #d97706;
-  border-color: color-mix(in srgb, #f59e0b 30%, transparent);
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 30%, transparent);
 }
 
 .interview-flight-cta-wrapper {

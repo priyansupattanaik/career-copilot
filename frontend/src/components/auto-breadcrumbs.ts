@@ -20,10 +20,10 @@ export function getAutoBreadcrumbs(
       href: "/resume-analysis",
     };
     if (pathname.includes("/report")) {
-      return [base, parent, { label: "ATS Report", current: true }];
+      return [base, parent, { label: "Report", current: true }];
     }
     if (pathname.includes("/new") || search.includes("tab=upload")) {
-      return [base, parent, { label: "Upload & Match", current: true }];
+      return [base, parent, { label: "Upload", current: true }];
     }
     return [base, { label: "Resume Analysis", current: true }];
   }
@@ -34,26 +34,26 @@ export function getAutoBreadcrumbs(
       href: "/mock-interview",
     };
     if (pathname.includes("/setup")) {
-      return [base, parent, { label: "Setup & Flight Check", current: true }];
+      return [base, parent, { label: "Setup", current: true }];
     }
     if (pathname.includes("/preparation")) {
       return [base, parent, { label: "Preparation", current: true }];
     }
     if (pathname.includes("/session")) {
-      return [base, parent, { label: "Live Session", current: true }];
+      return [base, parent, { label: "Session", current: true }];
     }
     if (pathname.includes("/report")) {
-      return [base, parent, { label: "Feedback Report", current: true }];
+      return [base, parent, { label: "Report", current: true }];
     }
     return [base, { label: "Mock Interview", current: true }];
   }
 
   if (pathname.startsWith("/learning")) {
-    return [base, { label: "Learning Path", current: true }];
+    return [base, { label: "Study plan", current: true }];
   }
 
   if (pathname.startsWith("/jobs")) {
-    return [base, { label: "Recommended Jobs", current: true }];
+    return [base, { label: "Jobs", current: true }];
   }
 
   if (pathname.startsWith("/community")) {
@@ -70,15 +70,15 @@ export function getAutoBreadcrumbs(
       href: "/settings/profile",
     };
     if (pathname.includes("/account")) {
-      return [base, parent, { label: "Account & Access", current: true }];
+      return [base, parent, { label: "Account", current: true }];
     }
     if (pathname.includes("/preferences")) {
       return [base, parent, { label: "Preferences", current: true }];
     }
     if (pathname.includes("/privacy")) {
-      return [base, parent, { label: "Privacy Controls", current: true }];
+      return [base, parent, { label: "Privacy", current: true }];
     }
-    return [base, parent, { label: "Candidate Profile", current: true }];
+    return [base, parent, { label: "Profile", current: true }];
   }
 
   // Fallback for any other path

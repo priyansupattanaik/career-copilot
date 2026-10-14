@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 
 
-import { apiRequest } from "@/shared/api/client";
+import { getProfile, patchProfile } from "@/features/profile/api";
 import { createClient } from "@/features/auth/api/client";
 import { Button, Card, Input, PageHeader, Textarea } from "@/shared/ui/primitives";
 import { motion, useReducedMotion } from "motion/react";
@@ -52,7 +52,7 @@ export function Onboarding() {
     (async () => {
       try {
         // 1) Load persisted profile (also syncs empty full_name from Auth metadata on the API).
-        const payload = await apiRequest<{ profile: Record<string, unknown> }>("/profile");
+        const payload = await getProfile<{ profile: Record<string, unknown> }>();
         const profile = payload.profile || {};
 
         // 2) Fallback: Auth user_metadata from the browser session (sign-up full name).
@@ -114,18 +114,15 @@ export function Onboarding() {
       if (!form.full_name.trim()) {
         throw new Error("Full name is required.");
       }
-      await apiRequest("/profile", {
-        method: "PATCH",
-        body: JSON.stringify({
-          full_name: form.full_name.trim(),
-          headline: form.headline.trim() || null,
-          phone: form.phone.trim() || null,
-          location: form.location.trim() || null,
-          current_role: form.current_role.trim() || null,
-          bio: form.bio.trim() || null,
-          onboarding_step: 6,
-          onboarding_completed: true,
-        }),
+      await patchProfile({
+        full_name: form.full_name.trim(),
+        headline: form.headline.trim() || null,
+        phone: form.phone.trim() || null,
+        location: form.location.trim() || null,
+        current_role: form.current_role.trim() || null,
+        bio: form.bio.trim() || null,
+        onboarding_step: 6,
+        onboarding_completed: true,
       });
       navigate("/resume-analysis?tab=upload");
 

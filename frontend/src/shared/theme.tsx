@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 
 export type ThemePreference = "light" | "dark";
 export type ResolvedTheme = "light" | "dark";
@@ -28,7 +29,8 @@ export function readStoredTheme(): ThemePreference {
   if (typeof window === "undefined") return "light";
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    return isThemePreference(stored) ? stored : "light";
+    if (isThemePreference(stored)) return stored;
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   } catch {
     return "light";
   }
@@ -66,7 +68,7 @@ function subscribeToThemeChanges(onChange: () => void) {
   };
 }
 
-function storeTheme(theme: ThemePreference) {
+function commitTheme(theme: ThemePreference) {
   try {
     window.localStorage.setItem(STORAGE_KEY, theme);
   } catch {
@@ -74,6 +76,24 @@ function storeTheme(theme: ThemePreference) {
   }
   applyThemeToDocument(theme);
   window.dispatchEvent(new Event("career-copilot:theme-change"));
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+}
+
+function storeTheme(theme: ThemePreference) {
+  const start = document.startViewTransition?.bind(document);
+  if (!start || prefersReducedMotion()) {
+    commitTheme(theme);
+    return;
+  }
+  // Old frame leaves, new frame settles. The live page is covered until this ends.
+  start(() => {
+    flushSync(() => {
+      commitTheme(theme);
+    });
+  });
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

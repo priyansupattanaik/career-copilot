@@ -97,10 +97,10 @@ async function main() {
   }
 
   const bodyText = await page.locator("body").innerText();
-  if (/illustrative (practice|profile)/i.test(bodyText)) {
-    pass("FE-008-labelling", "found illustrative wording");
+  if (/Example/i.test(bodyText) && /Not your data/i.test(bodyText)) {
+    pass("FE-008-labelling", "found example labelling");
   } else {
-    fail("FE-008-labelling", "missing illustrative roles copy");
+    fail("FE-008-labelling", "missing example labelling");
   }
   if (/verified job locations/i.test(bodyText)) {
     fail("FE-008-no-verified-claim", "still claims verified job locations");

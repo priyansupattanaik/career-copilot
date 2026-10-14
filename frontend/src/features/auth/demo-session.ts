@@ -1,6 +1,6 @@
 
 
-import { isDemoCookiePresent } from "@/shared/config";
+import { isDemoCookiePresent, isProductionBuild } from "@/shared/config";
 
 type DemoRecord = Record<string, unknown>;
 
@@ -199,7 +199,7 @@ function seedDemoInterviewProgress(): Pick<DemoState, "interviews" | "reports"> 
     },
     {
       id: "demo-interview-4",
-      label: "Role-focused debrief",
+      label: "Role practice",
       mode: "mixed",
       target_role: "Backend Engineer",
       days: 2,
@@ -233,9 +233,9 @@ function seedDemoInterviewProgress(): Pick<DemoState, "interviews" | "reports"> 
     structure_score: s.structure,
     content_score: s.content,
     created_at: daysAgo(s.days - 0.02),
-    summary: `Demo debrief for ${s.label}: overall ${s.overall}/100.`,
+    summary: `Sample report for ${s.label}: overall ${s.overall}/100. Not a hiring result.`,
     report: {
-      overall_summary: `Demo debrief for ${s.label}: overall ${s.overall}/100. Practice shows steady improvement.`,
+      overall_summary: `Sample report for ${s.label}: overall ${s.overall}/100. These numbers are demo data, not a hiring result.`,
       overall_score: s.overall,
       communication_score: s.communication,
       structure_score: s.structure,
@@ -368,8 +368,8 @@ function initialState(): DemoState {
       {
         id: "demo-path-1",
         user_id: DEMO_USER_ID,
-        title: "Skill gap path · Demo ATS",
-        description: "Study plan from requirements not fully evidenced in the demo ATS analysis.",
+        title: "Study plan · Demo",
+        description: "Demo study plan from sample missing words. Lessons are examples, not a live search.",
         source_type: "ats_analysis",
         source_id: "demo-ats-1",
         status: "active",
@@ -391,7 +391,7 @@ function initialState(): DemoState {
                 resource_type: "youtube_video",
                 provider: "freeCodeCamp.org",
                 url: "https://www.youtube.com/watch?v=fqMOX6JJhGo",
-                reason_recommended: "Demo video lesson for an ATS Docker gap (not live API).",
+                reason_recommended: "Demo lesson. Not a live search result.",
                 watch_status: "not_started",
                 watch_percent: 0,
                 position_seconds: 0,
@@ -411,7 +411,7 @@ function initialState(): DemoState {
                 provider: "Google · educational sites",
                 url: "https://www.google.com/search?q=Docker+tutorial+guide+OR+article+%28site%3Afreecodecamp.org+OR+site%3Adev.to+OR+site%3Adocs.docker.com%29",
                 reason_recommended:
-                  "Free blogs and articles for the ATS Docker gap (demo). Specific post URLs are never invented.",
+                  "Demo reading search for Docker. Specific article URLs are not invented.",
                 watch_status: "not_started",
                 watch_percent: 0,
                 metadata: {
@@ -442,7 +442,7 @@ let state = initialState();
  * (no invented ATS scores / offline API shim).
  */
 export function isDemoSession() {
-  if (import.meta.env.PROD) return false;
+  if (isProductionBuild) return false;
   return isDemoCookiePresent();
 }
 
@@ -482,7 +482,7 @@ function buildDemoReport(session: DemoRecord, responses: DemoRecord[]): DemoReco
     !current || Number(review.score) < Number(current.score) ? review : current, null);
   const role = String(session.target_role || "this role");
   const summary = reviews.length
-    ? `Evidence-only demo debrief for ${role}: ${reviews.length} recorded answer(s) averaged ${overall}/100. The feedback below is derived from those answers; no employer decision is implied.`
+    ? `Sample report for ${role}: ${reviews.length} recorded answer(s) averaged ${overall}/100. The notes below use those answers. This is not a hiring decision.`
     : "No answers were recorded for this demo session, so no performance report was generated.";
   return {
     overall_summary: summary,
@@ -1155,8 +1155,8 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
       missing_skill_questions: [{ question: "Describe how you would build a small Docker image and validate it locally.", skill: "Docker", difficulty: "easy", source: "question_bank" }],
       coding_questions: [{ question: "Write a small Python solution and explain its edge cases and complexity.", skill: "Python", difficulty: "easy", source: "candidate_context" }],
       hr_questions: [{ question: "Tell me about yourself and connect your documented experience to this role.", skill: null, difficulty: "easy", source: "candidate_context" }],
-      study_topics: [{ topic: "Docker", priority: "high", reason: "Demo focus area: not found in the demo resume evidence." }],
-      interview_readiness: { score: 78, ats_score: 78, matched_skills: matched, missing_skills: missing, summary: "Demo preparation uses the demo ATS evidence.", source_analysis_id: state.analyses[0]?.id || null },
+      study_topics: [{ topic: "Docker", priority: "high", reason: "Demo focus area: Docker was not found in the demo resume." }],
+      interview_readiness: { score: 78, ats_score: 78, matched_skills: matched, missing_skills: missing, summary: "Demo preparation uses the sample resume check.", source_analysis_id: state.analyses[0]?.id || null },
     } as T;
   }
 
@@ -1230,7 +1230,7 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
       session,
       report,
       questions: mappedQuestions,
-      message: "Session saved. Review your detailed debrief report.",
+      message: "Session saved. Review your report.",
     } as T;
   }
   if (path === "/interviews" && method === "POST") {
@@ -1352,9 +1352,9 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
       communication_score: 70,
       structure_score: 74,
       content_score: 73,
-      summary: "Demo debrief: solid practice set. Focus on clearer results and fewer fillers.",
+      summary: "Sample report. This is demo data, not a hiring result.",
       report: {
-        overall_summary: "Demo debrief: solid practice set. Focus on clearer results and fewer fillers.",
+        overall_summary: "Sample report. This is demo data, not a hiring result.",
         overall_score: 72,
         communication_score: 70,
         structure_score: 74,
@@ -1412,7 +1412,7 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
     });
     state.reports = state.reports.filter((item) => item.session_id !== parts[1]);
     state.reports.push(report);
-    return { session, report, message: "Demo session completed with debrief report." } as T;
+    return { session, report, message: "Demo session completed. Review the sample report." } as T;
   }
   if (parts[0] === "interviews" && parts[2] === "report" && method === "GET") {
     const session = state.interviews.find((item) => item.id === parts[1]);
@@ -1435,9 +1435,9 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
         communication_score: 70,
         structure_score: 74,
         content_score: 73,
-        summary: "Demo debrief report.",
+        summary: "Sample report for this demo session.",
         report: {
-          overall_summary: "Demo debrief report for completed practice.",
+          overall_summary: "Sample report for this demo session. Not a hiring result.",
           overall_score: 72,
           communication_score: 70,
           structure_score: 74,
@@ -1572,7 +1572,7 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
       ? completed.find((row) => String(row.id) === requestedId)
       : completed[0];
     if (!analysis) {
-      throw new Error("Complete an ATS analysis before generating a learning path.");
+      throw new Error("Finish a resume check before building a study plan.");
     }
     const pathId = id("demo-path");
     const itemId = id("demo-item");
@@ -1581,9 +1581,9 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
     const path = demoRollupPath({
       id: pathId,
       user_id: DEMO_USER_ID,
-      title: "Skill gap path · Demo ATS gaps",
+      title: "Study plan · Demo",
       description:
-        "Demo path grounded in illustrative ATS gaps with free video lessons and blogs/articles (no invented skills).",
+        "Demo study plan from sample missing words. Lessons are examples, not a live search.",
       source_type: "ats_analysis",
       source_id: String(analysis.id),
       source_snapshot: {
@@ -1614,7 +1614,7 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
               resource_type: "youtube_video",
               provider: "freeCodeCamp.org",
               url: "https://www.youtube.com/watch?v=fqMOX6JJhGo",
-              reason_recommended: "Demo video lesson for an illustrative ATS gap (not live API).",
+              reason_recommended: "Demo lesson. Not a live search result.",
               watch_status: "not_started",
               watch_percent: 0,
               position_seconds: 0,

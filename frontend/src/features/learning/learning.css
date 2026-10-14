@@ -442,7 +442,7 @@
   place-items: center;
   gap: 10px;
   padding: 24px;
-  color: #f4f1ea;
+  color: var(--ink);
   text-align: center;
 }
 

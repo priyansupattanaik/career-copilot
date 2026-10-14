@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { AgentAudioVisualizerAura } from "@/components/agents-ui/agent-audio-visualizer-aura";
 import { apiRequest } from "@/shared/api/client";
+import { deleteInterview } from "../api";
 import { Button, Textarea } from "@/shared/ui/primitives";
 import LoadingState from "@/components/ui/loading-state";
 import { useTheme } from "@/shared/theme";
@@ -432,7 +433,7 @@ export function InterviewSession() {
         if (!live) throw new Error("This live session is no longer available. Start a new round.");
         const answered = live.responses.filter((row) => (row.transcript || row.typed_response || "").trim());
         if (!answered.length) throw new Error("Answer at least one question before saving the session.");
-        setMediaMessage("Saving your session and building the debrief…");
+        setMediaMessage("Saving your session and building the report…");
         const result = await apiRequest<{ session?: Session; message?: string }>(
           "/interviews/commit",
           {
@@ -471,10 +472,10 @@ export function InterviewSession() {
         clearLiveInterview();
         const savedId = result.session?.id;
         if (!savedId) throw new Error("The session was not saved. Try again.");
-        setMessage(result.message || "Session saved. Opening your debrief…");
+        setMessage(result.message || "Session saved. Opening your report…");
         setSession((s) => (s ? { ...s, id: savedId, status: "completed" } : s));
         setPhase("complete");
-        setMediaMessage("Session saved. Review the debrief.");
+        setMediaMessage("Session saved. Review the report.");
         navigate(`/mock-interview/report/${savedId}`);
         return;
       }
@@ -482,10 +483,10 @@ export function InterviewSession() {
         `/interviews/${sessionId}/complete`,
         { method: "POST" },
       );
-      setMessage(result.message || "Session complete. Opening your debrief…");
+      setMessage(result.message || "Session complete. Opening your report…");
       setSession((s) => (s ? { ...s, status: "completed" } : s));
       setPhase("complete");
-      setMediaMessage("Session complete. Review the debrief.");
+      setMediaMessage("Session complete. Review the report.");
       navigate(`/mock-interview/report/${sessionId}`);
     } catch (e) {
       setError((e as Error).message);
@@ -506,7 +507,7 @@ export function InterviewSession() {
       if (next === null) {
         setLastFeedback(null);
         setPhase("complete");
-        setMediaMessage("All questions answered. Building your debrief…");
+        setMediaMessage("All questions answered. Building your report…");
         await completeSession();
         return;
       }
@@ -1137,7 +1138,7 @@ export function InterviewSession() {
         navigate("/mock-interview");
         return;
       }
-      await apiRequest(`/interviews/${sessionId}`, { method: "DELETE" });
+      await deleteInterview(sessionId);
       navigate("/mock-interview");
     } catch (e) {
       setError((e as Error).message);
@@ -1174,7 +1175,7 @@ export function InterviewSession() {
               ? isFollowUp
                 ? `Follow-up ${activeIndex + 1} of ${questions.length}`
                 : `Question ${activeIndex + 1} of ${questions.length}`
-              : "Interview room"}
+              : "Practice session"}
           </h1>
         </div>
         <ol className="interview-pips" aria-label="Question progress">
@@ -1214,7 +1215,7 @@ export function InterviewSession() {
           <div className="interview-aura-stage" aria-label={`Interviewer ${auraState}`}>
             <AgentAudioVisualizerAura
               size="md"
-              color="#3a7ca5"
+              color="var(--accent)"
               colorShift={0.18}
               state={auraState}
               themeMode={resolvedTheme}
@@ -1366,7 +1367,7 @@ export function InterviewSession() {
                   </Button>
                   {phase === "awaiting_proceed" ? (
                     <Button onClick={() => void advanceAfterFeedback()} disabled={saving}>
-                      {activeIndex >= questions.length - 1 ? "Go to debrief" : "Continue"}
+                      {activeIndex >= questions.length - 1 ? "See report" : "Continue"}
                     </Button>
                   ) : null}
                 </div>

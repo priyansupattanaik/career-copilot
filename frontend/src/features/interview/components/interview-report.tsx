@@ -2,7 +2,8 @@ import { Link } from "@/shared/ui/router-link";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { apiRequest } from "@/shared/api/client";
-import { Card, PageHeader } from "@/shared/ui/primitives";
+import { Card } from "@/shared/ui/primitives";
+import { PageHeader } from "@/shared/ui/workbench";
 import { ScoreRing } from "@/features/dashboard/components/interview-progress-charts";
 import type { InterviewReportPayload, Session } from "@/features/interview/types";
 import "@/features/interview/interview.css";
@@ -68,11 +69,11 @@ export function InterviewReport() {
       <div className="feature-page interview-report">
         <PageHeader
           title="Report unavailable"
-          description="Finish a mock interview session to generate a debrief."
+          description="Finish a practice session to see a report."
         />
         <Card className="empty-state">
           <h2>No report yet</h2>
-          <p>{error || "Complete the session to store questions, answers, and coach notes."}</p>
+          <p>{error || "Finish the session to store questions, answers, and notes."}</p>
           <Link className="button button-primary" href="/mock-interview">
             Back to mock interview
           </Link>
@@ -84,10 +85,10 @@ export function InterviewReport() {
   return (
     <div className="feature-page interview-report">
       <PageHeader
-        title={session?.target_role ? `${session.target_role} debrief` : "Mock interview debrief"}
-        description="Practice coaching from this session: scores, pace, and what to try next. Not a hiring decision."
-        action={
-          <Link className="button button-secondary" href="/mock-interview">
+        title={session?.target_role ? `${session.target_role} report` : "Practice *report*"}
+        description="Scores from this practice session. This is not a hiring decision."
+        actions={
+          <Link className="wb-button wb-button-secondary" href="/mock-interview">
             All sessions
           </Link>
         }
@@ -95,14 +96,14 @@ export function InterviewReport() {
 
       <p className="interview-report-provenance" role="status">
         {aiGenerated
-          ? "Narrative generated from this session’s recorded answers and measured delivery."
-          : "Scores and coaching come only from the recorded answers and measured metrics."}
+          ? "Notes were written from this session’s recorded answers and measured delivery."
+          : "Scores and notes come only from the recorded answers and measured delivery."}
       </p>
 
       {readiness ? (
         <section className="interview-report-readiness">
           <div>
-            <p className="interview-kicker">Practice readiness</p>
+            <p className="interview-kicker">Session score</p>
             <h2>{readiness.label}</h2>
             <p>{readiness.next_step}</p>
             <p className="muted">{readiness.disclaimer}</p>

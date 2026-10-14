@@ -172,6 +172,6 @@ async def commit_live_interview(
         "session": saved_session,
         "report": saved_report,
         "questions": question_rows,
-        "message": "Session saved. Review your detailed debrief report.",
+        "message": "Session saved. Review your report.",
     }
 

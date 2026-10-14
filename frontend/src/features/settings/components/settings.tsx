@@ -11,6 +11,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "@/shared/api/client";
+import { deleteAccount as deleteAccountRequest, saveCareerPreferences, saveSettingsRecord } from "../api";
 import { createClient } from "@/features/auth/api/client";
 import {
   Button,
@@ -23,7 +24,7 @@ import {
 } from "@/shared/ui/primitives";
 import { CopilotIcon, type CopilotIconName } from "@/components/ui/copilot-icons";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "motion/react";
-import { FLUID_SPRING_TRANSITION } from "@/components/ui/motion-system";
+import { FLUID_SPRING_TRANSITION, premiumTransition } from "@/components/ui/motion-system";
 import { cn } from "@/shared/utils";
 import {
   clampCompletion,
@@ -740,7 +741,7 @@ function MultiOptionGroup({
       )}
 
       {selected.length > 0 ? (
-        <MotionConfig transition={{ type: "spring", stiffness: 300, damping: 40 }}>
+        <MotionConfig transition={premiumTransition.card}>
           <motion.div
             layout
             className="cluster"
@@ -752,9 +753,9 @@ function MultiOptionGroup({
                 <motion.span
                   key={value}
                   layout
-                  initial={{ opacity: 0, scale: 0.85 }}
+                  initial={{ opacity: 0, scale: 0.985 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.85 }}
+                  exit={{ opacity: 0, scale: 0.985 }}
                   className="badge badge-info"
                   role="listitem"
                   style={{ gap: 8 }}
@@ -2015,8 +2016,8 @@ export function ProfileSettings() {
   return (
     <Frame
       className="profile-v2"
-      title="Candidate profile"
-      description="Keep your experience, strengths, and goals ready for every interview."
+      title="Profile"
+      description="Name, experience, skills, and links saved on your account."
     >
       {loading ? (
         <div className="profile-studio">
@@ -2179,7 +2180,7 @@ export function ProfileSettings() {
                   <Link
                     href={`/${encodeURIComponent(String(form.username))}`}
                     className="button button-primary profile-showcase-btn"
-                    title="Open your live public candidate profile"
+                    title="Open your public profile"
                   >
                     <CopilotIcon name="external" size={14} />
                     <span>View public profile</span>
@@ -2189,7 +2190,7 @@ export function ProfileSettings() {
                     variant="secondary"
                     onClick={copyPublicProfileUrl}
                     className="profile-copy-btn"
-                    title="Copy public candidate profile URL"
+                    title="Copy profile link"
                   >
                     <CopilotIcon name={publicUrlCopied ? "check" : "link"} size={14} />
                     <span>{publicUrlCopied ? "URL copied!" : "Copy link"}</span>
@@ -2198,7 +2199,7 @@ export function ProfileSettings() {
               ) : (
                 <div className="profile-claim-prompt">
                   <p className="profile-claim-text">
-                    Set a personal username to unlock your public candidate profile and shareable URL.
+                    Set a username to publish a profile page and copy its link.
                   </p>
                   <Button
                     type="button"
@@ -2211,7 +2212,7 @@ export function ProfileSettings() {
                     }}
                   >
                     <CopilotIcon name="add" size={14} />
-                    Claim handle
+                    Set username
                   </Button>
                 </div>
               )}
@@ -2877,7 +2878,7 @@ export function ProfileSettings() {
                   )}
                 </div>
               </div>
-              <MotionConfig transition={{ type: "spring", stiffness: 300, damping: 40 }}>
+              <MotionConfig transition={premiumTransition.card}>
                 <motion.div layout className="profile-chip-list">
                   {skills.length === 0 && (
                     <p className="profile-empty">No skills saved yet.</p>
@@ -2887,9 +2888,9 @@ export function ProfileSettings() {
                       <motion.span
                         key={skill.id}
                         layout
-                        initial={{ opacity: 0, scale: 0.85 }}
+                        initial={{ opacity: 0, scale: 0.985 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.85 }}
+                        exit={{ opacity: 0, scale: 0.985 }}
                         className={`badge ${editingSkillId === skill.id ? "badge-warning" : "badge-info"}`}
                         style={{ gap: 8 }}
                       >
@@ -3536,12 +3537,9 @@ export function AccountSettings() {
 
     setDeleting(true);
     try {
-      await apiRequest("/account", {
-        method: "DELETE",
-        body: JSON.stringify({
-          confirmation: DELETE_ACCOUNT_PHRASE,
-          email: confirmEmail.trim() || accountEmail || null,
-        }),
+      await deleteAccountRequest({
+        confirmation: DELETE_ACCOUNT_PHRASE,
+        email: confirmEmail.trim() || accountEmail || null,
       });
       await createClient()?.auth.signOut();
       navigate("/");
@@ -3566,8 +3564,8 @@ export function AccountSettings() {
 
   return (
     <Frame
-      title="Account & access"
-      description="Manage your active session securely."
+      title="Account"
+      description="Sign out, or delete this account."
     >
       <div className="settings-canvas">
         <UsernameChangeCard />
@@ -3612,7 +3610,7 @@ export function AccountSettings() {
           >
             Permanently removes your account and all candidate data stored with
             us: profile, skills, experience, education, resumes and files, job
-            descriptions, ATS analyses, interviews, learning paths, saved jobs,
+            descriptions, resume checks, interviews, study plans, saved jobs,
             activity, and preferences. This cannot be undone.
           </p>
           {!showDeletePanel ? (
@@ -3757,14 +3755,11 @@ function StoredSettings({
           );
         }
       }
-      await apiRequest(`/settings/${kind}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-      });
+      await saveSettingsRecord(kind, payload);
       setMessage(
         kind === "notifications"
           ? "Notification preferences saved successfully."
-          : "Privacy controls saved successfully.",
+          : "Privacy settings saved.",
       );
     } catch (e) {
       setError((e as Error).message);
@@ -3782,7 +3777,7 @@ function StoredSettings({
     {
       key: "learning_reminders",
       label: "Learning reminders",
-      hint: "Reminders for paths generated from ATS gaps.",
+      hint: "Reminders for study plans built from missing resume words.",
     },
     {
       key: "interview_reminders",
@@ -3805,7 +3800,7 @@ function StoredSettings({
     {
       key: "job_recommendation_consent",
       label: "Allow job recommendations",
-      hint: "Rank jobs using confirmed resume evidence.",
+      hint: "Score jobs using the resume you confirmed.",
     },
   ] as const;
 
@@ -4070,10 +4065,7 @@ function CareerPreferencesSettingsCard() {
       ) {
         throw new Error("Currency must be a 3-letter code such as INR or USD.");
       }
-      await apiRequest("/settings/career-preferences", {
-        method: "PUT",
-        body: JSON.stringify(payload),
-      });
+      await saveCareerPreferences(payload);
       setMessage("Career preferences saved to your account.");
     } catch (e) {
       setError((e as Error).message);
@@ -4108,7 +4100,7 @@ export function PreferenceSettings() {
   return (
     <Frame
       title="Preferences"
-      description="Manage your career search criteria and notification channels in one place."
+      description="Job search filters and notifications."
     >
       <div className="settings-canvas">
         <CareerPreferencesSettingsCard />
@@ -4121,8 +4113,8 @@ export function PreferenceSettings() {
 export function PrivacySettings() {
   return (
     <Frame
-      title="Privacy controls"
-      description="Consent and visibility choices are saved to your private account."
+      title="Privacy"
+      description="Who can see your profile, and whether practice can use the camera and microphone."
     >
       <StoredSettings kind="privacy" />
     </Frame>

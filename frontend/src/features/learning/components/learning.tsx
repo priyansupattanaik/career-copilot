@@ -3,8 +3,16 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CopilotIcon } from "@/components/ui/copilot-icons";
 import { apiRequest, isAbortError } from "@/shared/api/client";
+import { deleteLearningPath, generateLearningPath, getLearningPath, listLearningPaths } from "../api";
 import LoadingState from "@/components/ui/loading-state";
-import { Badge, Button, Progress } from "@/shared/ui/primitives";
+import {
+  PageHeader,
+  Surface,
+  EmptyState,
+  Skeleton,
+  Button,
+} from "@/shared/ui/workbench";
+import { Badge, Progress } from "@/shared/ui/primitives";
 
 import { motion, useReducedMotion } from "motion/react";
 import { FLUID_SPRING_TRANSITION } from "@/components/ui/motion-system";
@@ -56,14 +64,6 @@ function formatDate(value?: string | null) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-}
-
-function scoreBand(score: number | null | undefined): "high" | "mid" | "low" | "none" {
-  if (score == null || !Number.isFinite(Number(score))) return "none";
-  const value = Number(score);
-  if (value >= 80) return "high";
-  if (value >= 55) return "mid";
-  return "low";
 }
 
 function gapCount(analysis: AtsAnalysis): number {
@@ -144,7 +144,6 @@ function applyResourceToPath(
 }
 
 export function LearningHome() {
-  const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
   const [paths, setPaths] = useState<Path[]>([]);
   const [analyses, setAnalyses] = useState<AtsAnalysis[]>([]);
@@ -158,7 +157,7 @@ export function LearningHome() {
   useEffect(() => {
     let active = true;
     Promise.all([
-      apiRequest<Path[]>("/learning-paths"),
+      listLearningPaths<Path>(),
       apiRequest<AtsAnalysis[]>("/ats-analyses"),
     ])
       .then(([pathRows, analysisRows]) => {
@@ -191,7 +190,7 @@ export function LearningHome() {
 
   async function generate() {
     if (!selectedId) {
-      setError("Choose a completed ATS analysis first. Paths are built only from those evidence gaps.");
+      setError("Choose a finished resume check first. Lessons use only the missing words from that check.");
       return;
     }
     if (existingForSelected) {
@@ -201,14 +200,11 @@ export function LearningHome() {
     setBusy(true);
     setError("");
     try {
-      const created = await apiRequest<Path>("/learning-paths/generate", {
-        method: "POST",
-        body: JSON.stringify({ source_analysis_id: selectedId }),
-      });
+      const created = await generateLearningPath<Path>(selectedId);
       setPaths((current) => [created, ...current.filter((row) => row.id !== created.id)]);
       navigate(`/learning/${created.id}`);
     } catch (reason) {
-      setError((reason as Error).message || "Could not build a path from that ATS analysis.");
+      setError((reason as Error).message || "Could not build a study plan from that resume check.");
     } finally {
       setBusy(false);
     }
@@ -218,7 +214,7 @@ export function LearningHome() {
     setDeletingId(path.id);
     setError("");
     try {
-      await apiRequest(`/learning-paths/${path.id}`, { method: "DELETE" });
+      await deleteLearningPath(path.id);
       setPaths((current) => current.filter((row) => row.id !== path.id));
       setConfirmDeleteId(null);
     } catch (reason) {
@@ -229,185 +225,274 @@ export function LearningHome() {
   }
 
   return (
-    <div className="lp-page">
-      <header className="lp-masthead">
-        <div>
-          <h1 className="lp-title">Learning path</h1>
-          <p className="lp-sub">
-            Build a study plan from skill gaps in your completed ATS analysis. Watch progress is
-            stored as you play each lesson. Skipped time is not counted.
-          </p>
-        </div>
-        <div className="lp-masthead-actions">
-          <Button onClick={() => void generate()} disabled={busy || !selectedId || Boolean(deletingId)}>
-            {busy ? <CopilotIcon name="loader" size={17} loop /> : null}
-            {existingForSelected ? "Open path from this ATS" : "Generate from ATS gaps"}
+    <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
+      <PageHeader
+        title="Study *plan*"
+        description="Lessons come from words missing in a finished resume check. Watch time is saved. Skipped time is not counted."
+        actions={
+          <Button
+            variant="primary"
+            onClick={() => void generate()}
+            disabled={busy || !selectedId || Boolean(deletingId)}
+          >
+            {busy ? "Building…" : existingForSelected ? "Open this plan" : "Build from missing words"}
           </Button>
-        </div>
-      </header>
+        }
+      />
 
       {error ? (
-        <div className="lp-alert" role="alert">
-          <p>{error}</p>
+        <div className="wb-notice wb-notice-error" role="alert">
+          <p style={{ margin: 0 }}>{error}</p>
         </div>
       ) : null}
 
       {busy ? <LoadingState label="Building your learning path" variant="Drive" /> : null}
 
       {loading ? (
-        <div className="lp-loading" aria-label="Loading learning paths">
-          <div className="lp-skeleton" />
-          <div className="lp-skeleton" />
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <Skeleton height={80} />
+          <Skeleton height={80} />
         </div>
       ) : (
         <>
-          <section className="lp-section" aria-labelledby="lp-ats-heading">
-            <div className="lp-section-head">
-              <h2 className="lp-section-title" id="lp-ats-heading">
-                Choose a completed ATS analysis
+          {/* Section 1: Choose a finished resume check */}
+          <section aria-labelledby="lp-ats-heading">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "space-between",
+                marginBottom: 16,
+              }}
+            >
+              <h2
+                id="lp-ats-heading"
+                style={{
+                  fontSize: 16,
+                  lineHeight: "24px",
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  margin: 0,
+                }}
+              >
+                Choose a finished resume check
               </h2>
-              <p className="lp-summary-line">
-                <strong>{analyses.length}</strong> completed runs
-              </p>
+              <span style={{ fontSize: 13, color: "var(--ink-2)" }}>
+                {analyses.length} completed runs
+              </span>
             </div>
+
             {analyses.length === 0 ? (
-              <div className="lp-empty">
-                <h2>No completed ATS analysis yet</h2>
-                <p>
-                  Complete a resume-vs-JD ATS analysis first. Paths are built only from those
-                  evidence gaps. Skills are never invented.
-                </p>
-                <Link className="button button-primary" href="/resume-analysis?tab=upload">
-                  Open Resume Analysis
-                </Link>
-              </div>
+              <EmptyState
+                headline="No resume check yet"
+                description="Compare a resume with a job first. Lessons use only the missing words from that check. Skills are not added for you."
+                cta={
+                  <Link className="wb-button wb-button-primary" href="/resume-analysis?tab=upload">
+                    Open Resume Analysis
+                  </Link>
+                }
+              />
             ) : (
-              <div className="lp-ledger">
-                {analyses.map((analysis) => {
-                  const linked = pathForAnalysis(paths, analysis.id);
-                  const selectedRun = analysis.id === selectedId;
-                  return (
-                    <button
-                      type="button"
-                      key={analysis.id}
-                      className={`lp-run${selectedRun ? " is-selected" : ""}`}
-                      onClick={() => setSelectedId(analysis.id)}
-                      aria-pressed={selectedRun}
-                    >
-                      <span className="lp-scoretile" data-band={scoreBand(analysis.overall_score)}>
-                        {analysis.overall_score == null ? "—" : Math.round(Number(analysis.overall_score))}
-                        <small>ATS</small>
-                      </span>
-                      <span className="lp-run-main">
-                        <span className="lp-run-pair">{analysisLabel(analysis)}</span>
-                        <span className="lp-run-meta">
-                          {(analysis.resume?.title || "Resume") +
-                            " · " +
-                            gapCount(analysis) +
-                            " skill gaps"}
-                        </span>
-                        <span className="lp-run-time">{formatDate(analysis.completed_at || analysis.created_at)}</span>
-                      </span>
-                      <span className="lp-run-side">
-                        {linked ? (
-                          <Badge tone="success">Path {linked.progress_percentage}%</Badge>
-                        ) : (
-                          <Badge variant="secondary">No path yet</Badge>
-                        )}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              <Surface style={{ padding: 0, overflow: "hidden" }}>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  {analyses.map((analysis, index) => {
+                    const linked = pathForAnalysis(paths, analysis.id);
+                    const selectedRun = analysis.id === selectedId;
+                    return (
+                      <button
+                        type="button"
+                        key={analysis.id}
+                        onClick={() => setSelectedId(analysis.id)}
+                        aria-pressed={selectedRun}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "16px 20px",
+                          background: selectedRun ? "var(--accent-soft)" : "transparent",
+                          border: "none",
+                          borderBottom: index < analyses.length - 1 ? "1px solid var(--line)" : "none",
+                          borderLeft: selectedRun ? "3px solid var(--accent)" : "3px solid transparent",
+                          cursor: "pointer",
+                          textAlign: "left",
+                          transition: "background-color 120ms ease",
+                          width: "100%",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                          <span
+                            style={{
+                              fontFamily: "var(--font-mono)",
+                              fontVariantNumeric: "tabular-nums",
+                              fontSize: 18,
+                              fontWeight: 600,
+                              color: "var(--ink)",
+                              minWidth: 48,
+                            }}
+                          >
+                            {analysis.overall_score == null ? "—" : `${Math.round(Number(analysis.overall_score))}%`}
+                          </span>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--ink)" }}>
+                              {analysisLabel(analysis)}
+                            </div>
+                            <div style={{ fontSize: 13, color: "var(--ink-2)", marginTop: 2 }}>
+                              {(analysis.resume?.title || "Resume") + " · " + gapCount(analysis) + " missing words · " + formatDate(analysis.completed_at || analysis.created_at)}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          {linked ? (
+                            <span
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 500,
+                                color: "var(--ok)",
+                                padding: "2px 8px",
+                                borderRadius: 9999,
+                                border: "1px solid var(--ok)",
+                              }}
+                            >
+                              Path {linked.progress_percentage}%
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 13, color: "var(--ink-3)" }}>
+                              No path yet
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Surface>
             )}
           </section>
 
-          <section className="lp-section" aria-labelledby="lp-paths-heading">
-            <div className="lp-section-head">
-              <h2 className="lp-section-title" id="lp-paths-heading">
+          {/* Section 2: Your paths */}
+          <section aria-labelledby="lp-paths-heading">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "space-between",
+                marginBottom: 16,
+              }}
+            >
+              <h2
+                id="lp-paths-heading"
+                style={{
+                  fontSize: 16,
+                  lineHeight: "24px",
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  margin: 0,
+                }}
+              >
                 Your paths
               </h2>
-              <p className="lp-summary-line">
-                <strong>{paths.length}</strong> saved
-              </p>
+              <span style={{ fontSize: 13, color: "var(--ink-2)" }}>
+                {paths.length} saved
+              </span>
             </div>
+
             {paths.length === 0 ? (
-              <div className="lp-empty">
-                <h2>No learning path yet</h2>
-                <p>
-                  Select a completed ATS analysis above, then generate a path. Each step maps a real
-                  evidence gap to free video lessons and blogs/articles.
-                </p>
-              </div>
+              <EmptyState
+                headline="No learning path yet"
+                description="Select a finished resume check above, then build a plan. Each step uses a missing word and a free lesson."
+              />
             ) : (
-              <div className="lp-path-grid">
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {paths.map((path) => {
                   const steps = pathStepCount(path);
                   const watched = path.watch_summary?.watched_percent ?? path.progress_percentage;
                   return (
-                    <motion.article
-                      key={path.id}
-                      className="lp-path-card"
-                      whileHover={reduceMotion ? undefined : { y: -3, transition: FLUID_SPRING_TRANSITION }}
-                    >
-                      <div className="lp-path-card-head">
-                        <div>
-                          <span className="status-chip" data-tone={watched === 100 ? "success" : "info"}>
-                            {(path.status || "active").replaceAll("_", " ")}
-                          </span>
-                          <h2>{path.title}</h2>
-                        </div>
-                        <Badge variant={watched === 100 ? "default" : "secondary"}>{watched}%</Badge>
-                      </div>
-                      <p>
-                        {path.source_snapshot?.role_title
-                          ? `From ATS · ${path.source_snapshot.role_title}`
-                          : path.description ||
-                            "Built from stored ATS evidence with free lesson resources for each gap."}
-                      </p>
-                      <Progress value={watched} label="Watch progress" />
-                      <div className="lp-chip-row">
-                        <Badge variant="secondary">Skill gaps</Badge>
-                        {steps > 0 && <span className="muted">{steps} steps</span>}
-                        {path.watch_summary?.last_resource_title ? (
-                          <span className="muted">Last: {path.watch_summary.last_resource_title}</span>
-                        ) : null}
-                      </div>
-                      {confirmDeleteId === path.id ? (
-                        <div className="lp-confirm">
-                          <p>Delete this path and its watch history from your account?</p>
-                          <div className="lp-chip-row">
-                            <Button
-                              variant="destructive"
-                              disabled={deletingId === path.id}
-                              onClick={() => void deletePath(path)}
+                    <Surface key={path.id} style={{ padding: 20 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          justifyContent: "space-between",
+                          gap: 16,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: 260 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                            <h3 style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)", margin: 0 }}>
+                              {path.title}
+                            </h3>
+                            <span
+                              style={{
+                                fontSize: 12,
+                                fontFamily: "var(--font-mono)",
+                                color: watched === 100 ? "var(--ok)" : "var(--ink-2)",
+                              }}
                             >
-                              {deletingId === path.id ? "Deleting…" : "Delete permanently"}
-                            </Button>
-                            <Button variant="ghost" onClick={() => setConfirmDeleteId(null)}>
-                              Keep path
-                            </Button>
+                              {watched}% complete
+                            </span>
+                          </div>
+                          <p style={{ fontSize: 14, color: "var(--ink-2)", margin: "0 0 10px 0" }}>
+                            {path.source_snapshot?.role_title
+                              ? `From resume check · ${path.source_snapshot.role_title}`
+                              : path.description || "Built from missing words in a saved resume check."}
+                          </p>
+                          <div style={{ fontSize: 13, color: "var(--ink-3)", display: "flex", gap: 16 }}>
+                            <span>{steps} steps</span>
+                            {path.watch_summary?.last_resource_title ? (
+                              <span>Last lesson: {path.watch_summary.last_resource_title}</span>
+                            ) : null}
                           </div>
                         </div>
-                      ) : (
-                        <div className="lp-path-actions">
-                          <Link className="button button-secondary" href={`/learning/${path.id}`}>
-                            {watched > 0 ? "Continue watching" : "Open path & track progress"}
-                          </Link>
-                          <Button
-                            variant="destructive"
-                            disabled={deletingId === path.id || busy}
-                            onClick={() => setConfirmDeleteId(path.id)}
-                            aria-label={`Delete learning path ${path.title}`}
-                          >
-                            <CopilotIcon name="trash" size={17} />
-                            Delete
-                          </Button>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          {confirmDeleteId === path.id ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <Button
+                                variant="destructive"
+                                disabled={deletingId === path.id}
+                                onClick={() => void deletePath(path)}
+                              >
+                                {deletingId === path.id ? "Deleting…" : "Confirm delete"}
+                              </Button>
+                              <Button variant="ghost" onClick={() => setConfirmDeleteId(null)}>
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <>
+                              <Link
+                                className="wb-button wb-button-secondary"
+                                href={`/learning/${path.id}`}
+                              >
+                                {watched > 0 ? "Continue watching" : "Open path"}
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteId(path.id)}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: "var(--danger)",
+                                  fontSize: 13,
+                                  cursor: "pointer",
+                                  padding: "6px 8px",
+                                }}
+                                aria-label={`Delete learning path ${path.title}`}
+                              >
+                                Delete
+                              </button>
+                            </>
+                          )}
                         </div>
-                      )}
-                    </motion.article>
+                      </div>
+                    </Surface>
                   );
                 })}
+                <p style={{ fontSize: 13, color: "var(--ink-3)", margin: "8px 0 0 0" }}>
+                  Watch time is saved. Skipped time is not counted.
+                </p>
               </div>
             )}
           </section>
@@ -447,7 +532,7 @@ export function LearningPath({ pathId }: { pathId: string }) {
       return;
     }
     setError("");
-    apiRequest<Path>(`/learning-paths/${pathId}`)
+    getLearningPath<Path>(pathId)
       .then((data) => {
         setError("");
         setPath(data);
@@ -662,7 +747,7 @@ export function LearningPath({ pathId }: { pathId: string }) {
     setDeleting(true);
     setError("");
     try {
-      await apiRequest(`/learning-paths/${pathId}`, { method: "DELETE" });
+      await deleteLearningPath(pathId);
       navigate("/learning");
     } catch (e) {
       setError((e as Error).message);
@@ -692,7 +777,7 @@ export function LearningPath({ pathId }: { pathId: string }) {
           <h1 className="lp-title">{path?.title || "Path details"}</h1>
           <p className="lp-sub">
             {path?.description ||
-              "Each step is an ATS skill gap with free lesson resources. Open a lesson, practice, then mark complete."}
+              "Each step is a missing word with a free lesson. Open it, then mark it complete."}
           </p>
         </div>
         <div className="lp-masthead-actions">
@@ -757,8 +842,8 @@ export function LearningPath({ pathId }: { pathId: string }) {
             </div>
             {path.source_snapshot ? (
               <div className="lp-source-card">
-                <p className="lp-summary-line">From ATS analysis</p>
-                <strong>{path.source_snapshot.role_title || path.source_snapshot.job_title || "Completed ATS run"}</strong>
+                <p className="lp-summary-line">From resume check</p>
+                <strong>{path.source_snapshot.role_title || path.source_snapshot.job_title || "Finished check"}</strong>
                 <p>
                   Score {path.source_snapshot.overall_score ?? "—"}
                   {path.source_snapshot.missing_count
@@ -770,10 +855,9 @@ export function LearningPath({ pathId }: { pathId: string }) {
             ) : null}
             {items.length === 0 ? (
               <div className="lp-empty">
-                <h2>No verified gaps found</h2>
+                <h2>No missing words</h2>
                 <p>
-                  This ATS analysis did not produce a learning gap. Re-run ATS after confirming resume
-                  and JD, or pick another analysis.
+                  This resume check did not list missing words. Compare the resume and job again, or pick another check.
                 </p>
               </div>
             ) : (
@@ -856,7 +940,7 @@ export function LearningPath({ pathId }: { pathId: string }) {
                     <div className="lp-player-fallback">
                       <p>
                         {selectedResource
-                          ? "This ATS gap has a lesson search instead of an exact video. Open it, then mark it watched."
+                          ? "This step has a lesson search instead of one video. Open it, then mark it watched."
                           : "Select a lesson to start tracking."}
                       </p>
                     </div>

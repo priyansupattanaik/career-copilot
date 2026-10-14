@@ -1,37 +1,44 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { CopilotIcon } from "@/components/ui/copilot-icons";
 import { Link } from "@/shared/ui/router-link";
-import { apiRequest } from "@/shared/api/client";
 import { isDemoSession } from "@/features/auth/demo-session";
+import {
+  generateJobRecommendations,
+  getJob,
+  listResumeRows,
+  listSavedJobs,
+  saveJob,
+  syncExternalJobs as requestExternalJobSync,
+  unsaveJob,
+  updateSavedJobStatus,
+  type JobAgentStatus,
+} from "../api";
 import { JobCard } from "./job-card";
 import { JobCardSkeleton } from "./job-card-skeleton";
 import { JobModal } from "./job-modal";
-import type { Job, Recommendation, SavedJobRow, SavedJobStatus } from "./job-types";
-import { isPipelineStatus } from "./job-types";
+import type { Job, Recommendation, SavedJobRow, SavedJobStatus } from "../model/job-types";
+import { isPipelineStatus } from "../model/job-types";
 import { jobRecsCacheKey, readJobRecsCache, writeJobRecsCache } from "../job-recs-cache";
-import { Badge, Button, Card, EmptyState, PageHeader } from "@/shared/ui/primitives";
+import {
+  PageHeader,
+  EmptyState,
+  Button,
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+  Sheet,
+  SheetContent,
+  SheetClose,
+  useToast,
+} from "@/shared/ui/workbench";
+import { Badge, Card } from "@/shared/ui/primitives";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { FLUID_SPRING_TRANSITION } from "@/components/ui/motion-system";
+import { AnimatePresence } from "motion/react";
 
-export type { Job, Recommendation } from "./job-types";
+export type { Job, Recommendation } from "../model/job-types";
 
 type PipelineFilter = "all" | "saved" | "applied" | "rejected";
-
-type ResumeSummary = {
-  id: string;
-  is_active?: boolean;
-  latest_version?: {
-    id?: string;
-    extraction_status?: string | null;
-  } | null;
-};
-
-type JobAgentStatus = {
-  mode: "agent" | "evidence" | "evidence_fallback";
-  provider?: string | null;
-  error?: string;
-};
 
 function normalizeStatus(status: string | undefined | null): SavedJobStatus {
   const value = (status || "saved").toLowerCase() as SavedJobStatus;
@@ -39,7 +46,8 @@ function normalizeStatus(status: string | undefined | null): SavedJobStatus {
 }
 
 export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
-  const reduceMotion = useReducedMotion();
+  const navigate = useNavigate();
+  const { showToast } = useToast();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [error, setError] = useState("");
@@ -49,6 +57,7 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [filterLocation, setFilterLocation] = useState("");
@@ -71,6 +80,16 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
         workMode: filterWorkMode,
         salaryMin: filterSalaryMin,
       }),
+    [filterLocation, filterWorkMode, filterSalaryMin],
+  );
+
+  const activeFilterCount = useMemo(
+    () =>
+      [
+        Boolean(filterLocation),
+        Boolean(filterWorkMode),
+        Boolean(filterSalaryMin !== "" && filterSalaryMin != null),
+      ].filter(Boolean).length,
     [filterLocation, filterWorkMode, filterSalaryMin],
   );
 
@@ -134,7 +153,7 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
       } else setIsLoadingMore(true);
       try {
         if (savedOnly) {
-          const rows = await apiRequest<SavedJobRow[]>("/saved-jobs");
+          const rows = await listSavedJobs();
           if (sequence !== requestSequence.current) return;
           const pipeline = applySavedRows(Array.isArray(rows) ? rows : []);
           setJobs(pipeline.map((row) => row.jobs).filter((job): job is Job => Boolean(job)));
@@ -153,8 +172,8 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
           // a confusing 409 when the user had just confirmed a resume in the
           // Resume Analysis page and this page still held stale state.
           const [resumes, savedRows] = await Promise.all([
-            apiRequest<ResumeSummary[]>("/resumes"),
-            apiRequest<SavedJobRow[]>("/saved-jobs"),
+            listResumeRows(),
+            listSavedJobs(),
           ]);
           const activeResume = (Array.isArray(resumes) ? resumes : []).find((row) => row.is_active);
           const confirmedVersion = activeResume?.latest_version;
@@ -163,10 +182,7 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
           }
           body.resume_version_id = confirmedVersion.id;
 
-          const result = await apiRequest<{ recommendations: Recommendation[]; agent?: JobAgentStatus }>("/job-recommendations/generate", {
-            method: "POST",
-            body: JSON.stringify(body),
-          });
+          const result = await generateJobRecommendations(body);
           const newRecs = result.recommendations || [];
           setAgentStatus(result.agent || { mode: "evidence", provider: null });
           const newJobs = newRecs.map((row) => row.job);
@@ -224,7 +240,7 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
   async function syncExternalJobs() {
     setError("");
     try {
-      await apiRequest("/jobs/external/sync", { method: "POST" });
+      await requestExternalJobSync();
       load();
     } catch (e) {
       setError((e as Error).message);
@@ -259,9 +275,9 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
 
     try {
       if (shouldUnsave) {
-        await apiRequest(`/saved-jobs/${jobId}`, { method: "DELETE" });
+        await unsaveJob(jobId);
       } else {
-        const result = await apiRequest<{ status?: string }>(`/saved-jobs/${jobId}`, { method: "POST" });
+        const result = await saveJob(jobId);
         const serverStatus = normalizeStatus(result?.status || "saved");
         setStatusByJobId((map) => ({ ...map, [jobId]: serverStatus }));
       }
@@ -309,10 +325,7 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
     }
 
     try {
-      await apiRequest(`/saved-jobs/${jobId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
-      });
+      await updateSavedJobStatus(jobId, status);
     } catch (err) {
       setError((err as Error).message);
       setStatusByJobId(previous);
@@ -348,135 +361,364 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
   return (
     <div className="feature-page jobs-radar-page">
       <PageHeader
-        title={savedOnly ? "My job pipeline" : "Your next move, shortlisted"}
+        title={savedOnly ? "Saved jobs" : "Job *matches*"}
         description={
           savedOnly
-            ? "Track jobs you saved, applied to, or rejected. Counts update as you mark each role."
-            : "A focused shortlist built from your profile, preferences, and confirmed resume evidence."
+            ? "Jobs you saved, applied to, or rejected. Counts update when you change a status."
+            : "Roles scored from your saved resume and preferences. The list does not invent jobs or skills."
         }
-        action={
+        actions={
           savedOnly ? (
-            <Link className="button button-secondary" href="/jobs">
+            <Link className="wb-button wb-button-ghost" href="/jobs">
               Back to recommendations
             </Link>
           ) : (
-            <Link className="button button-secondary" href="/jobs/saved">
-              View pipeline ({counts.total})
-            </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Button
+                variant="primary"
+                onClick={() => void syncExternalJobs()}
+                data-testid="freehire-sync"
+              >
+                <CopilotIcon name="refresh" size={16} />
+                <span>Refresh job search</span>
+              </Button>
+              <Link className="wb-button wb-button-ghost" href="/jobs/saved">
+                View saved ({counts.total})
+              </Link>
+            </div>
           )
         }
       />
 
+      {/* "How matches are chosen": collapse into a small disclosure row under header */}
       {!savedOnly ? (
-        <section className="jobs-radar-intro" aria-labelledby="jobs-radar-title">
-          <div className="jobs-radar-copy">
-            <h2 id="jobs-radar-title">Less scrolling. More signal.</h2>
-            <p>Fresh roles are collected from the configured job-search sources, then the fit agent checks each one against the evidence in your profile.</p>
-          </div>
-          <div className="jobs-agent-panel" data-testid="job-agent-status">
-            <span className="jobs-agent-label">Recommendation engine</span>
-            <strong>{agentStatus.mode === "agent" ? "AI fit agent active" : agentStatus.mode === "evidence_fallback" ? "Evidence matching active" : "Profile evidence active"}</strong>
-            <span>{agentStatus.mode === "agent" ? `Provider: ${agentStatus.provider || "configured LLM"}` : "No profile or job data is invented."}</span>
-          </div>
-        </section>
+        <Collapsible
+          style={{
+            border: "1px solid var(--hairline)",
+            borderRadius: "var(--radius-control)",
+            padding: "10px 16px",
+            background: "var(--surface-1)",
+          }}
+        >
+          <CollapsibleTrigger
+            type="button"
+            style={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: "var(--ink-2)",
+              cursor: "pointer",
+              userSelect: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              padding: 0,
+            }}
+          >
+            <span>
+              How matches are chosen ·{" "}
+              <span style={{ color: "var(--ink-3)" }}>
+                Scoring:{" "}
+                {agentStatus.mode === "agent"
+                  ? "Using a language model"
+                  : agentStatus.mode === "evidence_fallback"
+                    ? "Matched from your resume"
+                    : "Matched from your profile"}
+              </span>
+            </span>
+            <span style={{ fontSize: 12, color: "var(--ink-3)" }}>▾</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent
+            style={{
+              marginTop: 8,
+              fontSize: 13,
+              lineHeight: "20px",
+              color: "var(--ink-2)",
+            }}
+          >
+            Jobs come from the search source configured for your account. Each one is scored against your resume.{" "}
+            {agentStatus.mode === "agent"
+              ? agentStatus.provider || "Language model"
+              : "Missing details are not filled in."}
+          </CollapsibleContent>
+        </Collapsible>
       ) : null}
 
-      <div className="jobs-stat-rail">
-        <Card className="metric-card">
-          <p className="metric-card-label">Saved</p>
-          <p className="metric-value">{counts.saved}</p>
-          <p className="metric-card-note">Bookmarked for later</p>
-        </Card>
-        <Card className="metric-card">
-          <p className="metric-card-label">Applied</p>
-          <p className="metric-value">{counts.applied}</p>
-          <p className="metric-card-note">Applications you tracked</p>
-        </Card>
-        <Card className="metric-card">
-          <p className="metric-card-label">Rejected</p>
-          <p className="metric-value">{counts.rejected}</p>
-          <p className="metric-card-note">Roles you passed on</p>
-        </Card>
+      {/* Saved / Applied / Rejected: replace three cards with tabs that carry counts */}
+      <div role="tablist" className="wb-tabs" aria-label="Job pipeline filter" style={{ marginBottom: 0 }}>
+        {!savedOnly ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={true}
+            className="wb-tab-item is-active"
+            title="Personalized matches scored against your confirmed resume"
+          >
+            Matches ({jobs.length})
+          </button>
+        ) : (
+          <Link
+            className="wb-tab-item"
+            href="/jobs"
+            title="Personalized matches scored against your confirmed resume"
+          >
+            Matches
+          </Link>
+        )}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={savedOnly && pipelineFilter === "saved"}
+          className={`wb-tab-item ${savedOnly && pipelineFilter === "saved" ? "is-active" : ""}`}
+          onClick={() => {
+            if (!savedOnly) navigate("/jobs/saved");
+            else setPipelineFilter("saved");
+          }}
+          title="Bookmarked for later"
+        >
+          Saved ({counts.saved})
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={savedOnly && pipelineFilter === "applied"}
+          className={`wb-tab-item ${savedOnly && pipelineFilter === "applied" ? "is-active" : ""}`}
+          onClick={() => {
+            if (!savedOnly) navigate("/jobs/saved");
+            else setPipelineFilter("applied");
+          }}
+          title="Applications you tracked"
+        >
+          Applied ({counts.applied})
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={savedOnly && pipelineFilter === "rejected"}
+          className={`wb-tab-item ${savedOnly && pipelineFilter === "rejected" ? "is-active" : ""}`}
+          onClick={() => {
+            if (!savedOnly) navigate("/jobs/saved");
+            else setPipelineFilter("rejected");
+          }}
+          title="Roles you passed on"
+        >
+          Rejected ({counts.rejected})
+        </button>
       </div>
 
       {isRefreshing ? (
-        <p className="muted" style={{ marginBottom: 8 }} aria-live="polite">
+        <p style={{ fontSize: 13, color: "var(--ink-3)", margin: 0 }} aria-live="polite">
           Updating recommendations…
         </p>
       ) : null}
 
+      {/* Filters: responsive single row on >=1024px, bottom sheet on <1024px */}
       {!savedOnly ? (
-        <div className="filters-bar" role="search" aria-label="Filter job recommendations">
-          <label className="field">
-            <span className="field-label">Location</span>
-            <input
-              value={filterLocation}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterLocation(e.target.value)}
-              placeholder="City or region"
-            />
-          </label>
-          <label className="field">
-            <span className="field-label">Work mode</span>
-            <input
-              value={filterWorkMode}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterWorkMode(e.target.value)}
-              placeholder="remote, hybrid…"
-            />
-          </label>
-          <label className="field">
-            <span className="field-label">Min salary</span>
-            <input
-              type="number"
-              value={filterSalaryMin}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setFilterSalaryMin(e.target.value === "" ? "" : Number(e.target.value))
-              }
-            />
-          </label>
-          <Button variant="secondary" onClick={() => void syncExternalJobs()} data-testid="freehire-sync">
-            <CopilotIcon name="refresh" size={16} /> Refresh job search
-          </Button>
-        </div>
-      ) : (
-        <div className="cluster" role="tablist" aria-label="Filter pipeline by status" style={{ marginBottom: 8, position: "relative" }}>
-          {(
-            [
-              ["all", `All (${counts.total})`],
-              ["saved", `Saved (${counts.saved})`],
-              ["applied", `Applied (${counts.applied})`],
-              ["rejected", `Rejected (${counts.rejected})`],
-            ] as const
-          ).map(([key, label]) => {
-            const active = pipelineFilter === key;
-            return (
+        <>
+          <div
+            role="search"
+            aria-label="Filter job recommendations"
+            className="wb-job-filters-desktop"
+          >
+            <div style={{ flex: 1, minWidth: 160 }}>
+              <label style={{ display: "block", fontSize: 13, color: "var(--ink-3)", marginBottom: 6 }}>
+                Location
+              </label>
+              <input
+                value={filterLocation}
+                onChange={(e) => setFilterLocation(e.target.value)}
+                placeholder="City or region"
+                style={{
+                  width: "100%",
+                  height: 40,
+                  padding: "0 12px",
+                  borderRadius: "var(--radius-control)",
+                  border: "1px solid var(--hairline)",
+                  background: "var(--bg)",
+                  color: "var(--ink)",
+                  fontSize: 14,
+                }}
+              />
+            </div>
+
+            <div style={{ flex: 1, minWidth: 140 }}>
+              <label style={{ display: "block", fontSize: 13, color: "var(--ink-3)", marginBottom: 6 }}>
+                Work mode
+              </label>
+              <input
+                value={filterWorkMode}
+                onChange={(e) => setFilterWorkMode(e.target.value)}
+                placeholder="remote, hybrid…"
+                style={{
+                  width: "100%",
+                  height: 40,
+                  padding: "0 12px",
+                  borderRadius: "var(--radius-control)",
+                  border: "1px solid var(--hairline)",
+                  background: "var(--bg)",
+                  color: "var(--ink)",
+                  fontSize: 14,
+                }}
+              />
+            </div>
+
+            <div style={{ width: 140 }}>
+              <label style={{ display: "block", fontSize: 13, color: "var(--ink-3)", marginBottom: 6 }}>
+                Min salary ($)
+              </label>
+              <input
+                type="number"
+                value={filterSalaryMin}
+                onChange={(e) =>
+                  setFilterSalaryMin(e.target.value === "" ? "" : Number(e.target.value))
+                }
+                placeholder="50000"
+                style={{
+                  width: "100%",
+                  height: 40,
+                  padding: "0 12px",
+                  borderRadius: "var(--radius-control)",
+                  border: "1px solid var(--hairline)",
+                  background: "var(--bg)",
+                  color: "var(--ink)",
+                  fontSize: 14,
+                }}
+              />
+            </div>
+
+            {activeFilterCount > 0 ? (
               <button
-                key={key}
                 type="button"
-                className={`button ${active ? "button-secondary is-active" : "button-ghost"}`}
-                onClick={() => setPipelineFilter(key)}
-                aria-pressed={active}
-                style={{ position: "relative" }}
+                className="wb-button wb-button-ghost"
+                onClick={() => {
+                  setFilterLocation("");
+                  setFilterWorkMode("");
+                  setFilterSalaryMin("");
+                }}
+                style={{ height: 40, fontSize: 13 }}
               >
-                {active ? (
-                  <motion.span
-                    layoutId="job-pipeline-active-pill"
-                    transition={reduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION}
+                Reset filters
+              </button>
+            ) : null}
+          </div>
+
+          <div className="wb-job-filters-mobile-bar">
+            <Button
+              variant="secondary"
+              onClick={() => setMobileFiltersOpen(true)}
+              style={{ height: 40 }}
+            >
+              <CopilotIcon name="settings" size={16} />
+              <span>Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}</span>
+            </Button>
+            {activeFilterCount > 0 ? (
+              <button
+                type="button"
+                className="wb-button wb-button-ghost"
+                onClick={() => {
+                  setFilterLocation("");
+                  setFilterWorkMode("");
+                  setFilterSalaryMin("");
+                }}
+                style={{ fontSize: 13, height: 40 }}
+              >
+                Reset filters
+              </button>
+            ) : null}
+          </div>
+
+          <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+            <SheetContent title="Filter recommendations">
+              <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 16 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 13, color: "var(--ink-3)", marginBottom: 6 }}>
+                    Location
+                  </label>
+                  <input
+                    value={filterLocation}
+                    onChange={(e) => setFilterLocation(e.target.value)}
+                    placeholder="City or region"
                     style={{
-                      position: "absolute",
-                      inset: 0,
-                      borderRadius: "inherit",
-                      background: "color-mix(in srgb, var(--primary-strong) 12%, transparent)",
-                      border: "1px solid color-mix(in srgb, var(--primary-strong) 25%, transparent)",
-                      zIndex: 0,
+                      width: "100%",
+                      height: 44,
+                      padding: "0 12px",
+                      borderRadius: "var(--radius-control)",
+                      border: "1px solid var(--hairline)",
+                      background: "var(--surface-2)",
+                      color: "var(--ink)",
+                      fontSize: 14,
                     }}
                   />
-                ) : null}
-                <span style={{ position: "relative", zIndex: 1 }}>{label}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 13, color: "var(--ink-3)", marginBottom: 6 }}>
+                    Work mode
+                  </label>
+                  <input
+                    value={filterWorkMode}
+                    onChange={(e) => setFilterWorkMode(e.target.value)}
+                    placeholder="remote, hybrid…"
+                    style={{
+                      width: "100%",
+                      height: 44,
+                      padding: "0 12px",
+                      borderRadius: "var(--radius-control)",
+                      border: "1px solid var(--hairline)",
+                      background: "var(--surface-2)",
+                      color: "var(--ink)",
+                      fontSize: 14,
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 13, color: "var(--ink-3)", marginBottom: 6 }}>
+                    Min salary ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={filterSalaryMin}
+                    onChange={(e) =>
+                      setFilterSalaryMin(e.target.value === "" ? "" : Number(e.target.value))
+                    }
+                    placeholder="50000"
+                    style={{
+                      width: "100%",
+                      height: 44,
+                      padding: "0 12px",
+                      borderRadius: "var(--radius-control)",
+                      border: "1px solid var(--hairline)",
+                      background: "var(--surface-2)",
+                      color: "var(--ink)",
+                      fontSize: 14,
+                    }}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                  <SheetClose asChild>
+                    <Button variant="primary" style={{ flex: 1 }}>
+                      Apply
+                    </Button>
+                  </SheetClose>
+                  {activeFilterCount > 0 ? (
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setFilterLocation("");
+                        setFilterWorkMode("");
+                        setFilterSalaryMin("");
+                      }}
+                    >
+                      Reset
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </>
+      ) : null}
 
       {error ? (
         <div className="feature-alert" role="alert">
@@ -485,7 +727,7 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
       ) : null}
 
       {isLoading ? (
-        <div className="jobs-grid" aria-busy="true" aria-label="Loading job recommendations">
+        <div className="jobs-grid" aria-busy="true" aria-label="Loading jobs">
           <JobCardSkeleton />
           <JobCardSkeleton />
           <JobCardSkeleton />
@@ -493,20 +735,20 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
         </div>
       ) : visibleJobs.length === 0 ? (
         <EmptyState
-          title={savedOnly ? "No jobs in this view" : "No jobs yet"}
+          headline={savedOnly ? "No jobs in this view" : "No jobs yet"}
           description={
             savedOnly
               ? pipelineFilter === "applied"
-                ? "Mark a recommendation as applied to track it here."
+                ? "Mark a saved job as applied to list it here."
                 : pipelineFilter === "rejected"
-                  ? "Mark roles you do not want as rejected to keep a clear record."
-                  : "Save a recommendation or mark it applied to build your pipeline."
-              : "Confirm a resume and sync jobs to see matches."
+                  ? "Mark a saved job as rejected to list it here."
+                  : "Save a job or mark it applied to list it here."
+              : "Save a resume, then open job matches."
           }
         />
       ) : (
         <div className="stack">
-          <div className="jobs-grid" role="list" aria-label={savedOnly ? "Pipeline jobs" : "Recommended jobs"}>
+          <div className="jobs-grid" role="list" aria-label={savedOnly ? "Saved jobs" : "Job matches"}>
             {visibleJobs.map((job) => {
               const rec = recommendations.find((row) => row.job.id === job.id);
               const status = statusByJobId[job.id];
@@ -521,7 +763,18 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
                     onOpen={() => setSelectedJob(job.id)}
                     onToggleSave={(e) => void toggleSave(job.id, e)}
                     onMarkApplied={(e) => void setJobStatus(job.id, "applied", e)}
-                    onMarkRejected={(e) => void setJobStatus(job.id, "rejected", e)}
+                    onMarkRejected={(e) => {
+                      const prevStatus = status;
+                      void setJobStatus(job.id, "rejected", e);
+                      showToast({
+                        message: `Marked "${job.title}" as rejected`,
+                        undoLabel: "Undo",
+                        duration: 5000,
+                        onUndo: () => {
+                          void setJobStatus(job.id, prevStatus || "saved");
+                        },
+                      });
+                    }}
                   />
                 </div>
               );
@@ -553,7 +806,18 @@ export function JobsHome({ savedOnly = false }: { savedOnly?: boolean }) {
             status={selectedStatus}
             onToggleSave={() => void toggleSave(selected.id)}
             onMarkApplied={() => void setJobStatus(selected.id, "applied")}
-            onMarkRejected={() => void setJobStatus(selected.id, "rejected")}
+            onMarkRejected={() => {
+              const prev = selectedStatus;
+              void setJobStatus(selected.id, "rejected");
+              showToast({
+                message: `Marked "${selected.title}" as rejected`,
+                undoLabel: "Undo",
+                duration: 5000,
+                onUndo: () => {
+                  void setJobStatus(selected.id, prev || "saved");
+                },
+              });
+            }}
             onClose={() => setSelectedJob(null)}
             onDismiss={() => void dismissJob(selected.id)}
           />
@@ -567,7 +831,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState("");
   useEffect(() => {
-    void apiRequest<Job>(`/jobs/${jobId}`)
+    void getJob(jobId)
       .then(setJob)
       .catch((e: Error) => setError(e.message));
   }, [jobId]);

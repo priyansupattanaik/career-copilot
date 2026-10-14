@@ -204,9 +204,9 @@ export function PublicProfile({ username }: { username: string }) {
             <div className="public-profile-error-icon" aria-hidden="true">
               <CopilotIcon name="alert" size={28} />
             </div>
-            <h1>Candidate profile not found</h1>
+            <h1>Profile not found</h1>
             <p>
-              The candidate profile <strong>@{username}</strong> could not be found or is set to private.
+              The profile <strong>@{username}</strong> could not be found or is set to private.
             </p>
             <div className="public-profile-error-actions">
               <Link className="button button-primary" href="/community">
@@ -258,7 +258,7 @@ export function PublicProfile({ username }: { username: string }) {
                 <div className="public-profile-skeleton-line" style={{ width: "30%", height: 14 }} />
               </div>
             </div>
-            <p className="sr-only">Loading candidate profile…</p>
+            <p className="sr-only">Loading profile…</p>
           </div>
         </div>
       </main>
@@ -299,8 +299,8 @@ export function PublicProfile({ username }: { username: string }) {
               type="button"
               className="public-profile-share-btn"
               onClick={handleShare}
-              aria-label="Copy candidate profile link"
-              title="Copy candidate profile link"
+              aria-label="Copy profile link"
+              title="Copy profile link"
             >
               <CopilotIcon name={copied ? "check" : "link"} size={14} />
               <span>{copied ? "Link copied!" : "Share profile"}</span>

@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useLocation } from "react-router-dom";
-import { apiRequest } from "@/shared/api/client";
+import { loadWorkspaceBootstrap } from "@/features/workspace/api";
 import {
   PROFILE_UPDATED_EVENT,
   extractMissing,
@@ -158,7 +158,7 @@ export function WorkspaceBootstrapProvider({
     });
     setError("");
     const bootstrapScope = pathname === "/dashboard" ? "full" : "shell";
-    apiRequest<WorkspaceBootstrap>(`/me/bootstrap?scope=${bootstrapScope}`)
+    loadWorkspaceBootstrap<WorkspaceBootstrap>(bootstrapScope)
       .then((payload) => {
         if (gen !== fetchGen.current) return;
         setData(payload);

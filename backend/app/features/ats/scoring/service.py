@@ -25,12 +25,12 @@ async def score_resume_jd(
         raise
     except (ConnectionError, OSError, RuntimeError, TimeoutError) as exc:
         logger.warning("ats_scoring_provider_unavailable error=%s", type(exc).__name__)
-        raise ApiError(503, "ats_scoring_unavailable", "The ATS scoring provider is not available.") from exc
+        raise ApiError(503, "ats_scoring_unavailable", "Resume scoring is not available right now.") from exc
     except (ValidationError, ValueError, TypeError, KeyError) as exc:
         logger.exception("ats_scoring_structured_output_failed")
-        raise ApiError(502, "ats_scoring_invalid_output", "The ATS scoring pipeline returned invalid structured data.") from exc
+        raise ApiError(502, "ats_scoring_invalid_output", "The resume check returned data this app could not read.") from exc
     except Exception as exc:
         logger.exception("ats_scoring_failed")
-        raise ApiError(500, "ats_scoring_failed", "The ATS scoring pipeline could not complete.") from exc
+        raise ApiError(500, "ats_scoring_failed", "The resume check could not finish.") from exc
     logger.info("ats_scoring_service_complete decision=%s score=%.2f", result.gate.decision, result.composite_score)
     return result

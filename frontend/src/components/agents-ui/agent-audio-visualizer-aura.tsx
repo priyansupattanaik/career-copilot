@@ -21,11 +21,16 @@ import { ReactShaderToy } from '@/components/agents-ui/react-shader-toy';
 import { useAgentAudioVisualizerAura } from '@/hooks/agents-ui/use-agent-audio-visualizer-aura';
 import { cn } from '@/shared/utils';
 
-const DEFAULT_COLOR = '#1FD5F9';
+const DEFAULT_COLOR = '#6EA8FF';
 
 function hexToRgb(hexColor: string) {
   try {
-    const rgbColor = hexColor.match(/^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/);
+    let resolved = hexColor;
+    if (resolved.startsWith("var(") && typeof window !== "undefined") {
+      const varName = resolved.replace(/var\(|\)/g, "").split(",")[0].trim();
+      resolved = getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || DEFAULT_COLOR;
+    }
+    const rgbColor = resolved.match(/^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/);
 
     if (rgbColor) {
       const [, r, g, b] = rgbColor;
@@ -252,7 +257,7 @@ interface AuraShaderProps {
    * Color of the aura in hexidecimal format.
    * @default '#1FD5F9'
    */
-  color?: `#${string}`;
+  color?: `#${string}` | `var(--${string})` | string;
 
   /**
    * Color variation across layers (0-1)
@@ -377,7 +382,7 @@ export interface AgentAudioVisualizerAuraProps {
    * The color of the aura in hexidecimal format.
    * @defaultValue '#1FD5F9'
    */
-  color?: `#${string}`;
+  color?: `#${string}` | `var(--${string})` | string;
   /**
    * The color shift of the aura.
    * @defaultValue 0.05

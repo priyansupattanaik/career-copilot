@@ -1,7 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
-const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+import { supabasePublishableKey, supabaseUrl } from "@/shared/config";
 
 export class SupabaseWebConfigError extends Error {
   public readonly code = "supabase/web-config-missing";

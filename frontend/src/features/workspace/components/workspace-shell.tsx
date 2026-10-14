@@ -2,170 +2,134 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Link } from "@/shared/ui/router-link";
 import {
   useEffect,
-  useId,
-  useRef,
   useState,
-  useSyncExternalStore,
+  type ReactNode,
 } from "react";
 import { CopilotIcon, type CopilotIconName } from "@/components/ui/copilot-icons";
-import { Breadcrumb5 } from "@/components/breadcrumb-5";
-import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { routes } from "@/shared/routes";
 import { createClient } from "@/features/auth/api/client";
-import { ProfileCompletionToast } from "@/features/profile/components/profile-completion-toast";
-import {
-  PROFILE_UPDATED_EVENT,
-  applyLiveCompletionDetail,
-  type ProfileMissingItem,
-  type ProfileUpdatedDetail,
-} from "@/features/profile/model/profile-completion";
 import { isDemoSession } from "@/features/auth/demo-session";
 import { DEMO_COOKIE_NAME } from "@/shared/config";
 import { prefetchRoute, prefetchWorkspace } from "@/shared/route-prefetch";
+import { useWorkspaceBootstrap } from "@/features/workspace/bootstrap-context";
+import { motion, useReducedMotion } from "motion/react";
 import {
-  completionFromBootstrap,
-  useWorkspaceBootstrap,
-} from "@/features/workspace/bootstrap-context";
-import {
-  AnimatePresence,
-  LayoutGroup,
-  MotionConfig,
-  motion,
-  useReducedMotion,
-} from "motion/react";
-import {
-  FLUID_SPRING_TRANSITION,
-  dropdownMenuVariants,
-  pageTransitionVariants,
-  springs,
-} from "@/components/ui/motion-system";
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  Sheet,
+  SheetContent,
+  SheetClose,
+  ToastProvider,
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/shared/ui/workbench";
 
-/** Primary nav only — Settings lives in the profile account menu. */
+/** Primary navigation for sidebar (desktop & tablet rail) */
 const navigation = [
   {
     href: routes.dashboard,
     label: "Dashboard",
-    shortLabel: "Home",
     icon: "dashboard" as CopilotIconName,
   },
   {
     href: routes.resume,
     label: "Resume Analysis",
-    shortLabel: "Resume",
     icon: "resume" as CopilotIconName,
   },
   {
     href: routes.interview,
     label: "Mock Interview",
-    shortLabel: "Interview",
     icon: "interview" as CopilotIconName,
   },
   {
     href: routes.learning,
     label: "Learning Path",
-    shortLabel: "Learn",
     icon: "learning" as CopilotIconName,
   },
   {
     href: routes.jobs,
     label: "Recommended Jobs",
-    shortLabel: "Jobs",
     icon: "jobs" as CopilotIconName,
   },
   {
     href: routes.community,
     label: "Community",
-    shortLabel: "People",
     icon: "community" as CopilotIconName,
   },
 ];
 
-function readDemoMode() {
-  return isDemoSession();
+/** Mobile bottom tab slots (5 slots: Dashboard, Resume, Interview, Jobs, More) */
+const mobilePrimaryTabs = [
+  {
+    href: routes.dashboard,
+    label: "Dashboard",
+    icon: "dashboard" as CopilotIconName,
+  },
+  {
+    href: routes.resume,
+    label: "Resume",
+    icon: "resume" as CopilotIconName,
+  },
+  {
+    href: routes.interview,
+    label: "Interview",
+    icon: "interview" as CopilotIconName,
+  },
+  {
+    href: routes.jobs,
+    label: "Jobs",
+    icon: "jobs" as CopilotIconName,
+  },
+];
+
+export function WorkspaceLogo({ compact = false }: { compact?: boolean }) {
+  return (
+    <Link
+      href={routes.dashboard}
+      className="workbench-logo-link"
+      onMouseEnter={() => prefetchRoute(routes.dashboard)}
+      onFocus={() => prefetchRoute(routes.dashboard)}
+      aria-label="Career Copilot dashboard"
+    >
+      <span className="workbench-logo-mark">
+        <BrandMark compact />
+      </span>
+      {!compact && <span className="workbench-logo-text">Career Copilot</span>}
+    </Link>
+  );
 }
 
-function subscribeDemoMode() {
-  return () => undefined;
-}
-
-export function WorkspaceShell({ children }: { children: React.ReactNode }) {
+export function WorkspaceShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   const { data: bootstrap } = useWorkspaceBootstrap();
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
-  const demoMode = useSyncExternalStore(
-    subscribeDemoMode,
-    readDemoMode,
-    () => false,
-  );
-  const [liveCompletion, setLiveCompletion] = useState<{
-    completion: number;
-    missing: ProfileMissingItem[];
-  } | null>(null);
-  const profileMenuRef = useRef<HTMLDivElement | null>(null);
-  const profileMenuId = useId();
-
-  // Optimistic completion from profile events (provider also refreshes bootstrap).
-  useEffect(() => {
-    function onProfileUpdated(event: Event) {
-      const detail = (event as CustomEvent<ProfileUpdatedDetail>).detail;
-      const live = applyLiveCompletionDetail(detail);
-      if (live) setLiveCompletion(live);
-    }
-    window.addEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
-    return () =>
-      window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
-  }, []);
-
-  // Clear optimistic overlay when shared bootstrap catches up.
-  useEffect(() => {
-    if (bootstrap) setLiveCompletion(null);
-  }, [bootstrap]);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [moreSheetOpen, setMoreSheetOpen] = useState(false);
 
   useEffect(() => {
     prefetchWorkspace();
   }, []);
 
+  // Topbar hairline appears after 8px scroll
   useEffect(() => {
-    if (!profileMenuOpen) return;
-
-    function onPointerDown(event: PointerEvent) {
-      const root = profileMenuRef.current;
-      if (!root) return;
-      const target = event.target;
-      if (target instanceof Node && !root.contains(target)) {
-        setProfileMenuOpen(false);
-      }
+    function onScroll() {
+      setIsScrolled(window.scrollY > 8);
     }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setProfileMenuOpen(false);
-    }
-
-    // Defer so the opening click does not immediately count as an outside click.
-    const timer = window.setTimeout(() => {
-      document.addEventListener("pointerdown", onPointerDown);
-    }, 0);
-    document.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      window.clearTimeout(timer);
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [profileMenuOpen]);
-
-  // Close account menu only when the route actually changes (not on mount).
-  const prevMenuPathRef = useRef(pathname);
+  // Close more sheet on route change
   useEffect(() => {
-    if (prevMenuPathRef.current !== pathname) {
-      prevMenuPathRef.current = pathname;
-      setProfileMenuOpen(false);
-    }
+    setMoreSheetOpen(false);
   }, [pathname]);
 
   const fullName = bootstrap?.profile?.full_name || "Your account";
@@ -176,330 +140,274 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
-  const profileAvatarUrl = bootstrap?.profile?.avatar_url || null;
-  const avatarUrl =
-    profileAvatarUrl && profileAvatarUrl !== failedAvatarUrl
-      ? profileAvatarUrl
-      : null;
-  const fromBootstrap = completionFromBootstrap(bootstrap);
-  const completion = liveCompletion?.completion ?? fromBootstrap.completion;
-  const missing: ProfileMissingItem[] =
-    liveCompletion?.missing ?? fromBootstrap.missing;
-  const showCompletionPercent = completion < 100;
-  const activeNav =
-    navigation.find(
-      (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
-    )?.label ||
+  const avatarUrl = bootstrap?.profile?.avatar_url || null;
+
+  const currentNav = navigation.find(
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+  );
+  const currentNavLabel =
+    currentNav?.label ||
     (pathname.startsWith("/settings") ? "Settings" : "Workspace");
 
-  function closeMenus() {
-    setProfileMenuOpen(false);
-  }
+  // Document title per route
+  useEffect(() => {
+    document.title = `${currentNavLabel} · Career Copilot`;
+  }, [currentNavLabel]);
 
   async function logout() {
     if (loggingOut) return;
     setLoggingOut(true);
     try {
       await createClient()?.auth.signOut();
-      // Ensure demo mode does not trap the next visit after logout.
       document.cookie = `${DEMO_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
-      closeMenus();
       navigate("/");
     } finally {
       setLoggingOut(false);
     }
   }
 
+  // Page entrance motion: 240ms cubic-bezier(0.16, 1, 0.3, 1), opacity 0->1, y 8->0
+  const pageVariants = reduceMotion
+    ? { initial: { opacity: 0 }, animate: { opacity: 1, transition: { duration: 0.15 } } }
+    : {
+        initial: { opacity: 0, y: 8 },
+        animate: {
+          opacity: 1,
+          y: 0,
+          transition: {
+            duration: 0.24,
+            ease: [0.16, 1, 0.3, 1] as const,
+          },
+        },
+      };
+
+  const isMoreActive =
+    pathname.startsWith("/learning") ||
+    pathname.startsWith("/community") ||
+    pathname.startsWith("/settings");
+
   return (
-    <MotionConfig transition={reduceMotion ? { duration: 0 } : springs.fluid} reducedMotion="user">
-    <LayoutGroup>
-    <div className="workspace">
-      <aside className="sidebar" aria-label="Workspace navigation">
-        <div className="sidebar-top">
-          <div className="row sidebar-header">
-            <Link
-              className="brand"
-              href={routes.dashboard}
-              onMouseEnter={() => prefetchRoute(routes.dashboard)}
-              onFocus={() => prefetchRoute(routes.dashboard)}
-              aria-label="Career Copilot dashboard"
-            >
-              <BrandMark compact />
-              <span className="sidebar-brand-full">Career Copilot</span>
-            </Link>
+    <ToastProvider>
+      <TooltipProvider delayDuration={200}>
+        <div className="workspace workbench-shell">
+          {/* Skip-to-content accessible landmark */}
+          <a href="#main" className="wb-skip-link">
+            Skip to content
+          </a>
+
+          {/* Desktop & Tablet Sidebar (>= 1024px: 232px; 768-1023px: 72px icon rail) */}
+          <aside
+            className="workbench-sidebar"
+            aria-label="Workspace navigation"
+          >
+            <div className="workbench-sidebar-header">
+              <WorkspaceLogo />
+            </div>
+
+            <nav className="workbench-sidebar-nav" aria-label="Primary">
+              {navigation.map((item) => {
+                const active =
+                  pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <Tooltip key={item.href}>
+                    <TooltipTrigger asChild>
+                      <Link
+                        href={item.href}
+                        onMouseEnter={() => prefetchRoute(item.href)}
+                        onFocus={() => prefetchRoute(item.href)}
+                        className={`workbench-nav-item ${active ? "is-active" : ""}`}
+                        aria-current={active ? "page" : undefined}
+                      >
+                        <span className="workbench-nav-icon" aria-hidden="true">
+                          <CopilotIcon name={item.icon} size={18} />
+                        </span>
+                        <span className="workbench-nav-label">{item.label}</span>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      {item.label}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </nav>
+          </aside>
+
+          {/* Main Content Area */}
+          <div className="workbench-main">
+            {/* Top bar: 56px, sticky, transparent */}
+            <header className={`workbench-topbar ${isScrolled ? "is-scrolled" : ""}`}>
+              {/* Desktop & Tablet: Breadcrumb Workspace / Page */}
+              <div className="workbench-breadcrumb" aria-label="Breadcrumb">
+                {/* On mobile (< 768px) and phone landscape, logo shows on left */}
+                <span className="mobile-only">
+                  <WorkspaceLogo compact={false} />
+                </span>
+                <span className="desktop-tablet-only">
+                  <Link href={routes.dashboard}>Workspace</Link>
+                  <span className="workbench-breadcrumb-separator">/</span>
+                  <span style={{ color: "var(--ink)", fontWeight: 500 }}>
+                    {currentNavLabel}
+                  </span>
+                </span>
+              </div>
+
+              {/* Right: Demo status badge + Account Avatar Menu */}
+              <div className="workbench-topbar-actions">
+                {isDemoSession() ? (
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: "var(--ink-2)",
+                      border: "1px solid var(--hairline)",
+                      padding: "3px 8px",
+                      borderRadius: 9999,
+                    }}
+                  >
+                    Demo workspace
+                  </span>
+                ) : null}
+
+                {/* Account Avatar button opening existing account menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="workbench-avatar-btn"
+                      aria-label={`Account menu for ${firstName}`}
+                    >
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="" />
+                      ) : (
+                        initials
+                      )}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" side="bottom">
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings/profile">
+                        <CopilotIcon name="account" size={16} />
+                        <span>View profile</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings/account">
+                        <CopilotIcon name="settings" size={16} />
+                        <span>Settings</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      isDanger
+                      onClick={() => void logout()}
+                      disabled={loggingOut}
+                    >
+                      <CopilotIcon name="logout" size={16} />
+                      <span>{loggingOut ? "Signing out…" : "Log out"}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </header>
+
+            {/* Main content landmark */}
+            <main id="main" className="workbench-content">
+              <motion.div
+                key={pathname}
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+              >
+                {children}
+              </motion.div>
+            </main>
           </div>
 
-          <nav className="sidebar-nav">
-            {navigation.map((item) => {
+          {/* Mobile Bottom Tab Bar (< 768px): 5 slots */}
+          <nav className="workbench-bottom-bar" aria-label="Mobile Primary">
+            {mobilePrimaryTabs.map((item) => {
               const active =
                 pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  onMouseEnter={() => prefetchRoute(item.href)}
-                  onFocus={() => prefetchRoute(item.href)}
-                  className={`sidebar-link ${active ? "active" : ""}`}
+                  className={`workbench-tab-slot ${active ? "is-active" : ""}`}
                   aria-current={active ? "page" : undefined}
-                  title={item.label}
-                  style={{ position: "relative" }}
                 >
-                  {active ? (
-                    <motion.span
-                      layoutId="sidebar-active-indicator"
-                      className="sidebar-active-pill"
-                      transition={
-                        reduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION
-                      }
-                    />
-                  ) : null}
-                  <span className="sidebar-link-icon" style={{ position: "relative", zIndex: 1 }} aria-hidden>
-                    <CopilotIcon name={item.icon} size={18} />
-                  </span>
-                  <span className="sidebar-link-label" style={{ position: "relative", zIndex: 1 }}>{item.label}</span>
+                  <CopilotIcon name={item.icon} size={18} />
+                  <span className="workbench-tab-label">{item.label}</span>
                 </Link>
               );
             })}
-          </nav>
-        </div>
 
-        <div className="sidebar-footer">
-          <div className="sidebar-profile-menu-wrap" ref={profileMenuRef}>
-            {/* Menu sits above the trigger in normal flow so it is never clipped by absolute positioning. */}
-            <AnimatePresence>
-              {profileMenuOpen ? (
-                <motion.div
-                  id={profileMenuId}
-                  className="sidebar-account-menu"
-                  role="menu"
-                  aria-label="Account options"
-                  variants={dropdownMenuVariants}
-                  initial={reduceMotion ? false : "initial"}
-                  animate="animate"
-                  exit="exit"
-                >
-                  <div className="sidebar-account-menu-head">
-                    <span
-                      className="sidebar-profile-avatar sidebar-account-menu-avatar"
-                      aria-hidden
-                    >
-                      {avatarUrl ? (
-                        <img
-                          src={avatarUrl}
-                          alt=""
-                          className="avatar-image"
-                          onError={() => setFailedAvatarUrl(avatarUrl)}
-                        />
-                      ) : (
-                        initials
-                      )}
-                    </span>
-                    <div className="sidebar-account-menu-identity">
-                      <p className="sidebar-account-menu-name">{fullName}</p>
-                      {showCompletionPercent ? (
-                        <>
-                          <p className="sidebar-account-menu-sub">
-                            {completion}% complete
-                          </p>
-                          <div
-                            className="sidebar-account-menu-progress"
-                            role="progressbar"
-                            aria-valuenow={completion}
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                            aria-label="Profile completion"
-                          >
-                            <span
-                              style={{
-                                width: `${Math.max(0, Math.min(100, completion))}%`,
-                              }}
-                            />
-                          </div>
-                        </>
-                      ) : (
-                        <p className="sidebar-account-menu-sub">
-                          Profile complete
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="sidebar-account-menu-actions" role="none">
-                    <div
-                      className="sidebar-account-menu-item theme-menu-item"
-                      role="none"
-                    >
-                      <ThemeToggle />
-                    </div>
-                    <Link
-                      href="/settings/profile"
-                      className="sidebar-account-menu-item"
-                      role="menuitem"
-                      onClick={closeMenus}
-                      onMouseEnter={() => prefetchRoute("/settings/profile")}
-                      onFocus={() => prefetchRoute("/settings/profile")}
-                    >
-                      <CopilotIcon name="account" size={16} />
-                      View profile
-                    </Link>
-                    <Link
-                      href="/settings/account"
-                      className="sidebar-account-menu-item"
-                      role="menuitem"
-                      onClick={closeMenus}
-                      onMouseEnter={() => prefetchRoute("/settings/account")}
-                      onFocus={() => prefetchRoute("/settings/account")}
-                    >
-                      <CopilotIcon name="settings" size={16} />
-                      Settings
-                    </Link>
-                    <button
-                      type="button"
-                      className="sidebar-account-menu-item is-danger"
-                      role="menuitem"
-                      disabled={loggingOut}
-                      onClick={() => void logout()}
-                    >
-                      <CopilotIcon name="logout" size={16} />
-                      {loggingOut ? "Signing out…" : "Logout"}
-                    </button>
-                  </div>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-
+            {/* 5th slot: More button */}
             <button
               type="button"
-              className={`sidebar-profile-card ${profileMenuOpen ? "is-open" : ""}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                setProfileMenuOpen((current) => !current);
-              }}
-              aria-haspopup="menu"
-              aria-expanded={profileMenuOpen}
-              aria-controls={profileMenuOpen ? profileMenuId : undefined}
-              title="Account menu"
+              className={`workbench-tab-slot ${isMoreActive ? "is-active" : ""}`}
+              onClick={() => setMoreSheetOpen(true)}
+              aria-label="More navigation options"
             >
-              <span className="sidebar-profile-avatar" aria-hidden>
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt=""
-                    className="avatar-image"
-                    onError={() => setFailedAvatarUrl(avatarUrl)}
-                  />
-                ) : (
-                  initials
-                )}
-              </span>
-              <span className="sidebar-profile-meta">
-                <span className="sidebar-profile-name">{firstName}</span>
-                {showCompletionPercent ? (
-                  <span className="sidebar-profile-sub">
-                    {completion}% complete
-                  </span>
-                ) : (
-                  <span className="sidebar-profile-sub">Account</span>
-                )}
-              </span>
-              <CopilotIcon
-                name="collapse"
-                className={`sidebar-profile-caret ${profileMenuOpen ? "is-open" : ""}`}
-                size={16}
-              />
+              <CopilotIcon name="menu" size={18} />
+              <span className="workbench-tab-label">More</span>
             </button>
-          </div>
-        </div>
-      </aside>
+          </nav>
 
-      <div className="workspace-main">
-        <header className="app-header">
-          <div className="app-header-left">
-            <div className="app-header-titles">
-              <strong className="app-header-title">{activeNav}</strong>
-              <div className="app-header-breadcrumb-wrap mt-0.5">
-                <Breadcrumb5 className="app-header-breadcrumb" />
+          {/* Mobile "More" Bottom Sheet (< 768px) */}
+          <Sheet open={moreSheetOpen} onOpenChange={setMoreSheetOpen}>
+            <SheetContent title="More workspace pages" showHandle>
+              <nav style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <SheetClose asChild>
+                  <Link
+                    href={routes.learning}
+                    className={`workbench-nav-item ${pathname.startsWith(routes.learning) ? "is-active" : ""}`}
+                  >
+                    <span className="workbench-nav-icon" aria-hidden="true">
+                      <CopilotIcon name="learning" size={18} />
+                    </span>
+                    <span className="workbench-nav-label">Learning Path</span>
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    href={routes.community}
+                    className={`workbench-nav-item ${pathname.startsWith(routes.community) ? "is-active" : ""}`}
+                  >
+                    <span className="workbench-nav-icon" aria-hidden="true">
+                      <CopilotIcon name="community" size={18} />
+                    </span>
+                    <span className="workbench-nav-label">Community</span>
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    href="/settings/profile"
+                    className={`workbench-nav-item ${pathname.startsWith("/settings") ? "is-active" : ""}`}
+                  >
+                    <span className="workbench-nav-icon" aria-hidden="true">
+                      <CopilotIcon name="settings" size={18} />
+                    </span>
+                    <span className="workbench-nav-label">Settings</span>
+                  </Link>
+                </SheetClose>
+              </nav>
+
+              <div style={{ paddingTop: 12, borderTop: "1px solid var(--hairline)" }}>
+                <button
+                  type="button"
+                  className="wb-button wb-button-destructive"
+                  onClick={() => void logout()}
+                  disabled={loggingOut}
+                  style={{ width: "100%", justifyContent: "center" }}
+                >
+                  <CopilotIcon name="logout" size={16} />
+                  <span>{loggingOut ? "Signing out…" : "Log out"}</span>
+                </button>
               </div>
-            </div>
-          </div>
-
-          <div className="app-header-actions">
-            {demoMode ? (
-              <span className="demo-banner">Demo · no account data</span>
-            ) : null}
-          </div>
-        </header>
-
-        <main id="main-content" className="workspace-content">
-          <motion.div
-            key={pathname}
-            className="workspace-page"
-            variants={pageTransitionVariants}
-            initial={reduceMotion ? false : "initial"}
-            animate="animate"
-          >
-            {children}
-          </motion.div>
-        </main>
-        <ProfileCompletionToast completion={completion} missing={missing} />
-      </div>
-
-      <nav className="mobile-bottom-nav" aria-label="Primary">
-        {navigation.map((item) => {
-          const active =
-            pathname === item.href || pathname.startsWith(`${item.href}/`);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onMouseEnter={() => prefetchRoute(item.href)}
-              onFocus={() => prefetchRoute(item.href)}
-              className={active ? "active" : ""}
-              aria-label={item.label}
-              aria-current={active ? "page" : undefined}
-              style={{ position: "relative" }}
-            >
-              {active ? (
-                <motion.span
-                  layoutId="mobile-nav-active-pill"
-                  className="mobile-nav-active-pill"
-                  transition={
-                    reduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION
-                  }
-                />
-              ) : null}
-              <span className="mobile-bottom-nav-icon" style={{ position: "relative", zIndex: 1 }} aria-hidden>
-                <CopilotIcon name={item.icon} size={20} />
-              </span>
-              <span className="mobile-bottom-nav-label" style={{ position: "relative", zIndex: 1 }}>{item.shortLabel}</span>
-            </Link>
-          );
-        })}
-        <Link
-          href="/settings/profile"
-          onMouseEnter={() => prefetchRoute("/settings/profile")}
-          onFocus={() => prefetchRoute("/settings/profile")}
-          className={pathname.startsWith("/settings") ? "active" : ""}
-          aria-current={pathname.startsWith("/settings") ? "page" : undefined}
-          style={{ position: "relative" }}
-        >
-          {pathname.startsWith("/settings") ? (
-            <motion.span
-              layoutId="mobile-nav-active-pill"
-              className="mobile-nav-active-pill"
-              transition={
-                reduceMotion ? { duration: 0 } : FLUID_SPRING_TRANSITION
-              }
-            />
-          ) : null}
-          <span className="mobile-bottom-nav-icon" style={{ position: "relative", zIndex: 1 }} aria-hidden>
-            <CopilotIcon name="settings" size={20} />
-          </span>
-          <span className="mobile-bottom-nav-label" style={{ position: "relative", zIndex: 1 }}>Profile</span>
-        </Link>
-      </nav>
-    </div>
-    </LayoutGroup>
-    </MotionConfig>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </TooltipProvider>
+    </ToastProvider>
   );
 }

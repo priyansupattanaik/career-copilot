@@ -241,7 +241,7 @@ async function main() {
     note("error", "network-failed", criticalFails.slice(0, 8).join(" | "));
   else note("info", "network-failed", "none");
 
-  if (!hero.h1 || !/Show up/i.test(hero.h1))
+  if (!hero.h1 || !/Check your resume/i.test(hero.h1))
     note("error", "missing-h1", JSON.stringify(hero.h1));
   if (hero.overflowX > 8)
     note("error", "overflow-x-hero", `${hero.overflowX}px`);

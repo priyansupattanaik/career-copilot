@@ -1,9 +1,11 @@
-import type { Job, Recommendation, SavedJobStatus } from "./job-types";
-import { statusLabel, statusTone } from "./job-types";
-import { Badge, Button, Card } from "@/shared/ui/primitives";
+import type { Job, Recommendation, SavedJobStatus } from "../model/job-types";
+import { statusLabel } from "../model/job-types";
 import { CopilotIcon } from "@/components/ui/copilot-icons";
-import { motion, useReducedMotion } from "motion/react";
-import { FLUID_SPRING_TRANSITION } from "@/components/ui/motion-system";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/shared/ui/workbench";
 
 function salaryLabel(job: Job): string | null {
   if (job.salary_min != null && job.salary_max != null) {
@@ -12,13 +14,6 @@ function salaryLabel(job: Job): string | null {
   if (job.salary_min != null) return `From $${Number(job.salary_min).toLocaleString()}`;
   if (job.salary_max != null) return `Up to $${Number(job.salary_max).toLocaleString()}`;
   return null;
-}
-
-function excerpt(text: string | null | undefined, max = 140): string | null {
-  const cleaned = (text || "").replace(/\s+/g, " ").trim();
-  if (!cleaned) return null;
-  if (cleaned.length <= max) return cleaned;
-  return `${cleaned.slice(0, max - 1).trimEnd()}…`;
 }
 
 export function JobCard({
@@ -42,17 +37,15 @@ export function JobCard({
 }) {
   const score = recommendation != null ? Math.round(Number(recommendation.match_score) || 0) : null;
   const salary = salaryLabel(job);
-  const blurb = excerpt(job.description);
   const matched = (recommendation?.match_breakdown?.matched_requirements || []).slice(0, 4);
   const missing = (recommendation?.match_breakdown?.missing_requirements || []).slice(0, 2);
   const normalized = (status || "").toLowerCase();
   const isSaved = normalized === "saved";
   const isApplied = normalized === "applied" || normalized === "interviewing" || normalized === "offer";
   const isRejected = normalized === "rejected" || normalized === "withdrawn";
-  const scoreTone =
-    score == null ? "muted" : score >= 75 ? "high" : score >= 50 ? "mid" : "low";
 
-  const reduceMotion = useReducedMotion();
+  const companyInitial = (job.company || "C").trim().slice(0, 1).toUpperCase();
+  const metaLine = [job.location, job.work_mode, salary].filter(Boolean).join(" · ");
 
   function onKeyActivate(event: React.KeyboardEvent) {
     if (event.key === "Enter" || event.key === " ") {
@@ -61,127 +54,248 @@ export function JobCard({
     }
   }
 
+  // Thin score ring calculation
+  const ringSize = 36;
+  const stroke = 3;
+  const radius = (ringSize - stroke) / 2;
+  const circ = 2 * Math.PI * radius;
+  const offset = score != null ? circ - (score / 100) * circ : circ;
+
   return (
-    <motion.div
-      whileHover={reduceMotion ? undefined : { y: -3, transition: FLUID_SPRING_TRANSITION }}
-      whileTap={reduceMotion ? undefined : { scale: 0.995 }}
-      style={{ height: "100%", display: "flex", flexDirection: "column" }}
+    <article
+      onClick={onOpen}
+      onKeyDown={onKeyActivate}
+      role="button"
+      tabIndex={0}
+      aria-label={`${job.title} at ${job.company || "Company"}${score != null ? `, ${score}% match` : ""}`}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 16,
+        padding: "16px 20px",
+        borderRadius: "var(--radius-control)",
+        border: "1px solid var(--hairline)",
+        background: "transparent",
+        cursor: "pointer",
+        transition: "background-color 120ms ease, border-color 120ms ease",
+        flexWrap: "wrap",
+      }}
+      className="job-row-workbench"
     >
-      <Card
-        as="article"
-        className="job-card"
-        onClick={onOpen}
-        onKeyDown={onKeyActivate}
-        role="button"
-        tabIndex={0}
-        aria-label={`${job.title} at ${job.company}${score != null ? `, ${score}% match` : ""}`}
-        style={{ height: "100%" }}
-      >
-      <div className="job-card-top">
-        {score != null ? (
-          <div className="job-score" data-tone={scoreTone} aria-label={`${score}% match`}>
-            <span className="job-score-value">{score}%</span>
-            <span className="job-score-label">match</span>
-          </div>
-        ) : (
-          <div className="job-score job-score-empty" aria-hidden="true">
-            <CopilotIcon name="work" size={20} />
-          </div>
-        )}
-        <div className="job-card-body">
-          <div className="job-card-chips">
+      {/* Left: Monogram tile + title + meta */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 260 }}>
+        {/* Monogram tile from company initial */}
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: "var(--radius-control)",
+            background: "var(--surface-2)",
+            border: "1px solid var(--hairline)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "var(--font-sans)",
+            fontSize: 16,
+            fontWeight: 600,
+            color: "var(--ink)",
+            flexShrink: 0,
+          }}
+          aria-hidden="true"
+        >
+          {companyInitial}
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: "var(--ink)", margin: 0 }}>
+              {job.title}
+            </h3>
+            <span style={{ fontSize: 13, color: "var(--ink-2)", fontWeight: 400 }}>
+              {job.company}
+            </span>
             {status ? (
-              <span className="status-chip" data-tone={statusTone(status)}>
+              <span
+                style={{
+                  fontSize: 11,
+                  padding: "1px 6px",
+                  borderRadius: 9999,
+                  border: "1px solid var(--hairline)",
+                  color: isApplied ? "var(--ok)" : isRejected ? "var(--danger)" : "var(--ink-2)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                }}
+              >
                 {statusLabel(status)}
               </span>
             ) : null}
-            {job.work_mode ? (
-              <Badge variant="secondary">
-                <CopilotIcon name="work" size={12} /> {job.work_mode}
-              </Badge>
-            ) : null}
-            {salary ? (
-              <Badge variant="secondary">
-                <CopilotIcon name="pay" size={12} /> {salary}
-              </Badge>
-            ) : null}
           </div>
-          <h3 className="job-card-title">{job.title}</h3>
-          <p className="job-card-meta">
-            <span>
-              <CopilotIcon name="company" size={14} /> {job.company || "Company"}
+          {metaLine ? (
+            <span style={{ fontSize: 13, color: "var(--ink-2)" }}>
+              {metaLine}
             </span>
-            {job.location ? (
-              <span>
-                <CopilotIcon name="pin" size={14} /> {job.location}
-              </span>
-            ) : null}
-          </p>
-          <p className="job-card-applicants"><CopilotIcon name="applicants" size={14} /> {Number(job.application_count || 0)} {Number(job.application_count || 0) === 1 ? "user has applied" : "users have applied"}</p>
+          ) : null}
         </div>
       </div>
 
-      {blurb ? <p className="job-card-excerpt">{blurb}</p> : null}
-
-      {matched.length > 0 || missing.length > 0 ? (
-        <div className="job-card-tags" aria-label="Match highlights">
+      {/* Middle: Matched / missing keyword chips ONLY if the data exists */}
+      {(matched.length > 0 || missing.length > 0) ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
           {matched.map((item) => (
-            <span key={`m-${item}`} className="job-tag job-tag-matched">
-              <CopilotIcon name="check" size={12} /> {item}
+            <span
+              key={`m-${item}`}
+              style={{
+                fontSize: 12,
+                padding: "2px 8px",
+                borderRadius: 9999,
+                background: "var(--surface-2)",
+                color: "var(--ok)",
+                border: "1px solid var(--hairline)",
+              }}
+            >
+              ✓ {item}
             </span>
           ))}
           {missing.map((item) => (
-            <span key={`x-${item}`} className="job-tag job-tag-gap">
-              {item}
-            </span>
-          ))}
-        </div>
-      ) : job.requirements?.length ? (
-        <div className="job-card-tags" aria-label="Requirements">
-          {job.requirements.slice(0, 4).map((item) => (
-            <span key={item} className="job-tag">
+            <span
+              key={`x-${item}`}
+              style={{
+                fontSize: 12,
+                padding: "2px 8px",
+                borderRadius: 9999,
+                background: "transparent",
+                color: "var(--ink-3)",
+                border: "1px solid var(--hairline)",
+              }}
+            >
               {item}
             </span>
           ))}
         </div>
       ) : null}
 
-      <div className="job-card-footer" onClick={(e) => e.stopPropagation()}>
-        <span className="job-card-hint muted">View details</span>
-        <div className="job-card-actions">
-          <Button
-            variant={isSaved ? "primary" : "secondary"}
-            disabled={busy}
-            onClick={(e) => onToggleSave(e)}
-            aria-label={isSaved ? "Unsave job" : "Save job"}
-            title={isSaved ? "Unsave" : "Save"}
+      {/* Right: Match score ring & actions */}
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 16, flexShrink: 0 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {score != null ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+            title={`${score}% match score`}
           >
-            <CopilotIcon name="save" size={16} />
-            <span className="job-card-action-label">{isSaved ? "Saved" : "Save"}</span>
-          </Button>
-          <Button
-            variant="secondary"
-            disabled={busy || isApplied}
-            onClick={(e) => onMarkApplied(e)}
-            aria-label="Mark as applied"
-            title="Mark applied"
-          >
-            <CopilotIcon name="apply" size={16} />
-            <span className="job-card-action-label">{isApplied ? "Applied" : "Apply"}</span>
-          </Button>
-          <Button
-            variant="secondary"
-            disabled={busy || isRejected}
-            onClick={(e) => onMarkRejected(e)}
-            aria-label="Mark as rejected"
-            title="Mark rejected"
-          >
-            <CopilotIcon name="reject" size={16} />
-            <span className="job-card-action-label">{isRejected ? "Rejected" : "Pass"}</span>
-          </Button>
+            <svg width={ringSize} height={ringSize} style={{ transform: "rotate(-90deg)" }}>
+              <circle
+                cx={ringSize / 2}
+                cy={ringSize / 2}
+                r={radius}
+                stroke="var(--hairline)"
+                strokeWidth={stroke}
+                fill="none"
+              />
+              <circle
+                cx={ringSize / 2}
+                cy={ringSize / 2}
+                r={radius}
+                stroke="var(--accent)"
+                strokeWidth={stroke}
+                fill="none"
+                strokeDasharray={circ}
+                strokeDashoffset={offset}
+                strokeLinecap="round"
+              />
+            </svg>
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontVariantNumeric: "tabular-nums",
+                fontSize: 14,
+                fontWeight: 600,
+                color: "var(--ink)",
+              }}
+            >
+              {score}%
+            </span>
+          </div>
+        ) : null}
+
+        {/* Action buttons: Save, Applied, Reject as ghost buttons with tooltips */}
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="wb-button wb-button-ghost"
+                disabled={busy}
+                onClick={(e) => onToggleSave(e)}
+                aria-label={isSaved ? "Unsave job" : "Save job"}
+                style={{
+                  height: 36,
+                  padding: "0 10px",
+                  color: isSaved ? "var(--accent)" : "var(--ink-2)",
+                }}
+              >
+                <CopilotIcon name="save" size={16} />
+                <span style={{ fontSize: 13 }}>{isSaved ? "Saved" : "Save"}</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isSaved ? "Remove from saved" : "Bookmark for later"}
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="wb-button wb-button-ghost"
+                disabled={busy || isApplied}
+                onClick={(e) => onMarkApplied(e)}
+                aria-label="Mark as applied"
+                style={{
+                  height: 36,
+                  padding: "0 10px",
+                  color: isApplied ? "var(--ok)" : "var(--ink-2)",
+                }}
+              >
+                <CopilotIcon name="apply" size={16} />
+                <span style={{ fontSize: 13 }}>{isApplied ? "Applied" : "Apply"}</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isApplied ? "Tracked as applied" : "Mark as applied"}
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="wb-button wb-button-ghost"
+                disabled={busy || isRejected}
+                onClick={(e) => onMarkRejected(e)}
+                aria-label="Mark as rejected"
+                style={{
+                  height: 36,
+                  padding: "0 10px",
+                  color: isRejected ? "var(--danger)" : "var(--ink-2)",
+                }}
+              >
+                <CopilotIcon name="reject" size={16} />
+                <span style={{ fontSize: 13 }}>{isRejected ? "Rejected" : "Pass"}</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isRejected ? "Marked as passed" : "Pass on this role"}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
-    </Card>
-    </motion.div>
+    </article>
   );
 }

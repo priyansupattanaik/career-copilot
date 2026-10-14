@@ -22,26 +22,26 @@ interface FocusOption {
 const FOCUS_TRACKS: readonly FocusOption[] = [
   {
     value: "mixed",
-    label: "Mixed Round",
-    hint: "Stories, design, and skills mirroring a comprehensive real-world screen",
+    label: "Mixed",
+    hint: "A mix of experience, technical, and role questions.",
     icon: "interview",
   },
   {
     value: "behavioural",
     label: "Behavioural",
-    hint: "STAR method, cross-functional conflict, leadership, and collaboration",
+    hint: "Questions about how you worked with other people.",
     icon: "community",
   },
   {
     value: "technical",
-    label: "Technical Depth",
-    hint: "System thinking, architecture trade-offs, and verbal problem breakdown",
+    label: "Technical",
+    hint: "Questions about how you would solve a technical problem.",
     icon: "skills",
   },
   {
     value: "hr",
-    label: "Screening & Culture",
-    hint: "Elevator pitch, motivations, salary alignment, and career narrative",
+    label: "Background",
+    hint: "Questions about your background and why you want the role.",
     icon: "account",
   },
 ];
@@ -49,9 +49,9 @@ const FOCUS_TRACKS: readonly FocusOption[] = [
 const QUESTION_COUNTS = [3, 5, 8] as const;
 
 const DIFFICULTY_LEVELS = [
-  { value: "easy", label: "Foundational", hint: "Standard entry & mid-level expectations" },
-  { value: "balanced", label: "Balanced Standard", hint: "Industry baseline with targeted follow-ups" },
-  { value: "challenging", label: "Challenging / Staff", hint: "Rigorous drill-down on edge cases & ambiguity" },
+  { value: "easy", label: "Easier", hint: "Shorter, more direct questions." },
+  { value: "balanced", label: "Typical", hint: "A normal practice set." },
+  { value: "challenging", label: "Harder", hint: "Harder questions, with follow-ups when the session supports them." },
 ] as const;
 
 type SetupResumeOption = {
@@ -392,19 +392,19 @@ export function InterviewSetupView() {
       <nav className="interview-setup-nav" aria-label="Breadcrumb">
         <Link href="/mock-interview" className="interview-back-link">
           <CopilotIcon name="back" size={16} />
-          <span>Back to Mock Interview Hub</span>
+          <span>Back to practice</span>
         </Link>
         <span className="interview-nav-divider">/</span>
-        <span className="interview-nav-current">Setup &amp; Flight Check</span>
+        <span className="interview-nav-current">Camera and microphone</span>
       </nav>
 
       {/* Hero Header */}
       <header className="interview-setup-header">
         <div className="interview-setup-header-copy">
-          <p className="interview-kicker">Interactive Setup &amp; A/V Command Center</p>
-          <h1 className="interview-setup-title">Prepare Your Practice Round</h1>
+          <p className="interview-kicker">Practice setup</p>
+          <h1 className="interview-setup-title">Check camera and microphone</h1>
           <p className="interview-setup-subtitle">
-            Calibrate your camera, test your microphone audio levels, and tailor your interview focus track before entering the room.
+            Check your camera and microphone, then choose a focus.
           </p>
         </div>
       </header>
@@ -412,15 +412,15 @@ export function InterviewSetupView() {
       {/* Split-Screen Command Layout */}
       <div className="interview-setup-layout">
         {/* LEFT COLUMN: Interactive Hardware / A/V Test Lab */}
-        <section className="interview-av-lab" aria-label="A/V Test Lab">
+        <section className="interview-av-lab" aria-label="Camera and microphone">
           <div className="interview-lab-header">
             <div className="interview-lab-title-row">
               <div className="interview-lab-icon-box">
                 <CopilotIcon name="lesson" size={18} />
               </div>
               <div>
-                <h2 className="interview-lab-title">A/V Hardware Test Lab</h2>
-                <p className="interview-lab-desc">Live camera mirror &amp; audio calibration</p>
+                <h2 className="interview-lab-title">Camera and microphone</h2>
+                <p className="interview-lab-desc">Camera preview and microphone level</p>
               </div>
             </div>
             <span
@@ -629,14 +629,14 @@ export function InterviewSetupView() {
         </section>
 
         {/* RIGHT COLUMN: Structured Setup Configuration */}
-        <section className="interview-config-card" aria-label="Session Configuration">
+        <section className="interview-config-card" aria-label="Practice settings">
           <div className="interview-config-header">
             <div className="interview-lab-icon-box config">
               <CopilotIcon name="settings" size={18} />
             </div>
             <div>
-              <h2 className="interview-config-title">Round Configuration</h2>
-              <p className="interview-config-desc">Target domain, question depth, and tailored context</p>
+              <h2 className="interview-config-title">Session</h2>
+              <p className="interview-config-desc">Role, focus, and how many questions.</p>
             </div>
           </div>
 
@@ -649,7 +649,7 @@ export function InterviewSetupView() {
           >
             {/* Focus Track Selector */}
             <fieldset className="interview-config-group">
-              <legend className="interview-field-label">Interview Focus Track</legend>
+              <legend className="interview-field-label">Focus</legend>
               <div className="interview-tracks-grid">
                 {FOCUS_TRACKS.map((track) => {
                   const selected = mode === track.value;
@@ -693,7 +693,7 @@ export function InterviewSetupView() {
             <div className="interview-config-row">
               <label className="interview-field flex-1">
                 <span className="interview-field-label">
-                  Target Role <span className="interview-field-optional">(e.g. Senior Frontend, Staff SRE)</span>
+                  Role <span className="interview-field-optional">(for example, backend engineer)</span>
                 </span>
                 <input
                   className="field interview-input"
@@ -706,7 +706,7 @@ export function InterviewSetupView() {
               </label>
 
               <fieldset className="interview-field">
-                <legend className="interview-field-label">Question Count</legend>
+                <legend className="interview-field-label">Number of questions</legend>
                 <div className="interview-pills-row">
                   {QUESTION_COUNTS.map((count) => {
                     const selected = questionCount === count;
@@ -714,8 +714,8 @@ export function InterviewSetupView() {
                       <motion.label
                         key={count}
                         className={`interview-pill-chip ${selected ? "is-selected" : ""}`}
-                        whileHover={shouldReduceMotion ? undefined : { scale: 1.04 }}
-                        whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
+                        whileHover={shouldReduceMotion ? undefined : { y: -1 }}
+                        whileTap={shouldReduceMotion ? undefined : { scale: 0.985 }}
                         transition={FAST_SPRING_TRANSITION}
                       >
                         <input
@@ -736,7 +736,7 @@ export function InterviewSetupView() {
 
             {/* Difficulty Level */}
             <fieldset className="interview-config-group">
-              <legend className="interview-field-label">Simulation Rigor &amp; Difficulty</legend>
+              <legend className="interview-field-label">Difficulty</legend>
               <div className="interview-difficulty-grid">
                 {DIFFICULTY_LEVELS.map((item) => {
                   const selected = difficulty === item.value;
@@ -764,12 +764,12 @@ export function InterviewSetupView() {
             {/* Resume Auto-Selector */}
             <div className="interview-field">
               <span className="interview-field-label">
-                Grounding Resume <span className="interview-field-optional">(recommended for evidence-backed questions)</span>
+                Resume <span className="interview-field-optional">(optional, used for questions)</span>
               </span>
               {resumesLoading ? (
                 <div className="interview-loading-notice">
                   <div className="interview-spinner-sm" />
-                  <span>Scanning your saved resumes…</span>
+                  <span>Loading saved resumes…</span>
                 </div>
               ) : resumesWithVersion.length > 0 || resumeVersionId ? (
                 <Select
@@ -797,7 +797,7 @@ export function InterviewSetupView() {
             {/* Job Description Textarea */}
             <div className="interview-field">
               <label htmlFor="target-jd" className="interview-field-label">
-                Target Job Description <span className="interview-field-optional">(optional)</span>
+                Job description <span className="interview-field-optional">(optional)</span>
               </label>
               <Textarea
                 id="target-jd"
@@ -823,19 +823,19 @@ export function InterviewSetupView() {
       <footer className="interview-flight-check-bar">
         <div className="interview-flight-status-wrapper">
           <div className="interview-flight-title-group">
-            <span className="interview-flight-kicker">Pre-Flight Readiness</span>
+            <span className="interview-flight-kicker">Checks</span>
             <div className="interview-flight-checklist">
               <div className={`interview-check-badge ${isCameraOk ? "is-ok" : "is-warn"}`}>
                 <CopilotIcon name={isCameraOk ? "check" : "alert"} size={14} />
-                <span>{cameraEnabled ? (cameraStatus === "ready" ? "Camera Ready" : "Camera Check") : "Camera Bypassed"}</span>
+                <span>{cameraEnabled ? (cameraStatus === "ready" ? "Camera on" : "Check camera") : "Camera off"}</span>
               </div>
               <div className={`interview-check-badge ${isMicOk ? "is-ok" : "is-warn"}`}>
                 <CopilotIcon name={isMicOk ? "check" : "alert"} size={14} />
-                <span>{microphoneEnabled ? (micStatus === "ready" ? "Audio Calibrated" : "Audio Check") : "Audio Bypassed"}</span>
+                <span>{microphoneEnabled ? (micStatus === "ready" ? "Microphone on" : "Check microphone") : "Microphone off"}</span>
               </div>
               <div className="interview-check-badge is-ok">
                 <CopilotIcon name="check" size={14} />
-                <span>Track: {FOCUS_TRACKS.find((t) => t.value === mode)?.label} ({questionCount} Qs)</span>
+                <span>Focus: {FOCUS_TRACKS.find((t) => t.value === mode)?.label} ({questionCount} questions)</span>
               </div>
             </div>
           </div>
@@ -847,7 +847,7 @@ export function InterviewSetupView() {
             className="interview-launch-btn"
             onClick={handleEnterInterviewRoom}
           >
-            <span>Enter Interview Room</span>
+            <span>Start practice</span>
             <CopilotIcon name="go" size={18} />
           </Button>
         </div>

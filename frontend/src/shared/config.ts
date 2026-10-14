@@ -11,6 +11,24 @@ export const DEMO_COOKIE_NAME = "career_copilot_demo";
 export const DEMO_COOKIE_VALUE = "1";
 export const DEMO_COOKIE_PAIR = `${DEMO_COOKIE_NAME}=${DEMO_COOKIE_VALUE}`;
 
+/** True for production Vite builds. Feature code should read this instead of import.meta.env. */
+export const isProductionBuild = import.meta.env.PROD;
+
+function readViteEnv(value: string | undefined): string {
+  return value?.trim() || "";
+}
+
+/** Browser Supabase project URL. Empty when the build was not given VITE_SUPABASE_URL. */
+export const supabaseUrl = readViteEnv(import.meta.env.VITE_SUPABASE_URL);
+
+/** Browser Supabase publishable key. Empty when the build was not given one. */
+export const supabasePublishableKey = readViteEnv(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+
+/** Public site origin from VITE_PUBLIC_APP_ORIGIN, without a trailing slash. */
+export function vitePublicAppOrigin(): string {
+  return readViteEnv(import.meta.env.VITE_PUBLIC_APP_ORIGIN).replace(/\/$/, "");
+}
+
 /**
  * Browser API base for fetch().
  * - Prefer VITE_API_BASE_URL (absolute origin) for static production hosting without a proxy.
@@ -21,7 +39,7 @@ export const DEMO_COOKIE_PAIR = `${DEMO_COOKIE_NAME}=${DEMO_COOKIE_VALUE}`;
 export function resolveApiBase(): string {
   const url = import.meta.env.VITE_API_BASE_URL?.trim();
   if (url) return `${url.replace(/\/$/, "")}${API_V1_PREFIX}`;
-  if (import.meta.env.PROD && typeof window !== "undefined") {
+  if (isProductionBuild && typeof window !== "undefined") {
     // Same-origin proxy path is intentional for vite preview / reverse-proxied deploys.
     // Direct static file hosts without a reverse proxy will fail fetch with a clear network error.
   }
@@ -36,7 +54,7 @@ export function resolveUpstreamApiOrigin(): string {
 
 export function isDemoCookiePresent(cookieSource?: string): boolean {
   // Production builds never treat demo cookie as active (fail closed).
-  if (import.meta.env.PROD) return false;
+  if (isProductionBuild) return false;
   if (typeof document === "undefined" && cookieSource === undefined) return false;
   const raw = cookieSource ?? document.cookie;
   return raw.split("; ").includes(DEMO_COOKIE_PAIR);
