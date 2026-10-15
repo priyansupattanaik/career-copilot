@@ -34,7 +34,10 @@ All query keys follow standardized factory patterns:
 - **Dashboard & Jobs List**: `STALE_TIME_DEFAULT_MS` (60 seconds). Fast updates while preventing excessive reload bursts.
 - **Static Catalogs & Rarely Changing Content**: `STALE_TIME_STATIC_MS` (5 minutes).
 - **Profile Data**: `STALE_TIME_PROFILE_MS` (2 minutes).
-- **Mutations**: Mutations invalidate relevant query key families upon success (e.g. saving a job invalidates `jobsKeys.saved()` and `jobsKeys.lists()`).
+- **Mutations & Invalidation**:
+  - Saving a job invalidates `jobsKeys.saved()` and `jobsKeys.lists()`.
+  - Updating profile sections or applying resume autofill (`POST /profile/autofill/apply`) invalidates `profileKeys.all` (specifically `profileKeys.me()`), causing immediate re-fetch of the candidate record, skills, experience, education, links, and completeness calculation across the Identity Strip and active sections.
+  - Uploading or activating a resume invalidates `resumeKeys.list()` and `profileKeys.me()`.
 
 ---
 

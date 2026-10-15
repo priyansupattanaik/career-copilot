@@ -58,3 +58,7 @@ Backend variables are read and validated **exclusively** in `backend/app/core/co
 | `FREEHIRE_API_URL` | Optional | Render, Local `.env` | FreeHire service URL (`https://freehire.me`). |
 | `YOUTUBE_API_KEY` | Optional | Render, Local `.env` | Google YouTube Data API v3 key for real learning video IDs. |
 | `YOUTUBE_API_BASE_URL` | Optional | Render, Local `.env` | YouTube API base (`https://www.googleapis.com/youtube/v3`). |
+| `RESUME_PARSE_TOTAL_TIMEOUT_SECONDS` | Optional | Render, Local `.env` | Total timeout budget in seconds before returning PARSE_UNAVAILABLE (default `65.0`). |
+| `RESUME_PARSE_MAX_OUTPUT_TOKENS` | Optional | Render, Local `.env` | Max output tokens for structured autofill extraction (default `8000`). |
+| `RESUME_PARSE_MAX_TEXT_CHARS` | Optional | Render, Local `.env` | Max characters of plain text parsed from resume before rejecting (default `40000`). |
+| `RESUME_PARSE_MAX_PER_HOUR_PER_USER` | Optional | Render, Local `.env` | Rolling 1-hour rate limit per user for parsing (default `5`). |
