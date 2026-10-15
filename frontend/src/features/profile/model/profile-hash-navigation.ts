@@ -7,7 +7,7 @@ export const PROFILE_SECTIONS: readonly {
 }[] = [
   { id: "resume", label: "Resume", hash: "#resume" },
   { id: "about", label: "About you", hash: "#about" },
-  { id: "background", label: "Background", hash: "#background" },
+  { id: "background", label: "Experience & education", hash: "#background" },
   { id: "skills", label: "Skills", hash: "#skills" },
   { id: "preferences", label: "Job preferences", hash: "#preferences" },
 ] as const;

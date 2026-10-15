@@ -14,6 +14,23 @@ interface BackgroundSectionProps {
   onDeleteEducation: (id: string) => Promise<void>;
 }
 
+export function formatMonthYear(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  const match = dateStr.match(/^(\d{4})-(\d{2})/);
+  if (match) {
+    const year = match[1];
+    const month = parseInt(match[2], 10);
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    if (month >= 1 && month <= 12) {
+      return `${months[month - 1]} ${year}`;
+    }
+  }
+  return dateStr;
+}
+
 export function BackgroundSection({
   experiences,
   onAddExperience,
@@ -136,14 +153,17 @@ export function BackgroundSection({
       id="section-background"
       className="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-8 py-8 border-b border-neutral-900"
     >
-      {/* Left Column: Heading & Description */}
+      {/* Left Column: Heading & Explanation */}
       <div className="lg:col-span-4">
         <h2 className="text-xl font-medium text-white tracking-tight">
-          Background
+          Experience & education
         </h2>
         <p className="text-sm text-neutral-400 mt-2 leading-relaxed">
-          Your professional track record and academic achievements. Keep descriptions
-          evidence-based and highlight key technologies or accomplishments.
+          Your career trajectory and academic achievements. We use these milestones to
+          evaluate qualifications and role seniority.
+        </p>
+        <p className="text-xs text-neutral-400 mt-3 p-3 rounded-xl bg-neutral-900/60 border border-neutral-850">
+          Add at least one experience, or set years of experience to 0 for fresher credit.
         </p>
       </div>
 
@@ -154,13 +174,13 @@ export function BackgroundSection({
           <div className="flex items-center justify-between pb-3 border-b border-neutral-850">
             <div>
               <h3 className="text-sm font-semibold text-white tracking-wide uppercase">
-                Work Experience ({experiences.length})
+                Experience
               </h3>
             </div>
             <button
               type="button"
               onClick={openAddExp}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 hover:bg-neutral-800 text-cyan-400 border border-neutral-800 hover:border-cyan-500/40 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-750 hover:border-neutral-700 transition-colors"
             >
               <CopilotIcon name="plus" className="w-3.5 h-3.5" />
               <span>Add experience</span>
@@ -168,17 +188,27 @@ export function BackgroundSection({
           </div>
 
           {experiences.length === 0 ? (
-            <div className="text-center py-8 text-neutral-500 text-xs italic">
-              No work experience listed yet. Click "Add experience" to record your history.
+            <div className="text-center py-8 space-y-3">
+              <p className="text-neutral-500 text-xs">No experience added yet.</p>
+              <button
+                type="button"
+                onClick={openAddExp}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-200 border border-neutral-800 hover:border-neutral-700 transition-colors"
+              >
+                <CopilotIcon name="plus" className="w-3 h-3" />
+                <span>Add experience</span>
+              </button>
             </div>
           ) : (
             <div className="mt-4 space-y-4">
               {experiences.map((exp, idx) => {
                 const id = exp.id || String(idx);
                 const isExpanded = Boolean(expandedExpIds[id]);
-                const dateDisplay = exp.start_date
-                  ? `${exp.start_date} – ${exp.is_current ? "Present" : exp.end_date || "Present"}`
-                  : exp.is_current ? "Current" : "";
+                const startDateStr = formatMonthYear(exp.start_date);
+                const endDateStr = exp.is_current ? "Present" : formatMonthYear(exp.end_date);
+                const dateDisplay = startDateStr
+                  ? `${startDateStr} – ${endDateStr || "Present"}`
+                  : exp.is_current ? "Aug 2024 – Present" : "";
 
                 return (
                   <div
@@ -189,11 +219,8 @@ export function BackgroundSection({
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="text-sm font-semibold text-white">
-                            {exp.role_title}
+                            {exp.role_title} · {exp.company_name}
                           </h4>
-                          <span className="text-xs text-neutral-400 font-normal">
-                            at {exp.company_name}
-                          </span>
                           {exp.employment_type && (
                             <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-neutral-800 text-neutral-300">
                               {exp.employment_type}
@@ -201,24 +228,24 @@ export function BackgroundSection({
                           )}
                           {exp.is_current && (
                             <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                              Current
+                              Present
                             </span>
                           )}
                         </div>
                         {dateDisplay && (
-                          <p className="text-xs text-neutral-500 mt-0.5">
+                          <p className="text-xs text-neutral-400 mt-0.5">
                             {dateDisplay}
                           </p>
                         )}
                       </div>
 
-                      {/* Action buttons */}
+                      {/* Action buttons: Edit and Remove */}
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           type="button"
                           onClick={() => openEditExp(exp)}
                           className="p-1.5 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 text-xs transition-colors"
-                          title="Edit experience"
+                          title="Edit"
                         >
                           <CopilotIcon name="edit" className="w-3.5 h-3.5" />
                         </button>
@@ -226,7 +253,7 @@ export function BackgroundSection({
                           type="button"
                           onClick={() => setDeleteExpId(id)}
                           className="p-1.5 rounded text-neutral-500 hover:text-rose-400 hover:bg-neutral-800 text-xs transition-colors"
-                          title="Delete experience"
+                          title="Remove"
                         >
                           <CopilotIcon name="trash" className="w-3.5 h-3.5" />
                         </button>
@@ -249,7 +276,7 @@ export function BackgroundSection({
                             onClick={() => toggleSummaryExpand(id)}
                             className="text-[11px] text-cyan-400 hover:text-cyan-300 mt-1 font-medium block"
                           >
-                            {isExpanded ? "Show less ↑" : "Read more ↓"}
+                            {isExpanded ? "Show less" : "Show more"}
                           </button>
                         )}
                       </div>
@@ -262,17 +289,17 @@ export function BackgroundSection({
         </div>
 
         {/* ================= EDUCATION ================= */}
-        <div className="pt-6 border-t border-neutral-850">
+        <div>
           <div className="flex items-center justify-between pb-3 border-b border-neutral-850">
             <div>
               <h3 className="text-sm font-semibold text-white tracking-wide uppercase">
-                Education ({education.length})
+                Education
               </h3>
             </div>
             <button
               type="button"
               onClick={openAddEdu}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 hover:bg-neutral-800 text-cyan-400 border border-neutral-800 hover:border-cyan-500/40 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-750 hover:border-neutral-700 transition-colors"
             >
               <CopilotIcon name="plus" className="w-3.5 h-3.5" />
               <span>Add education</span>
@@ -280,59 +307,63 @@ export function BackgroundSection({
           </div>
 
           {education.length === 0 ? (
-            <div className="text-center py-8 text-neutral-500 text-xs italic">
-              No education listed yet. Click "Add education" to record your degree or certifications.
+            <div className="text-center py-8 space-y-3">
+              <p className="text-neutral-500 text-xs">No education added yet.</p>
+              <button
+                type="button"
+                onClick={openAddEdu}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-200 border border-neutral-800 hover:border-neutral-700 transition-colors"
+              >
+                <CopilotIcon name="plus" className="w-3 h-3" />
+                <span>Add education</span>
+              </button>
             </div>
           ) : (
             <div className="mt-4 space-y-4">
               {education.map((edu, idx) => {
                 const id = edu.id || String(idx);
-                const years = [edu.start_year, edu.end_year].filter(Boolean).join(" – ");
+                const titleStr = [edu.degree, edu.field_of_study].filter(Boolean).join(" · ");
+                const dates = [edu.start_year, edu.end_year].filter(Boolean).join(" – ");
 
                 return (
                   <div
                     key={id}
-                    className="p-4 rounded-xl bg-neutral-900/50 border border-neutral-850 hover:border-neutral-800 transition-all flex flex-col sm:flex-row sm:items-start justify-between gap-3"
+                    className="p-4 rounded-xl bg-neutral-900/50 border border-neutral-850 hover:border-neutral-800 transition-all space-y-2"
                   >
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                      <div>
                         <h4 className="text-sm font-semibold text-white">
-                          {edu.institution}
+                          {titleStr || "Education"} with {edu.institution}
                         </h4>
-                        {edu.degree && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-neutral-800 text-neutral-300">
-                            {edu.degree}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-3 mt-0.5 text-xs text-neutral-400">
+                          {dates && <span>{dates}</span>}
+                          {edu.grade_text && (
+                            <span className="px-2 py-0.5 rounded text-[10px] bg-neutral-800 text-neutral-300">
+                              {edu.grade_text}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      {edu.field_of_study && (
-                        <p className="text-xs text-neutral-300 mt-1">
-                          {edu.field_of_study}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-3 text-xs text-neutral-500 mt-1">
-                        {years && <span>{years}</span>}
-                        {edu.grade_text && <span>• Grade: {edu.grade_text}</span>}
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => openEditEdu(edu)}
-                        className="p-1.5 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 text-xs transition-colors"
-                        title="Edit education"
-                      >
-                        <CopilotIcon name="edit" className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteEduId(id)}
-                        className="p-1.5 rounded text-neutral-500 hover:text-rose-400 hover:bg-neutral-800 text-xs transition-colors"
-                        title="Delete education"
-                      >
-                        <CopilotIcon name="trash" className="w-3.5 h-3.5" />
-                      </button>
+                      {/* Action buttons: Edit and Remove */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => openEditEdu(edu)}
+                          className="p-1.5 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 text-xs transition-colors"
+                          title="Edit"
+                        >
+                          <CopilotIcon name="edit" className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteEduId(id)}
+                          className="p-1.5 rounded text-neutral-500 hover:text-rose-400 hover:bg-neutral-800 text-xs transition-colors"
+                          title="Remove"
+                        >
+                          <CopilotIcon name="trash" className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -342,55 +373,55 @@ export function BackgroundSection({
         </div>
       </div>
 
-      {/* ================= MODALS & CONFIRMATIONS ================= */}
+      {/* ================= MODALS ================= */}
 
-      {/* Experience Add/Edit Modal */}
+      {/* Experience Add/Edit Dialog */}
       {showExpModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
           <div className="w-full max-w-lg rounded-2xl bg-[#111111] border border-neutral-800 p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
-              <h3 className="text-base font-semibold text-white">
-                {editingExpId ? "Edit Work Experience" : "Add Work Experience"}
-              </h3>
+              <h4 className="text-sm font-semibold text-white">
+                {editingExpId ? "Edit experience" : "Add experience"}
+              </h4>
               <button
                 type="button"
                 onClick={() => setShowExpModal(false)}
-                className="text-neutral-500 hover:text-white text-lg"
+                className="text-neutral-500 hover:text-white text-sm"
               >
                 ×
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-4 text-xs">
               <div>
                 <label className="block text-neutral-300 font-semibold mb-1">
-                  Company Name <span className="text-cyan-400">*</span>
+                  Company name *
                 </label>
                 <input
                   type="text"
                   value={expDraft.company_name}
                   onChange={(e) => setExpDraft({ ...expDraft, company_name: e.target.value })}
-                  placeholder="e.g. Acme Cloud Systems"
-                  className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-cyan-500/60"
+                  placeholder="e.g. Acme Corp"
+                  className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60"
                 />
               </div>
 
               <div>
                 <label className="block text-neutral-300 font-semibold mb-1">
-                  Role Title <span className="text-cyan-400">*</span>
+                  Role title *
                 </label>
                 <input
                   type="text"
                   value={expDraft.role_title}
                   onChange={(e) => setExpDraft({ ...expDraft, role_title: e.target.value })}
-                  placeholder="e.g. Senior Backend Engineer"
-                  className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-cyan-500/60"
+                  placeholder="e.g. Senior Frontend Engineer"
+                  className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60"
                 />
               </div>
 
               <div>
                 <label className="block text-neutral-300 font-semibold mb-1">
-                  Employment Type
+                  Employment type
                 </label>
                 <select
                   value={expDraft.employment_type || "Full-time"}
@@ -405,30 +436,29 @@ export function BackgroundSection({
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Month inputs for dates */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-neutral-300 font-semibold mb-1">
-                    Start Date (YYYY-MM-DD)
+                    Start date (Month)
                   </label>
                   <input
-                    type="text"
+                    type="month"
                     value={expDraft.start_date || ""}
                     onChange={(e) => setExpDraft({ ...expDraft, start_date: e.target.value })}
-                    placeholder="2022-01-01"
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs focus:outline-none focus:border-cyan-500/60"
                   />
                 </div>
                 <div>
                   <label className="block text-neutral-300 font-semibold mb-1">
-                    End Date (YYYY-MM-DD)
+                    End date (Month)
                   </label>
                   <input
-                    type="text"
-                    disabled={expDraft.is_current}
+                    type="month"
+                    disabled={Boolean(expDraft.is_current)}
                     value={expDraft.is_current ? "" : expDraft.end_date || ""}
                     onChange={(e) => setExpDraft({ ...expDraft, end_date: e.target.value })}
-                    placeholder="2024-05-31"
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60 disabled:opacity-40"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs focus:outline-none focus:border-cyan-500/60 disabled:opacity-40"
                   />
                 </div>
               </div>
@@ -436,25 +466,32 @@ export function BackgroundSection({
               <div className="flex items-center gap-2 pt-1">
                 <input
                   type="checkbox"
-                  id="exp-is-current"
+                  id="currently-working"
                   checked={Boolean(expDraft.is_current)}
-                  onChange={(e) => setExpDraft({ ...expDraft, is_current: e.target.checked, end_date: e.target.checked ? null : expDraft.end_date })}
-                  className="rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0"
+                  onChange={(e) =>
+                    setExpDraft({
+                      ...expDraft,
+                      is_current: e.target.checked,
+                      end_date: e.target.checked ? null : expDraft.end_date,
+                    })
+                  }
+                  className="rounded border-neutral-800 bg-neutral-950 text-cyan-500 focus:ring-0"
                 />
-                <label htmlFor="exp-is-current" className="text-neutral-300 text-xs">
-                  I currently work here
+                <label htmlFor="currently-working" className="text-neutral-300 cursor-pointer select-none">
+                  Currently working here
                 </label>
               </div>
 
               <div>
                 <label className="block text-neutral-300 font-semibold mb-1">
-                  Summary / Responsibilities
+                  Summary / Key Achievements
                 </label>
                 <textarea
-                  rows={4}
+                  rows={3}
+                  maxLength={800}
                   value={expDraft.summary || ""}
                   onChange={(e) => setExpDraft({ ...expDraft, summary: e.target.value })}
-                  placeholder="Highlights, achievements, technologies used..."
+                  placeholder="Describe your scope of impact, key systems built, or measurable outcomes..."
                   className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60 resize-none leading-relaxed"
                 />
               </div>
@@ -475,28 +512,28 @@ export function BackgroundSection({
                 onClick={handleSaveExp}
                 className="px-4 py-1.5 rounded-lg text-xs font-medium text-black bg-white hover:bg-neutral-200 transition-colors"
               >
-                Save Experience
+                Save
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Delete Experience Confirmation */}
+      {/* Remove Experience Confirmation Dialog */}
       {deleteExpId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
           <div className="w-full max-w-sm rounded-xl bg-[#111111] border border-neutral-800 p-6 shadow-2xl space-y-4">
             <h4 className="text-sm font-semibold text-white">
-              Delete Work Experience?
+              Remove this entry?
             </h4>
-            <p className="text-xs text-neutral-400">
-              Are you sure you want to remove this work experience entry? This cannot be undone.
+            <p className="text-xs text-neutral-400 leading-relaxed">
+              Are you sure you want to remove this experience entry? This cannot be undone.
             </p>
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setDeleteExpId(null)}
-                className="px-3 py-1.5 rounded-lg text-xs text-neutral-400 hover:text-white bg-neutral-900"
+                className="px-3.5 py-1.5 rounded-lg text-xs text-neutral-400 hover:text-white bg-neutral-900"
               >
                 Cancel
               </button>
@@ -507,47 +544,47 @@ export function BackgroundSection({
                   setDeleteExpId(null);
                   await onDeleteExperience(target);
                 }}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-white bg-rose-600 hover:bg-rose-500 transition-colors"
+                className="px-4 py-1.5 rounded-lg text-xs font-medium text-white bg-rose-600 hover:bg-rose-500 transition-colors"
               >
-                Delete
+                Remove
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Education Add/Edit Modal */}
+      {/* Education Add/Edit Dialog */}
       {showEduModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
           <div className="w-full max-w-lg rounded-2xl bg-[#111111] border border-neutral-800 p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
-              <h3 className="text-base font-semibold text-white">
-                {editingEduId ? "Edit Education" : "Add Education"}
-              </h3>
+              <h4 className="text-sm font-semibold text-white">
+                {editingEduId ? "Edit education" : "Add education"}
+              </h4>
               <button
                 type="button"
                 onClick={() => setShowEduModal(false)}
-                className="text-neutral-500 hover:text-white text-lg"
+                className="text-neutral-500 hover:text-white text-sm"
               >
                 ×
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-4 text-xs">
               <div>
                 <label className="block text-neutral-300 font-semibold mb-1">
-                  Institution / University <span className="text-cyan-400">*</span>
+                  Institution *
                 </label>
                 <input
                   type="text"
                   value={eduDraft.institution}
                   onChange={(e) => setEduDraft({ ...eduDraft, institution: e.target.value })}
-                  placeholder="e.g. Stanford University or Apex Institute"
-                  className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-cyan-500/60"
+                  placeholder="e.g. Stanford University"
+                  className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-neutral-300 font-semibold mb-1">
                     Degree
@@ -557,7 +594,7 @@ export function BackgroundSection({
                     type="text"
                     value={eduDraft.degree || ""}
                     onChange={(e) => setEduDraft({ ...eduDraft, degree: e.target.value })}
-                    placeholder="e.g. B.Tech or M.S."
+                    placeholder="e.g. B.Tech"
                     className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60"
                   />
                   <datalist id="degree-catalog">
@@ -587,7 +624,7 @@ export function BackgroundSection({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-neutral-300 font-semibold mb-1">
                     Start Year
@@ -643,28 +680,28 @@ export function BackgroundSection({
                 onClick={handleSaveEdu}
                 className="px-4 py-1.5 rounded-lg text-xs font-medium text-black bg-white hover:bg-neutral-200 transition-colors"
               >
-                Save Education
+                Save
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Delete Education Confirmation */}
+      {/* Remove Education Confirmation Dialog */}
       {deleteEduId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
           <div className="w-full max-w-sm rounded-xl bg-[#111111] border border-neutral-800 p-6 shadow-2xl space-y-4">
             <h4 className="text-sm font-semibold text-white">
-              Delete Education Entry?
+              Remove this entry?
             </h4>
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-neutral-400 leading-relaxed">
               Are you sure you want to remove this education entry? This cannot be undone.
             </p>
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setDeleteEduId(null)}
-                className="px-3 py-1.5 rounded-lg text-xs text-neutral-400 hover:text-white bg-neutral-900"
+                className="px-3.5 py-1.5 rounded-lg text-xs text-neutral-400 hover:text-white bg-neutral-900"
               >
                 Cancel
               </button>
@@ -675,9 +712,9 @@ export function BackgroundSection({
                   setDeleteEduId(null);
                   await onDeleteEducation(target);
                 }}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-white bg-rose-600 hover:bg-rose-500 transition-colors"
+                className="px-4 py-1.5 rounded-lg text-xs font-medium text-white bg-rose-600 hover:bg-rose-500 transition-colors"
               >
-                Delete
+                Remove
               </button>
             </div>
           </div>

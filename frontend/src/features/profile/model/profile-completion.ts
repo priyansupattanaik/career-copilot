@@ -121,7 +121,7 @@ export function computeProfileCompleteness8(context: {
   experienceCount?: number;
   educationCount?: number;
   linksCount?: number;
-}): { percentage: number; missing: ProfileMissingItem[] } {
+}): { percentage: number; done: number; total: number; missing: ProfileMissingItem[] } {
   let done = 0;
   const missing: ProfileMissingItem[] = [];
 
@@ -184,6 +184,6 @@ export function computeProfileCompleteness8(context: {
   }
 
   const percentage = Math.round((done / 8) * 100);
-  return { percentage, missing };
+  return { percentage, done, total: 8, missing };
 }
 

@@ -76,8 +76,7 @@ export function PreferencesSection({
           Job preferences
         </h2>
         <p className="text-sm text-neutral-400 mt-2 leading-relaxed">
-          Specify your ideal roles, work arrangements, and compensation expectations.
-          These guide our matching algorithms to surface relevant opportunities.
+          These preferences are used to find and rank jobs for you.
         </p>
       </div>
 
@@ -211,7 +210,7 @@ export function PreferencesSection({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
           <div>
             <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
-              Currency
+              Salary currency
             </label>
             <select
               value={preferences.salary_currency || "USD"}
@@ -228,7 +227,7 @@ export function PreferencesSection({
 
           <div className="sm:col-span-2">
             <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
-              Minimum expected salary (Annual)
+              Minimum salary
             </label>
             <input
               type="number"

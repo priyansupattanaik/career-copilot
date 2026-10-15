@@ -20,7 +20,10 @@ export function DirtyActionBar({
 
   return (
     <>
-      <div className="fixed bottom-6 inset-x-0 mx-auto max-w-lg z-40 px-4 animate-in slide-in-from-bottom-5 duration-200">
+      <div
+        className="fixed inset-x-0 mx-auto max-w-lg z-40 px-4 animate-in slide-in-from-bottom-5 duration-200"
+        style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
+      >
         <div className="flex items-center justify-between gap-4 p-3.5 rounded-2xl bg-[#111111]/95 border border-neutral-700/80 shadow-2xl backdrop-blur-xl">
           <div className="flex items-center gap-2 pl-2">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
@@ -42,7 +45,7 @@ export function DirtyActionBar({
               type="button"
               disabled={saving}
               onClick={() => void onSave()}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold bg-white text-black hover:bg-neutral-200 transition-colors shadow"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold bg-white text-black hover:bg-neutral-200 transition-colors shadow disabled:opacity-40"
             >
               {saving ? (
                 <>
@@ -66,7 +69,7 @@ export function DirtyActionBar({
                 <CopilotIcon name="alert" className="w-4 h-4" />
               </div>
               <h4 className="text-sm font-semibold text-white">
-                Discard unsaved changes?
+                Discard changes?
               </h4>
             </div>
             <p className="text-xs text-neutral-400 leading-relaxed">
@@ -77,7 +80,7 @@ export function DirtyActionBar({
               <button
                 type="button"
                 onClick={() => setShowDiscardConfirm(false)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-300 hover:text-white bg-neutral-900"
+                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-neutral-300 hover:text-white bg-neutral-900"
               >
                 Keep editing
               </button>
@@ -87,9 +90,9 @@ export function DirtyActionBar({
                   setShowDiscardConfirm(false);
                   onDiscard();
                 }}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-white bg-rose-600 hover:bg-rose-500 transition-colors"
+                className="px-4 py-1.5 rounded-lg text-xs font-medium text-white bg-rose-600 hover:bg-rose-500 transition-colors"
               >
-                Discard changes
+                Discard
               </button>
             </div>
           </div>

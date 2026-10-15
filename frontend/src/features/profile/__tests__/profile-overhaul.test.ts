@@ -24,6 +24,7 @@ describe("profile-overhaul navigation & hash resolution", () => {
   });
 
   it("correctly redirects legacy hashes to the new information architecture", () => {
+    expect(Object.keys(LEGACY_HASH_MAP).length).toBeGreaterThanOrEqual(7);
     expect(resolveProfileHash("#profile-details")).toBe("about");
     expect(resolveProfileHash("#profile-resume")).toBe("resume");
     expect(resolveProfileHash("#profile-preferences")).toBe("preferences");

@@ -110,3 +110,22 @@ export const POPULAR_SKILL_OPTIONS = [
   "Pandas",
   "Figma",
 ] as const;
+
+export const CAREER_LEVEL_OPTIONS = [
+  { value: "fresher", label: "Fresher / Entry" },
+  { value: "junior", label: "Junior" },
+  { value: "mid", label: "Mid-level" },
+  { value: "senior", label: "Senior" },
+  { value: "lead", label: "Lead" },
+  { value: "manager", label: "Manager" },
+  { value: "executive", label: "Executive" },
+] as const;
+
+export const CAREER_GOAL_OPTIONS = [
+  { value: "switch_role", label: "Switch role" },
+  { value: "get_first_job", label: "Get first job" },
+  { value: "promotion", label: "Get promoted" },
+  { value: "upskill", label: "Upskill in current role" },
+  { value: "relocate", label: "Relocate for work" },
+  { value: "freelance", label: "Move to freelance / contract" },
+] as const;

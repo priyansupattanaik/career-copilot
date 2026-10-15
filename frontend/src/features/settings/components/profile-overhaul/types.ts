@@ -53,24 +53,27 @@ export interface ResumeItem {
 }
 
 export interface AutofillProposalField<T = any> {
+  id?: string;
   value: T;
-  status: "new" | "differs" | "duplicate";
+  evidence?: string | null;
+  status: "new" | "differs" | "duplicate" | "unmapped";
   selected_by_default: boolean;
-  basis?: string;
+  basis?: any;
+  current?: any;
   current_value?: any;
 }
 
 export interface AutofillParseResponse {
+  resume_id?: string;
+  schema_version?: string;
+  prompt_version?: string;
   quality: "ok" | "partial" | "empty";
-  source_summary?: {
-    text_chars: number;
-    total_returned: number;
-    kept_count: number;
-    dropped_count: number;
-  };
+  dropped_count?: number;
   proposals: {
     about: {
       full_name?: AutofillProposalField<string>;
+      headline?: AutofillProposalField<string>;
+      bio?: AutofillProposalField<string>;
       current_role?: AutofillProposalField<string>;
       location?: AutofillProposalField<string>;
       years_of_experience?: AutofillProposalField<number>;
@@ -85,6 +88,8 @@ export interface AutofillParseResponse {
 export interface AutofillApplyPayload {
   about?: {
     full_name?: string;
+    headline?: string;
+    bio?: string;
     current_role?: string;
     location?: string;
     years_of_experience?: number;

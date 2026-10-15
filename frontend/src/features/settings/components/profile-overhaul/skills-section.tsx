@@ -22,7 +22,7 @@ export function SkillsSection({
     const raw = skillInput.trim();
     if (!raw || busy) return;
 
-    // Duplicate check
+    // Case-insensitive duplicate check
     const normalized = raw.toLowerCase();
     const alreadyExists = skills.some((s) => (s.name || "").trim().toLowerCase() === normalized);
     if (alreadyExists) {
@@ -69,10 +69,13 @@ export function SkillsSection({
 
       {/* Right Column: Surface */}
       <div className="lg:col-span-8 bg-[#0A0A0A] border border-neutral-850 rounded-2xl p-6 sm:p-8 space-y-6">
-        {/* Add Skill Input */}
+        {/* Add Skill Combobox & Add button */}
         <div>
-          <label htmlFor="skill-autocomplete-input" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
-            Add a skill or tool
+          <label
+            htmlFor="skill-autocomplete-input"
+            className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2"
+          >
+            Add a skill
           </label>
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -101,7 +104,7 @@ export function SkillsSection({
               onClick={handleAdd}
               className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-white text-black hover:bg-neutral-200 transition-colors disabled:opacity-40 shrink-0"
             >
-              Add Skill
+              Add
             </button>
           </div>
           {duplicateWarning && (
@@ -130,7 +133,7 @@ export function SkillsSection({
 
           {skills.length === 0 ? (
             <p className="text-xs text-neutral-500 italic py-4">
-              No skills added yet. Add your key technical skills above or use Autofill from resume.
+              No skills yet. Add skills or autofill from your resume.
             </p>
           ) : (
             <div className="flex flex-wrap gap-2 pt-1">
@@ -146,7 +149,7 @@ export function SkillsSection({
                       type="button"
                       onClick={() => onDeleteSkill(id)}
                       className="text-neutral-500 group-hover:text-rose-400 hover:text-rose-300 p-0.5 rounded transition-colors text-xs"
-                      aria-label={`Remove skill ${skill.name}`}
+                      aria-label={`Remove ${skill.name}`}
                     >
                       ×
                     </button>

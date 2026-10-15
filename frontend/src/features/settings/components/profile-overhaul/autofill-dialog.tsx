@@ -4,9 +4,7 @@ import { apiRequest } from "@/shared/api/client";
 import type {
   AutofillParseResponse,
   AutofillApplyPayload,
-  CandidateExperience,
-  CandidateEducation,
-  CandidateLink,
+  AutofillProposalField,
 } from "./types";
 
 interface AutofillDialogProps {
@@ -14,47 +12,200 @@ interface AutofillDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onApplied: () => Promise<void>;
+  onlyFillEmpty?: boolean;
 }
 
-type DialogStage = "idle" | "parsing" | "review" | "applying" | "error";
+type DialogStage = "idle" | "parsing" | "review" | "empty" | "applying" | "error";
+
+interface ErrorInfo {
+  copy: string;
+  canRetry: boolean;
+}
+
+export function mapAutofillError(err: any): ErrorInfo {
+  const code = String(err?.code || err?.error || "").toUpperCase();
+  const status = Number(err?.status || err?.status_code || 0);
+
+  if (code === "UNSUPPORTED_FILE" || status === 415) {
+    return { copy: "Upload a PDF or DOCX file.", canRetry: false };
+  }
+  if (code === "FILE_TOO_LARGE" || status === 413) {
+    return { copy: "This file is too large. The limit is 10 MB.", canRetry: false };
+  }
+  if (code === "RATE_LIMITED" || (status === 429 && code.includes("RATE"))) {
+    return { copy: "You've reached the hourly limit for autofill. Try again later.", canRetry: false };
+  }
+  if (code === "NO_TEXT") {
+    return {
+      copy: "We couldn't read any text in this file. If it's a scan, upload a text-based PDF or a DOCX.",
+      canRetry: true,
+    };
+  }
+  if (code === "TEXT_TOO_LONG") {
+    return {
+      copy: "This resume is longer than we can read. Try a shorter version.",
+      canRetry: true,
+    };
+  }
+  if (code === "PARSE_BUSY" || status === 429) {
+    return { copy: "Autofill is busy right now. Try again in a minute.", canRetry: true };
+  }
+  if (code === "PARSE_INVALID" || (status === 422 && code.includes("INVALID"))) {
+    return {
+      copy: "We couldn't read this resume reliably. You can fill your profile manually.",
+      canRetry: true,
+    };
+  }
+  if (code === "PARSE_UNAVAILABLE" || status === 503) {
+    return {
+      copy: "Autofill isn't available right now. You can fill your profile manually and try again later.",
+      canRetry: true,
+    };
+  }
+  if (status === 422) {
+    return {
+      copy: "We couldn't read this resume reliably. You can fill your profile manually.",
+      canRetry: true,
+    };
+  }
+  return {
+    copy: "Autofill isn't available right now. You can fill your profile manually and try again later.",
+    canRetry: true,
+  };
+}
 
 export function AutofillDialog({
   resumeId,
   isOpen,
   onClose,
   onApplied,
+  onlyFillEmpty = true,
 }: AutofillDialogProps) {
   const [stage, setStage] = useState<DialogStage>("idle");
-  const [warmNotice, setWarmNotice] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [coldStartNotice, setColdStartNotice] = useState(false);
+  const [errorInfo, setErrorInfo] = useState<ErrorInfo | null>(null);
   const [parseResult, setParseResult] = useState<AutofillParseResponse | null>(null);
+  const [partialSaveError, setPartialSaveError] = useState<string>("");
 
-  // Selection state for proposals
-  const [selectedAbout, setSelectedAbout] = useState<{
-    full_name: boolean;
-    current_role: boolean;
-    location: boolean;
-    years_of_experience: boolean;
-  }>({
-    full_name: true,
-    current_role: true,
-    location: true,
-    years_of_experience: true,
-  });
-
+  // Selections
+  const [selectedAbout, setSelectedAbout] = useState<Record<string, boolean>>({});
   const [selectedSkills, setSelectedSkills] = useState<Record<number, boolean>>({});
   const [selectedExperience, setSelectedExperience] = useState<Record<number, boolean>>({});
   const [selectedEducation, setSelectedEducation] = useState<Record<number, boolean>>({});
   const [selectedLinks, setSelectedLinks] = useState<Record<number, boolean>>({});
 
+  // Expandable evidence state
+  const [expandedEvidence, setExpandedEvidence] = useState<Record<string, boolean>>({});
+
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Trigger parsing when dialog opens with a valid resumeId
+  function toggleEvidence(key: string) {
+    setExpandedEvidence((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  async function runParse() {
+    if (!resumeId) return;
+    setStage("parsing");
+    setColdStartNotice(false);
+    setErrorInfo(null);
+    setPartialSaveError("");
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    // Show cold start notice after 4 seconds
+    const coldTimer = setTimeout(() => {
+      setColdStartNotice(true);
+    }, 4000);
+
+    // 80 seconds timeout
+    const timeoutTimer = setTimeout(() => {
+      controller.abort();
+      setStage("error");
+      setErrorInfo({
+        copy: "Autofill isn't available right now. You can fill your profile manually and try again later.",
+        canRetry: true,
+      });
+    }, 80000);
+
+    try {
+      const res = await apiRequest<AutofillParseResponse>("/profile/autofill/parse", {
+        method: "POST",
+        body: JSON.stringify({
+          resume_id: resumeId,
+          only_fill_empty: onlyFillEmpty,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(coldTimer);
+      clearTimeout(timeoutTimer);
+
+      if (res.quality === "empty") {
+        setStage("empty");
+        setParseResult(res);
+        return;
+      }
+
+      setParseResult(res);
+
+      // Initialize selections per Step 4.3:
+      // IF onlyFillEmpty -> only "new" is checked
+      // IF OFF -> "new" and "differs" are checked
+      // "duplicate" and "unmapped" are never checked by default
+      const isEligible = (field?: AutofillProposalField) => {
+        if (!field) return false;
+        if (field.status === "duplicate" || field.status === "unmapped") return false;
+        if (onlyFillEmpty) return field.status === "new";
+        return field.status === "new" || field.status === "differs";
+      };
+
+      const aboutInit: Record<string, boolean> = {};
+      const aboutProps = res.proposals?.about || {};
+      for (const [k, field] of Object.entries(aboutProps)) {
+        aboutInit[k] = isEligible(field);
+      }
+      setSelectedAbout(aboutInit);
+
+      const skillInit: Record<number, boolean> = {};
+      (res.proposals?.skills || []).forEach((s, idx) => {
+        skillInit[idx] = isEligible(s);
+      });
+      setSelectedSkills(skillInit);
+
+      const expInit: Record<number, boolean> = {};
+      (res.proposals?.experience || []).forEach((e, idx) => {
+        expInit[idx] = isEligible(e);
+      });
+      setSelectedExperience(expInit);
+
+      const eduInit: Record<number, boolean> = {};
+      (res.proposals?.education || []).forEach((ed, idx) => {
+        eduInit[idx] = isEligible(ed);
+      });
+      setSelectedEducation(eduInit);
+
+      const linkInit: Record<number, boolean> = {};
+      (res.proposals?.links || []).forEach((l, idx) => {
+        linkInit[idx] = isEligible(l);
+      });
+      setSelectedLinks(linkInit);
+
+      setStage("review");
+    } catch (err: any) {
+      clearTimeout(coldTimer);
+      clearTimeout(timeoutTimer);
+      if (controller.signal.aborted) return;
+      setStage("error");
+      setErrorInfo(mapAutofillError(err));
+    }
+  }
+
   useEffect(() => {
     if (!isOpen || !resumeId) {
       setStage("idle");
-      setWarmNotice(false);
-      setErrorMessage("");
+      setColdStartNotice(false);
+      setErrorInfo(null);
       setParseResult(null);
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -62,118 +213,36 @@ export function AutofillDialog({
       return;
     }
 
-    setStage("parsing");
-    setWarmNotice(false);
-    setErrorMessage("");
-
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    // Show warming notice after 4 seconds
-    const warmTimer = setTimeout(() => {
-      setWarmNotice(true);
-    }, 4000);
-
-    // Timeout after 80 seconds
-    const timeoutTimer = setTimeout(() => {
-      controller.abort();
-      setStage("error");
-      setErrorMessage("The request timed out. Please try again.");
-    }, 80000);
-
-    void (async () => {
-      try {
-        const res = await apiRequest<AutofillParseResponse>("/profile/autofill/parse", {
-          method: "POST",
-          body: JSON.stringify({
-            resume_id: resumeId,
-            only_fill_empty: true,
-          }),
-          signal: controller.signal,
-        });
-
-        clearTimeout(warmTimer);
-        clearTimeout(timeoutTimer);
-
-        setParseResult(res);
-
-        // Pre-select items per proposals' selected_by_default
-        const aboutProps = res.proposals?.about || {};
-        setSelectedAbout({
-          full_name: Boolean(aboutProps.full_name?.selected_by_default),
-          current_role: Boolean(aboutProps.current_role?.selected_by_default),
-          location: Boolean(aboutProps.location?.selected_by_default),
-          years_of_experience: Boolean(aboutProps.years_of_experience?.selected_by_default),
-        });
-
-        const skillsMap: Record<number, boolean> = {};
-        (res.proposals?.skills || []).forEach((s, i) => {
-          skillsMap[i] = Boolean(s.selected_by_default);
-        });
-        setSelectedSkills(skillsMap);
-
-        const expMap: Record<number, boolean> = {};
-        (res.proposals?.experience || []).forEach((e, i) => {
-          expMap[i] = Boolean(e.selected_by_default);
-        });
-        setSelectedExperience(expMap);
-
-        const eduMap: Record<number, boolean> = {};
-        (res.proposals?.education || []).forEach((ed, i) => {
-          eduMap[i] = Boolean(ed.selected_by_default);
-        });
-        setSelectedEducation(eduMap);
-
-        const linkMap: Record<number, boolean> = {};
-        (res.proposals?.links || []).forEach((l, i) => {
-          linkMap[i] = Boolean(l.selected_by_default);
-        });
-        setSelectedLinks(linkMap);
-
-        setStage("review");
-      } catch (err: any) {
-        clearTimeout(warmTimer);
-        clearTimeout(timeoutTimer);
-        if (controller.signal.aborted) return;
-
-        setStage("error");
-        const code = err?.code || "";
-        const status = err?.status || err?.status_code;
-
-        if (code === "PARSE_RATE_LIMITED" || (status === 429 && code.includes("LIMIT"))) {
-          setErrorMessage("You've reached the autofill limit for this hour. Please try again later.");
-        } else if (code === "PARSE_BUSY" || status === 429) {
-          setErrorMessage("Autofill is busy right now. Try again in a minute.");
-        } else if (code === "PARSE_INVALID" || status === 422) {
-          setErrorMessage("We couldn't read this resume reliably. You can fill your profile manually.");
-        } else if (code === "PARSE_UNAVAILABLE" || status === 503) {
-          setErrorMessage("Autofill isn't available right now. You can fill your profile manually and try again later.");
-        } else {
-          setErrorMessage(err?.message || "Failed to parse resume. You can fill your profile manually.");
-        }
-      }
-    })();
+    void runParse();
 
     return () => {
-      clearTimeout(warmTimer);
-      clearTimeout(timeoutTimer);
-      controller.abort();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
-  }, [isOpen, resumeId]);
+  }, [isOpen, resumeId, onlyFillEmpty]);
 
-  // Apply handler
+  // Apply selected changes
   async function handleApply() {
     if (!parseResult || !resumeId) return;
 
     setStage("applying");
+    setPartialSaveError("");
+
     try {
       const proposals = parseResult.proposals;
       const changes: AutofillApplyPayload = {};
 
-      // 1. About fields
+      // 1. About
       const aboutObj: Record<string, any> = {};
       if (selectedAbout.full_name && proposals.about?.full_name?.value) {
         aboutObj.full_name = proposals.about.full_name.value;
+      }
+      if (selectedAbout.headline && proposals.about?.headline?.value) {
+        aboutObj.headline = proposals.about.headline.value;
+      }
+      if (selectedAbout.bio && proposals.about?.bio?.value) {
+        aboutObj.bio = proposals.about.bio.value;
       }
       if (selectedAbout.current_role && proposals.about?.current_role?.value) {
         aboutObj.current_role = proposals.about.current_role.value;
@@ -181,7 +250,10 @@ export function AutofillDialog({
       if (selectedAbout.location && proposals.about?.location?.value) {
         aboutObj.location = proposals.about.location.value;
       }
-      if (selectedAbout.years_of_experience && proposals.about?.years_of_experience?.value != null) {
+      if (
+        selectedAbout.years_of_experience &&
+        proposals.about?.years_of_experience?.value !== undefined
+      ) {
         aboutObj.years_of_experience = proposals.about.years_of_experience.value;
       }
       if (Object.keys(aboutObj).length > 0) {
@@ -189,50 +261,58 @@ export function AutofillDialog({
       }
 
       // 2. Skills
-      const chosenSkills: string[] = [];
+      const skillsList: string[] = [];
       (proposals.skills || []).forEach((s, idx) => {
         if (selectedSkills[idx] && s.value) {
-          chosenSkills.push(s.value);
+          skillsList.push(s.value);
         }
       });
-      if (chosenSkills.length > 0) {
-        changes.skills = chosenSkills;
+      if (skillsList.length > 0) {
+        changes.skills = skillsList;
       }
 
       // 3. Experience
-      const chosenExp: CandidateExperience[] = [];
+      const expList: any[] = [];
       (proposals.experience || []).forEach((e, idx) => {
         if (selectedExperience[idx] && e.value) {
-          chosenExp.push(e.value);
+          expList.push(e.value);
         }
       });
-      if (chosenExp.length > 0) {
-        changes.experience = chosenExp;
+      if (expList.length > 0) {
+        changes.experience = expList;
       }
 
       // 4. Education
-      const chosenEdu: CandidateEducation[] = [];
+      const eduList: any[] = [];
       (proposals.education || []).forEach((ed, idx) => {
         if (selectedEducation[idx] && ed.value) {
-          chosenEdu.push(ed.value);
+          eduList.push(ed.value);
         }
       });
-      if (chosenEdu.length > 0) {
-        changes.education = chosenEdu;
+      if (eduList.length > 0) {
+        changes.education = eduList;
       }
 
       // 5. Links
-      const chosenLinks: CandidateLink[] = [];
+      const linkList: any[] = [];
       (proposals.links || []).forEach((l, idx) => {
         if (selectedLinks[idx] && l.value) {
-          chosenLinks.push(l.value);
+          linkList.push(l.value);
         }
       });
-      if (chosenLinks.length > 0) {
-        changes.links = chosenLinks;
+      if (linkList.length > 0) {
+        changes.links = linkList;
       }
 
-      await apiRequest("/profile/autofill/apply", {
+      const applyRes = await apiRequest<{
+        applied?: {
+          about: boolean;
+          skills: number;
+          experience: number;
+          education: number;
+          links: number;
+        };
+      }>("/profile/autofill/apply", {
         method: "POST",
         body: JSON.stringify({
           resume_id: resumeId,
@@ -240,20 +320,40 @@ export function AutofillDialog({
         }),
       });
 
+      // Invalidate and refresh profile
       await onApplied();
+
+      // Check if partial failure occurred
+      const app = applyRes?.applied;
+      const expectedAbout = Boolean(changes.about);
+      const aboutFailed = expectedAbout && !app?.about;
+      const expectedSkills = (changes.skills || []).length;
+      const skillsFailed = expectedSkills > 0 && (app?.skills || 0) < expectedSkills;
+      const expectedExp = (changes.experience || []).length;
+      const expFailed = expectedExp > 0 && (app?.experience || 0) < expectedExp;
+
+      if (aboutFailed || skillsFailed || expFailed) {
+        setStage("review");
+        setPartialSaveError("Some sections could not be saved");
+        return;
+      }
+
       onClose();
-    } catch (err: any) {
-      setStage("error");
-      setErrorMessage(err?.message || "Failed to apply profile changes.");
+
+      // Move focus to identity strip heading
+      const heading = document.getElementById("identity-strip-heading");
+      if (heading) {
+        heading.focus();
+      }
+    } catch {
+      setStage("review");
+      setPartialSaveError("Some sections could not be saved");
     }
   }
 
-  // Count total items selected
+  // Count total selected items
   const totalSelected =
-    (selectedAbout.full_name ? 1 : 0) +
-    (selectedAbout.current_role ? 1 : 0) +
-    (selectedAbout.location ? 1 : 0) +
-    (selectedAbout.years_of_experience ? 1 : 0) +
+    Object.values(selectedAbout).filter(Boolean).length +
     Object.values(selectedSkills).filter(Boolean).length +
     Object.values(selectedExperience).filter(Boolean).length +
     Object.values(selectedEducation).filter(Boolean).length +
@@ -276,7 +376,7 @@ export function AutofillDialog({
               </h3>
               <p className="text-xs text-neutral-400 font-sans">
                 {stage === "review"
-                  ? "Select the details you would like to import into your profile."
+                  ? "Nothing is saved until you apply."
                   : "Scanning and extracting structured candidate profile data."}
               </p>
             </div>
@@ -297,23 +397,50 @@ export function AutofillDialog({
             <div className="py-12 text-center space-y-4">
               <div className="w-12 h-12 mx-auto border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
               <div className="space-y-1">
-                <h4 className="text-sm font-semibold text-white">
-                  Analyzing your resume with AI...
-                </h4>
+                <p
+                  className="text-sm font-semibold text-white"
+                  aria-live="polite"
+                >
+                  Reading your resume…
+                </p>
                 <p className="text-xs text-neutral-400 max-w-sm mx-auto">
-                  Extracting your work experience, education, verified skills, and links.
+                  Extracting your work history, education, skills, and links without hallucination.
                 </p>
               </div>
-              {warmNotice && (
-                <p className="text-xs text-cyan-400/90 font-medium animate-in fade-in max-w-xs mx-auto">
+              {coldStartNotice && (
+                <p className="text-xs text-cyan-400 font-medium animate-in fade-in max-w-xs mx-auto">
                   AI models warming up, please wait...
                 </p>
               )}
             </div>
           )}
 
+          {/* Stage: Empty */}
+          {stage === "empty" && (
+            <div className="py-8 text-center space-y-4">
+              <div className="w-12 h-12 mx-auto rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400">
+                <CopilotIcon name="alert" className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-sm font-semibold text-white">
+                  We couldn't find profile details in this file.
+                </h4>
+                <p className="text-xs text-neutral-400 max-w-sm mx-auto">
+                  You can enter your information manually in each section.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="mt-2 px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-800 hover:bg-neutral-700 text-white transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          )}
+
           {/* Stage: Error */}
-          {stage === "error" && (
+          {stage === "error" && errorInfo && (
             <div className="py-8 text-center space-y-4">
               <div className="w-12 h-12 mx-auto rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
                 <CopilotIcon name="alert" className="w-6 h-6" />
@@ -323,16 +450,27 @@ export function AutofillDialog({
                   Autofill Notice
                 </h4>
                 <p className="text-xs text-neutral-300 max-w-md mx-auto leading-relaxed">
-                  {errorMessage}
+                  {errorInfo.copy}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="mt-2 px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-800 hover:bg-neutral-700 text-white transition-colors"
-              >
-                Close & Enter Manually
-              </button>
+              <div className="flex justify-center gap-3 pt-2">
+                {errorInfo.canRetry && (
+                  <button
+                    type="button"
+                    onClick={() => void runParse()}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold bg-white text-black hover:bg-neutral-200 transition-colors"
+                  >
+                    Try again
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-800 hover:bg-neutral-700 text-white transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           )}
 
@@ -349,12 +487,20 @@ export function AutofillDialog({
           {/* Stage: Review Proposals */}
           {stage === "review" && parseResult && (
             <div className="space-y-6">
+              {/* Partial Save Notice */}
+              {partialSaveError && (
+                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+                  <CopilotIcon name="alert" className="w-4 h-4 shrink-0" />
+                  <span>{partialSaveError}</span>
+                </div>
+              )}
+
               {/* Quality Banner if partial */}
               {parseResult.quality === "partial" && (
                 <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2">
                   <CopilotIcon name="alert" className="w-4 h-4 shrink-0" />
                   <span>
-                    Some items could not be verified from the resume text and were excluded for accuracy.
+                    We found only part of your resume. Please check the details before applying.
                   </span>
                 </div>
               )}
@@ -362,51 +508,60 @@ export function AutofillDialog({
               {/* 1. About You Proposals */}
               {parseResult.proposals?.about && (
                 <div className="space-y-3">
-                  <h4 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider pb-1 border-b border-neutral-850">
-                    About you
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {/* Full Name */}
-                    {parseResult.proposals.about.full_name && (
-                      <ProposalCheckItem
-                        label="Full name"
-                        value={parseResult.proposals.about.full_name.value}
-                        status={parseResult.proposals.about.full_name.status}
-                        checked={selectedAbout.full_name}
-                        onChange={(c) => setSelectedAbout({ ...selectedAbout, full_name: c })}
+                  <div className="flex items-center justify-between pb-1 border-b border-neutral-850">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={Object.values(selectedAbout).some(Boolean)}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          const next: Record<string, boolean> = {};
+                          for (const [k, f] of Object.entries(parseResult.proposals.about)) {
+                            if (f && f.status !== "duplicate") {
+                              next[k] = val;
+                            }
+                          }
+                          setSelectedAbout(next);
+                        }}
+                        className="rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0"
                       />
-                    )}
-                    {/* Current Role */}
-                    {parseResult.proposals.about.current_role && (
-                      <ProposalCheckItem
-                        label="Current role"
-                        value={parseResult.proposals.about.current_role.value}
-                        status={parseResult.proposals.about.current_role.status}
-                        checked={selectedAbout.current_role}
-                        onChange={(c) => setSelectedAbout({ ...selectedAbout, current_role: c })}
-                      />
-                    )}
-                    {/* Location */}
-                    {parseResult.proposals.about.location && (
-                      <ProposalCheckItem
-                        label="Location"
-                        value={parseResult.proposals.about.location.value}
-                        status={parseResult.proposals.about.location.status}
-                        checked={selectedAbout.location}
-                        onChange={(c) => setSelectedAbout({ ...selectedAbout, location: c })}
-                      />
-                    )}
-                    {/* Years of Experience */}
-                    {parseResult.proposals.about.years_of_experience && (
-                      <ProposalCheckItem
-                        label="Experience"
-                        value={`${parseResult.proposals.about.years_of_experience.value} years`}
-                        subtext={parseResult.proposals.about.years_of_experience.basis}
-                        status={parseResult.proposals.about.years_of_experience.status}
-                        checked={selectedAbout.years_of_experience}
-                        onChange={(c) => setSelectedAbout({ ...selectedAbout, years_of_experience: c })}
-                      />
-                    )}
+                      <h4 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
+                        About you
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {Object.entries(parseResult.proposals.about).map(([k, field]) => {
+                      if (!field || field.value === undefined || field.value === null) return null;
+                      const labelMap: Record<string, string> = {
+                        full_name: "Full name",
+                        headline: "Headline",
+                        bio: "About / Bio",
+                        location: "Location",
+                        current_role: "Current role",
+                        years_of_experience: "Years of experience",
+                      };
+                      const displayVal =
+                        k === "years_of_experience"
+                          ? `${field.value} years`
+                          : String(field.value);
+
+                      return (
+                        <ProposalRow
+                          key={k}
+                          label={labelMap[k] || k}
+                          value={displayVal}
+                          status={field.status}
+                          currentValue={field.current || field.current_value}
+                          evidence={field.evidence}
+                          checked={Boolean(selectedAbout[k])}
+                          onToggle={(c) => setSelectedAbout({ ...selectedAbout, [k]: c })}
+                          isEvidenceExpanded={Boolean(expandedEvidence[`about_${k}`])}
+                          onToggleEvidence={() => toggleEvidence(`about_${k}`)}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -415,93 +570,113 @@ export function AutofillDialog({
               {parseResult.proposals?.skills && parseResult.proposals.skills.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between pb-1 border-b border-neutral-850">
-                    <h4 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
-                      Skills ({parseResult.proposals.skills.length})
-                    </h4>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const allSelected = Object.values(selectedSkills).every(Boolean);
-                        const next: Record<number, boolean> = {};
-                        parseResult.proposals.skills.forEach((_, idx) => {
-                          next[idx] = !allSelected;
-                        });
-                        setSelectedSkills(next);
-                      }}
-                      className="text-[11px] text-cyan-400 hover:text-cyan-300"
-                    >
-                      Toggle all
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={Object.values(selectedSkills).some(Boolean)}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          const next: Record<number, boolean> = {};
+                          parseResult.proposals.skills.forEach((s, idx) => {
+                            if (s.status !== "duplicate") {
+                              next[idx] = val;
+                            }
+                          });
+                          setSelectedSkills(next);
+                        }}
+                        className="rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0"
+                      />
+                      <h4 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
+                        Skills ({parseResult.proposals.skills.length})
+                      </h4>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {parseResult.proposals.skills.map((s, idx) => (
-                      <label
-                        key={idx}
-                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs cursor-pointer border transition-all ${
-                          selectedSkills[idx]
-                            ? "bg-neutral-900 border-neutral-700 text-white"
-                            : "bg-neutral-950/60 border-neutral-850 text-neutral-400 opacity-60"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={Boolean(selectedSkills[idx])}
-                          onChange={(e) =>
-                            setSelectedSkills({ ...selectedSkills, [idx]: e.target.checked })
-                          }
-                          className="rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0"
-                        />
-                        <span>{s.value}</span>
-                        <StatusBadge status={s.status} />
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
 
-              {/* 3. Work Experience Proposals */}
-              {parseResult.proposals?.experience && parseResult.proposals.experience.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider pb-1 border-b border-neutral-850">
-                    Work Experience ({parseResult.proposals.experience.length})
-                  </h4>
-                  <div className="space-y-2">
-                    {parseResult.proposals.experience.map((expProp, idx) => {
-                      const exp = expProp.value;
+                  <div className="flex flex-wrap gap-2">
+                    {parseResult.proposals.skills.map((s, idx) => {
+                      const isDup = s.status === "duplicate";
                       return (
                         <label
                           key={idx}
-                          className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                            selectedExperience[idx]
-                              ? "bg-neutral-900/70 border-neutral-750"
-                              : "bg-neutral-950/40 border-neutral-850 opacity-60"
+                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs border transition-all ${
+                            isDup
+                              ? "bg-neutral-950/40 border-neutral-850 text-neutral-500 opacity-60 cursor-not-allowed"
+                              : selectedSkills[idx]
+                              ? "bg-neutral-900 border-neutral-700 text-white cursor-pointer"
+                              : "bg-neutral-950/60 border-neutral-850 text-neutral-400 cursor-pointer"
                           }`}
                         >
                           <input
                             type="checkbox"
-                            checked={Boolean(selectedExperience[idx])}
+                            disabled={isDup}
+                            checked={Boolean(selectedSkills[idx])}
                             onChange={(e) =>
-                              setSelectedExperience({ ...selectedExperience, [idx]: e.target.checked })
+                              setSelectedSkills({ ...selectedSkills, [idx]: e.target.checked })
                             }
-                            className="mt-1 rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0 shrink-0"
+                            className="rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0 disabled:opacity-40"
                           />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-xs font-semibold text-white truncate">
-                                {exp.role_title} at {exp.company_name}
-                              </span>
-                              <StatusBadge status={expProp.status} />
-                            </div>
-                            <span className="text-[11px] text-neutral-400 block mt-0.5">
-                              {exp.start_date || "Start"} – {exp.is_current ? "Present" : exp.end_date || "End"}
-                            </span>
-                            {exp.summary && (
-                              <p className="text-xs text-neutral-300 mt-1 line-clamp-2">
-                                {exp.summary}
-                              </p>
-                            )}
-                          </div>
+                          <span>{s.value}</span>
+                          <StatusBadge status={s.status} />
                         </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Experience Proposals */}
+              {parseResult.proposals?.experience && parseResult.proposals.experience.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between pb-1 border-b border-neutral-850">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={Object.values(selectedExperience).some(Boolean)}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          const next: Record<number, boolean> = {};
+                          parseResult.proposals.experience.forEach((exp, idx) => {
+                            if (exp.status !== "duplicate") {
+                              next[idx] = val;
+                            }
+                          });
+                          setSelectedExperience(next);
+                        }}
+                        className="rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0"
+                      />
+                      <h4 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
+                        Experience ({parseResult.proposals.experience.length})
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {parseResult.proposals.experience.map((expProp, idx) => {
+                      const exp = expProp.value;
+                      const titleLine = `${exp.role_title || "Role"} · ${exp.company_name || "Company"}`;
+                      const subLine = [
+                        exp.employment_type,
+                        [exp.start_date, exp.is_current ? "Present" : exp.end_date].filter(Boolean).join(" – "),
+                      ]
+                        .filter(Boolean)
+                        .join(" • ");
+
+                      return (
+                        <ProposalRow
+                          key={idx}
+                          label={titleLine}
+                          value={subLine}
+                          summary={exp.summary}
+                          status={expProp.status}
+                          currentValue={expProp.current || expProp.current_value}
+                          evidence={expProp.evidence}
+                          checked={Boolean(selectedExperience[idx])}
+                          onToggle={(c) =>
+                            setSelectedExperience({ ...selectedExperience, [idx]: c })
+                          }
+                          isEvidenceExpanded={Boolean(expandedEvidence[`exp_${idx}`])}
+                          onToggleEvidence={() => toggleEvidence(`exp_${idx}`)}
+                        />
                       );
                     })}
                   </div>
@@ -511,43 +686,56 @@ export function AutofillDialog({
               {/* 4. Education Proposals */}
               {parseResult.proposals?.education && parseResult.proposals.education.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider pb-1 border-b border-neutral-850">
-                    Education ({parseResult.proposals.education.length})
-                  </h4>
+                  <div className="flex items-center justify-between pb-1 border-b border-neutral-850">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={Object.values(selectedEducation).some(Boolean)}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          const next: Record<number, boolean> = {};
+                          parseResult.proposals.education.forEach((edu, idx) => {
+                            if (edu.status !== "duplicate") {
+                              next[idx] = val;
+                            }
+                          });
+                          setSelectedEducation(next);
+                        }}
+                        className="rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0"
+                      />
+                      <h4 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
+                        Education ({parseResult.proposals.education.length})
+                      </h4>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     {parseResult.proposals.education.map((eduProp, idx) => {
                       const edu = eduProp.value;
+                      const titleLine = `${edu.degree || "Degree"} · ${edu.field_of_study || "Field"}`;
+                      const subLine = [
+                        edu.institution,
+                        [edu.start_year, edu.end_year].filter(Boolean).join(" – "),
+                        edu.grade_text,
+                      ]
+                        .filter(Boolean)
+                        .join(" • ");
+
                       return (
-                        <label
+                        <ProposalRow
                           key={idx}
-                          className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                            selectedEducation[idx]
-                              ? "bg-neutral-900/70 border-neutral-750"
-                              : "bg-neutral-950/40 border-neutral-850 opacity-60"
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={Boolean(selectedEducation[idx])}
-                            onChange={(e) =>
-                              setSelectedEducation({ ...selectedEducation, [idx]: e.target.checked })
-                            }
-                            className="mt-0.5 rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0 shrink-0"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-xs font-semibold text-white">
-                                {edu.institution}
-                              </span>
-                              <StatusBadge status={eduProp.status} />
-                            </div>
-                            <span className="text-[11px] text-neutral-400 block mt-0.5">
-                              {[edu.degree, edu.field_of_study, [edu.start_year, edu.end_year].filter(Boolean).join("-")]
-                                .filter(Boolean)
-                                .join(" • ")}
-                            </span>
-                          </div>
-                        </label>
+                          label={titleLine}
+                          value={subLine}
+                          status={eduProp.status}
+                          currentValue={eduProp.current || eduProp.current_value}
+                          evidence={eduProp.evidence}
+                          checked={Boolean(selectedEducation[idx])}
+                          onToggle={(c) =>
+                            setSelectedEducation({ ...selectedEducation, [idx]: c })
+                          }
+                          isEvidenceExpanded={Boolean(expandedEvidence[`edu_${idx}`])}
+                          onToggleEvidence={() => toggleEvidence(`edu_${idx}`)}
+                        />
                       );
                     })}
                   </div>
@@ -557,37 +745,45 @@ export function AutofillDialog({
               {/* 5. Links Proposals */}
               {parseResult.proposals?.links && parseResult.proposals.links.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider pb-1 border-b border-neutral-850">
-                    Links ({parseResult.proposals.links.length})
-                  </h4>
+                  <div className="flex items-center justify-between pb-1 border-b border-neutral-850">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={Object.values(selectedLinks).some(Boolean)}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          const next: Record<number, boolean> = {};
+                          parseResult.proposals.links.forEach((l, idx) => {
+                            if (l.status !== "duplicate") {
+                              next[idx] = val;
+                            }
+                          });
+                          setSelectedLinks(next);
+                        }}
+                        className="rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0"
+                      />
+                      <h4 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
+                        Links ({parseResult.proposals.links.length})
+                      </h4>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     {parseResult.proposals.links.map((linkProp, idx) => {
                       const l = linkProp.value;
                       return (
-                        <label
+                        <ProposalRow
                           key={idx}
-                          className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                            selectedLinks[idx]
-                              ? "bg-neutral-900/70 border-neutral-750"
-                              : "bg-neutral-950/40 border-neutral-850 opacity-60"
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={Boolean(selectedLinks[idx])}
-                            onChange={(e) =>
-                              setSelectedLinks({ ...selectedLinks, [idx]: e.target.checked })
-                            }
-                            className="rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0 shrink-0"
-                          />
-                          <span className="text-xs text-neutral-300 truncate flex-1">
-                            <strong className="uppercase text-[10px] text-neutral-400 mr-2">
-                              {l.link_type}:
-                            </strong>
-                            {l.url}
-                          </span>
-                          <StatusBadge status={linkProp.status} />
-                        </label>
+                          label={l.link_type}
+                          value={l.url}
+                          status={linkProp.status}
+                          currentValue={linkProp.current || linkProp.current_value}
+                          evidence={linkProp.evidence}
+                          checked={Boolean(selectedLinks[idx])}
+                          onToggle={(c) => setSelectedLinks({ ...selectedLinks, [idx]: c })}
+                          isEvidenceExpanded={Boolean(expandedEvidence[`link_${idx}`])}
+                          onToggleEvidence={() => toggleEvidence(`link_${idx}`)}
+                        />
                       );
                     })}
                   </div>
@@ -601,7 +797,7 @@ export function AutofillDialog({
         {stage === "review" && (
           <div className="p-4 border-t border-neutral-850 bg-neutral-950/50 flex items-center justify-between shrink-0">
             <span className="text-xs text-neutral-400">
-              {totalSelected} changes selected
+              {totalSelected} selected
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -617,7 +813,7 @@ export function AutofillDialog({
                 onClick={handleApply}
                 className="px-5 py-2 rounded-xl text-xs font-semibold text-black bg-white hover:bg-neutral-200 transition-colors disabled:opacity-40"
               >
-                Apply {totalSelected} changes
+                Apply selected ({totalSelected})
               </button>
             </div>
           </div>
@@ -627,7 +823,104 @@ export function AutofillDialog({
   );
 }
 
-function StatusBadge({ status }: { status: "new" | "differs" | "duplicate" }) {
+interface ProposalRowProps {
+  label: string;
+  value: string;
+  summary?: string;
+  status: "new" | "differs" | "duplicate" | "unmapped";
+  currentValue?: any;
+  evidence?: string | null;
+  checked: boolean;
+  onToggle: (checked: boolean) => void;
+  isEvidenceExpanded: boolean;
+  onToggleEvidence: () => void;
+}
+
+function ProposalRow({
+  label,
+  value,
+  summary,
+  status,
+  currentValue,
+  evidence,
+  checked,
+  onToggle,
+  isEvidenceExpanded,
+  onToggleEvidence,
+}: ProposalRowProps) {
+  const isDup = status === "duplicate";
+
+  return (
+    <div
+      className={`p-3 rounded-xl border transition-all space-y-1.5 ${
+        isDup
+          ? "bg-neutral-950/40 border-neutral-850 opacity-60"
+          : checked
+          ? "bg-neutral-900/70 border-neutral-750"
+          : "bg-neutral-950/60 border-neutral-850"
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          disabled={isDup}
+          checked={checked}
+          onChange={(e) => onToggle(e.target.checked)}
+          className="mt-0.5 rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0 shrink-0 disabled:opacity-40"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="text-xs font-semibold text-white">
+              {label}
+            </span>
+            <StatusBadge status={status} />
+          </div>
+
+          <p className="text-xs text-neutral-300 mt-0.5 leading-relaxed font-sans">
+            {value}
+          </p>
+
+          {summary && (
+            <p className="text-[11px] text-neutral-400 mt-1 line-clamp-2 leading-relaxed">
+              {summary}
+            </p>
+          )}
+
+          {/* Differs from your profile: show current value below in --ink-3 */}
+          {status === "differs" && currentValue && (
+            <p className="text-[11px] text-neutral-500 mt-1">
+              Current: {String(currentValue)}
+            </p>
+          )}
+
+          {/* Expandable 'From your resume' line */}
+          {evidence && (
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={onToggleEvidence}
+                className="text-[10px] text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center gap-1"
+              >
+                <span>From your resume</span>
+                <CopilotIcon
+                  name="chevron-down"
+                  className={`w-2.5 h-2.5 transition-transform ${isEvidenceExpanded ? "rotate-180" : ""}`}
+                />
+              </button>
+              {isEvidenceExpanded && (
+                <p className="text-[11px] text-neutral-400 mt-1 pl-2 border-l border-neutral-800 italic bg-neutral-950/60 p-1.5 rounded">
+                  "{evidence}"
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: "new" | "differs" | "duplicate" | "unmapped" }) {
   if (status === "new") {
     return (
       <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shrink-0">
@@ -638,62 +931,20 @@ function StatusBadge({ status }: { status: "new" | "differs" | "duplicate" }) {
   if (status === "differs") {
     return (
       <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/30 shrink-0">
-        Differs
+        Differs from your profile
+      </span>
+    );
+  }
+  if (status === "unmapped") {
+    return (
+      <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/30 shrink-0">
+        Not in our list
       </span>
     );
   }
   return (
     <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-neutral-800 text-neutral-400 shrink-0">
-      Exists
+      Already in your profile
     </span>
-  );
-}
-
-function ProposalCheckItem({
-  label,
-  value,
-  subtext,
-  status,
-  checked,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  subtext?: string;
-  status: "new" | "differs" | "duplicate";
-  checked: boolean;
-  onChange: (c: boolean) => void;
-}) {
-  return (
-    <label
-      className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
-        checked
-          ? "bg-neutral-900/70 border-neutral-750"
-          : "bg-neutral-950/40 border-neutral-850 opacity-60"
-      }`}
-    >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0 shrink-0"
-      />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-1.5">
-          <span className="text-[10px] text-neutral-400 font-semibold uppercase tracking-wider">
-            {label}
-          </span>
-          <StatusBadge status={status} />
-        </div>
-        <span className="text-xs text-white font-medium block truncate mt-0.5">
-          {value}
-        </span>
-        {subtext && (
-          <span className="text-[10px] text-neutral-500 block mt-0.5">
-            {subtext}
-          </span>
-        )}
-      </div>
-    </label>
   );
 }
