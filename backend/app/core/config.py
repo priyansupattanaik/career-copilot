@@ -1,4 +1,4 @@
-﻿import json
+import json
 import re
 from functools import lru_cache
 from pathlib import Path
@@ -97,6 +97,11 @@ class Settings(BaseSettings):
     freehire_timeout_seconds: float = Field(default=15.0, gt=0, le=60)
     freehire_results_per_page: int = Field(default=25, ge=1, le=50)
     freehire_max_days_old: int | None = Field(default=30, ge=1, le=365)
+    # Profile AI resume parser settings
+    resume_parse_total_timeout_seconds: float = Field(default=65.0, gt=0, le=300)
+    resume_parse_max_output_tokens: int = Field(default=8000, ge=512, le=16384)
+    resume_parse_max_text_chars: int = Field(default=40000, ge=1000, le=100000)
+    resume_parse_max_per_hour_per_user: int = Field(default=5, ge=1, le=100)
     # Legacy Fish Audio fields. Interviewer voice now uses Groq Orpheus.
     fish_audio_api_key: str = ""
     fish_audio_base_url: str = "https://api.fish.audio"

@@ -1,0 +1,76 @@
+{
+  "schema_version": "1",
+  "full_name": {
+    "value": "Aria Nova",
+    "evidence": "Aria Nova"
+  },
+  "headline": {
+    "value": "Software Engineer Fresher",
+    "evidence": "Software Engineer Fresher"
+  },
+  "summary_text": {
+    "value": "Passionate junior developer eager to build scalable web applications.",
+    "evidence": "Passionate junior developer eager to build scalable web applications."
+  },
+  "location": {
+    "city": "Bengaluru",
+    "region": null,
+    "country": "India",
+    "evidence": "Bengaluru, India"
+  },
+  "skills": [
+    "Python",
+    "FastAPI",
+    "TypeScript",
+    "React",
+    "PostgreSQL",
+    "Docker",
+    "Git"
+  ],
+  "experience": [
+    {
+      "company": "CloudScale Labs",
+      "title": "Software Engineering Intern",
+      "employment_type": "internship",
+      "location_text": null,
+      "start": "2024-01",
+      "end": "2024-06",
+      "is_current": false,
+      "summary": "Worked on backend APIs using FastAPI and Python; integrated automated tests; improved response times by 15%.",
+      "evidence": "CloudScale Labs · Software Engineering Intern"
+    }
+  ],
+  "education": [
+    {
+      "institution": "Apex Institute of Technology",
+      "degree": "B.Tech",
+      "field_of_study": "Computer Science",
+      "start_year": "2020",
+      "end_year": "2024",
+      "grade_text": "8.8 CGPA",
+      "evidence": "Apex Institute of Technology\nB.Tech in Computer Science"
+    }
+  ],
+  "projects": [
+    {
+      "name": "TaskStream Web Platform",
+      "summary": "A collaborative task management system with real-time updates using React and Node.js.",
+      "technologies": ["React", "Node.js", "PostgreSQL", "TailwindCSS"],
+      "url": "https://github.com/arianova-synthetic/taskstream",
+      "evidence": "TaskStream Web Platform"
+    }
+  ],
+  "certifications": [],
+  "links": [
+    {
+      "type": "linkedin",
+      "url": "https://linkedin.com/in/arianova-synthetic",
+      "evidence": "https://linkedin.com/in/arianova-synthetic"
+    },
+    {
+      "type": "github",
+      "url": "https://github.com/arianova-synthetic",
+      "evidence": "https://github.com/arianova-synthetic"
+    }
+  ]
+}

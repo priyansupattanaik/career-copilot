@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,15 @@ from app.core.errors import ApiError
 
 TRANSIENT_STATUS = {408, 429, 500, 502, 503, 504}
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
+
+
+def strip_reasoning_markers(content: str) -> str:
+    text = content or ""
+    text = re.sub(r"<think>[\s\S]*?</think>", "", text)
+    text = re.sub(r"\[THOUGHT\][\s\S]*?\[/THOUGHT\]", "", text)
+    return text.strip()
+
+
 class NvidiaClient:
     def __init__(self, settings: Settings, transport: httpx.AsyncBaseTransport | None = None):
         self.settings = settings
@@ -89,7 +99,7 @@ class NvidiaClient:
                     "The AI provider returned an invalid structured response.",
                 ) from exc
     def _parse(self, content: str) -> ProviderSuggestionResult:
-        data = parse_json_object(content)
+        data = parse_json_object(strip_reasoning_markers(content))
         return ProviderSuggestionResult.model_validate(data)
     def _strip_json_fence(self, content: str) -> str:
         return strip_json_fence(content)
@@ -100,9 +110,11 @@ class NvidiaClient:
         user_payload: dict[str, Any],
         schema_model: type,
         temperature: float | None = None,
+        max_output_tokens: int | None = None,
         allow_repair: bool = True,
         timeout_seconds: float | None = None,
         max_retries: int | None = None,
+        **kwargs: Any,
     ) -> Any:
         if not self.settings.nvidia_configured:
             raise ApiError(
@@ -115,7 +127,7 @@ class NvidiaClient:
         payload = {
             "model": route["model"],
             "temperature": self.settings.nvidia_temperature if temperature is None else temperature,
-            "max_tokens": self.settings.nvidia_max_output_tokens,
+            "max_tokens": max_output_tokens if max_output_tokens is not None else self.settings.nvidia_max_output_tokens,
             "response_format": {"type": "json_object"},
             "messages": [
                 {"role": "system", "content": system_prompt},
@@ -131,7 +143,7 @@ class NvidiaClient:
         repair_allowed = allow_repair and bool(getattr(self.settings, "llm_allow_repair", True))
         raw = await self._request(payload, timeout_seconds=timeout_seconds, max_retries=max_retries)
         try:
-            return schema_model.model_validate(parse_json_object(raw))
+            return schema_model.model_validate(parse_json_object(strip_reasoning_markers(raw)))
         except (json.JSONDecodeError, ValidationError, TypeError, ValueError):
             if not repair_allowed:
                 raise ApiError(
@@ -147,7 +159,7 @@ class NvidiaClient:
                     {
                         "role": "user",
                         "content": json.dumps(
-                            {"invalid_output": strip_json_fence(raw)[:12_000], "output_schema": schema},
+                            {"invalid_output": strip_json_fence(strip_reasoning_markers(raw))[:12_000], "output_schema": schema},
                             separators=(",", ":"),
                         ),
                     },
@@ -155,7 +167,7 @@ class NvidiaClient:
             }
             repaired = await self._request(repair_payload, timeout_seconds=timeout_seconds, max_retries=max_retries)
             try:
-                return schema_model.model_validate(parse_json_object(repaired))
+                return schema_model.model_validate(parse_json_object(strip_reasoning_markers(repaired)))
             except (json.JSONDecodeError, ValidationError, TypeError, ValueError) as exc:
                 raise ApiError(
                     502,

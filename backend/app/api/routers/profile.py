@@ -8,6 +8,8 @@ from fastapi import APIRouter, Body, Depends, File, Form, UploadFile
 
 from app.api.schemas import (
     PreferencesUpdate,
+    ProfileAutofillApplyRequest,
+    ProfileAutofillParseRequest,
     ProfileFromResumeApplyRequest,
     ProfileFromResumePreviewRequest,
     ProfilePatch,
@@ -43,6 +45,7 @@ from app.features.document_parsing.service import (
 )
 from app.features.profile.agent import build_profile_draft_enriched, profile_draft_response_payload
 from app.features.profile.agent.normalize import normalize_date_value
+from app.features.profile.autofill import apply_autofill_changes, parse_resume_for_autofill
 from app.features.profile.avatars import (
     attach_avatar_url,
     avatar_extension_for_mime,
@@ -367,6 +370,43 @@ def _load_resume_version_for_profile_fill(
     return version
 
 
+@router.post("/profile/autofill/parse")
+async def profile_autofill_parse(
+    payload: ProfileAutofillParseRequest,
+    user: CurrentUser = Depends(get_current_user),
+    settings: Settings = Depends(get_settings),
+):
+    """
+    LLM-based resume extraction and profile proposal generation with failover and verification.
+    """
+    client = client_for(settings, user)
+    return await parse_resume_for_autofill(
+        client,
+        settings,
+        user,
+        resume_id=payload.resume_id,
+        only_fill_empty=payload.only_fill_empty,
+        force=payload.force,
+    )
+
+
+@router.post("/profile/autofill/apply")
+def profile_autofill_apply(
+    payload: ProfileAutofillApplyRequest,
+    user: CurrentUser = Depends(get_current_user),
+    settings: Settings = Depends(get_settings),
+):
+    """
+    Apply selected resume autofill proposals into candidate profile tables.
+    """
+    client = client_for(settings, user)
+    return apply_autofill_changes(
+        client,
+        settings,
+        user,
+        resume_id=payload.resume_id,
+        changes=payload.changes,
+    )
 
 
 @router.post("/profile/from-resume/preview")

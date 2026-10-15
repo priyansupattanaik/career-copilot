@@ -1,0 +1,28 @@
+Aria Nova
+Software Engineer Fresher
+Passionate junior developer eager to build scalable web applications.
+Bengaluru, India
+
+Education
+Apex Institute of Technology
+B.Tech in Computer Science
+2020 – 2024
+Grade: 8.8 CGPA
+
+Experience
+CloudScale Labs · Software Engineering Intern
+Jan 2024 – Jun 2024
+Worked on backend APIs using FastAPI and Python; integrated automated tests; improved response times by 15%.
+
+Projects
+TaskStream Web Platform
+A collaborative task management system with real-time updates using React and Node.js.
+Technologies: React, Node.js, PostgreSQL, TailwindCSS
+https://github.com/arianova-synthetic/taskstream
+
+Skills
+Python, FastAPI, TypeScript, React, PostgreSQL, Docker, Git
+
+Links
+LinkedIn: https://linkedin.com/in/arianova-synthetic
+GitHub: https://github.com/arianova-synthetic

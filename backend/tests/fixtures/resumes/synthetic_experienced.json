@@ -1,0 +1,101 @@
+{
+  "schema_version": "1",
+  "full_name": {
+    "value": "Devon Vance",
+    "evidence": "Devon Vance"
+  },
+  "headline": {
+    "value": "Staff Backend Engineer",
+    "evidence": "Staff Backend Engineer"
+  },
+  "summary_text": {
+    "value": "Experienced distributed systems engineer with 6+ years designing high-throughput services.",
+    "evidence": "Experienced distributed systems engineer with 6+ years designing high-throughput services."
+  },
+  "location": {
+    "city": "Pune",
+    "region": "Maharashtra",
+    "country": "India",
+    "evidence": "Pune, Maharashtra, India"
+  },
+  "skills": [
+    "Python",
+    "Go",
+    "FastAPI",
+    "Django",
+    "PostgreSQL",
+    "Kubernetes",
+    "Docker",
+    "Redis",
+    "Apache Kafka",
+    "AWS",
+    "Git"
+  ],
+  "experience": [
+    {
+      "company": "Vanguard Cloud Systems",
+      "title": "Senior Software Engineer",
+      "employment_type": "full_time",
+      "location_text": null,
+      "start": "2022-06",
+      "end": null,
+      "is_current": true,
+      "summary": "Architected distributed telemetry ingestion processing 40k events/sec; led migration to microservices on Kubernetes; mentored junior engineers.",
+      "evidence": "Vanguard Cloud Systems · Senior Software Engineer"
+    },
+    {
+      "company": "Nexus Data Corp",
+      "title": "Software Engineer",
+      "employment_type": "full_time",
+      "location_text": null,
+      "start": "2020-01",
+      "end": "2022-07",
+      "is_current": false,
+      "summary": "Built resilient data pipelines in Python and Go; managed PostgreSQL clusters; authored internal tooling adopted across 4 squads.",
+      "evidence": "Nexus Data Corp · Software Engineer"
+    },
+    {
+      "company": "Horizon Analytics",
+      "title": "Contract Backend Developer",
+      "employment_type": "contract",
+      "location_text": null,
+      "start": "2022-01",
+      "end": "2022-12",
+      "is_current": false,
+      "summary": "Contract consultant advising on event-driven architectures with Apache Kafka and Redis.",
+      "evidence": "Horizon Analytics · Contract Backend Developer"
+    }
+  ],
+  "education": [
+    {
+      "institution": "Metropolitan University",
+      "degree": "B.Tech",
+      "field_of_study": "Information Technology",
+      "start_year": "2016",
+      "end_year": "2020",
+      "grade_text": null,
+      "evidence": "Metropolitan University\nB.Tech in Information Technology"
+    }
+  ],
+  "projects": [],
+  "certifications": [
+    {
+      "name": "AWS Certified Solutions Architect",
+      "issuer": "Amazon Web Services",
+      "year": "2023",
+      "evidence": "AWS Certified Solutions Architect\nAmazon Web Services\n2023"
+    }
+  ],
+  "links": [
+    {
+      "type": "linkedin",
+      "url": "https://linkedin.com/in/devonvance-synthetic",
+      "evidence": "https://linkedin.com/in/devonvance-synthetic"
+    },
+    {
+      "type": "portfolio",
+      "url": "https://devonvance.synthetic.dev",
+      "evidence": "https://devonvance.synthetic.dev"
+    }
+  ]
+}

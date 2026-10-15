@@ -19,6 +19,9 @@ async def generate_structured_with_failover(
     user_payload: dict[str, Any],
     schema_model: type,
     temperature: float | None = None,
+    temperature_overrides: dict[str, float] | None = None,
+    max_output_tokens: int | None = None,
+    strict_schema: bool = False,
     attempts_per_provider: int = 2,
     allow_repair: bool = True,
     timeout_seconds: float | None = None,
@@ -50,8 +53,14 @@ async def generate_structured_with_failover(
                     "user_payload": user_payload,
                     "schema_model": schema_model,
                 }
-                if temperature is not None:
+                if temperature_overrides and provider in temperature_overrides:
+                    kwargs["temperature"] = temperature_overrides[provider]
+                elif temperature is not None:
                     kwargs["temperature"] = temperature
+                if max_output_tokens is not None:
+                    kwargs["max_output_tokens"] = max_output_tokens
+                if strict_schema:
+                    kwargs["strict_schema"] = strict_schema
                 kwargs["allow_repair"] = allow_repair
                 if timeout_seconds is not None:
                     kwargs["timeout_seconds"] = timeout_seconds

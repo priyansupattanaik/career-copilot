@@ -29,6 +29,20 @@ class UsernameChange(BaseModel):
 class ProfileFromResumePreviewRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     resume_version_id: UUID | None = None
+
+
+class ProfileAutofillParseRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    resume_id: UUID
+    only_fill_empty: bool = True
+    force: bool = False
+
+
+class ProfileAutofillApplyRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    resume_id: UUID
+    changes: dict[str, Any] = Field(default_factory=dict)
+
 class ProfileFromResumeApplyRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     fill_empty_only: bool = True

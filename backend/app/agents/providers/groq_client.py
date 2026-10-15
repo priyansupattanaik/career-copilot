@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,8 @@ from app.agents.providers.routing import provider_route
 from app.api.schemas import ProviderSuggestionResult
 from app.core.config import Settings
 from app.core.errors import ApiError
+
+logger = logging.getLogger(__name__)
 
 TRANSIENT_STATUS = {408, 429, 500, 502, 503, 504}
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
@@ -151,11 +154,13 @@ class GroqClient:
         user_payload: dict[str, Any],
         schema_model: type,
         temperature: float | None = None,
+        max_output_tokens: int | None = None,
         allow_repair: bool = True,
         model: str | None = None,
         timeout_seconds: float | None = None,
         max_retries: int | None = None,
         strict_schema: bool = False,
+        **kwargs: Any,
     ) -> Any:
         if not self.settings.groq_configured:
             raise ApiError(
@@ -178,7 +183,7 @@ class GroqClient:
         payload = {
             "model": model or route["model"],
             "temperature": self.settings.groq_temperature if temperature is None else temperature,
-            "max_tokens": self.settings.groq_max_output_tokens,
+            "max_tokens": max_output_tokens if max_output_tokens is not None else self.settings.groq_max_output_tokens,
             "response_format": response_format,
             "messages": [
                 {"role": "system", "content": system_prompt},
@@ -192,7 +197,15 @@ class GroqClient:
             ],
         }
         repair_allowed = allow_repair and bool(getattr(self.settings, "llm_allow_repair", True))
-        raw = await self._request(payload, timeout_seconds=timeout_seconds, max_retries=max_retries)
+        try:
+            raw = await self._request(payload, timeout_seconds=timeout_seconds, max_retries=max_retries)
+        except ApiError as exc:
+            if strict_schema and exc.status_code in {400, 422, 502}:
+                logger.warning("Groq rejected strict_schema; retrying with strict_schema=False: %s", exc)
+                payload["response_format"] = {"type": "json_object"}
+                raw = await self._request(payload, timeout_seconds=timeout_seconds, max_retries=max_retries)
+            else:
+                raise
         try:
             return schema_model.model_validate(parse_json_object(raw))
         except (json.JSONDecodeError, ValidationError, TypeError, ValueError):

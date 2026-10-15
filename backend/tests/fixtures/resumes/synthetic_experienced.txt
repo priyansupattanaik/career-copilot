@@ -1,0 +1,34 @@
+Devon Vance
+Staff Backend Engineer
+Experienced distributed systems engineer with 6+ years designing high-throughput services.
+Pune, Maharashtra, India
+
+Experience
+Vanguard Cloud Systems · Senior Software Engineer
+Jun 2022 – Present
+Architected distributed telemetry ingestion processing 40k events/sec; led migration to microservices on Kubernetes; mentored junior engineers.
+
+Nexus Data Corp · Software Engineer
+Jan 2020 – Jul 2022
+Built resilient data pipelines in Python and Go; managed PostgreSQL clusters; authored internal tooling adopted across 4 squads.
+
+Horizon Analytics · Contract Backend Developer
+Jan 2022 – Dec 2022
+Contract consultant advising on event-driven architectures with Apache Kafka and Redis.
+
+Education
+Metropolitan University
+B.Tech in Information Technology
+2016 – 2020
+
+Certifications
+AWS Certified Solutions Architect
+Amazon Web Services
+2023
+
+Skills
+Python, Go, FastAPI, Django, PostgreSQL, Kubernetes, Docker, Redis, Apache Kafka, AWS, Git
+
+Links
+LinkedIn: https://linkedin.com/in/devonvance-synthetic
+Portfolio: https://devonvance.synthetic.dev
