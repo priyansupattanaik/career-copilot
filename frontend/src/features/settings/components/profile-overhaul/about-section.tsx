@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { CopilotIcon } from "@/components/ui/copilot-icons";
 import { apiRequest } from "@/shared/api/client";
+import { Surface } from "@/shared/ui/workbench";
 import {
   LOCATION_OPTIONS,
   ROLE_OPTIONS,
@@ -160,57 +161,96 @@ export function AboutSection({
     if (!/^https?:\/\//i.test(url)) {
       url = `https://${url}`;
     }
+
     try {
-      const parsed = new URL(url);
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-        setLinkError("Only HTTP and HTTPS URLs are accepted.");
-        return;
+      if (editingLinkIdOrIdx !== null) {
+        if (onUpdateLink) {
+          await onUpdateLink(editingLinkIdOrIdx, {
+            link_type: dialogLinkType,
+            url,
+          });
+        }
+      } else {
+        await onAddLink({
+          link_type: dialogLinkType,
+          url,
+        });
       }
-    } catch {
-      setLinkError("Please enter a valid URL.");
-      return;
+      setShowLinkDialog(false);
+    } catch (err: any) {
+      setLinkError(err?.message || "Failed to save link.");
     }
-
-    const payload: CandidateLink = {
-      link_type: dialogLinkType,
-      url,
-      label: dialogLinkType,
-    };
-
-    if (editingLinkIdOrIdx !== null && onUpdateLink) {
-      await onUpdateLink(editingLinkIdOrIdx, payload);
-    } else {
-      await onAddLink(payload);
-    }
-    setShowLinkDialog(false);
   }
 
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontFamily: "var(--font-sans)",
+    fontSize: 12,
+    lineHeight: "16px",
+    fontWeight: 600,
+    color: "var(--ink-2)",
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+    marginBottom: 8,
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    height: 40,
+    padding: "0 12px",
+    borderRadius: "var(--radius-md, 8px)",
+    border: "1px solid var(--border-control)",
+    backgroundColor: "var(--surface-2)",
+    color: "var(--ink)",
+    fontFamily: "var(--font-sans)",
+    fontSize: 14,
+    outline: "none",
+  };
+
   return (
-    <section
+    <Surface
       id="section-about"
-      className="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-8 py-8 border-b border-neutral-900"
+      className="profile-about-section"
+      style={{
+        padding: "var(--space-6, 24px)",
+        borderRadius: "var(--radius-lg, 12px)",
+        background: "var(--surface-1)",
+        border: "1px solid var(--hairline)",
+      }}
     >
-      {/* Left Column: Heading & Explanation */}
-      <div className="lg:col-span-4">
-        <h2 className="text-xl font-medium text-white tracking-tight">
+      {/* Section Header */}
+      <div style={{ marginBottom: 20 }}>
+        <h2
+          style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: 18,
+            lineHeight: "28px",
+            fontWeight: 600,
+            color: "var(--ink)",
+            margin: 0,
+          }}
+        >
           About you
         </h2>
-        <p className="text-sm text-neutral-400 mt-2 leading-relaxed">
-          Your core professional identity. This information appears on your profile
-          header and helps recruiters find and understand your background.
+        <p
+          style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: 14,
+            lineHeight: "22px",
+            color: "var(--ink-2)",
+            margin: "4px 0 0 0",
+          }}
+        >
+          Your core professional identity. This information appears on your profile header and helps recruiters find and understand your background.
         </p>
       </div>
 
-      {/* Right Column: Surface */}
-      <div className="lg:col-span-8 bg-[#0A0A0A] border border-neutral-850 rounded-2xl p-6 sm:p-8 space-y-6">
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {/* Row 1: Full name* | Username */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px 24px" }}>
           <div>
-            <label
-              htmlFor="profile-full-name"
-              className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2"
-            >
-              Full name <span className="text-cyan-400">*</span>
+            <label htmlFor="profile-full-name" style={labelStyle}>
+              Full name <span style={{ color: "var(--accent)" }}>*</span>
             </label>
             <input
               id="profile-full-name"
@@ -220,15 +260,12 @@ export function AboutSection({
               value={fullName}
               onChange={(e) => onFullNameChange(e.target.value)}
               placeholder="e.g. Alex Rivera"
-              className="w-full px-4 py-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30 transition-all"
+              style={inputStyle}
             />
           </div>
 
           <div>
-            <label
-              htmlFor="profile-username"
-              className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2"
-            >
+            <label htmlFor="profile-username" style={labelStyle}>
               Username
             </label>
             <input
@@ -240,23 +277,23 @@ export function AboutSection({
               value={username || ""}
               onChange={(e) => onUsernameChange(e.target.value)}
               placeholder="e.g. alex_rivera"
-              className="w-full px-4 py-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30 transition-all font-mono"
+              style={{ ...inputStyle, fontFamily: "var(--font-mono)" }}
             />
-            <p className="text-[11px] mt-1.5 leading-tight">
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, lineHeight: "16px", margin: "6px 0 0 0" }}>
               {checkingUsername ? (
-                <span className="text-neutral-400">Checking availability…</span>
+                <span style={{ color: "var(--ink-3)" }}>Checking availability…</span>
               ) : availability ? (
                 availability.available ? (
-                  <span className="text-emerald-400">
-                    Available. Public profile and sign-in: /{normalizePublicProfileUsername(username)}
+                  <span style={{ color: "var(--ok)" }}>
+                    Available. Public profile: /{normalizePublicProfileUsername(username)}
                   </span>
                 ) : (
-                  <span className="text-rose-400">
+                  <span style={{ color: "var(--danger)" }}>
                     {availability.reason || "That username is not available."}
                   </span>
                 )
               ) : (
-                <span className="text-neutral-500">
+                <span style={{ color: "var(--ink-3)" }}>
                   Choose a unique username. 3–30 letters, numbers, and underscores.
                 </span>
               )}
@@ -264,17 +301,14 @@ export function AboutSection({
           </div>
         </div>
 
-        {/* Row 2: Headline (full width, max 120 characters, counter from 100) */}
+        {/* Row 2: Headline */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <label
-              htmlFor="profile-headline"
-              className="text-xs font-semibold text-neutral-300 uppercase tracking-wider"
-            >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <label htmlFor="profile-headline" style={labelStyle}>
               Headline
             </label>
             {(headline || "").length >= 100 && (
-              <span className="text-[11px] font-mono text-neutral-400">
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-3)" }}>
                 {(headline || "").length}/120
               </span>
             )}
@@ -286,18 +320,15 @@ export function AboutSection({
             value={headline || ""}
             onChange={(e) => onHeadlineChange(e.target.value)}
             placeholder="e.g. Staff Backend Engineer | Distributed Systems & High-Throughput APIs"
-            className="w-full px-4 py-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30 transition-all"
+            style={inputStyle}
           />
         </div>
 
         {/* Row 3: Location* | Current role* */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px 24px" }}>
           <div>
-            <label
-              htmlFor="profile-location"
-              className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2"
-            >
-              Location <span className="text-cyan-400">*</span>
+            <label htmlFor="profile-location" style={labelStyle}>
+              Location <span style={{ color: "var(--accent)" }}>*</span>
             </label>
             <input
               id="profile-location"
@@ -308,7 +339,7 @@ export function AboutSection({
               value={location}
               onChange={(e) => onLocationChange(e.target.value)}
               placeholder="e.g. Bengaluru, India or Remote"
-              className="w-full px-4 py-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30 transition-all"
+              style={inputStyle}
             />
             <datalist id="location-catalog">
               {LOCATION_OPTIONS.map((loc) => (
@@ -318,11 +349,8 @@ export function AboutSection({
           </div>
 
           <div>
-            <label
-              htmlFor="profile-current-role"
-              className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2"
-            >
-              Current role <span className="text-cyan-400">*</span>
+            <label htmlFor="profile-current-role" style={labelStyle}>
+              Current role <span style={{ color: "var(--accent)" }}>*</span>
             </label>
             <input
               id="profile-current-role"
@@ -333,7 +361,7 @@ export function AboutSection({
               value={currentRole}
               onChange={(e) => onCurrentRoleChange(e.target.value)}
               placeholder="e.g. Senior Software Engineer"
-              className="w-full px-4 py-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30 transition-all"
+              style={inputStyle}
             />
             <datalist id="role-catalog">
               {ROLE_OPTIONS.map((r) => (
@@ -344,13 +372,10 @@ export function AboutSection({
         </div>
 
         {/* Row 4: Years of experience* | Career level */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px 24px" }}>
           <div>
-            <label
-              htmlFor="profile-years-exp"
-              className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2"
-            >
-              Years of experience <span className="text-cyan-400">*</span>
+            <label htmlFor="profile-years-exp" style={labelStyle}>
+              Years of experience <span style={{ color: "var(--accent)" }}>*</span>
             </label>
             <input
               id="profile-years-exp"
@@ -365,25 +390,22 @@ export function AboutSection({
                 onYearsExperienceChange(e.target.value === "" ? "" : Number(e.target.value))
               }
               placeholder="e.g. 5"
-              className="w-full px-4 py-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30 transition-all"
+              style={inputStyle}
             />
-            <p className="text-[11px] text-neutral-400 mt-1.5 leading-tight">
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--ink-3)", margin: "6px 0 0 0" }}>
               Choose 0 years if you are a fresher with no work history yet.
             </p>
           </div>
 
           <div>
-            <label
-              htmlFor="profile-career-level"
-              className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2"
-            >
+            <label htmlFor="profile-career-level" style={labelStyle}>
               Career level
             </label>
             <select
               id="profile-career-level"
               value={careerLevel || ""}
               onChange={(e) => onCareerLevelChange(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800 text-white text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30 transition-all"
+              style={inputStyle}
             >
               <option value="">Select career level</option>
               {CAREER_LEVEL_OPTIONS.map((opt) => (
@@ -395,20 +417,17 @@ export function AboutSection({
           </div>
         </div>
 
-        {/* Row 5: Career goal | (empty) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Row 5: Career goal */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px 24px" }}>
           <div>
-            <label
-              htmlFor="profile-career-goal"
-              className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2"
-            >
+            <label htmlFor="profile-career-goal" style={labelStyle}>
               Career goal
             </label>
             <select
               id="profile-career-goal"
               value={careerGoal || ""}
               onChange={(e) => onCareerGoalChange(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800 text-white text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30 transition-all"
+              style={inputStyle}
             >
               <option value="">Select career goal</option>
               {CAREER_GOAL_OPTIONS.map((opt) => (
@@ -418,19 +437,15 @@ export function AboutSection({
               ))}
             </select>
           </div>
-          <div className="hidden sm:block" />
         </div>
 
-        {/* Row 6: About (full-width textarea, 3 rows, labelled 'About') */}
+        {/* Row 6: About (bio) */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <label
-              htmlFor="profile-about-bio"
-              className="text-xs font-semibold text-neutral-300 uppercase tracking-wider"
-            >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <label htmlFor="profile-about-bio" style={labelStyle}>
               About
             </label>
-            <span className="text-[11px] text-neutral-500 font-mono">
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-3)" }}>
               {(bio || "").length}/4000
             </span>
           </div>
@@ -441,69 +456,107 @@ export function AboutSection({
             value={bio || ""}
             onChange={(e) => onBioChange(e.target.value)}
             placeholder="Briefly describe your background, technical interests, and what drives your engineering work..."
-            className="w-full px-4 py-3 rounded-xl bg-neutral-900/80 border border-neutral-800 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30 transition-all resize-none leading-relaxed"
+            style={{
+              ...inputStyle,
+              height: "auto",
+              padding: "10px 12px",
+              resize: "none",
+              lineHeight: "22px",
+            }}
           />
         </div>
 
         {/* Subsection: Links */}
-        <div className="pt-4 border-t border-neutral-850">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
-              Links
-            </span>
+        <div style={{ paddingTop: 16, borderTop: "1px solid var(--hairline)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <span style={labelStyle}>Links</span>
             <button
               type="button"
               onClick={openAddLinkModal}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 hover:bg-neutral-800 text-cyan-400 border border-neutral-800 hover:border-cyan-500/40 transition-colors"
+              className="wb-button wb-button-ghost"
+              style={{ height: 32 }}
             >
-              <CopilotIcon name="plus" className="w-3.5 h-3.5" />
+              <CopilotIcon name="plus" size={14} />
               <span>Add link</span>
             </button>
           </div>
 
-          {/* Links list */}
           {links.length === 0 ? (
-            <p className="text-xs text-neutral-500 italic py-2">
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--ink-3)", fontStyle: "italic", margin: 0 }}>
               No links added yet. Add your LinkedIn, GitHub, or portfolio website.
             </p>
           ) : (
-            <div className="space-y-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {links.map((link, idx) => {
                 const idOrIdx = link.id || idx;
                 return (
                   <div
                     key={link.id || idx}
-                    className="flex items-center justify-between p-3 rounded-xl bg-neutral-900/50 border border-neutral-850 hover:border-neutral-800 transition-colors"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "8px 12px",
+                      borderRadius: "var(--radius-md, 8px)",
+                      backgroundColor: "var(--surface-2)",
+                      border: "1px solid var(--hairline)",
+                    }}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0 pr-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-neutral-800 text-neutral-300 shrink-0">
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, paddingRight: 12 }}>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          height: 22,
+                          padding: "0 6px",
+                          borderRadius: "var(--radius-sm, 4px)",
+                          backgroundColor: "var(--surface-3)",
+                          color: "var(--ink-2)",
+                          fontFamily: "var(--font-sans)",
+                          fontSize: 10,
+                          fontWeight: 600,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.04em",
+                          flexShrink: 0,
+                        }}
+                      >
                         {link.link_type}
                       </span>
                       <a
                         href={link.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs text-neutral-300 hover:text-white truncate hover:underline"
+                        style={{
+                          fontFamily: "var(--font-sans)",
+                          fontSize: 13,
+                          color: "var(--ink)",
+                          textDecoration: "none",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
                       >
                         {link.url}
                       </a>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
                       <button
                         type="button"
                         onClick={() => openEditLinkModal(link, idOrIdx)}
-                        className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+                        className="wb-button wb-button-ghost"
+                        style={{ width: 32, height: 32, padding: 0 }}
                         title="Edit link"
                       >
-                        <CopilotIcon name="edit" className="w-3.5 h-3.5" />
+                        <CopilotIcon name="edit" size={14} />
                       </button>
                       <button
                         type="button"
                         onClick={() => onDeleteLink(idOrIdx)}
-                        className="p-1 rounded text-neutral-500 hover:text-rose-400 hover:bg-neutral-800 transition-colors"
+                        className="wb-button wb-button-ghost"
+                        style={{ width: 32, height: 32, padding: 0, color: "var(--danger)" }}
                         title="Remove link"
                       >
-                        <CopilotIcon name="trash" className="w-3.5 h-3.5" />
+                        <CopilotIcon name="trash" size={14} />
                       </button>
                     </div>
                   </div>
@@ -516,30 +569,81 @@ export function AboutSection({
 
       {/* Add / Edit Link Dialog */}
       {showLinkDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-[#111111] border border-neutral-800 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
-              <h4 className="text-sm font-semibold text-white">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(4px)",
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="link-dialog-title"
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 420,
+              borderRadius: "var(--radius-lg, 12px)",
+              backgroundColor: "var(--surface-3)",
+              border: "1px solid var(--hairline-strong)",
+              padding: 20,
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingBottom: 12,
+                borderBottom: "1px solid var(--hairline)",
+              }}
+            >
+              <h4
+                id="link-dialog-title"
+                style={{
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  margin: 0,
+                }}
+              >
                 {editingLinkIdOrIdx !== null ? "Edit link" : "Add link"}
               </h4>
               <button
                 type="button"
                 onClick={() => setShowLinkDialog(false)}
-                className="text-neutral-500 hover:text-white text-sm"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--ink-3)",
+                  fontSize: 18,
+                  lineHeight: 1,
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+                aria-label="Close dialog"
               >
                 ×
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div>
-                <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
-                  Link type
-                </label>
+                <label style={labelStyle}>Link type</label>
                 <select
                   value={dialogLinkType}
                   onChange={(e) => setDialogLinkType(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white text-xs focus:outline-none focus:border-cyan-500/60"
+                  style={inputStyle}
                 >
                   <option value="linkedin">LinkedIn</option>
                   <option value="github">GitHub</option>
@@ -550,33 +654,45 @@ export function AboutSection({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
-                  URL
-                </label>
+                <label style={labelStyle}>URL</label>
                 <input
                   type="url"
                   value={dialogLinkUrl}
                   onChange={(e) => setDialogLinkUrl(e.target.value)}
                   placeholder="https://example.com"
-                  className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60"
+                  style={inputStyle}
                 />
               </div>
 
-              {linkError && <p className="text-xs text-rose-400">{linkError}</p>}
+              {linkError && (
+                <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--danger)", margin: 0 }}>
+                  {linkError}
+                </p>
+              )}
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-neutral-800">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 8,
+                paddingTop: 12,
+                borderTop: "1px solid var(--hairline)",
+              }}
+            >
               <button
                 type="button"
                 onClick={() => setShowLinkDialog(false)}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-white bg-neutral-900"
+                className="wb-button wb-button-ghost"
+                style={{ height: 40 }}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSaveLink}
-                className="px-4 py-1.5 rounded-lg text-xs font-medium text-black bg-white hover:bg-neutral-200 transition-colors"
+                className="wb-button wb-button-primary"
+                style={{ height: 40 }}
               >
                 Save link
               </button>
@@ -584,6 +700,6 @@ export function AboutSection({
           </div>
         </div>
       )}
-    </section>
+    </Surface>
   );
 }

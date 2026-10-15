@@ -1,5 +1,6 @@
 import { useState, useRef, type ChangeEvent } from "react";
 import { CopilotIcon } from "@/components/ui/copilot-icons";
+import { Checkbox, Surface } from "@/shared/ui/workbench";
 import type { ResumeItem } from "./types";
 
 interface ResumeSectionProps {
@@ -86,273 +87,505 @@ export function ResumeSection({
   }
 
   return (
-    <section
+    <Surface
       id="section-resume"
-      className="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-8 py-8 border-b border-neutral-900"
+      className="profile-resume-section"
+      style={{
+        padding: "var(--space-6, 24px)",
+        borderRadius: "var(--radius-lg, 12px)",
+        background: "var(--surface-1)",
+        border: "1px solid var(--hairline)",
+      }}
     >
-      {/* Left Column: Heading & Explanation */}
-      <div className="lg:col-span-4">
-        <h2 className="text-xl font-medium text-white tracking-tight">
-          Resume
-        </h2>
-        <p className="text-sm text-neutral-400 mt-2 leading-relaxed">
-          Manage your uploaded resumes, choose an active version for applications,
-          and autofill your profile fields using AI extraction.
+      {/* Section Header inside Surface */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+          <h2
+            style={{
+              fontFamily: "var(--font-sans)",
+              fontSize: 18,
+              lineHeight: "28px",
+              fontWeight: 600,
+              color: "var(--ink)",
+              margin: 0,
+            }}
+          >
+            Resume library
+          </h2>
+          <span
+            style={{
+              fontFamily: "var(--font-sans)",
+              fontSize: 14,
+              lineHeight: "20px",
+              color: "var(--ink-2)",
+              fontWeight: 400,
+            }}
+          >
+            {resumes.length}
+          </span>
+        </div>
+        <p
+          style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: 14,
+            lineHeight: "22px",
+            color: "var(--ink-2)",
+            margin: "4px 0 0 0",
+          }}
+        >
+          Manage your resumes, choose the active one, and autofill your profile from it.
         </p>
       </div>
 
-      {/* Right Column: Surface */}
-      <div className="lg:col-span-8 bg-[#0A0A0A] border border-neutral-850 rounded-2xl p-6 sm:p-8 space-y-6">
-        {resumes.length === 0 ? (
-          /* State A: No resumes uploaded yet */
-          <div className="text-center py-10 px-4 border border-dashed border-neutral-800 rounded-xl space-y-4">
-            <div className="w-12 h-12 mx-auto rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-cyan-400">
-              <CopilotIcon name="resume" className="w-6 h-6" />
-            </div>
+      {resumes.length === 0 ? (
+        /* Empty State */
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            padding: "48px 16px",
+            borderRadius: "var(--radius-md, 8px)",
+            border: "1px dashed var(--hairline-strong)",
+          }}
+        >
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: "var(--radius-full, 9999px)",
+              backgroundColor: "var(--surface-2)",
+              border: "1px solid var(--hairline)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "var(--accent)",
+              marginBottom: 16,
+            }}
+          >
+            <CopilotIcon name="resume" size={24} />
+          </div>
 
-            <p className="eyebrow hidden" id="saved-resumes-title" style={{ margin: 0 }}>
-              Saved resumes
-            </p>
-            <p className="eyebrow hidden" id="upload-resume-title" style={{ margin: 0 }}>
-              Upload resume
-            </p>
+          <h3
+            style={{
+              fontFamily: "var(--font-sans)",
+              fontSize: 16,
+              lineHeight: "24px",
+              fontWeight: 600,
+              color: "var(--ink)",
+              margin: 0,
+            }}
+          >
+            Start with your resume
+          </h3>
+          <p
+            style={{
+              fontFamily: "var(--font-sans)",
+              fontSize: 14,
+              lineHeight: "22px",
+              color: "var(--ink-2)",
+              maxWidth: 440,
+              margin: "8px 0 20px 0",
+            }}
+          >
+            Upload a PDF or DOCX and we'll fill in your profile. You review everything before it's saved.
+          </p>
 
-            <div className="space-y-1.5">
-              <h3 className="text-lg font-semibold text-white tracking-tight">
-                Start with your resume
-              </h3>
-              <p className="text-sm text-neutral-400 max-w-md mx-auto leading-relaxed">
-                Upload a PDF or DOCX and we'll fill in your profile. You review everything before it's saved.
-              </p>
-            </div>
+          <input
+            ref={fileInputRefA}
+            type="file"
+            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            style={{ display: "none" }}
+            onChange={handleDirectUpload}
+            aria-label="Upload resume file"
+          />
 
-            <input
-              ref={fileInputRefA}
-              type="file"
-              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              className="hidden"
-              onChange={handleDirectUpload}
-              aria-label="Upload resume file"
+          <button
+            type="button"
+            disabled={uploadBusy}
+            onClick={() => fileInputRefA.current?.click()}
+            className="wb-button wb-button-primary"
+            style={{ height: 40 }}
+          >
+            {uploadBusy ? (
+              <>
+                <div
+                  style={{
+                    width: 14,
+                    height: 14,
+                    border: "2px solid rgba(0,0,0,0.2)",
+                    borderTopColor: "var(--accent-ink)",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                  }}
+                />
+                <span>Uploading…</span>
+              </>
+            ) : (
+              <>
+                <CopilotIcon name="upload" size={16} />
+                <span>Upload resume</span>
+              </>
+            )}
+          </button>
+        </div>
+      ) : (
+        /* Resume List */
+        <div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {resumes.map((r, idx) => {
+              const isActive = Boolean(r.is_active || r.id === activeResumeId || idx === 0);
+              const title = r.filename || r.original_filename || `Resume ${idx + 1}`;
+              const originalFile = r.original_filename || r.filename || "";
+              const rawStatus = r.extraction_status || "confirmed";
+              const status = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase();
+
+              return (
+                <div
+                  key={r.id}
+                  className="profile-resume-row"
+                  style={{
+                    minHeight: 64,
+                    padding: "12px 16px",
+                    borderBottom: "1px solid var(--hairline)",
+                    borderRadius: "var(--radius-md, 8px)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 16,
+                    flexWrap: "wrap",
+                    transition: "background-color 120ms ease",
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-sans)",
+                          fontSize: 14,
+                          lineHeight: "20px",
+                          fontWeight: 500,
+                          color: "var(--ink)",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {title}
+                      </span>
+                      {isActive && (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            height: 24,
+                            padding: "0 8px",
+                            borderRadius: "var(--radius-full, 9999px)",
+                            backgroundColor: "var(--accent-soft)",
+                            color: "var(--accent)",
+                            fontFamily: "var(--font-sans)",
+                            fontSize: 11,
+                            lineHeight: "16px",
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.04em",
+                          }}
+                        >
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <p
+                      style={{
+                        fontFamily: "var(--font-sans)",
+                        fontSize: 13,
+                        lineHeight: "20px",
+                        color: "var(--ink-2)",
+                        margin: "2px 0 0 0",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {originalFile ? `${originalFile} · ${status}` : status}
+                    </p>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                    {!isActive && onSelectActiveResume && (
+                      <button
+                        type="button"
+                        onClick={() => void onSelectActiveResume(r.id)}
+                        className="wb-button wb-button-ghost"
+                        style={{ height: 40 }}
+                      >
+                        Set active
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => openRenameDialog(r)}
+                      className="wb-button wb-button-ghost"
+                      style={{ height: 40 }}
+                    >
+                      Rename
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onTriggerAutofill(r.id, onlyFillEmpty)}
+                      className="wb-button wb-button-primary"
+                      style={{ height: 40 }}
+                    >
+                      Autofill from this resume
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Shared Checkbox below list */}
+          <div style={{ margin: "16px 0" }}>
+            <Checkbox
+              checked={onlyFillEmpty}
+              onChange={onToggleOnlyFillEmpty}
+              label="Only fill empty profile fields (recommended)"
             />
+          </div>
 
-            <div>
+          {/* Hairline Separator */}
+          <div style={{ height: 1, backgroundColor: "var(--hairline)", margin: "24px 0" }} />
+
+          {/* Upload a new resume */}
+          <div>
+            <h3
+              style={{
+                fontFamily: "var(--font-sans)",
+                fontSize: 14,
+                lineHeight: "20px",
+                fontWeight: 600,
+                color: "var(--ink)",
+                margin: "0 0 12px 0",
+              }}
+            >
+              Upload a new resume
+            </h3>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr auto auto",
+                alignItems: "center",
+                gap: 12,
+              }}
+              className="profile-upload-row"
+            >
+              <div>
+                <label
+                  htmlFor="resume-name-input"
+                  style={{
+                    position: "absolute",
+                    width: 1,
+                    height: 1,
+                    padding: 0,
+                    margin: -1,
+                    overflow: "hidden",
+                    clip: "rect(0, 0, 0, 0)",
+                    border: 0,
+                  }}
+                >
+                  Resume name
+                </label>
+                <input
+                  id="resume-name-input"
+                  type="text"
+                  value={resumeTitle}
+                  onChange={(e) => setResumeTitle(e.target.value)}
+                  placeholder="e.g. Senior Backend Resume 2026"
+                  style={{
+                    width: "100%",
+                    height: 40,
+                    padding: "0 12px",
+                    borderRadius: "var(--radius-md, 8px)",
+                    border: "1px solid var(--border-control)",
+                    backgroundColor: "var(--surface-2)",
+                    color: "var(--ink)",
+                    fontFamily: "var(--font-sans)",
+                    fontSize: 14,
+                    outline: "none",
+                  }}
+                />
+              </div>
+
+              <input
+                ref={fileInputRefB}
+                type="file"
+                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                style={{ display: "none" }}
+                onChange={handleFileSelect}
+              />
+
               <button
                 type="button"
-                disabled={uploadBusy}
-                onClick={() => fileInputRefA.current?.click()}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold bg-white text-black hover:bg-neutral-200 transition-colors shadow disabled:opacity-40"
+                onClick={() => fileInputRefB.current?.click()}
+                className="wb-button wb-button-secondary"
+                style={{ height: 40 }}
               >
-                {uploadBusy ? (
-                  <>
-                    <div className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                    <span>Uploading…</span>
-                  </>
-                ) : (
-                  <>
-                    <CopilotIcon name="upload" className="w-3.5 h-3.5 text-black" />
-                    <span>Upload resume</span>
-                  </>
-                )}
+                <span style={{ maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {selectedFile ? selectedFile.name : "Choose PDF or DOCX"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                disabled={!selectedFile || uploadBusy}
+                onClick={handleSubmitUpload}
+                className="wb-button wb-button-primary"
+                style={{ height: 40 }}
+              >
+                {uploadBusy ? "Uploading…" : "Upload"}
               </button>
             </div>
 
-            <p className="text-xs text-neutral-500 font-sans">
-              Saved privately and available across the workspace
+            <p
+              style={{
+                fontFamily: "var(--font-sans)",
+                fontSize: 12,
+                lineHeight: "16px",
+                color: "var(--ink-3)",
+                margin: "8px 0 0 0",
+              }}
+            >
+              PDF or DOCX format. Maximum size: 10 MB.
             </p>
           </div>
-        ) : (
-          /* State B: Resumes exist */
-          <div className="space-y-6">
-            {/* Header / Autofill option checkbox */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-850">
-              <div>
-                <p className="eyebrow" id="saved-resumes-title" style={{ margin: 0 }}>
-                  Saved resumes
-                </p>
-                <h3 className="text-sm font-semibold text-white mt-1">
-                  Resume library ({resumes.length})
-                </h3>
-              </div>
-
-              {/* Autofill option checkbox */}
-              <label className="inline-flex items-center gap-2 text-xs text-neutral-300 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={onlyFillEmpty}
-                  onChange={(e) => onToggleOnlyFillEmpty(e.target.checked)}
-                  className="rounded border-neutral-800 bg-neutral-900 text-cyan-500 focus:ring-0"
-                />
-                <span>Only fill empty profile fields (recommended)</span>
-              </label>
-            </div>
-
-            {/* Hairline-separated rows of resumes */}
-            <div className="divide-y divide-neutral-850 border border-neutral-850 rounded-xl overflow-hidden bg-neutral-900/30">
-              {resumes.map((r, idx) => {
-                const isActive = Boolean(r.is_active || r.id === activeResumeId || idx === 0);
-                const title = r.filename || r.original_filename || `Resume ${idx + 1}`;
-                const originalFile = r.original_filename || r.filename || "";
-                const status = r.extraction_status || "confirmed";
-
-                return (
-                  <div
-                    key={r.id}
-                    className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:bg-neutral-900/60 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-lg bg-neutral-850 flex items-center justify-center shrink-0 text-cyan-400">
-                        <CopilotIcon name="resume" className="w-5 h-5" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium text-white truncate">
-                            {title}
-                          </span>
-                          {isActive && (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                              ACTIVE
-                            </span>
-                          )}
-                          <span className="text-[10px] text-neutral-500 font-mono">
-                            {status}
-                          </span>
-                        </div>
-                        {originalFile && originalFile !== title && (
-                          <span className="text-xs text-neutral-500 truncate block mt-0.5">
-                            {originalFile}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Actions: Set active, Rename, Autofill from this resume */}
-                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                      {!isActive && onSelectActiveResume && (
-                        <button
-                          type="button"
-                          onClick={() => void onSelectActiveResume(r.id)}
-                          className="px-2.5 py-1 text-xs font-medium text-neutral-300 hover:text-white rounded-lg bg-neutral-850 hover:bg-neutral-800 transition-colors"
-                        >
-                          Set active
-                        </button>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => openRenameDialog(r)}
-                        className="px-2.5 py-1 text-xs font-medium text-neutral-300 hover:text-white rounded-lg bg-neutral-850 hover:bg-neutral-800 transition-colors"
-                      >
-                        Rename
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => onTriggerAutofill(r.id, onlyFillEmpty)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hover:border-cyan-400/50 transition-colors shadow-sm"
-                      >
-                        <CopilotIcon name="sparkles" className="w-3.5 h-3.5" />
-                        <span>Autofill from this resume</span>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Below: Upload a new resume */}
-            <div className="pt-4 border-t border-neutral-850 space-y-3">
-              <p className="eyebrow" id="upload-resume-title" style={{ margin: 0 }}>
-                Upload a new resume
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-                <div className="sm:col-span-7">
-                  <label
-                    htmlFor="resume-name-input"
-                    className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5"
-                  >
-                    Resume name
-                  </label>
-                  <input
-                    id="resume-name-input"
-                    type="text"
-                    value={resumeTitle}
-                    onChange={(e) => setResumeTitle(e.target.value)}
-                    placeholder="e.g. Senior Backend Resume 2026"
-                    className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60"
-                  />
-                </div>
-
-                <div className="sm:col-span-5 flex items-center gap-2">
-                  <input
-                    ref={fileInputRefB}
-                    type="file"
-                    accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    className="hidden"
-                    onChange={handleFileSelect}
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => fileInputRefB.current?.click()}
-                    className="flex-1 px-3 py-2 rounded-xl text-xs font-medium text-neutral-200 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 transition-colors truncate"
-                  >
-                    {selectedFile ? selectedFile.name : "Choose PDF or DOCX"}
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={!selectedFile || uploadBusy}
-                    onClick={handleSubmitUpload}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold bg-white text-black hover:bg-neutral-200 transition-colors disabled:opacity-40 shrink-0"
-                  >
-                    {uploadBusy ? "Uploading…" : "Upload"}
-                  </button>
-                </div>
-              </div>
-
-              <p className="text-[11px] text-neutral-500 font-sans">
-                PDF or DOCX format. Maximum size: 10 MB.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Rename Resume Dialog */}
       {renamingResume && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-sm rounded-2xl bg-[#111111] border border-neutral-800 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
-              <h4 className="text-sm font-semibold text-white">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(4px)",
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="rename-dialog-title"
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 400,
+              borderRadius: "var(--radius-lg, 12px)",
+              backgroundColor: "var(--surface-3)",
+              border: "1px solid var(--hairline-strong)",
+              padding: 20,
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingBottom: 12,
+                borderBottom: "1px solid var(--hairline)",
+              }}
+            >
+              <h4
+                id="rename-dialog-title"
+                style={{
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  margin: 0,
+                }}
+              >
                 Rename resume
               </h4>
               <button
                 type="button"
                 onClick={() => setRenamingResume(null)}
-                className="text-neutral-500 hover:text-white text-sm"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--ink-3)",
+                  fontSize: 18,
+                  lineHeight: 1,
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+                aria-label="Close dialog"
               >
                 ×
               </button>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label
+                htmlFor="rename-resume-input"
+                style={{
+                  display: "block",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "var(--ink-2)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                  marginBottom: 6,
+                }}
+              >
                 New resume title
               </label>
               <input
+                id="rename-resume-input"
                 type="text"
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white text-xs focus:outline-none focus:border-cyan-500/60"
+                style={{
+                  width: "100%",
+                  height: 40,
+                  padding: "0 12px",
+                  borderRadius: "var(--radius-md, 8px)",
+                  border: "1px solid var(--border-control)",
+                  backgroundColor: "var(--surface-2)",
+                  color: "var(--ink)",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 14,
+                  outline: "none",
+                }}
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-neutral-800">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 8,
+                paddingTop: 12,
+                borderTop: "1px solid var(--hairline)",
+              }}
+            >
               <button
                 type="button"
                 onClick={() => setRenamingResume(null)}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-white bg-neutral-900"
+                className="wb-button wb-button-ghost"
+                style={{ height: 40 }}
               >
                 Cancel
               </button>
@@ -360,7 +593,8 @@ export function ResumeSection({
                 type="button"
                 disabled={!newTitle.trim() || renameBusy}
                 onClick={handleSaveRename}
-                className="px-4 py-1.5 rounded-lg text-xs font-medium text-black bg-white hover:bg-neutral-200 transition-colors disabled:opacity-40"
+                className="wb-button wb-button-primary"
+                style={{ height: 40 }}
               >
                 {renameBusy ? "Saving…" : "Save"}
               </button>
@@ -368,6 +602,6 @@ export function ResumeSection({
           </div>
         </div>
       )}
-    </section>
+    </Surface>
   );
 }

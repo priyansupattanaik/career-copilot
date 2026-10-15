@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CopilotIcon } from "@/components/ui/copilot-icons";
+import { Surface } from "@/shared/ui/workbench";
 import { DEGREE_OPTIONS, FIELD_OF_STUDY_OPTIONS } from "@/features/profile/model/profile-options";
 import type { CandidateExperience, CandidateEducation } from "./types";
 
@@ -95,8 +96,12 @@ export function BackgroundSection({
   }
 
   async function handleSaveExp() {
-    if (!expDraft.company_name.trim() || !expDraft.role_title.trim()) {
-      setExpError("Company name and role title are required.");
+    if (!expDraft.company_name.trim()) {
+      setExpError("Company name is required.");
+      return;
+    }
+    if (!expDraft.role_title.trim()) {
+      setExpError("Role title is required.");
       return;
     }
     setExpError("");
@@ -148,59 +153,137 @@ export function BackgroundSection({
     setExpandedExpIds((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontFamily: "var(--font-sans)",
+    fontSize: 12,
+    lineHeight: "16px",
+    fontWeight: 600,
+    color: "var(--ink-2)",
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+    marginBottom: 8,
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    height: 40,
+    padding: "0 12px",
+    borderRadius: "var(--radius-md, 8px)",
+    border: "1px solid var(--border-control)",
+    backgroundColor: "var(--surface-2)",
+    color: "var(--ink)",
+    fontFamily: "var(--font-sans)",
+    fontSize: 14,
+    outline: "none",
+  };
+
   return (
-    <section
+    <Surface
       id="section-background"
-      className="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-8 py-8 border-b border-neutral-900"
+      className="profile-background-section"
+      style={{
+        padding: "var(--space-6, 24px)",
+        borderRadius: "var(--radius-lg, 12px)",
+        background: "var(--surface-1)",
+        border: "1px solid var(--hairline)",
+      }}
     >
-      {/* Left Column: Heading & Explanation */}
-      <div className="lg:col-span-4">
-        <h2 className="text-xl font-medium text-white tracking-tight">
+      {/* Section Header */}
+      <div style={{ marginBottom: 20 }}>
+        <h2
+          style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: 18,
+            lineHeight: "28px",
+            fontWeight: 600,
+            color: "var(--ink)",
+            margin: 0,
+          }}
+        >
           Experience & education
         </h2>
-        <p className="text-sm text-neutral-400 mt-2 leading-relaxed">
-          Your career trajectory and academic achievements. We use these milestones to
-          evaluate qualifications and role seniority.
+        <p
+          style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: 14,
+            lineHeight: "22px",
+            color: "var(--ink-2)",
+            margin: "4px 0 0 0",
+          }}
+        >
+          Your career trajectory and academic achievements. We use these milestones to evaluate qualifications and role seniority.
         </p>
-        <p className="text-xs text-neutral-400 mt-3 p-3 rounded-xl bg-neutral-900/60 border border-neutral-850">
+        <div
+          style={{
+            marginTop: 12,
+            padding: "8px 12px",
+            borderRadius: "var(--radius-md, 8px)",
+            backgroundColor: "var(--surface-2)",
+            border: "1px solid var(--hairline)",
+            fontFamily: "var(--font-sans)",
+            fontSize: 12,
+            lineHeight: "18px",
+            color: "var(--ink-2)",
+          }}
+        >
           Add at least one experience, or set years of experience to 0 for fresher credit.
-        </p>
+        </div>
       </div>
 
-      {/* Right Column: Surface */}
-      <div className="lg:col-span-8 bg-[#0A0A0A] border border-neutral-850 rounded-2xl p-6 sm:p-8 space-y-8">
+      <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
         {/* ================= WORK EXPERIENCE ================= */}
         <div>
-          <div className="flex items-center justify-between pb-3 border-b border-neutral-850">
-            <div>
-              <h3 className="text-sm font-semibold text-white tracking-wide uppercase">
-                Experience
-              </h3>
-            </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingBottom: 12,
+              borderBottom: "1px solid var(--hairline)",
+            }}
+          >
+            <h3
+              style={{
+                fontFamily: "var(--font-sans)",
+                fontSize: 12,
+                fontWeight: 600,
+                color: "var(--ink-2)",
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+                margin: 0,
+              }}
+            >
+              Experience ({experiences.length})
+            </h3>
             <button
               type="button"
               onClick={openAddExp}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-750 hover:border-neutral-700 transition-colors"
+              className="wb-button wb-button-ghost"
+              style={{ height: 32 }}
             >
-              <CopilotIcon name="plus" className="w-3.5 h-3.5" />
+              <CopilotIcon name="plus" size={14} />
               <span>Add experience</span>
             </button>
           </div>
 
           {experiences.length === 0 ? (
-            <div className="text-center py-8 space-y-3">
-              <p className="text-neutral-500 text-xs">No experience added yet.</p>
+            <div style={{ textAlign: "center", padding: "32px 16px" }}>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--ink-3)", margin: "0 0 12px 0" }}>
+                No experience added yet.
+              </p>
               <button
                 type="button"
                 onClick={openAddExp}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-200 border border-neutral-800 hover:border-neutral-700 transition-colors"
+                className="wb-button wb-button-secondary"
+                style={{ height: 36 }}
               >
-                <CopilotIcon name="plus" className="w-3 h-3" />
+                <CopilotIcon name="plus" size={14} />
                 <span>Add experience</span>
               </button>
             </div>
           ) : (
-            <div className="mt-4 space-y-4">
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
               {experiences.map((exp, idx) => {
                 const id = exp.id || String(idx);
                 const isExpanded = Boolean(expandedExpIds[id]);
@@ -213,60 +296,112 @@ export function BackgroundSection({
                 return (
                   <div
                     key={id}
-                    className="p-4 rounded-xl bg-neutral-900/50 border border-neutral-850 hover:border-neutral-800 transition-all space-y-2.5"
+                    style={{
+                      padding: 16,
+                      borderRadius: "var(--radius-md, 8px)",
+                      backgroundColor: "var(--surface-2)",
+                      border: "1px solid var(--hairline)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                    }}
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                       <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm font-semibold text-white">
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <h4
+                            style={{
+                              fontFamily: "var(--font-sans)",
+                              fontSize: 14,
+                              lineHeight: "20px",
+                              fontWeight: 600,
+                              color: "var(--ink)",
+                              margin: 0,
+                            }}
+                          >
                             {exp.role_title} · {exp.company_name}
                           </h4>
                           {exp.employment_type && (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-neutral-800 text-neutral-300">
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                height: 20,
+                                padding: "0 6px",
+                                borderRadius: "var(--radius-sm, 4px)",
+                                backgroundColor: "var(--surface-3)",
+                                color: "var(--ink-2)",
+                                fontFamily: "var(--font-sans)",
+                                fontSize: 10,
+                                fontWeight: 500,
+                              }}
+                            >
                               {exp.employment_type}
                             </span>
                           )}
                           {exp.is_current && (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                height: 20,
+                                padding: "0 6px",
+                                borderRadius: "var(--radius-sm, 4px)",
+                                backgroundColor: "var(--accent-soft)",
+                                color: "var(--accent)",
+                                fontFamily: "var(--font-sans)",
+                                fontSize: 10,
+                                fontWeight: 600,
+                              }}
+                            >
                               Present
                             </span>
                           )}
                         </div>
                         {dateDisplay && (
-                          <p className="text-xs text-neutral-400 mt-0.5">
+                          <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--ink-2)", margin: "4px 0 0 0" }}>
                             {dateDisplay}
                           </p>
                         )}
                       </div>
 
-                      {/* Action buttons: Edit and Remove */}
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Action buttons */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
                         <button
                           type="button"
                           onClick={() => openEditExp(exp)}
-                          className="p-1.5 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 text-xs transition-colors"
+                          className="wb-button wb-button-ghost"
+                          style={{ width: 32, height: 32, padding: 0 }}
                           title="Edit"
                         >
-                          <CopilotIcon name="edit" className="w-3.5 h-3.5" />
+                          <CopilotIcon name="edit" size={14} />
                         </button>
                         <button
                           type="button"
                           onClick={() => setDeleteExpId(id)}
-                          className="p-1.5 rounded text-neutral-500 hover:text-rose-400 hover:bg-neutral-800 text-xs transition-colors"
+                          className="wb-button wb-button-ghost"
+                          style={{ width: 32, height: 32, padding: 0, color: "var(--danger)" }}
                           title="Remove"
                         >
-                          <CopilotIcon name="trash" className="w-3.5 h-3.5" />
+                          <CopilotIcon name="trash" size={14} />
                         </button>
                       </div>
                     </div>
 
-                    {/* Summary clamped to 3 lines */}
                     {exp.summary && (
                       <div>
                         <p
-                          className={`text-xs text-neutral-300 leading-relaxed font-sans ${
-                            isExpanded ? "" : "line-clamp-3"
-                          }`}
+                          style={{
+                            fontFamily: "var(--font-sans)",
+                            fontSize: 13,
+                            lineHeight: "20px",
+                            color: "var(--ink-2)",
+                            margin: 0,
+                            display: isExpanded ? "block" : "-webkit-box",
+                            WebkitLineClamp: isExpanded ? undefined : 3,
+                            WebkitBoxOrient: isExpanded ? undefined : "vertical",
+                            overflow: isExpanded ? "visible" : "hidden",
+                          }}
                         >
                           {exp.summary}
                         </p>
@@ -274,7 +409,17 @@ export function BackgroundSection({
                           <button
                             type="button"
                             onClick={() => toggleSummaryExpand(id)}
-                            className="text-[11px] text-cyan-400 hover:text-cyan-300 mt-1 font-medium block"
+                            style={{
+                              background: "transparent",
+                              border: "none",
+                              padding: 0,
+                              color: "var(--accent)",
+                              fontFamily: "var(--font-sans)",
+                              fontSize: 11,
+                              fontWeight: 500,
+                              cursor: "pointer",
+                              marginTop: 4,
+                            }}
                           >
                             {isExpanded ? "Show less" : "Show more"}
                           </button>
@@ -290,36 +435,56 @@ export function BackgroundSection({
 
         {/* ================= EDUCATION ================= */}
         <div>
-          <div className="flex items-center justify-between pb-3 border-b border-neutral-850">
-            <div>
-              <h3 className="text-sm font-semibold text-white tracking-wide uppercase">
-                Education
-              </h3>
-            </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingBottom: 12,
+              borderBottom: "1px solid var(--hairline)",
+            }}
+          >
+            <h3
+              style={{
+                fontFamily: "var(--font-sans)",
+                fontSize: 12,
+                fontWeight: 600,
+                color: "var(--ink-2)",
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+                margin: 0,
+              }}
+            >
+              Education ({education.length})
+            </h3>
             <button
               type="button"
               onClick={openAddEdu}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-750 hover:border-neutral-700 transition-colors"
+              className="wb-button wb-button-ghost"
+              style={{ height: 32 }}
             >
-              <CopilotIcon name="plus" className="w-3.5 h-3.5" />
+              <CopilotIcon name="plus" size={14} />
               <span>Add education</span>
             </button>
           </div>
 
           {education.length === 0 ? (
-            <div className="text-center py-8 space-y-3">
-              <p className="text-neutral-500 text-xs">No education added yet.</p>
+            <div style={{ textAlign: "center", padding: "32px 16px" }}>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--ink-3)", margin: "0 0 12px 0" }}>
+                No education added yet.
+              </p>
               <button
                 type="button"
                 onClick={openAddEdu}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-200 border border-neutral-800 hover:border-neutral-700 transition-colors"
+                className="wb-button wb-button-secondary"
+                style={{ height: 36 }}
               >
-                <CopilotIcon name="plus" className="w-3 h-3" />
+                <CopilotIcon name="plus" size={14} />
                 <span>Add education</span>
               </button>
             </div>
           ) : (
-            <div className="mt-4 space-y-4">
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
               {education.map((edu, idx) => {
                 const id = edu.id || String(idx);
                 const titleStr = [edu.degree, edu.field_of_study].filter(Boolean).join(" · ");
@@ -328,42 +493,76 @@ export function BackgroundSection({
                 return (
                   <div
                     key={id}
-                    className="p-4 rounded-xl bg-neutral-900/50 border border-neutral-850 hover:border-neutral-800 transition-all space-y-2"
+                    style={{
+                      padding: 16,
+                      borderRadius: "var(--radius-md, 8px)",
+                      backgroundColor: "var(--surface-2)",
+                      border: "1px solid var(--hairline)",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      gap: 12,
+                    }}
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                      <div>
-                        <h4 className="text-sm font-semibold text-white">
-                          {titleStr || "Education"} with {edu.institution}
-                        </h4>
-                        <div className="flex items-center gap-3 mt-0.5 text-xs text-neutral-400">
-                          {dates && <span>{dates}</span>}
-                          {edu.grade_text && (
-                            <span className="px-2 py-0.5 rounded text-[10px] bg-neutral-800 text-neutral-300">
-                              {edu.grade_text}
-                            </span>
-                          )}
-                        </div>
+                    <div>
+                      <h4
+                        style={{
+                          fontFamily: "var(--font-sans)",
+                          fontSize: 14,
+                          lineHeight: "20px",
+                          fontWeight: 600,
+                          color: "var(--ink)",
+                          margin: 0,
+                        }}
+                      >
+                        {titleStr || "Education"} with {edu.institution}
+                      </h4>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                        {dates && (
+                          <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--ink-2)" }}>
+                            {dates}
+                          </span>
+                        )}
+                        {edu.grade_text && (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              height: 20,
+                              padding: "0 6px",
+                              borderRadius: "var(--radius-sm, 4px)",
+                              backgroundColor: "var(--surface-3)",
+                              color: "var(--ink-2)",
+                              fontFamily: "var(--font-sans)",
+                              fontSize: 10,
+                            }}
+                          >
+                            {edu.grade_text}
+                          </span>
+                        )}
                       </div>
+                    </div>
 
-                      {/* Action buttons: Edit and Remove */}
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => openEditEdu(edu)}
-                          className="p-1.5 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 text-xs transition-colors"
-                          title="Edit"
-                        >
-                          <CopilotIcon name="edit" className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteEduId(id)}
-                          className="p-1.5 rounded text-neutral-500 hover:text-rose-400 hover:bg-neutral-800 text-xs transition-colors"
-                          title="Remove"
-                        >
-                          <CopilotIcon name="trash" className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                    {/* Action buttons */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                      <button
+                        type="button"
+                        onClick={() => openEditEdu(edu)}
+                        className="wb-button wb-button-ghost"
+                        style={{ width: 32, height: 32, padding: 0 }}
+                        title="Edit"
+                      >
+                        <CopilotIcon name="edit" size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteEduId(id)}
+                        className="wb-button wb-button-ghost"
+                        style={{ width: 32, height: 32, padding: 0, color: "var(--danger)" }}
+                        title="Remove"
+                      >
+                        <CopilotIcon name="trash" size={14} />
+                      </button>
                     </div>
                   </div>
                 );
@@ -373,144 +572,193 @@ export function BackgroundSection({
         </div>
       </div>
 
-      {/* ================= MODALS ================= */}
-
-      {/* Experience Add/Edit Dialog */}
+      {/* Experience Add/Edit Modal */}
       {showExpModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg rounded-2xl bg-[#111111] border border-neutral-800 p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
-              <h4 className="text-sm font-semibold text-white">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(4px)",
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="exp-dialog-title"
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 480,
+              borderRadius: "var(--radius-lg, 12px)",
+              backgroundColor: "var(--surface-3)",
+              border: "1px solid var(--hairline-strong)",
+              padding: 20,
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingBottom: 12,
+                borderBottom: "1px solid var(--hairline)",
+              }}
+            >
+              <h4
+                id="exp-dialog-title"
+                style={{
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  margin: 0,
+                }}
+              >
                 {editingExpId ? "Edit experience" : "Add experience"}
               </h4>
               <button
                 type="button"
                 onClick={() => setShowExpModal(false)}
-                className="text-neutral-500 hover:text-white text-sm"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--ink-3)",
+                  fontSize: 18,
+                  lineHeight: 1,
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+                aria-label="Close dialog"
               >
                 ×
               </button>
             </div>
 
-            <div className="space-y-4 text-xs">
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div>
-                <label className="block text-neutral-300 font-semibold mb-1">
-                  Company name *
-                </label>
+                <label style={labelStyle}>Company name *</label>
                 <input
                   type="text"
                   value={expDraft.company_name}
                   onChange={(e) => setExpDraft({ ...expDraft, company_name: e.target.value })}
                   placeholder="e.g. Acme Corp"
-                  className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60"
+                  style={inputStyle}
                 />
               </div>
 
               <div>
-                <label className="block text-neutral-300 font-semibold mb-1">
-                  Role title *
-                </label>
+                <label style={labelStyle}>Role title *</label>
                 <input
                   type="text"
                   value={expDraft.role_title}
                   onChange={(e) => setExpDraft({ ...expDraft, role_title: e.target.value })}
-                  placeholder="e.g. Senior Frontend Engineer"
-                  className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60"
+                  placeholder="e.g. Senior Software Engineer"
+                  style={inputStyle}
                 />
               </div>
 
-              <div>
-                <label className="block text-neutral-300 font-semibold mb-1">
-                  Employment type
-                </label>
-                <select
-                  value={expDraft.employment_type || "Full-time"}
-                  onChange={(e) => setExpDraft({ ...expDraft, employment_type: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs focus:outline-none focus:border-cyan-500/60"
-                >
-                  <option value="Full-time">Full-time</option>
-                  <option value="Part-time">Part-time</option>
-                  <option value="Contract">Contract</option>
-                  <option value="Internship">Internship</option>
-                  <option value="Freelance">Freelance</option>
-                </select>
-              </div>
-
-              {/* Month inputs for dates */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <label className="block text-neutral-300 font-semibold mb-1">
-                    Start date (Month)
-                  </label>
+                  <label style={labelStyle}>Employment type</label>
+                  <select
+                    value={expDraft.employment_type || "Full-time"}
+                    onChange={(e) => setExpDraft({ ...expDraft, employment_type: e.target.value })}
+                    style={inputStyle}
+                  >
+                    <option value="Full-time">Full-time</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Internship">Internship</option>
+                    <option value="Freelance">Freelance</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Start Date</label>
                   <input
                     type="month"
                     value={expDraft.start_date || ""}
                     onChange={(e) => setExpDraft({ ...expDraft, start_date: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs focus:outline-none focus:border-cyan-500/60"
+                    style={inputStyle}
                   />
                 </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0" }}>
+                <input
+                  id="exp-is-current"
+                  type="checkbox"
+                  checked={Boolean(expDraft.is_current)}
+                  onChange={(e) => setExpDraft({ ...expDraft, is_current: e.target.checked })}
+                  style={{ width: 16, height: 16, accentColor: "var(--accent)" }}
+                />
+                <label htmlFor="exp-is-current" style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--ink)", cursor: "pointer" }}>
+                  I currently work here
+                </label>
+              </div>
+
+              {!expDraft.is_current && (
                 <div>
-                  <label className="block text-neutral-300 font-semibold mb-1">
-                    End date (Month)
-                  </label>
+                  <label style={labelStyle}>End Date</label>
                   <input
                     type="month"
-                    disabled={Boolean(expDraft.is_current)}
-                    value={expDraft.is_current ? "" : expDraft.end_date || ""}
+                    value={expDraft.end_date || ""}
                     onChange={(e) => setExpDraft({ ...expDraft, end_date: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs focus:outline-none focus:border-cyan-500/60 disabled:opacity-40"
+                    style={inputStyle}
                   />
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="currently-working"
-                  checked={Boolean(expDraft.is_current)}
-                  onChange={(e) =>
-                    setExpDraft({
-                      ...expDraft,
-                      is_current: e.target.checked,
-                      end_date: e.target.checked ? null : expDraft.end_date,
-                    })
-                  }
-                  className="rounded border-neutral-800 bg-neutral-950 text-cyan-500 focus:ring-0"
-                />
-                <label htmlFor="currently-working" className="text-neutral-300 cursor-pointer select-none">
-                  Currently working here
-                </label>
-              </div>
+              )}
 
               <div>
-                <label className="block text-neutral-300 font-semibold mb-1">
-                  Summary / Key Achievements
-                </label>
+                <label style={labelStyle}>Summary / Responsibilities</label>
                 <textarea
                   rows={3}
-                  maxLength={800}
                   value={expDraft.summary || ""}
                   onChange={(e) => setExpDraft({ ...expDraft, summary: e.target.value })}
-                  placeholder="Describe your scope of impact, key systems built, or measurable outcomes..."
-                  className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60 resize-none leading-relaxed"
+                  placeholder="Key accomplishments, impact, tech stack..."
+                  style={{ ...inputStyle, height: "auto", padding: "10px 12px", resize: "none" }}
                 />
               </div>
 
-              {expError && <p className="text-xs text-rose-400">{expError}</p>}
+              {expError && (
+                <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--danger)", margin: 0 }}>
+                  {expError}
+                </p>
+              )}
             </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-neutral-800">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 8,
+                paddingTop: 12,
+                borderTop: "1px solid var(--hairline)",
+              }}
+            >
               <button
                 type="button"
                 onClick={() => setShowExpModal(false)}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-white bg-neutral-900"
+                className="wb-button wb-button-ghost"
+                style={{ height: 40 }}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSaveExp}
-                className="px-4 py-1.5 rounded-lg text-xs font-medium text-black bg-white hover:bg-neutral-200 transition-colors"
+                className="wb-button wb-button-primary"
+                style={{ height: 40 }}
               >
                 Save
               </button>
@@ -521,19 +769,46 @@ export function BackgroundSection({
 
       {/* Remove Experience Confirmation Dialog */}
       {deleteExpId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-sm rounded-xl bg-[#111111] border border-neutral-800 p-6 shadow-2xl space-y-4">
-            <h4 className="text-sm font-semibold text-white">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(4px)",
+          }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 384,
+              borderRadius: "var(--radius-lg, 12px)",
+              backgroundColor: "var(--surface-3)",
+              border: "1px solid var(--hairline-strong)",
+              padding: 20,
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+            }}
+          >
+            <h4 style={{ fontFamily: "var(--font-sans)", fontSize: 15, fontWeight: 600, color: "var(--ink)", margin: 0 }}>
               Remove this entry?
             </h4>
-            <p className="text-xs text-neutral-400 leading-relaxed">
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--ink-2)", margin: 0 }}>
               Are you sure you want to remove this experience entry? This cannot be undone.
             </p>
-            <div className="flex justify-end gap-2 pt-2">
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <button
                 type="button"
                 onClick={() => setDeleteExpId(null)}
-                className="px-3.5 py-1.5 rounded-lg text-xs text-neutral-400 hover:text-white bg-neutral-900"
+                className="wb-button wb-button-ghost"
+                style={{ height: 36 }}
               >
                 Cancel
               </button>
@@ -544,7 +819,8 @@ export function BackgroundSection({
                   setDeleteExpId(null);
                   await onDeleteExperience(target);
                 }}
-                className="px-4 py-1.5 rounded-lg text-xs font-medium text-white bg-rose-600 hover:bg-rose-500 transition-colors"
+                className="wb-button"
+                style={{ height: 36, backgroundColor: "var(--danger)", color: "#000", fontWeight: 600 }}
               >
                 Remove
               </button>
@@ -553,49 +829,100 @@ export function BackgroundSection({
         </div>
       )}
 
-      {/* Education Add/Edit Dialog */}
+      {/* Education Add/Edit Modal */}
       {showEduModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg rounded-2xl bg-[#111111] border border-neutral-800 p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
-              <h4 className="text-sm font-semibold text-white">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(4px)",
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edu-dialog-title"
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 480,
+              borderRadius: "var(--radius-lg, 12px)",
+              backgroundColor: "var(--surface-3)",
+              border: "1px solid var(--hairline-strong)",
+              padding: 20,
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingBottom: 12,
+                borderBottom: "1px solid var(--hairline)",
+              }}
+            >
+              <h4
+                id="edu-dialog-title"
+                style={{
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  margin: 0,
+                }}
+              >
                 {editingEduId ? "Edit education" : "Add education"}
               </h4>
               <button
                 type="button"
                 onClick={() => setShowEduModal(false)}
-                className="text-neutral-500 hover:text-white text-sm"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--ink-3)",
+                  fontSize: 18,
+                  lineHeight: 1,
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+                aria-label="Close dialog"
               >
                 ×
               </button>
             </div>
 
-            <div className="space-y-4 text-xs">
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div>
-                <label className="block text-neutral-300 font-semibold mb-1">
-                  Institution *
-                </label>
+                <label style={labelStyle}>Institution *</label>
                 <input
                   type="text"
                   value={eduDraft.institution}
                   onChange={(e) => setEduDraft({ ...eduDraft, institution: e.target.value })}
                   placeholder="e.g. Stanford University"
-                  className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60"
+                  style={inputStyle}
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <label className="block text-neutral-300 font-semibold mb-1">
-                    Degree
-                  </label>
+                  <label style={labelStyle}>Degree</label>
                   <input
                     list="degree-catalog"
                     type="text"
                     value={eduDraft.degree || ""}
                     onChange={(e) => setEduDraft({ ...eduDraft, degree: e.target.value })}
                     placeholder="e.g. B.Tech"
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60"
+                    style={inputStyle}
                   />
                   <datalist id="degree-catalog">
                     {DEGREE_OPTIONS.map((d) => (
@@ -605,16 +932,14 @@ export function BackgroundSection({
                 </div>
 
                 <div>
-                  <label className="block text-neutral-300 font-semibold mb-1">
-                    Field of Study
-                  </label>
+                  <label style={labelStyle}>Field of Study</label>
                   <input
                     list="field-catalog"
                     type="text"
                     value={eduDraft.field_of_study || ""}
                     onChange={(e) => setEduDraft({ ...eduDraft, field_of_study: e.target.value })}
                     placeholder="e.g. Computer Science"
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60"
+                    style={inputStyle}
                   />
                   <datalist id="field-catalog">
                     {FIELD_OF_STUDY_OPTIONS.map((f) => (
@@ -624,61 +949,69 @@ export function BackgroundSection({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <label className="block text-neutral-300 font-semibold mb-1">
-                    Start Year
-                  </label>
+                  <label style={labelStyle}>Start Year</label>
                   <input
                     type="text"
                     value={eduDraft.start_year || ""}
                     onChange={(e) => setEduDraft({ ...eduDraft, start_year: e.target.value })}
                     placeholder="e.g. 2020"
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60"
+                    style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label className="block text-neutral-300 font-semibold mb-1">
-                    End Year
-                  </label>
+                  <label style={labelStyle}>End Year</label>
                   <input
                     type="text"
                     value={eduDraft.end_year || ""}
                     onChange={(e) => setEduDraft({ ...eduDraft, end_year: e.target.value })}
                     placeholder="e.g. 2024"
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60"
+                    style={inputStyle}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-neutral-300 font-semibold mb-1">
-                  Grade / GPA (Optional)
-                </label>
+                <label style={labelStyle}>Grade / GPA (Optional)</label>
                 <input
                   type="text"
                   value={eduDraft.grade_text || ""}
                   onChange={(e) => setEduDraft({ ...eduDraft, grade_text: e.target.value })}
                   placeholder="e.g. 3.8 GPA or 85%"
-                  className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/60"
+                  style={inputStyle}
                 />
               </div>
 
-              {eduError && <p className="text-xs text-rose-400">{eduError}</p>}
+              {eduError && (
+                <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--danger)", margin: 0 }}>
+                  {eduError}
+                </p>
+              )}
             </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-neutral-800">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 8,
+                paddingTop: 12,
+                borderTop: "1px solid var(--hairline)",
+              }}
+            >
               <button
                 type="button"
                 onClick={() => setShowEduModal(false)}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-white bg-neutral-900"
+                className="wb-button wb-button-ghost"
+                style={{ height: 40 }}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSaveEdu}
-                className="px-4 py-1.5 rounded-lg text-xs font-medium text-black bg-white hover:bg-neutral-200 transition-colors"
+                className="wb-button wb-button-primary"
+                style={{ height: 40 }}
               >
                 Save
               </button>
@@ -689,19 +1022,46 @@ export function BackgroundSection({
 
       {/* Remove Education Confirmation Dialog */}
       {deleteEduId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-sm rounded-xl bg-[#111111] border border-neutral-800 p-6 shadow-2xl space-y-4">
-            <h4 className="text-sm font-semibold text-white">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(4px)",
+          }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 384,
+              borderRadius: "var(--radius-lg, 12px)",
+              backgroundColor: "var(--surface-3)",
+              border: "1px solid var(--hairline-strong)",
+              padding: 20,
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+            }}
+          >
+            <h4 style={{ fontFamily: "var(--font-sans)", fontSize: 15, fontWeight: 600, color: "var(--ink)", margin: 0 }}>
               Remove this entry?
             </h4>
-            <p className="text-xs text-neutral-400 leading-relaxed">
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--ink-2)", margin: 0 }}>
               Are you sure you want to remove this education entry? This cannot be undone.
             </p>
-            <div className="flex justify-end gap-2 pt-2">
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <button
                 type="button"
                 onClick={() => setDeleteEduId(null)}
-                className="px-3.5 py-1.5 rounded-lg text-xs text-neutral-400 hover:text-white bg-neutral-900"
+                className="wb-button wb-button-ghost"
+                style={{ height: 36 }}
               >
                 Cancel
               </button>
@@ -712,7 +1072,8 @@ export function BackgroundSection({
                   setDeleteEduId(null);
                   await onDeleteEducation(target);
                 }}
-                className="px-4 py-1.5 rounded-lg text-xs font-medium text-white bg-rose-600 hover:bg-rose-500 transition-colors"
+                className="wb-button"
+                style={{ height: 36, backgroundColor: "var(--danger)", color: "#000", fontWeight: 600 }}
               >
                 Remove
               </button>
@@ -720,6 +1081,6 @@ export function BackgroundSection({
           </div>
         </div>
       )}
-    </section>
+    </Surface>
   );
 }

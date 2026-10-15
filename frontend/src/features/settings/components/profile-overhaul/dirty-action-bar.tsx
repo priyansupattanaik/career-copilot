@@ -21,23 +21,50 @@ export function DirtyActionBar({
   return (
     <>
       <div
-        className="fixed inset-x-0 mx-auto max-w-lg z-40 px-4 animate-in slide-in-from-bottom-5 duration-200"
+        className="fixed inset-x-0 mx-auto max-w-lg z-40 px-4"
         style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
       >
-        <div className="flex items-center justify-between gap-4 p-3.5 rounded-2xl bg-[#111111]/95 border border-neutral-700/80 shadow-2xl backdrop-blur-xl">
-          <div className="flex items-center gap-2 pl-2">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span className="text-xs font-semibold text-white tracking-wide">
+        <div
+          style={{
+            backgroundColor: "var(--surface-3)",
+            border: "1px solid var(--hairline-strong)",
+            borderRadius: "var(--radius-lg, 12px)",
+            padding: "12px 16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            backdropFilter: "blur(12px)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                backgroundColor: "var(--accent)",
+              }}
+            />
+            <span
+              style={{
+                fontFamily: "var(--font-sans)",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "var(--ink)",
+              }}
+            >
               Unsaved changes
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button
               type="button"
               disabled={saving}
               onClick={() => setShowDiscardConfirm(true)}
-              className="px-3 py-1.5 rounded-xl text-xs font-medium text-neutral-300 hover:text-white bg-neutral-900 hover:bg-neutral-800 transition-colors"
+              className="wb-button wb-button-ghost"
+              style={{ height: 36 }}
             >
               Discard
             </button>
@@ -45,16 +72,10 @@ export function DirtyActionBar({
               type="button"
               disabled={saving}
               onClick={() => void onSave()}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold bg-white text-black hover:bg-neutral-200 transition-colors shadow disabled:opacity-40"
+              className="wb-button wb-button-primary"
+              style={{ height: 36 }}
             >
-              {saving ? (
-                <>
-                  <div className="w-3 h-3 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                  <span>Saving...</span>
-                </>
-              ) : (
-                <span>Save changes</span>
-              )}
+              {saving ? "Saving…" : "Save changes"}
             </button>
           </div>
         </div>
@@ -62,25 +83,93 @@ export function DirtyActionBar({
 
       {/* Discard Confirmation Modal */}
       {showDiscardConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-sm rounded-2xl bg-[#111111] border border-neutral-800 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                <CopilotIcon name="alert" className="w-4 h-4" />
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(4px)",
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="discard-dialog-title"
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 384,
+              borderRadius: "var(--radius-lg, 12px)",
+              backgroundColor: "var(--surface-3)",
+              border: "1px solid var(--hairline-strong)",
+              padding: 20,
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  backgroundColor: "var(--warn-soft)",
+                  border: "1px solid var(--warn)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--warn)",
+                  flexShrink: 0,
+                }}
+              >
+                <CopilotIcon name="alert" size={16} />
               </div>
-              <h4 className="text-sm font-semibold text-white">
+              <h4
+                id="discard-dialog-title"
+                style={{
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  margin: 0,
+                }}
+              >
                 Discard changes?
               </h4>
             </div>
-            <p className="text-xs text-neutral-400 leading-relaxed">
+
+            <p
+              style={{
+                fontFamily: "var(--font-sans)",
+                fontSize: 13,
+                lineHeight: "20px",
+                color: "var(--ink-2)",
+                margin: 0,
+              }}
+            >
               Are you sure you want to discard your edits? All unsaved modifications
               will be reverted to your last saved profile state.
             </p>
-            <div className="flex justify-end gap-2 pt-2">
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 8,
+                paddingTop: 8,
+                borderTop: "1px solid var(--hairline)",
+              }}
+            >
               <button
                 type="button"
                 onClick={() => setShowDiscardConfirm(false)}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-neutral-300 hover:text-white bg-neutral-900"
+                className="wb-button wb-button-ghost"
+                style={{ height: 36 }}
               >
                 Keep editing
               </button>
@@ -90,7 +179,13 @@ export function DirtyActionBar({
                   setShowDiscardConfirm(false);
                   onDiscard();
                 }}
-                className="px-4 py-1.5 rounded-lg text-xs font-medium text-white bg-rose-600 hover:bg-rose-500 transition-colors"
+                className="wb-button"
+                style={{
+                  height: 36,
+                  backgroundColor: "var(--danger)",
+                  color: "#000000",
+                  fontWeight: 600,
+                }}
               >
                 Discard
               </button>

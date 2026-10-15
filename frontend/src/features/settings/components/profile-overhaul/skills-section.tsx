@@ -1,4 +1,6 @@
 import { useState, type KeyboardEvent } from "react";
+import { CopilotIcon } from "@/components/ui/copilot-icons";
+import { Surface } from "@/shared/ui/workbench";
 import { POPULAR_SKILL_OPTIONS } from "@/features/profile/model/profile-options";
 import type { CandidateSkill } from "./types";
 
@@ -51,34 +53,64 @@ export function SkillsSection({
   const visibleSkills = showAll ? skills : skills.slice(0, 16);
   const hasHiddenSkills = skills.length > 16;
 
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontFamily: "var(--font-sans)",
+    fontSize: 12,
+    lineHeight: "16px",
+    fontWeight: 600,
+    color: "var(--ink-2)",
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+    marginBottom: 8,
+  };
+
   return (
-    <section
+    <Surface
       id="section-skills"
-      className="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-8 py-8 border-b border-neutral-900"
+      className="profile-skills-section"
+      style={{
+        padding: "var(--space-6, 24px)",
+        borderRadius: "var(--radius-lg, 12px)",
+        background: "var(--surface-1)",
+        border: "1px solid var(--hairline)",
+      }}
     >
-      {/* Left Column: Heading & Description */}
-      <div className="lg:col-span-4">
-        <h2 className="text-xl font-medium text-white tracking-tight">
+      {/* Section Header */}
+      <div style={{ marginBottom: 20 }}>
+        <h2
+          style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: 18,
+            lineHeight: "28px",
+            fontWeight: 600,
+            color: "var(--ink)",
+            margin: 0,
+          }}
+        >
           Skills
         </h2>
-        <p className="text-sm text-neutral-400 mt-2 leading-relaxed">
-          Languages, frameworks, databases, and engineering tools you actively use.
-          Recruiters and job matches prioritize exact keyword matches from your skill list.
+        <p
+          style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: 14,
+            lineHeight: "22px",
+            color: "var(--ink-2)",
+            margin: "4px 0 0 0",
+          }}
+        >
+          Languages, frameworks, databases, and engineering tools you actively use. Recruiters and job matches prioritize exact keyword matches from your skill list.
         </p>
       </div>
 
-      {/* Right Column: Surface */}
-      <div className="lg:col-span-8 bg-[#0A0A0A] border border-neutral-850 rounded-2xl p-6 sm:p-8 space-y-6">
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         {/* Add Skill Combobox & Add button */}
         <div>
-          <label
-            htmlFor="skill-autocomplete-input"
-            className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2"
-          >
+          <label htmlFor="skill-autocomplete-input" style={labelStyle}>
             Add a skill
           </label>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div style={{ flex: 1 }}>
               <input
                 id="skill-autocomplete-input"
                 list="skills-catalog"
@@ -90,7 +122,18 @@ export function SkillsSection({
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder="e.g. TypeScript, Docker, PostgreSQL, PyTorch..."
-                className="w-full px-4 py-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30 transition-all"
+                style={{
+                  width: "100%",
+                  height: 40,
+                  padding: "0 12px",
+                  borderRadius: "var(--radius-md, 8px)",
+                  border: "1px solid var(--border-control)",
+                  backgroundColor: "var(--surface-2)",
+                  color: "var(--ink)",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 14,
+                  outline: "none",
+                }}
               />
               <datalist id="skills-catalog">
                 {POPULAR_SKILL_OPTIONS.map((s) => (
@@ -102,13 +145,14 @@ export function SkillsSection({
               type="button"
               disabled={!skillInput.trim() || busy}
               onClick={handleAdd}
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-white text-black hover:bg-neutral-200 transition-colors disabled:opacity-40 shrink-0"
+              className="wb-button wb-button-primary"
+              style={{ height: 40 }}
             >
               Add
             </button>
           </div>
           {duplicateWarning && (
-            <p className="text-xs text-amber-400 mt-1.5 animate-in fade-in">
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--warn)", margin: "6px 0 0 0" }}>
               This skill is already in your list.
             </p>
           )}
@@ -116,42 +160,68 @@ export function SkillsSection({
 
         {/* Skills Chips */}
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
-              Your Skills ({skills.length})
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <span style={labelStyle}>
+              Your skills ({skills.length})
             </span>
             {hasHiddenSkills && (
               <button
                 type="button"
-                onClick={() => setShowAll((prev) => !prev)}
-                className="text-xs text-cyan-400 hover:text-cyan-300 font-medium"
+                onClick={() => setShowAll(!showAll)}
+                className="wb-button wb-button-ghost"
+                style={{ height: 28, fontSize: 12 }}
               >
-                {showAll ? "Show fewer (16)" : `Show all (${skills.length})`}
+                {showAll ? "Show fewer" : `Show all ${skills.length}`}
               </button>
             )}
           </div>
 
           {skills.length === 0 ? (
-            <p className="text-xs text-neutral-500 italic py-4">
-              No skills yet. Add skills or autofill from your resume.
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--ink-3)", fontStyle: "italic", margin: 0 }}>
+              No skills added yet. Type a skill above to get started.
             </p>
           ) : (
-            <div className="flex flex-wrap gap-2 pt-1">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {visibleSkills.map((skill, idx) => {
-                const id = skill.id || idx;
+                const idOrIdx = skill.id || idx;
                 return (
                   <span
-                    key={id}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 border border-neutral-800 text-neutral-200 hover:border-neutral-700 transition-all group"
+                    key={idOrIdx}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      height: 32,
+                      padding: "0 10px",
+                      borderRadius: "var(--radius-md, 8px)",
+                      backgroundColor: "var(--surface-2)",
+                      border: "1px solid var(--hairline)",
+                      fontFamily: "var(--font-sans)",
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: "var(--ink)",
+                    }}
                   >
                     <span>{skill.name}</span>
                     <button
                       type="button"
-                      onClick={() => onDeleteSkill(id)}
-                      className="text-neutral-500 group-hover:text-rose-400 hover:text-rose-300 p-0.5 rounded transition-colors text-xs"
+                      onClick={() => onDeleteSkill(idOrIdx)}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        padding: 0,
+                        margin: 0,
+                        cursor: "pointer",
+                        color: "var(--ink-3)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        lineHeight: 1,
+                      }}
+                      className="wb-ghost-link"
                       aria-label={`Remove ${skill.name}`}
                     >
-                      ×
+                      <CopilotIcon name="trash" size={12} />
                     </button>
                   </span>
                 );
@@ -160,6 +230,6 @@ export function SkillsSection({
           )}
         </div>
       </div>
-    </section>
+    </Surface>
   );
 }

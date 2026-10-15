@@ -8,7 +8,10 @@ import {
   computeProfileCompleteness8,
   notifyProfileUpdated,
 } from "@/features/profile/model/profile-completion";
-import type { ProfileSectionId } from "@/features/profile/model/profile-hash-navigation";
+import {
+  resolveProfileHash,
+  type ProfileSectionId,
+} from "@/features/profile/model/profile-hash-navigation";
 import { IdentityStrip } from "./identity-strip";
 import { StickySectionTabs } from "./sticky-section-tabs";
 import { ResumeSection } from "./resume-section";
@@ -43,7 +46,34 @@ interface ProfileFormData {
 export function ProfileOverhaulView() {
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<ProfileSectionId>("resume");
+  const [activeSection, setActiveSection] = useState<ProfileSectionId>(() => {
+    if (typeof window !== "undefined" && window.location.hash) {
+      return resolveProfileHash(window.location.hash);
+    }
+    return "about";
+  });
+
+  // Keep activeSection in sync with hash changes
+  useEffect(() => {
+    function handleHashChange() {
+      if (typeof window !== "undefined" && window.location.hash) {
+        setActiveSection(resolveProfileHash(window.location.hash));
+      }
+    }
+    window.addEventListener("hashchange", handleHashChange);
+    window.addEventListener("popstate", handleHashChange);
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+      window.removeEventListener("popstate", handleHashChange);
+    };
+  }, []);
+
+  const handleSelectSection = useCallback((id: ProfileSectionId) => {
+    setActiveSection(id);
+    if (typeof window !== "undefined") {
+      window.history.pushState(null, "", `#${id}`);
+    }
+  }, []);
 
   // Form states
   const [form, setForm] = useState<ProfileFormData>({
@@ -449,192 +479,196 @@ export function ProfileOverhaulView() {
   }
 
   return (
-    <div className="profile-overhaul-canvas w-full min-h-screen bg-black text-white font-sans antialiased selection:bg-cyan-500/30 selection:text-white pb-32">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Step 2 a: Compact Settings underline tabs */}
-        <nav
-          className="flex items-center gap-1 border-b border-neutral-850 pb-2 mb-2"
-          aria-label="Settings navigation"
-        >
-          {SETTINGS_TABS.map((tab) => {
-            const active = pathname === tab.href;
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  active
-                    ? "text-white bg-neutral-900 border border-neutral-800"
-                    : "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-950"
-                }`}
-                aria-current={active ? "page" : undefined}
-              >
-                {tab.label}
-              </Link>
-            );
-          })}
-        </nav>
+    <div className="profile-overhaul-view">
+      {/* Settings tabs */}
+      <nav className="wb-tabs" aria-label="Settings navigation">
+        {SETTINGS_TABS.map((tab) => {
+          const active = pathname === tab.href;
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className={`wb-tab-item ${active ? "is-active" : ""}`}
+              aria-current={active ? "page" : undefined}
+            >
+              {tab.label}
+            </Link>
+          );
+        })}
+      </nav>
 
-        {/* Step 2 b: Identity Strip */}
-        <IdentityStrip
-          fullName={form.full_name}
-          avatarUrl={form.avatar_url}
-          headline={form.headline}
-          username={form.username}
-          currentRole={form.current_role}
-          location={form.location}
-          yearsExperience={form.years_experience}
-          completionScore={completeness.percentage}
-          completedCount={completeness.done}
-          totalCount={completeness.total}
-          missingItems={completeness.missing}
-          onUploadAvatar={handleUploadAvatar}
-          onRemoveAvatar={handleRemoveAvatar}
-          avatarBusy={avatarBusy}
-        />
+      {/* Identity Strip */}
+      <IdentityStrip
+        fullName={form.full_name}
+        avatarUrl={form.avatar_url}
+        headline={form.headline}
+        username={form.username}
+        currentRole={form.current_role}
+        location={form.location}
+        yearsExperience={form.years_experience}
+        completionScore={completeness.percentage}
+        completedCount={completeness.done}
+        totalCount={completeness.total}
+        missingItems={completeness.missing}
+        onUploadAvatar={handleUploadAvatar}
+        onRemoveAvatar={handleRemoveAvatar}
+        avatarBusy={avatarBusy}
+      />
 
-        {/* Step 2 c: Sticky Section Tabs */}
-        <StickySectionTabs
-          activeSection={activeSection}
-          onSelectSection={setActiveSection}
-        />
+      {/* Section Tabs */}
+      <StickySectionTabs
+        activeSection={activeSection}
+        onSelectSection={handleSelectSection}
+      />
 
-        {/* Section 3.1: Resume */}
-        <ResumeSection
-          resumes={resumes}
-          activeResumeId={resumes.find((r) => r.is_active)?.id || resumes[0]?.id}
-          onSelectActiveResume={handleSelectActiveResume}
-          onRenameResume={handleRenameResume}
-          onUploadResume={handleUploadResume}
-          onTriggerAutofill={handleTriggerAutofill}
-          onlyFillEmpty={onlyFillEmpty}
-          onToggleOnlyFillEmpty={setOnlyFillEmpty}
-          uploadBusy={uploadBusy}
-        />
-
-        {/* Section 3.2: About you */}
-        <AboutSection
-          fullName={form.full_name}
-          onFullNameChange={(val) => setForm((prev) => ({ ...prev, full_name: val }))}
-          username={form.username}
-          onUsernameChange={(val) => setForm((prev) => ({ ...prev, username: val }))}
-          savedUsername={savedForm.username}
-          headline={form.headline}
-          onHeadlineChange={(val) => setForm((prev) => ({ ...prev, headline: val }))}
-          location={form.location}
-          onLocationChange={(val) => setForm((prev) => ({ ...prev, location: val }))}
-          currentRole={form.current_role}
-          onCurrentRoleChange={(val) => setForm((prev) => ({ ...prev, current_role: val }))}
-          yearsExperience={form.years_experience}
-          onYearsExperienceChange={(val) => setForm((prev) => ({ ...prev, years_experience: val }))}
-          careerLevel={form.career_level}
-          onCareerLevelChange={(val) => setForm((prev) => ({ ...prev, career_level: val }))}
-          careerGoal={form.career_goal}
-          onCareerGoalChange={(val) => setForm((prev) => ({ ...prev, career_goal: val }))}
-          bio={form.bio}
-          onBioChange={(val) => setForm((prev) => ({ ...prev, bio: val }))}
-          links={links}
-          onAddLink={handleAddLink}
-          onUpdateLink={handleUpdateLink}
-          onDeleteLink={handleDeleteLink}
-        />
-
-        {/* Section 3.3: Experience & education */}
-        <BackgroundSection
-          experiences={experiences}
-          onAddExperience={handleAddExperience}
-          onUpdateExperience={handleUpdateExperience}
-          onDeleteExperience={handleDeleteExperience}
-          education={education}
-          onAddEducation={handleAddEducation}
-          onUpdateEducation={handleUpdateEducation}
-          onDeleteEducation={handleDeleteEducation}
-        />
-
-        {/* Section 3.4: Skills */}
-        <SkillsSection
-          skills={skills}
-          onAddSkill={handleAddSkill}
-          onDeleteSkill={handleDeleteSkill}
-        />
-
-        {/* Section 3.5: Job preferences */}
-        <PreferencesSection
-          preferences={preferences}
-          onChange={setPreferences}
-        />
-
-        {/* Sticky Dirty Action Bar */}
-        <DirtyActionBar
-          isDirty={isDirty}
-          onSave={handleSave}
-          onDiscard={handleDiscard}
-          saving={saving}
-        />
-
-        {/* Step 4.1: Post-Upload Prompt Dialog */}
-        {showPostUploadModal && postUploadResumeId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-            <div className="w-full max-w-sm rounded-2xl bg-[#111111] border border-neutral-800 p-6 shadow-2xl space-y-4">
-              <h4 className="text-sm font-semibold text-white">
-                Fill your profile from this resume?
-              </h4>
-              <p className="text-xs text-neutral-400 leading-relaxed">
-                We'll extract your work history, education, skills, and links so you can
-                review and apply them to your profile.
-              </p>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowPostUploadModal(false)}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-white bg-neutral-900"
-                >
-                  Not now
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowPostUploadModal(false);
-                    handleTriggerAutofill(postUploadResumeId, onlyFillEmpty);
-                  }}
-                  className="px-4 py-1.5 rounded-lg text-xs font-medium text-black bg-white hover:bg-neutral-200 transition-colors"
-                >
-                  Autofill
-                </button>
-              </div>
-            </div>
-          </div>
+      {/* Tab Panels: Only the active panel is rendered (D9) */}
+      <div
+        role="tabpanel"
+        id={`tabpanel-${activeSection}`}
+        aria-labelledby={`tab-${activeSection}`}
+        className="profile-tabpanel"
+      >
+        {activeSection === "resume" && (
+          <ResumeSection
+            resumes={resumes}
+            activeResumeId={resumes.find((r) => r.is_active)?.id || resumes[0]?.id}
+            onSelectActiveResume={handleSelectActiveResume}
+            onRenameResume={handleRenameResume}
+            onUploadResume={handleUploadResume}
+            onTriggerAutofill={handleTriggerAutofill}
+            onlyFillEmpty={onlyFillEmpty}
+            onToggleOnlyFillEmpty={setOnlyFillEmpty}
+            uploadBusy={uploadBusy}
+          />
         )}
 
-        {/* Autofill Review & Progress Dialog */}
-        <AutofillDialog
-          resumeId={autofillResumeId}
-          isOpen={isAutofillOpen}
-          onlyFillEmpty={onlyFillEmpty}
-          onClose={() => setIsAutofillOpen(false)}
-          onApplied={async () => {
-            await loadAll();
-            setAutofillToast(true);
-            setTimeout(() => setAutofillToast(false), 3000);
-          }}
-        />
-
-        {/* Save success toast */}
-        {saveToast && (
-          <div className="fixed top-6 right-6 z-50 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
-            <span>✓</span>
-            <span>Profile changes saved successfully!</span>
-          </div>
+        {activeSection === "about" && (
+          <AboutSection
+            fullName={form.full_name}
+            onFullNameChange={(val) => setForm((prev) => ({ ...prev, full_name: val }))}
+            username={form.username}
+            onUsernameChange={(val) => setForm((prev) => ({ ...prev, username: val }))}
+            savedUsername={savedForm.username}
+            headline={form.headline}
+            onHeadlineChange={(val) => setForm((prev) => ({ ...prev, headline: val }))}
+            location={form.location}
+            onLocationChange={(val) => setForm((prev) => ({ ...prev, location: val }))}
+            currentRole={form.current_role}
+            onCurrentRoleChange={(val) => setForm((prev) => ({ ...prev, current_role: val }))}
+            yearsExperience={form.years_experience}
+            onYearsExperienceChange={(val) => setForm((prev) => ({ ...prev, years_experience: val }))}
+            careerLevel={form.career_level}
+            onCareerLevelChange={(val) => setForm((prev) => ({ ...prev, career_level: val }))}
+            careerGoal={form.career_goal}
+            onCareerGoalChange={(val) => setForm((prev) => ({ ...prev, career_goal: val }))}
+            bio={form.bio}
+            onBioChange={(val) => setForm((prev) => ({ ...prev, bio: val }))}
+            links={links}
+            onAddLink={handleAddLink}
+            onUpdateLink={handleUpdateLink}
+            onDeleteLink={handleDeleteLink}
+          />
         )}
 
-        {/* Step 4.4: Autofill success toast */}
-        {autofillToast && (
-          <div className="fixed top-6 right-6 z-50 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
-            <span>✓</span>
-            <span>Profile updated from your resume.</span>
-          </div>
+        {activeSection === "background" && (
+          <BackgroundSection
+            experiences={experiences}
+            onAddExperience={handleAddExperience}
+            onUpdateExperience={handleUpdateExperience}
+            onDeleteExperience={handleDeleteExperience}
+            education={education}
+            onAddEducation={handleAddEducation}
+            onUpdateEducation={handleUpdateEducation}
+            onDeleteEducation={handleDeleteEducation}
+          />
+        )}
+
+        {activeSection === "skills" && (
+          <SkillsSection
+            skills={skills}
+            onAddSkill={handleAddSkill}
+            onDeleteSkill={handleDeleteSkill}
+          />
+        )}
+
+        {activeSection === "preferences" && (
+          <PreferencesSection
+            preferences={preferences}
+            onChange={setPreferences}
+          />
         )}
       </div>
+
+      {/* Sticky Dirty Action Bar */}
+      <DirtyActionBar
+        isDirty={isDirty}
+        onSave={handleSave}
+        onDiscard={handleDiscard}
+        saving={saving}
+      />
+
+      {/* Post-Upload Prompt Dialog */}
+      {showPostUploadModal && postUploadResumeId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm rounded-2xl bg-[#111111] border border-neutral-800 p-6 shadow-2xl space-y-4">
+            <h4 className="text-sm font-semibold text-white">
+              Fill your profile from this resume?
+            </h4>
+            <p className="text-xs text-neutral-400 leading-relaxed">
+              We'll extract your work history, education, skills, and links so you can
+              review and apply them to your profile.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowPostUploadModal(false)}
+                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-white bg-neutral-900"
+              >
+                Not now
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPostUploadModal(false);
+                  handleTriggerAutofill(postUploadResumeId, onlyFillEmpty);
+                }}
+                className="px-4 py-1.5 rounded-lg text-xs font-medium text-black bg-white hover:bg-neutral-200 transition-colors"
+              >
+                Autofill
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Autofill Review & Progress Dialog */}
+      <AutofillDialog
+        resumeId={autofillResumeId}
+        isOpen={isAutofillOpen}
+        onlyFillEmpty={onlyFillEmpty}
+        onClose={() => setIsAutofillOpen(false)}
+        onApplied={async () => {
+          await loadAll();
+          setAutofillToast(true);
+          setTimeout(() => setAutofillToast(false), 3000);
+        }}
+      />
+
+      {/* Save success toast */}
+      {saveToast && (
+        <div className="fixed top-6 right-6 z-50 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+          <span>✓</span>
+          <span>Profile changes saved successfully!</span>
+        </div>
+      )}
+
+      {/* Autofill success toast */}
+      {autofillToast && (
+        <div className="fixed top-6 right-6 z-50 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+          <span>✓</span>
+          <span>Profile updated from your resume.</span>
+        </div>
+      )}
     </div>
   );
 }

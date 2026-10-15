@@ -1817,6 +1817,82 @@
     border-color: var(--hairline-strong) !important;
   }
 }
+/* ==========================================================================
+   Profile Identity Strip (D3, D4, D5, D7)
+   ========================================================================== */
+.profile-identity-strip {
+  margin-bottom: 24px;
+}
+
+.identity-strip-grid {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 24px;
+}
+
+.identity-strip-right {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.identity-strip-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 1099px) {
+  .identity-strip-grid {
+    grid-template-columns: auto 1fr;
+    row-gap: 20px;
+  }
+  .identity-strip-right {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--hairline);
+    padding-top: 16px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+@media (max-width: 639px) {
+  .identity-strip-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .identity-strip-right {
+    grid-column: auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .identity-strip-meter {
+    justify-content: flex-start;
+  }
+  .identity-strip-actions {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+  .identity-strip-actions .wb-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+/* Profile Resume Section */
+.profile-resume-row:hover {
+  background-color: var(--surface-2);
+}
+
+@media (max-width: 639px) {
+  .profile-upload-row {
+    grid-template-columns: 1fr !important;
+  }
+}
 
 /* Reduced Motion overrides */
 @media (prefers-reduced-motion: reduce) {

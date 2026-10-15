@@ -562,18 +562,6 @@ export function CopilotIcon({
   const resolved = resolveCopilotIconName(String(name));
   const glyph = glyphs[resolved];
 
-  if (!glyph) {
-    if (isDevBuild) {
-      console.error(`[CopilotIcon] Unknown icon name: "${String(name)}" (resolved: "${String(resolved)}")`);
-    }
-    return null;
-  }
-  const labelled = Boolean(
-    title || (svgProps as { "aria-label"?: string })["aria-label"],
-  );
-  const spinning =
-    !reducedMotion && (loop || resolved === "loader" || className?.includes("spin"));
-
   useEffect(() => {
     const node = spanRef.current;
     if (!node) return;
@@ -598,6 +586,18 @@ export function CopilotIcon({
       parent.removeEventListener("blur", off);
     };
   }, []);
+
+  if (!glyph) {
+    if (isDevBuild) {
+      console.error(`[CopilotIcon] Unknown icon name: "${String(name)}" (resolved: "${String(resolved)}")`);
+    }
+    return null;
+  }
+  const labelled = Boolean(
+    title || (svgProps as { "aria-label"?: string })["aria-label"],
+  );
+  const spinning =
+    !reducedMotion && (loop || resolved === "loader" || className?.includes("spin"));
 
   return (
     <span

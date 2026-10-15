@@ -1,4 +1,6 @@
 import { useState, type KeyboardEvent } from "react";
+import { CopilotIcon } from "@/components/ui/copilot-icons";
+import { Surface } from "@/shared/ui/workbench";
 import type { CandidatePreferences } from "./types";
 
 interface PreferencesSectionProps {
@@ -65,30 +67,77 @@ export function PreferencesSection({
     onChange({ ...preferences, work_modes: updated });
   }
 
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontFamily: "var(--font-sans)",
+    fontSize: 12,
+    lineHeight: "16px",
+    fontWeight: 600,
+    color: "var(--ink-2)",
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+    marginBottom: 8,
+  };
+
+  const inputStyle: React.CSSProperties = {
+    height: 40,
+    padding: "0 12px",
+    borderRadius: "var(--radius-md, 8px)",
+    border: "1px solid var(--border-control)",
+    backgroundColor: "var(--surface-2)",
+    color: "var(--ink)",
+    fontFamily: "var(--font-sans)",
+    fontSize: 14,
+    outline: "none",
+  };
+
   return (
-    <section
+    <Surface
       id="section-preferences"
-      className="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-8 py-8 border-b border-neutral-900"
+      className="profile-preferences-section"
+      style={{
+        padding: "var(--space-6, 24px)",
+        borderRadius: "var(--radius-lg, 12px)",
+        background: "var(--surface-1)",
+        border: "1px solid var(--hairline)",
+      }}
     >
-      {/* Left Column: Heading & Description */}
-      <div className="lg:col-span-4">
-        <h2 className="text-xl font-medium text-white tracking-tight">
+      {/* Section Header */}
+      <div style={{ marginBottom: 20 }}>
+        <h2
+          style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: 18,
+            lineHeight: "28px",
+            fontWeight: 600,
+            color: "var(--ink)",
+            margin: 0,
+          }}
+        >
           Job preferences
         </h2>
-        <p className="text-sm text-neutral-400 mt-2 leading-relaxed">
-          These preferences are used to find and rank jobs for you.
+        <p
+          style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: 14,
+            lineHeight: "22px",
+            color: "var(--ink-2)",
+            margin: "4px 0 0 0",
+          }}
+        >
+          These preferences are used to find and rank relevant job matches for you.
         </p>
       </div>
 
-      {/* Right Column: Surface */}
-      <div className="lg:col-span-8 bg-[#0A0A0A] border border-neutral-850 rounded-2xl p-6 sm:p-8 space-y-6">
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
         {/* Target Roles */}
         <div>
-          <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
+          <label htmlFor="pref-target-roles" style={labelStyle}>
             Target roles
           </label>
-          <div className="flex gap-2 mb-3">
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
             <input
+              id="pref-target-roles"
               type="text"
               value={roleInput}
               onChange={(e) => setRoleInput(e.target.value)}
@@ -99,31 +148,54 @@ export function PreferencesSection({
                 }
               }}
               placeholder="e.g. Lead Architect, Staff Engineer (press Enter)"
-              className="flex-1 px-4 py-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-cyan-500/60"
+              style={{ ...inputStyle, flex: 1 }}
             />
             <button
               type="button"
               disabled={!roleInput.trim()}
               onClick={handleAddRole}
-              className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-neutral-850 hover:bg-neutral-800 text-white disabled:opacity-40"
+              className="wb-button wb-button-primary"
+              style={{ height: 40 }}
             >
               Add
             </button>
           </div>
           {preferences.target_roles.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {preferences.target_roles.map((role, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 border border-neutral-800 text-neutral-200"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    height: 32,
+                    padding: "0 10px",
+                    borderRadius: "var(--radius-md, 8px)",
+                    backgroundColor: "var(--surface-2)",
+                    border: "1px solid var(--hairline)",
+                    fontFamily: "var(--font-sans)",
+                    fontSize: 13,
+                    color: "var(--ink)",
+                  }}
                 >
                   <span>{role}</span>
                   <button
                     type="button"
                     onClick={() => handleRemoveRole(idx)}
-                    className="text-neutral-500 hover:text-rose-400 text-xs"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      color: "var(--ink-3)",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                    className="wb-ghost-link"
+                    aria-label={`Remove ${role}`}
                   >
-                    ×
+                    <CopilotIcon name="trash" size={12} />
                   </button>
                 </span>
               ))}
@@ -133,11 +205,12 @@ export function PreferencesSection({
 
         {/* Preferred Locations */}
         <div>
-          <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
+          <label htmlFor="pref-target-locations" style={labelStyle}>
             Preferred locations
           </label>
-          <div className="flex gap-2 mb-3">
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
             <input
+              id="pref-target-locations"
               type="text"
               value={locInput}
               onChange={(e) => setLocInput(e.target.value)}
@@ -147,32 +220,55 @@ export function PreferencesSection({
                   handleAddLoc();
                 }
               }}
-              placeholder="e.g. San Francisco, CA or Remote (press Enter)"
-              className="flex-1 px-4 py-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-cyan-500/60"
+              placeholder="e.g. San Francisco, CA, London, Remote (press Enter)"
+              style={{ ...inputStyle, flex: 1 }}
             />
             <button
               type="button"
               disabled={!locInput.trim()}
               onClick={handleAddLoc}
-              className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-neutral-850 hover:bg-neutral-800 text-white disabled:opacity-40"
+              className="wb-button wb-button-primary"
+              style={{ height: 40 }}
             >
               Add
             </button>
           </div>
           {preferences.preferred_locations.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {preferences.preferred_locations.map((loc, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 border border-neutral-800 text-neutral-200"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    height: 32,
+                    padding: "0 10px",
+                    borderRadius: "var(--radius-md, 8px)",
+                    backgroundColor: "var(--surface-2)",
+                    border: "1px solid var(--hairline)",
+                    fontFamily: "var(--font-sans)",
+                    fontSize: 13,
+                    color: "var(--ink)",
+                  }}
                 >
                   <span>{loc}</span>
                   <button
                     type="button"
                     onClick={() => handleRemoveLoc(idx)}
-                    className="text-neutral-500 hover:text-rose-400 text-xs"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      color: "var(--ink-3)",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                    className="wb-ghost-link"
+                    aria-label={`Remove ${loc}`}
                   >
-                    ×
+                    <CopilotIcon name="trash" size={12} />
                   </button>
                 </span>
               ))}
@@ -182,40 +278,51 @@ export function PreferencesSection({
 
         {/* Work Modes */}
         <div>
-          <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
-            Work arrangements
-          </label>
-          <div className="flex flex-wrap gap-3">
+          <label style={labelStyle}>Work modes</label>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {AVAILABLE_WORK_MODES.map((mode) => {
-              const active = preferences.work_modes.includes(mode);
+              const isSelected = preferences.work_modes.includes(mode);
               return (
                 <button
                   key={mode}
                   type="button"
                   onClick={() => toggleWorkMode(mode)}
-                  className={`px-4 py-2 rounded-xl text-xs font-medium border transition-all ${
-                    active
-                      ? "bg-cyan-500/10 text-cyan-300 border-cyan-500/40"
-                      : "bg-neutral-900/60 text-neutral-400 border-neutral-800 hover:border-neutral-700 hover:text-white"
-                  }`}
+                  style={{
+                    height: 40,
+                    padding: "0 16px",
+                    borderRadius: "var(--radius-md, 8px)",
+                    border: isSelected ? "1px solid var(--accent)" : "1px solid var(--border-control)",
+                    backgroundColor: isSelected ? "var(--accent-soft)" : "var(--surface-2)",
+                    color: isSelected ? "var(--accent)" : "var(--ink)",
+                    fontFamily: "var(--font-sans)",
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    transition: "all 120ms ease",
+                  }}
                 >
-                  {mode}
+                  {isSelected && <CopilotIcon name="check" size={14} />}
+                  <span>{mode}</span>
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Minimum Salary & Currency */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-          <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
-              Salary currency
-            </label>
+        {/* Salary expectation */}
+        <div>
+          <label htmlFor="pref-salary-min" style={labelStyle}>
+            Minimum annual base salary
+          </label>
+          <div style={{ display: "flex", gap: 8, maxWidth: 360 }}>
             <select
+              aria-label="Salary currency"
               value={preferences.salary_currency || "USD"}
               onChange={(e) => onChange({ ...preferences, salary_currency: e.target.value })}
-              className="w-full px-3 py-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800 text-white text-sm focus:outline-none focus:border-cyan-500/60"
+              style={{ ...inputStyle, width: 90 }}
             >
               {COMMON_CURRENCIES.map((cur) => (
                 <option key={cur} value={cur}>
@@ -223,29 +330,24 @@ export function PreferencesSection({
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
-              Minimum salary
-            </label>
             <input
+              id="pref-salary-min"
               type="number"
+              step="5000"
               min="0"
-              step="1000"
-              value={preferences.salary_min == null ? "" : preferences.salary_min}
+              value={preferences.salary_min != null ? preferences.salary_min : ""}
               onChange={(e) =>
                 onChange({
                   ...preferences,
                   salary_min: e.target.value === "" ? null : Number(e.target.value),
                 })
               }
-              placeholder="e.g. 120000"
-              className="w-full px-4 py-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-cyan-500/60"
+              placeholder="e.g. 150000"
+              style={{ ...inputStyle, flex: 1 }}
             />
           </div>
         </div>
       </div>
-    </section>
+    </Surface>
   );
 }

@@ -363,11 +363,27 @@ export function AutofillDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
-      <div className="w-full max-w-2xl rounded-2xl bg-[#0D0D0D] border border-neutral-800 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden">
+      <div
+        className="w-full max-w-2xl rounded-2xl flex flex-col max-h-[88vh] overflow-hidden"
+        style={{
+          backgroundColor: "var(--surface-3)",
+          border: "1px solid var(--hairline-strong)",
+        }}
+      >
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-5 border-b border-neutral-850 shrink-0">
+        <div
+          className="flex items-center justify-between p-5 shrink-0"
+          style={{ borderBottom: "1px solid var(--hairline)" }}
+        >
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{
+                backgroundColor: "var(--accent-soft)",
+                border: "1px solid var(--accent)",
+                color: "var(--accent)",
+              }}
+            >
               <CopilotIcon name="sparkles" className="w-4 h-4" />
             </div>
             <div>
@@ -395,7 +411,13 @@ export function AutofillDialog({
           {/* Stage: Parsing */}
           {stage === "parsing" && (
             <div className="py-12 text-center space-y-4">
-              <div className="w-12 h-12 mx-auto border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
+              <div
+                className="w-12 h-12 mx-auto rounded-full animate-spin"
+                style={{
+                  border: "2px solid var(--hairline-strong)",
+                  borderTopColor: "var(--accent)",
+                }}
+              />
               <div className="space-y-1">
                 <p
                   className="text-sm font-semibold text-white"
@@ -408,7 +430,10 @@ export function AutofillDialog({
                 </p>
               </div>
               {coldStartNotice && (
-                <p className="text-xs text-cyan-400 font-medium animate-in fade-in max-w-xs mx-auto">
+                <p
+                  className="text-xs font-medium animate-in fade-in max-w-xs mx-auto"
+                  style={{ color: "var(--accent)" }}
+                >
                   AI models warming up, please wait...
                 </p>
               )}
@@ -523,7 +548,7 @@ export function AutofillDialog({
                           }
                           setSelectedAbout(next);
                         }}
-                        className="rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0"
+                        className="rounded border-neutral-700 bg-neutral-900 accent-[var(--accent)] focus:ring-0"
                       />
                       <h4 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
                         About you
@@ -584,7 +609,7 @@ export function AutofillDialog({
                           });
                           setSelectedSkills(next);
                         }}
-                        className="rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0"
+                        className="rounded border-neutral-700 bg-neutral-900 accent-[var(--accent)] focus:ring-0"
                       />
                       <h4 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
                         Skills ({parseResult.proposals.skills.length})
@@ -613,7 +638,7 @@ export function AutofillDialog({
                             onChange={(e) =>
                               setSelectedSkills({ ...selectedSkills, [idx]: e.target.checked })
                             }
-                            className="rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0 disabled:opacity-40"
+                            className="rounded border-neutral-700 bg-neutral-900 accent-[var(--accent)] focus:ring-0 disabled:opacity-40"
                           />
                           <span>{s.value}</span>
                           <StatusBadge status={s.status} />
@@ -642,7 +667,7 @@ export function AutofillDialog({
                           });
                           setSelectedExperience(next);
                         }}
-                        className="rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0"
+                        className="rounded border-neutral-700 bg-neutral-900 accent-[var(--accent)] focus:ring-0"
                       />
                       <h4 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
                         Experience ({parseResult.proposals.experience.length})
@@ -701,7 +726,7 @@ export function AutofillDialog({
                           });
                           setSelectedEducation(next);
                         }}
-                        className="rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0"
+                        className="rounded border-neutral-700 bg-neutral-900 accent-[var(--accent)] focus:ring-0"
                       />
                       <h4 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
                         Education ({parseResult.proposals.education.length})
@@ -760,7 +785,7 @@ export function AutofillDialog({
                           });
                           setSelectedLinks(next);
                         }}
-                        className="rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0"
+                        className="rounded border-neutral-700 bg-neutral-900 accent-[var(--accent)] focus:ring-0"
                       />
                       <h4 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
                         Links ({parseResult.proposals.links.length})
@@ -866,7 +891,7 @@ function ProposalRow({
           disabled={isDup}
           checked={checked}
           onChange={(e) => onToggle(e.target.checked)}
-          className="mt-0.5 rounded border-neutral-700 bg-neutral-900 text-cyan-500 focus:ring-0 shrink-0 disabled:opacity-40"
+          className="mt-0.5 rounded border-neutral-700 bg-neutral-900 accent-[var(--accent)] focus:ring-0 shrink-0 disabled:opacity-40"
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -899,7 +924,8 @@ function ProposalRow({
               <button
                 type="button"
                 onClick={onToggleEvidence}
-                className="text-[10px] text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center gap-1"
+                className="text-[10px] font-medium inline-flex items-center gap-1 hover:underline"
+                style={{ color: "var(--accent)" }}
               >
                 <span>From your resume</span>
                 <CopilotIcon

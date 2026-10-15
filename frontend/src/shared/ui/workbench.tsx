@@ -347,6 +347,7 @@ export interface CheckboxProps {
   id?: string;
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
+  onChange?: (checked: boolean) => void;
   label?: ReactNode;
   disabled?: boolean;
   className?: string;
@@ -356,12 +357,14 @@ export function Checkbox({
   id,
   checked,
   onCheckedChange,
+  onChange,
   label,
   disabled,
   className,
 }: CheckboxProps) {
   const generatedId = useId();
   const inputId = id || generatedId;
+  const handleChange = onCheckedChange || onChange;
 
   return (
     <label
@@ -371,7 +374,7 @@ export function Checkbox({
       <RadixCheckbox.Root
         id={inputId}
         checked={checked}
-        onCheckedChange={(val) => onCheckedChange?.(Boolean(val))}
+        onCheckedChange={(val) => handleChange?.(Boolean(val))}
         disabled={disabled}
         className="wb-checkbox-root"
       >

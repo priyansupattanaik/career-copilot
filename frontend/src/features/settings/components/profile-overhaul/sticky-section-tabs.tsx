@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
+import { useRef } from "react";
 import {
   PROFILE_SECTIONS,
-  resolveProfileHash,
   type ProfileSectionId,
 } from "@/features/profile/model/profile-hash-navigation";
-import { cn } from "@/shared/utils";
 
 interface StickySectionTabsProps {
   activeSection: ProfileSectionId;
@@ -15,103 +13,84 @@ export function StickySectionTabs({
   activeSection,
   onSelectSection,
 }: StickySectionTabsProps) {
-  const [internalActive, setInternalActive] = useState<ProfileSectionId>(activeSection);
+  const tabListRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setInternalActive(activeSection);
-  }, [activeSection]);
-
-  // Handle initial legacy hash redirect and scroll
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const currentHash = window.location.hash;
-    if (currentHash) {
-      const canonical = resolveProfileHash(currentHash);
-      if (canonical !== currentHash.replace(/^#/, "")) {
-        // Replace legacy hash in browser URL
-        window.history.replaceState(null, "", `#${canonical}`);
-      }
-      onSelectSection(canonical);
-      // Give DOM time to settle before smooth scrolling
-      const timer = setTimeout(() => {
-        const el = document.getElementById(`section-${canonical}`);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      }, 150);
-      return () => clearTimeout(timer);
+  function handleKeyDown(e: React.KeyboardEvent<HTMLButtonElement>, index: number) {
+    let nextIndex = -1;
+    if (e.key === "ArrowRight") {
+      nextIndex = (index + 1) % PROFILE_SECTIONS.length;
+    } else if (e.key === "ArrowLeft") {
+      nextIndex = (index - 1 + PROFILE_SECTIONS.length) % PROFILE_SECTIONS.length;
+    } else if (e.key === "Home") {
+      nextIndex = 0;
+    } else if (e.key === "End") {
+      nextIndex = PROFILE_SECTIONS.length - 1;
     }
-  }, [onSelectSection]);
 
-  // Scroll spy with IntersectionObserver
-  useEffect(() => {
-    if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Find visible section with highest intersection ratio
-        const visible = entries.filter((e) => e.isIntersecting);
-        if (visible.length > 0) {
-          // Sort by top position relative to viewport
-          visible.sort((a, b) => Math.abs(a.boundingClientRect.top) - Math.abs(b.boundingClientRect.top));
-          const targetId = visible[0].target.id.replace(/^section-/, "") as ProfileSectionId;
-          if (PROFILE_SECTIONS.some((s) => s.id === targetId)) {
-            setInternalActive(targetId);
-          }
-        }
-      },
-      {
-        rootMargin: "-100px 0px -60% 0px",
-        threshold: [0, 0.2, 0.5],
-      }
-    );
-
-    PROFILE_SECTIONS.forEach((sec) => {
-      const el = document.getElementById(`section-${sec.id}`);
-      if (el) observer.observe(el);
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  function handleTabClick(id: ProfileSectionId) {
-    onSelectSection(id);
-    setInternalActive(id);
-    if (typeof window !== "undefined") {
-      window.history.replaceState(null, "", `#${id}`);
-      const el = document.getElementById(`section-${id}`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+    if (nextIndex !== -1) {
+      e.preventDefault();
+      const nextTab = PROFILE_SECTIONS[nextIndex];
+      onSelectSection(nextTab.id);
+      const targetBtn = tabListRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[nextIndex];
+      targetBtn?.focus();
+      targetBtn?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
     }
   }
 
   return (
-    <nav
-      className="sticky top-0 z-20 w-full bg-black/90 backdrop-blur-md border-b border-neutral-850 py-2.5 px-1 sm:px-4 mb-6"
-      aria-label="Profile navigation sections"
+    <div
+      ref={tabListRef}
+      className="wb-tabs profile-section-tabs"
+      role="tablist"
+      aria-label="Profile sections"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 24,
+        borderBottom: "1px solid var(--hairline)",
+        marginBottom: 24,
+        overflowX: "auto",
+        scrollbarWidth: "none",
+      }}
     >
-      <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar max-w-full">
-        {PROFILE_SECTIONS.map((section) => {
-          const isActive = internalActive === section.id;
-          return (
-            <button
-              key={section.id}
-              type="button"
-              onClick={() => handleTabClick(section.id)}
-              className={cn(
-                "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all select-none",
-                isActive
-                  ? "bg-neutral-800 text-white shadow-sm border border-neutral-700/80 font-semibold"
-                  : "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900 border border-transparent"
-              )}
-              aria-current={isActive ? "true" : undefined}
-            >
-              {section.label}
-            </button>
-          );
-        })}
-      </div>
-    </nav>
+      {PROFILE_SECTIONS.map((section, index) => {
+        const isActive = activeSection === section.id;
+        return (
+          <button
+            key={section.id}
+            id={`tab-${section.id}`}
+            role="tab"
+            type="button"
+            aria-selected={isActive}
+            aria-controls={`tabpanel-${section.id}`}
+            tabIndex={isActive ? 0 : -1}
+            onClick={() => onSelectSection(section.id)}
+            onKeyDown={(e) => handleKeyDown(e, index)}
+            className={`wb-tab-item ${isActive ? "is-active" : ""}`}
+            style={{
+              height: 44,
+              padding: "0 2px",
+              display: "inline-flex",
+              alignItems: "center",
+              background: "transparent",
+              border: "none",
+              borderBottom: isActive ? "2px solid var(--accent)" : "2px solid transparent",
+              color: isActive ? "var(--ink)" : "var(--ink-2)",
+              fontFamily: "var(--font-sans)",
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              marginBottom: -1,
+              transition: "color 120ms ease, border-color 120ms ease",
+            }}
+          >
+            {section.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
+
+export const SectionTabs = StickySectionTabs;
