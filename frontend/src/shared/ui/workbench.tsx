@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import {
+  Checkbox as RadixCheckbox,
   Collapsible as RadixCollapsible,
   Dialog as RadixDialog,
   DropdownMenu as RadixDropdown,
@@ -337,6 +338,64 @@ export function Switch({
 }
 
 /* ==========================================================================
+   Checkbox
+   - 18px box, radius sm, border --border-control, checked fill --accent
+   - Accessible label click toggle, focus ring
+   ========================================================================== */
+
+export interface CheckboxProps {
+  id?: string;
+  checked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
+  label?: ReactNode;
+  disabled?: boolean;
+  className?: string;
+}
+
+export function Checkbox({
+  id,
+  checked,
+  onCheckedChange,
+  label,
+  disabled,
+  className,
+}: CheckboxProps) {
+  const generatedId = useId();
+  const inputId = id || generatedId;
+
+  return (
+    <label
+      htmlFor={inputId}
+      className={cn("wb-checkbox-label", disabled && "is-disabled", className)}
+    >
+      <RadixCheckbox.Root
+        id={inputId}
+        checked={checked}
+        onCheckedChange={(val) => onCheckedChange?.(Boolean(val))}
+        disabled={disabled}
+        className="wb-checkbox-root"
+      >
+        <RadixCheckbox.Indicator className="wb-checkbox-indicator">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="2 6 4.5 9 10 3" />
+          </svg>
+        </RadixCheckbox.Indicator>
+      </RadixCheckbox.Root>
+      {label ? <span className="wb-checkbox-text">{label}</span> : null}
+    </label>
+  );
+}
+
+/* ==========================================================================
    Chip
    - Fully round pill chip
    ========================================================================== */
@@ -411,6 +470,8 @@ export interface ScoreRingProps {
   size?: number;
   strokeWidth?: number;
   label?: string;
+  hideLabel?: boolean;
+  compact?: boolean;
   className?: string;
 }
 
@@ -419,6 +480,8 @@ export function ScoreRing({
   size = 100,
   strokeWidth = 6,
   label = "Readiness",
+  hideLabel = false,
+  compact = false,
   className,
 }: ScoreRingProps) {
   const reduceMotion = useReducedMotion();
@@ -465,8 +528,9 @@ export function ScoreRing({
 
   return (
     <div
-      className={cn("wb-score-ring", className)}
+      className={cn("wb-score-ring", (compact || size <= 64) && "is-compact", className)}
       style={{ width: size, height: size }}
+      data-compact={compact || size <= 64 ? "true" : undefined}
       role="progressbar"
       aria-label={`${label}: ${numericScore != null ? numericScore + "%" : "unknown"}`}
       aria-valuenow={numericScore ?? undefined}
@@ -501,11 +565,19 @@ export function ScoreRing({
           />
         ) : null}
       </svg>
-      <div className="wb-score-ring-center" aria-hidden="true">
+      <div
+        className={cn(
+          "wb-score-ring-center",
+          (compact || size <= 64 || hideLabel) && "is-compact"
+        )}
+        aria-hidden="true"
+      >
         <span className="wb-score-ring-num">
           {numericScore != null ? displayNumber : "—"}
         </span>
-        <span className="wb-score-ring-label">{label}</span>
+        {!hideLabel && size > 64 && label ? (
+          <span className="wb-score-ring-label">{label}</span>
+        ) : null}
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import {
   type SVGProps,
 } from "react";
 import { useReducedMotion } from "motion/react";
+import { isDevBuild } from "@/shared/config/env";
 
 export type CopilotIconName =
   | "dashboard"
@@ -95,6 +96,7 @@ const ALIASES: Record<string, CopilotIconName> = {
   chevronleft: "back",
   chevronup: "collapse",
   chevrondown: "expand",
+  "chevron-down": "expand",
   arrowright: "go",
   user: "account",
   "user-round": "account",
@@ -105,10 +107,13 @@ const ALIASES: Record<string, CopilotIconName> = {
   "rotate-ccw": "refresh",
   "check-circle": "check",
   layers: "filters",
-};
+} as const;
+
+export type CopilotIconAlias = keyof typeof ALIASES;
+export type CopilotIconValidName = CopilotIconName | CopilotIconAlias;
 
 export function resolveCopilotIconName(name: string): CopilotIconName {
-  if (name in ALIASES) return ALIASES[name];
+  if (name in ALIASES) return ALIASES[name as CopilotIconAlias];
   return name as CopilotIconName;
 }
 
@@ -536,7 +541,7 @@ const glyphs: Record<CopilotIconName, ReactNode> = {
 };
 
 export type CopilotIconProps = {
-  name: CopilotIconName | string;
+  name: CopilotIconValidName;
   size?: number | string;
   className?: string;
   loop?: boolean;
@@ -555,7 +560,14 @@ export function CopilotIcon({
   const spanRef = useRef<HTMLSpanElement>(null);
   const [parentActive, setParentActive] = useState(false);
   const resolved = resolveCopilotIconName(String(name));
-  const glyph = glyphs[resolved] ?? glyphs.search;
+  const glyph = glyphs[resolved];
+
+  if (!glyph) {
+    if (isDevBuild) {
+      console.error(`[CopilotIcon] Unknown icon name: "${String(name)}" (resolved: "${String(resolved)}")`);
+    }
+    return null;
+  }
   const labelled = Boolean(
     title || (svgProps as { "aria-label"?: string })["aria-label"],
   );

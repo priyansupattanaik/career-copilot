@@ -237,76 +237,78 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
           <div className="workbench-main">
             {/* Top bar: 56px, sticky, transparent */}
             <header className={`workbench-topbar ${isScrolled ? "is-scrolled" : ""}`}>
-              {/* Desktop & Tablet: Breadcrumb Workspace / Page */}
-              <div className="workbench-breadcrumb" aria-label="Breadcrumb">
-                {/* On mobile (< 768px) and phone landscape, logo shows on left */}
-                <span className="mobile-only">
-                  <WorkspaceLogo compact={false} />
-                </span>
-                <span className="desktop-tablet-only">
-                  <Link href={routes.dashboard}>Workspace</Link>
-                  <span className="workbench-breadcrumb-separator">/</span>
-                  <span style={{ color: "var(--ink)", fontWeight: 500 }}>
-                    {currentNavLabel}
+              <div className="workbench-topbar-inner">
+                {/* Desktop & Tablet: Breadcrumb Workspace / Page */}
+                <div className="workbench-breadcrumb" aria-label="Breadcrumb">
+                  {/* On mobile (< 768px) and phone landscape, logo shows on left */}
+                  <span className="mobile-only">
+                    <WorkspaceLogo compact={false} />
                   </span>
-                </span>
-              </div>
-
-              {/* Right: Demo status badge + Account Avatar Menu */}
-              <div className="workbench-topbar-actions">
-                {isDemoSession() ? (
-                  <span
-                    style={{
-                      fontSize: 12,
-                      color: "var(--ink-2)",
-                      border: "1px solid var(--hairline)",
-                      padding: "3px 8px",
-                      borderRadius: 9999,
-                    }}
-                  >
-                    Demo workspace
+                  <span className="desktop-tablet-only">
+                    <Link href={routes.dashboard}>Workspace</Link>
+                    <span className="workbench-breadcrumb-separator">/</span>
+                    <span style={{ color: "var(--ink)", fontWeight: 500 }}>
+                      {currentNavLabel}
+                    </span>
                   </span>
-                ) : null}
+                </div>
 
-                {/* Account Avatar button opening existing account menu */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className="workbench-avatar-btn"
-                      aria-label={`Account menu for ${firstName}`}
+                {/* Right: Demo status badge + Account Avatar Menu */}
+                <div className="workbench-topbar-actions">
+                  {isDemoSession() ? (
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color: "var(--ink-2)",
+                        border: "1px solid var(--hairline)",
+                        padding: "3px 8px",
+                        borderRadius: 9999,
+                      }}
                     >
-                      {avatarUrl ? (
-                        <img src={avatarUrl} alt="" />
-                      ) : (
-                        initials
-                      )}
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" side="bottom">
-                    <DropdownMenuItem asChild>
-                      <Link href="/settings/profile">
-                        <CopilotIcon name="account" size={16} />
-                        <span>View profile</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/settings/account">
-                        <CopilotIcon name="settings" size={16} />
-                        <span>Settings</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      isDanger
-                      onClick={() => void logout()}
-                      disabled={loggingOut}
-                    >
-                      <CopilotIcon name="logout" size={16} />
-                      <span>{loggingOut ? "Signing out…" : "Log out"}</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      Demo workspace
+                    </span>
+                  ) : null}
+
+                  {/* Account Avatar button opening existing account menu */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="workbench-avatar-btn"
+                        aria-label={`Account menu for ${firstName}`}
+                      >
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt="" />
+                        ) : (
+                          initials
+                        )}
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" side="bottom">
+                      <DropdownMenuItem asChild>
+                        <Link href="/settings/profile">
+                          <CopilotIcon name="account" size={16} />
+                          <span>View profile</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/settings/account">
+                          <CopilotIcon name="settings" size={16} />
+                          <span>Settings</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        isDanger
+                        onClick={() => void logout()}
+                        disabled={loggingOut}
+                      >
+                        <CopilotIcon name="logout" size={16} />
+                        <span>{loggingOut ? "Signing out…" : "Log out"}</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </header>
 

@@ -67,3 +67,38 @@ The FastAPI backend follows layered separation of concerns:
     - `refactor(step-a): separate environment configuration from code`
     - `test: add safety net pure logic and smoke tests`
     - `docs: update architecture and api references`
+
+---
+
+## 6. UI Consistency Rules
+
+- **Spacing scale (px)**: `4, 8, 12, 16, 24, 32, 48, 64` (plus 0 and 1px borders).
+  - Vertical rhythm: 24px between page blocks (`--space-6`).
+  - Surface padding: 24px (20px below 768px).
+  - Field grid row-gap: 16px; column-gap: 24px.
+  - Label-to-control gap: 8px.
+  - Heading-to-description gap: 4px.
+- **Radius scale**:
+  - `sm` (4px): Checkbox.
+  - `md` (8px): Buttons, inputs, selects, row hover.
+  - `lg` (12px): Surfaces, dialogs, sheets.
+  - `full` (9999px or 50%): Chips, badges, avatars, rings.
+  - Buttons use `md` (8px), never full pill shapes.
+- **Borders**: 1px solid; `--hairline` for Surfaces and section dividers; `--border-control` for inputs, selects, checkboxes, and secondary buttons.
+- **Heights**:
+  - Buttons and inputs: 40px (44px on coarse pointer).
+  - Tabs: 44px.
+  - Chips and badges: 24px.
+  - Icon buttons: 40px (avatar badge 28px).
+- **Page container**: `max-width: 1200px`, centered in the main area right of sidebar. Padding-inline 32px at >= 1024px, 24px at 768–1023px, 16px below 768px. Used by topbar inner wrapper and page content.
+- **Top bar**: 56px height. Transparent at scroll 0. When scrolled > 8px, receives opaque `--canvas` background spanning full main width with bottom hairline. Section tabs are not sticky.
+- **Surfaces**: `Surface` component only, never nested. `--surface-1` fill, `--hairline` border, radius `lg`. Content between blocks sits directly on the canvas mesh.
+- **Colour**: `--accent` only for primary buttons, active nav icons, active tab underlines, selected states, focus rings, ScoreRing arcs, and text links. Secondary buttons use `--border-control` border and `--ink` text. Ghost buttons use `--ink-2` text, hover `--ink`. Zero cyan/teal literals.
+- **Typography**:
+  - Page-identity name: Instrument Serif 28/32, weight 400, letter-spacing -0.02em.
+  - Section titles (`h2`): Geist 600 18/28.
+  - Sub-titles (`h3`): Geist 600 14/20 in `--ink`.
+  - Body and descriptions: Geist 14/22 `--ink-2`.
+  - Small / captions: Geist 13/20.
+  - Numbers in the ring: Geist Mono (tabular-nums). Mono is strictly for numbers/scores.
+

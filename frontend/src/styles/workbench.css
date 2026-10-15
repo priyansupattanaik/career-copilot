@@ -335,35 +335,47 @@
   position: relative;
 }
 
-/* Top bar: 56px, sticky, transparent, 1px bottom line fades on 8px scroll */
+/* Top bar: 56px, sticky, transparent at scroll 0, opaque --canvas with hairline when scrolled > 8px */
 .workbench-topbar {
   height: 56px;
   position: sticky;
   top: 0;
   z-index: 20;
   background-color: transparent;
+  width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 32px;
   border-bottom: 1px solid transparent;
-  transition: border-bottom-color 160ms ease;
+  transition: border-bottom-color 160ms ease, background-color 160ms ease;
+  padding: 0;
 }
 
 .workbench-topbar.is-scrolled {
   border-bottom-color: var(--hairline);
-  background-color: rgba(0, 0, 0, 0.82);
+  background-color: var(--canvas);
 }
 
-@media (max-width: 1023px) {
-  .workbench-topbar {
-    padding: 0 24px;
+.workbench-topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-inline: 32px;
+  box-sizing: border-box;
+  height: 100%;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .workbench-topbar-inner {
+    padding-inline: 24px;
   }
 }
 
 @media (max-width: 767px) {
-  .workbench-topbar {
-    padding: 0 16px;
+  .workbench-topbar-inner {
+    padding-inline: 16px;
   }
 }
 
@@ -450,23 +462,29 @@
 }
 
 /* Page Container: max-width 1200px centred; padding 32/24/16 */
-.workbench-content {
+/* Page Container: max-width 1200px centred; padding-inline 32/24/16, padding-top 24 */
+.workbench-content,
+.workbench-page-container {
   flex: 1;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 32px;
+  padding: 24px 32px 64px 32px;
+  box-sizing: border-box;
+  background-color: transparent;
 }
 
-@media (max-width: 1023px) {
-  .workbench-content {
-    padding: 24px;
+@media (min-width: 768px) and (max-width: 1023px) {
+  .workbench-content,
+  .workbench-page-container {
+    padding: 24px 24px 64px 24px;
   }
 }
 
 @media (max-width: 767px) {
-  .workbench-content {
-    padding: 16px 16px calc(72px + env(safe-area-inset-bottom)) 16px;
+  .workbench-content,
+  .workbench-page-container {
+    padding: 24px 16px calc(72px + env(safe-area-inset-bottom)) 16px;
   }
 }
 
@@ -829,29 +847,42 @@
   }
 }
 
-/* Underline Tabs */
+/* Underline Tabs: height 44, padding-inline 0, gap 24, active 2px --accent underline */
 .wb-tabs {
   display: flex;
   align-items: center;
   gap: 24px;
+  height: 44px;
   border-bottom: 1px solid var(--hairline);
   margin-bottom: 24px;
+  padding: 0;
+  background: transparent;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.wb-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .wb-tab-item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 2px 14px 2px;
+  height: 44px;
+  padding-inline: 0;
+  padding-block: 0;
+  font-family: var(--font-sans);
   font-size: 14px;
+  line-height: 20px;
   font-weight: 500;
-  color: var(--ink-3);
+  color: var(--ink-2);
   text-decoration: none;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
   margin-bottom: -1px;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: color 120ms ease, border-bottom-color 120ms ease;
 }
 
@@ -862,9 +893,15 @@
 }
 
 .wb-tab-item.is-active,
+.wb-tab-item[aria-selected="true"],
 .wb-tab-item[data-state="active"] {
   color: var(--ink);
   border-bottom-color: var(--accent);
+}
+
+.wb-tab-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* Segmented Control (e.g. 3 / 5 / 8) */
@@ -1137,6 +1174,12 @@
   text-align: center;
 }
 
+.wb-score-ring[data-compact="true"] .wb-score-ring-center,
+.wb-score-ring.is-compact .wb-score-ring-center {
+  display: grid;
+  place-items: center;
+}
+
 .wb-score-ring-num {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -1146,12 +1189,81 @@
   color: var(--ink);
 }
 
+.wb-score-ring[data-compact="true"] .wb-score-ring-num,
+.wb-score-ring.is-compact .wb-score-ring-num {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
 .wb-score-ring-label {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--ink-3);
   margin-top: 4px;
+}
+
+/* Shared Checkbox: 18px box, radius sm (4px), border --border-control, checked fill --accent with --accent-ink mark */
+.wb-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-2);
+}
+
+.wb-checkbox-label:hover {
+  color: var(--ink);
+}
+
+.wb-checkbox-label.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wb-checkbox-root {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-control);
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: inherit;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.wb-checkbox-root[data-state="checked"] {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.wb-checkbox-root:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.wb-checkbox-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-ink);
+}
+
+.wb-checkbox-text {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink);
 }
 
 /* EmptyState */
