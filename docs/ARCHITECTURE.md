@@ -156,3 +156,18 @@ The application enforces a strictly unidirectional request lifecycle:
    If creating a new router module, mount it in `backend/app/api/router.py`.
 5. **Add Smoke Test**:
    Add a test case in `backend/tests/test_api_smoke.py` verifying status codes and response structures.
+
+---
+
+## 7. Profile Architecture & Autofill Pipeline
+
+The profile system (`/settings/profile`) features a modular, evidence-backed information architecture:
+- **Frontend Architecture**:
+  - Sticky section navigation (`#resume`, `#about`, `#background`, `#skills`, `#preferences`) with automatic legacy hash redirects (`#profile-details`, `#profile-resume`, etc.).
+  - True-black responsive surface canvas with Instrument Serif identity strip and 56px ScoreRing progress indicator.
+  - Floating Dirty Action Bar appearing only on unsaved modifications, with modal confirmation on discard.
+  - 8-item completeness calculation with entry-level (fresher) exemption for zero work history.
+- **Backend Architecture**:
+  - `POST /api/v1/profile/autofill/parse`: Orchestrates resume text extraction, LLM failover generation (NVIDIA -> Groq), NFKC evidence verification, token-subset validation, and interval-merging experience derivation.
+  - `POST /api/v1/profile/autofill/apply`: Statelessly persists verified and user-selected candidate changes across profile records and recalculates completeness.
+  - See [docs/PROFILE_AUTOFILL.md](file:///d:/My%20Creations/career-copilot/docs/PROFILE_AUTOFILL.md) for full subsystem details.

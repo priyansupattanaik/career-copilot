@@ -77,6 +77,8 @@ This document is extracted directly from the verified FastAPI routes and OpenAPI
 | `PATCH` | `/api/v1/profile` | Bearer JWT (Required) | Update Profile |
 | `DELETE` | `/api/v1/profile/avatar` | Bearer JWT (Required) | Delete Profile Avatar |
 | `POST` | `/api/v1/profile/avatar` | Bearer JWT (Required) | Upload Profile Avatar |
+| `POST` | `/api/v1/profile/autofill/apply` | Bearer JWT (Required) | Apply Profile Autofill Proposals |
+| `POST` | `/api/v1/profile/autofill/parse` | Bearer JWT (Required) | Parse Resume For Profile Autofill |
 | `POST` | `/api/v1/profile/from-resume/apply` | Bearer JWT (Required) | Apply Profile From Resume |
 | `POST` | `/api/v1/profile/from-resume/preview` | Bearer JWT (Required) | Preview Profile From Resume |
 | `POST` | `/api/v1/profile/from-resume/preview-upload` | Bearer JWT (Required) | Preview Profile From Resume Upload |
