@@ -43,15 +43,6 @@ export function StickySectionTabs({
       className="wb-tabs profile-section-tabs"
       role="tablist"
       aria-label="Profile sections"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 24,
-        borderBottom: "1px solid var(--hairline)",
-        marginBottom: 24,
-        overflowX: "auto",
-        scrollbarWidth: "none",
-      }}
     >
       {PROFILE_SECTIONS.map((section, index) => {
         const isActive = activeSection === section.id;
@@ -67,23 +58,6 @@ export function StickySectionTabs({
             onClick={() => onSelectSection(section.id)}
             onKeyDown={(e) => handleKeyDown(e, index)}
             className={`wb-tab-item ${isActive ? "is-active" : ""}`}
-            style={{
-              height: 44,
-              padding: "0 2px",
-              display: "inline-flex",
-              alignItems: "center",
-              background: "transparent",
-              border: "none",
-              borderBottom: isActive ? "2px solid var(--accent)" : "2px solid transparent",
-              color: isActive ? "var(--ink)" : "var(--ink-2)",
-              fontFamily: "var(--font-sans)",
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              marginBottom: -1,
-              transition: "color 120ms ease, border-color 120ms ease",
-            }}
           >
             {section.label}
           </button>

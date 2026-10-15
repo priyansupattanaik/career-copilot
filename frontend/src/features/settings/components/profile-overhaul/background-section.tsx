@@ -260,7 +260,7 @@ export function BackgroundSection({
               type="button"
               onClick={openAddExp}
               className="wb-button wb-button-ghost"
-              style={{ height: 32 }}
+              style={{ height: 40 }}
             >
               <CopilotIcon name="plus" size={14} />
               <span>Add experience</span>
@@ -371,7 +371,7 @@ export function BackgroundSection({
                           type="button"
                           onClick={() => openEditExp(exp)}
                           className="wb-button wb-button-ghost"
-                          style={{ width: 32, height: 32, padding: 0 }}
+                          style={{ width: 40, height: 40, padding: 0 }}
                           title="Edit"
                         >
                           <CopilotIcon name="edit" size={14} />
@@ -380,7 +380,7 @@ export function BackgroundSection({
                           type="button"
                           onClick={() => setDeleteExpId(id)}
                           className="wb-button wb-button-ghost"
-                          style={{ width: 32, height: 32, padding: 0, color: "var(--danger)" }}
+                          style={{ width: 40, height: 40, padding: 0, color: "var(--danger)" }}
                           title="Remove"
                         >
                           <CopilotIcon name="trash" size={14} />
@@ -461,7 +461,7 @@ export function BackgroundSection({
               type="button"
               onClick={openAddEdu}
               className="wb-button wb-button-ghost"
-              style={{ height: 32 }}
+              style={{ height: 40 }}
             >
               <CopilotIcon name="plus" size={14} />
               <span>Add education</span>
@@ -549,7 +549,7 @@ export function BackgroundSection({
                         type="button"
                         onClick={() => openEditEdu(edu)}
                         className="wb-button wb-button-ghost"
-                        style={{ width: 32, height: 32, padding: 0 }}
+                        style={{ width: 40, height: 40, padding: 0 }}
                         title="Edit"
                       >
                         <CopilotIcon name="edit" size={14} />
@@ -558,7 +558,7 @@ export function BackgroundSection({
                         type="button"
                         onClick={() => setDeleteEduId(id)}
                         className="wb-button wb-button-ghost"
-                        style={{ width: 32, height: 32, padding: 0, color: "var(--danger)" }}
+                        style={{ width: 40, height: 40, padding: 0, color: "var(--danger)" }}
                         title="Remove"
                       >
                         <CopilotIcon name="trash" size={14} />

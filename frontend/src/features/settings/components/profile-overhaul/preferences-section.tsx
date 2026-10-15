@@ -168,14 +168,14 @@ export function PreferencesSection({
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: 6,
-                    height: 32,
-                    padding: "0 10px",
-                    borderRadius: "var(--radius-md, 8px)",
+                    gap: 4,
+                    height: 24,
+                    padding: "0 8px",
+                    borderRadius: "var(--radius-full, 9999px)",
                     backgroundColor: "var(--surface-2)",
                     border: "1px solid var(--hairline)",
                     fontFamily: "var(--font-sans)",
-                    fontSize: 13,
+                    fontSize: 12,
                     color: "var(--ink)",
                   }}
                 >
@@ -241,14 +241,14 @@ export function PreferencesSection({
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: 6,
-                    height: 32,
-                    padding: "0 10px",
-                    borderRadius: "var(--radius-md, 8px)",
+                    gap: 4,
+                    height: 24,
+                    padding: "0 8px",
+                    borderRadius: "var(--radius-full, 9999px)",
                     backgroundColor: "var(--surface-2)",
                     border: "1px solid var(--hairline)",
                     fontFamily: "var(--font-sans)",
-                    fontSize: 13,
+                    fontSize: 12,
                     color: "var(--ink)",
                   }}
                 >

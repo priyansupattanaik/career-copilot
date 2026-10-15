@@ -258,11 +258,14 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
                   {isDemoSession() ? (
                     <span
                       style={{
+                        height: 24,
+                        display: "inline-flex",
+                        alignItems: "center",
                         fontSize: 12,
                         color: "var(--ink-2)",
                         border: "1px solid var(--hairline)",
-                        padding: "3px 8px",
-                        borderRadius: 9999,
+                        padding: "0 8px",
+                        borderRadius: "var(--radius-full, 9999px)",
                       }}
                     >
                       Demo workspace

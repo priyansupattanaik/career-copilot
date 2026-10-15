@@ -279,7 +279,7 @@ export function AboutSection({
               placeholder="e.g. alex_rivera"
               style={{ ...inputStyle, fontFamily: "var(--font-mono)" }}
             />
-            <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, lineHeight: "16px", margin: "6px 0 0 0" }}>
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, lineHeight: "16px", margin: "4px 0 0 0" }}>
               {checkingUsername ? (
                 <span style={{ color: "var(--ink-3)" }}>Checking availability…</span>
               ) : availability ? (
@@ -392,7 +392,7 @@ export function AboutSection({
               placeholder="e.g. 5"
               style={inputStyle}
             />
-            <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--ink-3)", margin: "6px 0 0 0" }}>
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--ink-3)", margin: "4px 0 0 0" }}>
               Choose 0 years if you are a fresher with no work history yet.
             </p>
           </div>
@@ -459,7 +459,7 @@ export function AboutSection({
             style={{
               ...inputStyle,
               height: "auto",
-              padding: "10px 12px",
+              padding: "12px",
               resize: "none",
               lineHeight: "22px",
             }}
@@ -474,7 +474,7 @@ export function AboutSection({
               type="button"
               onClick={openAddLinkModal}
               className="wb-button wb-button-ghost"
-              style={{ height: 32 }}
+              style={{ height: 40 }}
             >
               <CopilotIcon name="plus" size={14} />
               <span>Add link</span>
@@ -507,8 +507,8 @@ export function AboutSection({
                         style={{
                           display: "inline-flex",
                           alignItems: "center",
-                          height: 22,
-                          padding: "0 6px",
+                          height: 24,
+                          padding: "0 8px",
                           borderRadius: "var(--radius-sm, 4px)",
                           backgroundColor: "var(--surface-3)",
                           color: "var(--ink-2)",
@@ -544,7 +544,7 @@ export function AboutSection({
                         type="button"
                         onClick={() => openEditLinkModal(link, idOrIdx)}
                         className="wb-button wb-button-ghost"
-                        style={{ width: 32, height: 32, padding: 0 }}
+                        style={{ width: 40, height: 40, padding: 0 }}
                         title="Edit link"
                       >
                         <CopilotIcon name="edit" size={14} />
@@ -553,7 +553,7 @@ export function AboutSection({
                         type="button"
                         onClick={() => onDeleteLink(idOrIdx)}
                         className="wb-button wb-button-ghost"
-                        style={{ width: 32, height: 32, padding: 0, color: "var(--danger)" }}
+                        style={{ width: 40, height: 40, padding: 0, color: "var(--danger)" }}
                         title="Remove link"
                       >
                         <CopilotIcon name="trash" size={14} />

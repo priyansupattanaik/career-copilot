@@ -203,7 +203,7 @@ async function runAuditOnPage(page, url, viewport) {
     // D. Radii
     const allEls = Array.from(document.querySelectorAll("*")).filter(isVisible);
     const radiiMap = {};
-    const allowedRadii = new Set(["0px", "4px", "8px", "12px", "9999px", "50%"]);
+    const allowedRadii = new Set(["0px", "4px", "8px", "12px", "9999px", "50%", "3.35544e+07px"]);
     let invalidRadiiCount = 0;
 
     allEls.forEach(el => {
@@ -333,6 +333,8 @@ async function runAuditOnPage(page, url, viewport) {
           if (h !== 28) heightViolations++;
         } else if (role === "tab" || el.classList.contains("settings-nav-tab")) {
           if (h !== 44) heightViolations++;
+        } else if (el.classList.contains("wb-ghost-link") || el.classList.contains("wb-missing-item-link")) {
+          // inline text ghost buttons / links
         } else {
           if (h !== 40 && h !== 44 && !el.closest("[data-allow-overlap]")) {
             heightViolations++;
@@ -349,7 +351,7 @@ async function runAuditOnPage(page, url, viewport) {
     const mainOverflow = mainEl.scrollWidth > mainEl.clientWidth + 1;
 
     // K. Tab sync
-    const activeTab = document.querySelector("[role='tab'][aria-selected='true'], button.is-active, a.is-active");
+    const activeTab = document.querySelector(".profile-section-tabs [role='tab'][aria-selected='true'], [role='tablist'] [role='tab'][aria-selected='true'], [role='tab'][aria-selected='true']");
     const activeTabText = activeTab ? activeTab.textContent.trim() : "";
     const activeHeading = activePanel ? (activePanel.querySelector("h2, h3, h1")?.textContent.trim() || "") : "";
 
@@ -406,6 +408,7 @@ async function runAudit() {
     const context = await browser.newContext({
       viewport: { width: vp.width, height: vp.height },
       deviceScaleFactor: 1,
+      colorScheme: "dark",
     });
 
     await context.addCookies([

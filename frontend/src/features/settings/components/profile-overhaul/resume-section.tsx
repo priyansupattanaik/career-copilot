@@ -211,16 +211,7 @@ export function ResumeSection({
           >
             {uploadBusy ? (
               <>
-                <div
-                  style={{
-                    width: 14,
-                    height: 14,
-                    border: "2px solid rgba(0,0,0,0.2)",
-                    borderTopColor: "var(--accent-ink)",
-                    borderRadius: "50%",
-                    animation: "spin 1s linear infinite",
-                  }}
-                />
+                <CopilotIcon name="loader" size={14} loop />
                 <span>Uploading…</span>
               </>
             ) : (

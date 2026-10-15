@@ -195,16 +195,7 @@ export function IdentityStrip({
             }}
           >
             {avatarBusy ? (
-              <div
-                style={{
-                  width: 12,
-                  height: 12,
-                  border: "2px solid rgba(255,255,255,0.3)",
-                  borderTopColor: "var(--ink)",
-                  borderRadius: "50%",
-                  animation: "spin 1s linear infinite",
-                }}
-              />
+              <CopilotIcon name="loader" size={14} loop />
             ) : (
               <CopilotIcon name="edit" size={14} />
             )}
@@ -408,7 +399,7 @@ export function IdentityStrip({
                     background: "transparent",
                     border: "none",
                     padding: 0,
-                    margin: "2px 0 0 0",
+                    margin: "4px 0 0 0",
                     fontFamily: "var(--font-sans)",
                     fontSize: 13,
                     lineHeight: "18px",

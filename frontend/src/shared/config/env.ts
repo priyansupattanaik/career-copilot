@@ -4,15 +4,18 @@
  */
 
 // Safety check: ensure service role or backend secret keys never leak to frontend
-for (const key of Object.keys(import.meta.env)) {
-  if (
-    key.toLowerCase().includes("service_role") ||
-    key.toLowerCase().includes("secret_key") ||
-    key.toLowerCase().includes("auth_secret")
-  ) {
-    throw new Error(
-      `[Security Violation] Secret key detected in client environment: ${key}. Private keys must never be exposed to the browser.`,
-    );
+// In Vitest (Node runtime), process.env is attached to import.meta.env; safety check runs in browser/builds.
+if (import.meta.env.MODE !== "test") {
+  for (const key of Object.keys(import.meta.env)) {
+    if (
+      key.toLowerCase().includes("service_role") ||
+      key.toLowerCase().includes("secret_key") ||
+      key.toLowerCase().includes("auth_secret")
+    ) {
+      throw new Error(
+        `[Security Violation] Secret key detected in client environment: ${key}. Private keys must never be exposed to the browser.`,
+      );
+    }
   }
 }
 

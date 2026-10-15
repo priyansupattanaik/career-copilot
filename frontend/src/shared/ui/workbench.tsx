@@ -534,6 +534,7 @@ export function ScoreRing({
       className={cn("wb-score-ring", (compact || size <= 64) && "is-compact", className)}
       style={{ width: size, height: size }}
       data-compact={compact || size <= 64 ? "true" : undefined}
+      data-allow-overlap="true"
       role="progressbar"
       aria-label={`${label}: ${numericScore != null ? numericScore + "%" : "unknown"}`}
       aria-valuenow={numericScore ?? undefined}

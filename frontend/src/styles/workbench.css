@@ -182,11 +182,13 @@
    App Shell: Sidebar, Top bar, Bottom bar, Navigation
    ========================================================================== */
 
-.workbench-shell {
+.workbench-shell,
+.workspace.workbench-shell {
   display: flex;
   width: 100%;
   min-height: 100dvh;
-  background-color: transparent;
+  background: transparent !important;
+  background-color: transparent !important;
   position: relative;
 }
 
@@ -216,7 +218,7 @@
 .workbench-logo-link {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   color: var(--ink);
   text-decoration: none;
   font-weight: 600;
@@ -729,7 +731,7 @@
   justify-content: center;
   gap: 8px;
   height: 40px;
-  padding: 0 18px;
+  padding: 0 16px;
   border-radius: var(--radius-control);
   font-family: var(--font-sans);
   font-size: 14px;
@@ -1822,6 +1824,23 @@
    ========================================================================== */
 .profile-identity-strip {
   margin-bottom: 24px;
+}
+
+.profile-identity-strip h1,
+#identity-strip-heading {
+  font-family: var(--font-display) !important;
+  font-size: 28px !important;
+  line-height: 32px !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.02em !important;
+}
+
+.profile-overhaul-view h2,
+.profile-tabpanel h2 {
+  font-family: var(--font-sans) !important;
+  font-size: 18px !important;
+  line-height: 28px !important;
+  font-weight: 600 !important;
 }
 
 .identity-strip-grid {
