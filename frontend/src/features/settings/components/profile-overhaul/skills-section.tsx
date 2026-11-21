@@ -68,12 +68,14 @@ export function SkillsSection({
   return (
     <Surface
       id="section-skills"
-      className="profile-skills-section"
+      className="profile-skills-section settings-card"
       style={{
-        padding: "var(--space-6, 24px)",
-        borderRadius: "var(--radius-lg, 12px)",
-        background: "var(--surface-1)",
-        border: "1px solid var(--hairline)",
+        padding: "24px var(--settings-pad, 28px)",
+        borderRadius: "var(--settings-radius, 20px)",
+        background: "var(--app-panel, var(--surface))",
+        border: "1px solid var(--app-line, var(--border))",
+        boxShadow: "var(--app-shadow-soft, var(--shadow-sm))",
+        boxSizing: "border-box",
       }}
     >
       {/* Section Header */}

@@ -38,7 +38,10 @@ export const VITE_SUPABASE_URL: string = readEnv("VITE_SUPABASE_URL");
 export const VITE_SUPABASE_PUBLISHABLE_KEY: string =
   readEnv("VITE_SUPABASE_PUBLISHABLE_KEY") || readEnv("VITE_SUPABASE_ANON_KEY");
 
-export const VITE_PUBLIC_APP_ORIGIN: string = readEnv("VITE_PUBLIC_APP_ORIGIN").replace(/\/$/, "");
+export const VITE_PUBLIC_APP_ORIGIN: string = readEnv(
+  "VITE_PUBLIC_APP_ORIGIN",
+  "https://careercopilotai.vercel.app",
+).replace(/\/$/, "");
 
 export const VITE_API_BASE_URL: string = readEnv("VITE_API_BASE_URL").replace(/\/$/, "");
 

@@ -13,6 +13,8 @@ import { isDemoSession } from "@/features/auth/demo-session";
 import { DEMO_COOKIE_NAME } from "@/shared/config";
 import { prefetchRoute, prefetchWorkspace } from "@/shared/route-prefetch";
 import { useWorkspaceBootstrap } from "@/features/workspace/bootstrap-context";
+import { publicProfileUrl } from "@/features/auth/public-origin";
+import { normalizePublicProfileUsername } from "@/features/profile/model/public-profile-username";
 import { motion, useReducedMotion } from "motion/react";
 import {
   DropdownMenu,
@@ -141,6 +143,9 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
     .slice(0, 2)
     .toUpperCase();
   const avatarUrl = bootstrap?.profile?.avatar_url || null;
+  const username = bootstrap?.profile?.username;
+  const cleanUsername = normalizePublicProfileUsername(username || "");
+  const publicProfileHref = cleanUsername ? publicProfileUrl(cleanUsername) : "/settings/profile";
 
   const currentNav = navigation.find(
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
@@ -289,9 +294,15 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" side="bottom">
                       <DropdownMenuItem asChild>
-                        <Link href="/settings/profile">
+                        <Link href={publicProfileHref}>
                           <CopilotIcon name="account" size={16} />
                           <span>View profile</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/settings/profile">
+                          <CopilotIcon name="edit" size={16} />
+                          <span>Profile settings</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>

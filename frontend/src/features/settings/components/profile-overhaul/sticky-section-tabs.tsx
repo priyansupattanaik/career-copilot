@@ -40,7 +40,7 @@ export function StickySectionTabs({
   return (
     <div
       ref={tabListRef}
-      className="wb-tabs profile-section-tabs"
+      className="profile-section-tabs"
       role="tablist"
       aria-label="Profile sections"
     >
@@ -57,7 +57,7 @@ export function StickySectionTabs({
             tabIndex={isActive ? 0 : -1}
             onClick={() => onSelectSection(section.id)}
             onKeyDown={(e) => handleKeyDown(e, index)}
-            className={`wb-tab-item ${isActive ? "is-active" : ""}`}
+            className={`profile-section-tab-item ${isActive ? "is-active" : ""}`}
           >
             {section.label}
           </button>

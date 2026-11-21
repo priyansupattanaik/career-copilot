@@ -13,10 +13,3 @@ export function saveSettingsRecord(kind: "notifications" | "privacy", payload: u
     body: JSON.stringify(payload),
   });
 }
-
-export function saveCareerPreferences(payload: unknown) {
-  return apiRequest<unknown>("/settings/career-preferences", {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
-}

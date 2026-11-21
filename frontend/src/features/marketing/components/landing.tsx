@@ -1,6 +1,7 @@
 import { CopilotIcon } from "@/components/ui/copilot-icons";
 import {
   motion,
+  useInView,
   useReducedMotion,
   useScroll,
   useTransform,
@@ -15,9 +16,13 @@ import {
 
 import { BrandMark } from "@/components/ui/brand-mark";
 import { Navigation5 } from "@/components/ui/navigation-5";
-import { DotPattern } from "@/components/ui/dot-pattern";
+import { DotPattern } from "@/components/landing/DotPattern";
+import { AuroraBackground } from "@/components/landing/AuroraBackground";
+import { CursorGlow } from "@/components/landing/CursorGlow";
+import { MagneticButton } from "@/components/landing/MagneticButton";
+import { CountUp } from "@/components/landing/CountUp";
+import { usePracticeClock } from "@/components/landing/usePracticeClock";
 import { RuixenGradientFooter } from "@/components/ui/ruixen-gradient-footer";
-import { cn } from "@/shared/utils";
 
 import { MotionProvider, useMotion } from "../motion-context";
 import { useReveal } from "../use-reveal";
@@ -45,40 +50,6 @@ const features = [
     text: "Keep a list of jobs and mark which ones you applied to.",
   },
 ];
-
-function useCountUp(target: number, active: boolean) {
-  const [value, setValue] = useState(0);
-  useEffect(() => {
-    if (!active) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setValue(target);
-      return;
-    }
-    const start = performance.now();
-    const duration = 900;
-    let frame = 0;
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / duration);
-      setValue(Math.round(target * (1 - (1 - t) ** 3)));
-      if (t < 1) frame = window.requestAnimationFrame(tick);
-    };
-    frame = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(frame);
-  }, [active, target]);
-  return value;
-}
-
-function usePracticeClock(paused: boolean) {
-  const [seconds, setSeconds] = useState(4 * 60 + 18);
-  useEffect(() => {
-    if (paused) return;
-    const id = window.setInterval(() => setSeconds((n) => n + 1), 1000);
-    return () => window.clearInterval(id);
-  }, [paused]);
-  const minutes = Math.floor(seconds / 60);
-  const rest = seconds % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
-}
 
 function Reveal({
   as: Tag,
@@ -117,9 +88,9 @@ function HeroCopy() {
           onMouseEnter={() => prefetchRoute("/sign-up")}
           onFocus={() => prefetchRoute("/sign-up")}
         >
-          <ButtonLink href="/sign-up" className="home-primary-cta">
-            Get started
-          </ButtonLink>
+          <MagneticButton>
+            <ButtonLink href="/sign-up" className="home-primary-cta">Get started</ButtonLink>
+          </MagneticButton>
         </span>
         <a href="#practice" className="home-text-cta">
           <CopilotIcon name="play" size={14} />{" "}
@@ -165,13 +136,10 @@ function PracticeCopy() {
 }
 
 function PracticeCard() {
-  const [live, setLive] = useState(false);
   const ref = useReveal<HTMLDivElement>({
     delay: 80,
     y: 8,
-    onReveal: () => setLive(true),
   });
-  const sessions = useCountUp(3, live);
   return (
     <div ref={ref} className="home-practice-card">
       <div className="home-practice-card-top">
@@ -179,7 +147,7 @@ function PracticeCard() {
         <b>Not your data</b>
       </div>
       <div className="home-practice-stat">
-        <strong>{sessions}</strong>
+        <strong><CountUp end={3} /></strong>
         <span>
           sessions
           <br />
@@ -318,35 +286,21 @@ function FinalCard() {
         onMouseEnter={() => prefetchRoute("/sign-up")}
         onFocus={() => prefetchRoute("/sign-up")}
       >
-        <ButtonLink href="/sign-up" className="home-primary-cta">
-          Get started
-        </ButtonLink>
+        <MagneticButton>
+          <ButtonLink href="/sign-up" className="home-primary-cta">Get started</ButtonLink>
+        </MagneticButton>
       </span>
     </div>
   );
 }
 
 function HomeDotField() {
-  const { isMotionPaused } = useMotion();
-  const reduce = useReducedMotion();
-  const glow = !isMotionPaused && !reduce;
+  return <div className="home-dot-field" aria-hidden="true"><DotPattern /></div>;
+}
 
-  return (
-    <div className="home-dot-field" aria-hidden="true">
-      <DotPattern
-        glow={glow}
-        width={28}
-        height={28}
-        cx={1}
-        cy={1}
-        cr={1.15}
-        className={cn(
-          "home-dot-pattern",
-          "[mask-image:radial-gradient(ellipse_at_center,white,transparent_78%)]",
-        )}
-      />
-    </div>
-  );
+function ScrollProgress() {
+  const { scrollYProgress } = useScroll();
+  return <motion.div className="landing-scroll-progress" style={{ scaleX: scrollYProgress }} aria-hidden="true" />;
 }
 
 function LandingInner() {
@@ -365,6 +319,8 @@ function LandingInner() {
       data-motion={isMotionPaused ? "paused" : "running"}
     >
       <HomeDotField />
+      <CursorGlow />
+      <ScrollProgress />
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
@@ -384,6 +340,7 @@ function LandingInner() {
           className="home-practice"
           aria-labelledby="practice-title"
         >
+          <AuroraBackground />
           <div className="home-frame home-practice-grid">
             <PracticeCopy />
             <PracticeCard />
@@ -457,57 +414,52 @@ const TYPING_SPEED = 32; // ms per character
 
 const INTERVIEW_QUESTIONS = [
   {
-    topic: "Example",
+    topic: "Behavioural",
+    q: "Tell me about a time you led a project under a tight deadline.",
+    a: "I broke the work into daily milestones, flagged the risk on day two, and shipped on time by cutting one non-essential feature.",
+  },
+  {
+    topic: "Delivery",
     q: "Tell me about a project you shipped.",
-    a: "This is an example answer, not a recording. In a real session, your own answer is saved.",
+    a: "We reduced onboarding drop-off by rebuilding the first-run flow around one clear action, measured with a before/after funnel.",
   },
   {
-    topic: "Example",
+    topic: "Prioritisation",
     q: "How do you decide what to do first?",
-    a: "This preview does not use your resume or invent your experience.",
+    a: "I rank by impact and reversibility — high-impact, hard-to-reverse decisions get the most scrutiny first.",
   },
   {
-    topic: "Example",
+    topic: "Reflection",
     q: "What would you change about a past technical choice?",
-    a: "Practice sessions store the answer you give. This text is only a sample.",
+    a: "I would add tests earlier. The rewrite was right, but we paid for missing coverage in the first month.",
   },
 ];
-
-function buildSequence(len: number): number[] {
-  const arr = Array.from({ length: len }, (_, i) => i);
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
 
 // Typewriter hook — resets and starts when `active` flips to true
 function useTyping(text: string, active: boolean) {
   const [count, setCount] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setCount(0);
     if (!active) return;
 
     // Small initial delay so the panel is fully visible before text starts
     const startId = setTimeout(() => {
-      intervalRef.current = setInterval(() => {
-        setCount((c) => {
-          if (c >= text.length) {
-            clearInterval(intervalRef.current!);
-            return c;
-          }
-          return c + 1;
+      const typeNext = () => {
+        setCount((current) => {
+          if (current >= text.length) return current;
+          timeoutRef.current = setTimeout(typeNext, TYPING_SPEED + Math.round(Math.random() * 16 - 8));
+          return current + 1;
         });
-      }, TYPING_SPEED);
+      };
+      typeNext();
     }, 280);
 
     return () => {
       clearTimeout(startId);
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, [text, active]);
 
@@ -519,29 +471,11 @@ function useTyping(text: string, active: boolean) {
 
 type InterviewPhase = "question" | "answering" | "transitioning";
 
-function useInterviewDemo() {
-  const seqRef = useRef<number[] | null>(null);
-  const posRef = useRef(1);
+function useInterviewDemo(paused: boolean, active: boolean) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearTimer = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
-  };
-
-  const getNext = () => {
-    if (!seqRef.current) {
-      seqRef.current = buildSequence(INTERVIEW_QUESTIONS.length);
-    }
-    if (posRef.current >= seqRef.current.length) {
-      const last = seqRef.current[seqRef.current.length - 1];
-      const next = buildSequence(INTERVIEW_QUESTIONS.length);
-      if (next[0] === last && next.length > 1) {
-        [next[0], next[next.length - 1]] = [next[next.length - 1], next[0]];
-      }
-      seqRef.current = next;
-      posRef.current = 0;
-    }
-    return seqRef.current[posRef.current++];
   };
 
   const [idx, setIdx] = useState(0);
@@ -549,14 +483,14 @@ function useInterviewDemo() {
 
   useEffect(() => {
     clearTimer();
+    if (paused || !active) return clearTimer;
     const q = INTERVIEW_QUESTIONS[idx];
 
     if (phase === "question") {
-      // Show question for 3.2s, then start answering
-      timerRef.current = setTimeout(() => setPhase("answering"), 3200);
+      timerRef.current = setTimeout(() => setPhase("answering"), 3000);
     } else if (phase === "answering") {
       // Duration = time to type the full answer + 1.2s pause at end
-      const typeDuration = 280 + q.a.length * TYPING_SPEED + 1200;
+      const typeDuration = 280 + q.a.length * TYPING_SPEED + 800;
       timerRef.current = setTimeout(
         () => setPhase("transitioning"),
         typeDuration,
@@ -564,13 +498,13 @@ function useInterviewDemo() {
     } else {
       // Fade-out transition, then load next question
       timerRef.current = setTimeout(() => {
-        setIdx(getNext());
+        setIdx((current) => (current + 1) % INTERVIEW_QUESTIONS.length);
         setPhase("question");
       }, 520);
     }
 
     return clearTimer;
-  }, [phase, idx]);
+  }, [active, idx, paused, phase]);
 
   return { question: INTERVIEW_QUESTIONS[idx], phase };
 }
@@ -587,7 +521,10 @@ function InterviewStage({
 }: {
   blockVideoInteraction: (e: SyntheticEvent) => void;
 }) {
-  const { question, phase } = useInterviewDemo();
+  const stageRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(stageRef, { margin: "-100px", once: false });
+  const [paused, setPaused] = useState(false);
+  const { question, phase } = useInterviewDemo(paused, inView);
   const isTransitioning = phase === "transitioning";
   const isAnswering = phase === "answering";
 
@@ -595,6 +532,7 @@ function InterviewStage({
 
   return (
     <div
+      ref={stageRef}
       className="home-window-stage"
       onClick={blockVideoInteraction}
       onContextMenu={blockVideoInteraction}
@@ -634,7 +572,6 @@ function InterviewStage({
         ]
           .join(" ")
           .trim()}
-        aria-live="polite"
       >
         <span className="home-demo-topic">{question.topic}</span>
         <p>{question.q}</p>
@@ -642,6 +579,7 @@ function InterviewStage({
 
       {/* Answer panel — slides up during answering phase */}
       <div
+        aria-live="polite"
         className={[
           "home-demo-answer",
           isAnswering && !isTransitioning ? "home-demo-answer--visible" : "",
@@ -656,9 +594,7 @@ function InterviewStage({
         {/* Typed answer */}
         <p className="home-demo-answer-text">
           {typed}
-          <span
-            className={`home-demo-cursor${done ? " home-demo-cursor--blink" : ""}`}
-          />
+          {!done && <span className="home-demo-cursor" />}
         </p>
 
         {/* Status bar */}
@@ -673,6 +609,15 @@ function InterviewStage({
           </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        className="home-demo-toggle"
+        aria-label={paused ? "Play demo" : "Pause demo"}
+        onClick={() => setPaused((current) => !current)}
+      >
+        {paused ? "▶" : "Ⅱ"}
+      </button>
     </div>
   );
 }
@@ -688,7 +633,7 @@ function HeroVisual() {
   const y = useTransform(
     scrollYProgress,
     [0, 1],
-    reduce || isMotionPaused ? [0, 0] : [18, -36],
+    reduce || isMotionPaused ? [0, 0] : [18, -60],
   );
   const blockVideoInteraction = (event: SyntheticEvent) =>
     event.preventDefault();

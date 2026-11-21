@@ -33,7 +33,6 @@ This document is extracted directly from the verified FastAPI routes and OpenAPI
 | `DELETE` | `/api/v1/ats-analyses/{analysis_id}` | Bearer JWT (Required) | Delete Ats |
 | `GET` | `/api/v1/ats-analyses/{analysis_id}` | Bearer JWT (Required) | Get Ats |
 | `GET` | `/api/v1/ats-analyses/{analysis_id}/evidence` | Bearer JWT (Required) | List Ats Evidence |
-| `GET` | `/api/v1/ats-analyses/{analysis_id}/suggestions` | Bearer JWT (Required) | List Suggestions |
 | `GET` | `/api/v1/files/{bucket}/{path}` | Bearer JWT (Required) | Authenticated File |
 | `GET` | `/api/v1/health` | Bearer JWT (Required) | Health |
 | `GET` | `/api/v1/health/database` | Bearer JWT (Required) | Health Database |
@@ -79,11 +78,8 @@ This document is extracted directly from the verified FastAPI routes and OpenAPI
 | `POST` | `/api/v1/profile/avatar` | Bearer JWT (Required) | Upload Profile Avatar |
 | `POST` | `/api/v1/profile/autofill/apply` | Bearer JWT (Required) | Apply Profile Autofill Proposals |
 | `POST` | `/api/v1/profile/autofill/parse` | Bearer JWT (Required) | Parse Resume For Profile Autofill |
-| `POST` | `/api/v1/profile/from-resume/apply` | Bearer JWT (Required) | Apply Profile From Resume |
 | `POST` | `/api/v1/profile/from-resume/preview` | Bearer JWT (Required) | Preview Profile From Resume |
-| `POST` | `/api/v1/profile/from-resume/preview-upload` | Bearer JWT (Required) | Preview Profile From Resume Upload |
 | `PUT` | `/api/v1/profile/preferences` | Bearer JWT (Required) | Update Preferences |
-| `POST` | `/api/v1/profile/skills/from-resume` | Bearer JWT (Required) | Import Skills From Resume |
 | `PATCH` | `/api/v1/profile/username` | Bearer JWT (Required) | Update Profile Username |
 | `GET` | `/api/v1/profile/username/availability` | Bearer JWT (Required) | Username Availability |
 | `GET` | `/api/v1/profile/{resource}` | Bearer JWT (Required) | List Candidate Records |

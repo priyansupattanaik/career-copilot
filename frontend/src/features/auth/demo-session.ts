@@ -834,9 +834,6 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
     state.profile = { ...state.profile, avatar_path: file?.name || "demo-avatar", avatar_url: avatarUrl };
     return { profile: state.profile, avatar_url: avatarUrl } as T;
   }
-  if (path === "/profile/skills/from-resume" && method === "POST") {
-    return { suggested: state.skills.map((skill) => skill.name), created: [], created_count: 0, profile_completion: state.profile.profile_completion } as T;
-  }
   if (path === "/profile/from-resume/preview" && method === "POST") {
     const versionId = String(body.resume_version_id || "");
     const version =
@@ -872,86 +869,7 @@ export async function demoApiRequest<T>(path: string, init: RequestInit = {}): P
       disclaimer: "Demo draft — review before applying.",
     } as T;
   }
-  if (path === "/profile/from-resume/preview-upload" && method === "POST") {
-    const form = init.body instanceof FormData ? init.body : null;
-    const file = form?.get("file") as File | null;
-    const requestedTitle = String(form?.get("title") || "").trim();
-    const resumeId = id("demo-resume");
-    const versionId = id("demo-version");
-    const resume = {
-      id: resumeId,
-      user_id: DEMO_USER_ID,
-      title: requestedTitle.slice(0, 200) || (file?.name ? `${file.name} (profile)` : "Profile resume"),
-      is_active: state.resumes.length === 0,
-      created_at: now(),
-    };
-    const version = {
-      id: versionId,
-      resume_id: resumeId,
-      user_id: DEMO_USER_ID,
-      version_number: 1,
-      source_type: "uploaded",
-      original_filename: file?.name || "resume.pdf",
-      mime_type: file?.type || "application/pdf",
-      extraction_status: "review_required",
-      created_at: now(),
-      structured_content: {
-        sections: {
-          summary: ["Software engineer with experience building web products."],
-          skills: ["TypeScript", "Python"],
-          experience: ["Software Engineer  -  Demo Company"],
-        },
-      },
-    };
-    state.resumes.unshift(resume);
-    state.resumeVersions.unshift(version);
-    return {
-      draft: {
-        profile: {
-          selected: true,
-          full_name: state.profile.full_name || "Demo Candidate",
-          current_role: "Software Engineer",
-          headline: "Software engineer building products",
-          location: "Remote",
-        },
-        skills: [
-          { name: "TypeScript", selected: true },
-          { name: "Python", selected: true },
-        ],
-        experiences: [
-          {
-            company_name: "Demo Company",
-            role_title: "Software Engineer",
-            selected: true,
-          },
-        ],
-        education: [],
-        projects: [],
-        certifications: [],
-        languages: [],
-        links: [],
-        meta: { method: "demo", warnings: ["Technical extraction warning that must stay hidden."] },
-      },
-      counts: { skills: 2, experiences: 1 },
-      resume: {
-        id: versionId,
-        resume_id: resumeId,
-        original_filename: version.original_filename,
-        extraction_status: version.extraction_status,
-        title: resume.title,
-        is_active: resume.is_active,
-        source: "upload_stored",
-      },
-      disclaimer: "Demo draft — resume saved to library for reuse.",
-    } as T;
-  }
-  if (path === "/profile/from-resume/apply" && method === "POST") {
-    return {
-      created: { skills: 0, experiences: 0, education: 0, projects: 0, certifications: 0, languages: 0, links: 0 },
-      updated_profile_fields: ["full_name", "current_role"],
-      profile_completion: state.profile.profile_completion || 40,
-    } as T;
-  }
+
   if (parts[0] === "resumes" && parts.length === 1 && method === "GET") {
     return state.resumes.map((resume) => ({
       ...resume,

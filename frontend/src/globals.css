@@ -509,6 +509,89 @@ button {
     transition: none !important;
   }
 }
+
+/* Interactive landing layers. These remain decorative and never compete with
+   the page's readable content or hit testing. */
+.landing-dot-pattern {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 40%, transparent 80%);
+  mask-image: radial-gradient(ellipse at center, #000 40%, transparent 80%);
+}
+.landing-cursor-glow {
+  position: fixed;
+  z-index: 0;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: rgb(99 72 210 / 12%);
+  filter: blur(100px);
+}
+.landing-scroll-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 50;
+  height: 3px;
+  pointer-events: none;
+  transform-origin: left center;
+  background: #4f46e5;
+}
+[data-theme="dark"] .landing-scroll-progress { background: #8a63ff; }
+.landing-aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: screen;
+}
+.landing-aurora-blob {
+  position: absolute;
+  display: block;
+  width: 52vw;
+  height: 52vw;
+  max-width: 720px;
+  max-height: 720px;
+  border-radius: 50%;
+  filter: blur(100px);
+  will-change: transform;
+}
+.landing-aurora-blob-a { top: -35%; left: -16%; background: radial-gradient(circle, #4f46e5, transparent 68%); animation: aurora-drift-a 18s ease-in-out infinite alternate; }
+.landing-aurora-blob-b { right: -18%; bottom: -40%; background: radial-gradient(circle, #0ea5e9, transparent 68%); animation: aurora-drift-b 24s ease-in-out infinite alternate-reverse; }
+.landing-aurora-blob-c { top: 20%; left: 32%; background: radial-gradient(circle, rgb(245 158 11 / 20%), transparent 65%); animation: aurora-drift-c 30s ease-in-out infinite alternate; }
+.home-practice { position: relative; isolation: isolate; overflow: hidden; }
+.home-practice > .home-frame { position: relative; z-index: 1; }
+.home-demo-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 4;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 50%;
+  background: rgb(10 10 10 / 70%);
+  color: #fff;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.home-demo-toggle:focus-visible { outline: 2px solid #a78bfa; outline-offset: 3px; }
+@keyframes aurora-drift-a { to { transform: translate(60px, 35px) scale(1.15); } }
+@keyframes aurora-drift-b { to { transform: translate(-55px, -42px) scale(1.12); } }
+@keyframes aurora-drift-c { to { transform: translate(30px, -60px) scale(1.1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-cursor-glow,
+  .landing-scroll-progress { display: none; }
+  .landing-aurora-blob { animation-play-state: paused !important; }
+  .home-demo-toggle { transition: none; }
+}
+
 /* Direct SVG children of links/buttons get a light affordance when unwrapped. */
 a > svg,
 button > svg {
@@ -20354,4 +20437,75 @@ select.field,
 .workspace .cc-select-trigger.field {
   display: flex !important;
   align-items: center;
+}
+
+/* Final landing overrides: this block is intentionally last so legacy
+   landing polish cannot reintroduce opaque layers or oversized rhythm. */
+.home-page {
+  --radius-card: 16px;
+  --radius-pill: 9999px;
+  --radius-window: 12px;
+  --radius-menu: 20px;
+  --landing-gap-1: 4px;
+  --landing-gap-2: 8px;
+  --landing-gap-3: 12px;
+  --landing-gap-4: 16px;
+  --landing-gap-5: 24px;
+  --landing-gap-6: 32px;
+  --landing-gap-7: 48px;
+  --landing-border: rgb(128 128 128 / 18%);
+  --landing-shadow-resting: 0 12px 30px rgb(30 35 23 / 12%);
+  --landing-shadow-hover: 0 18px 42px rgb(30 35 23 / 18%);
+  position: relative;
+  isolation: isolate;
+  background: transparent !important;
+}
+.home-page > main,
+.home-page > .home-footer { position: relative; z-index: 1; }
+.home-dot-field { z-index: 0; }
+.home-hero {
+  padding: clamp(2rem, 5vh, 4rem) 0 0;
+  background: linear-gradient(125deg, rgb(247 247 245 / 64%), rgb(240 241 235 / 46%));
+}
+.home-hero h1 { font-size: clamp(2.8rem, 6vw, 5.5rem); letter-spacing: -0.02em; line-height: 0.94; }
+.home-practice h2,
+.home-profile h2,
+.home-final h2,
+.home-section-head h2 { font-size: clamp(2rem, 4vw, 3.2rem); letter-spacing: -0.02em; line-height: 0.98; }
+.home-hero-visual { padding: var(--landing-gap-5) 0 var(--landing-gap-5) var(--landing-gap-5); }
+.home-window { border-color: var(--landing-border); border-radius: var(--radius-window); box-shadow: var(--landing-shadow-resting); }
+.home-window-stage { max-height: 62vh; }
+.home-window-stage .home-camera-video { object-fit: cover; }
+.home-primary-cta { border-radius: var(--radius-pill); font-weight: 600; }
+.home-practice,
+.home-system,
+.home-profile { padding-block: clamp(3rem, 8vh, 6rem); }
+.home-practice-card,
+.home-profile-sheet,
+.home-final-card { border-color: var(--landing-border); border-radius: var(--radius-card); box-shadow: var(--landing-shadow-resting); }
+.home-practice-card { padding: 1.5rem; }
+.home-practice-row { padding-block: var(--landing-gap-3); }
+.home-practice-card:hover,
+.home-profile-sheet:hover,
+.home-final-card:hover { box-shadow: var(--landing-shadow-hover); }
+.home-profile-grid { gap: var(--landing-gap-7); }
+.home-sheet-items > span { padding: 1rem 1.5rem; }
+#practice, #system { scroll-margin-top: 80px; }
+.home-page { font-family: "Geist", sans-serif; }
+.home-page h1,
+.home-page h2,
+.home-page h3 { font-family: "Instrument Serif", serif !important; font-weight: 400 !important; }
+.home-page p,
+.home-page a,
+.home-page button,
+.home-page span,
+.home-page small { font-family: "Geist", sans-serif; }
+@media (max-width: 600px) {
+  .home-hero { padding-top: clamp(2rem, 5vh, 3rem); }
+  .home-hero h1 { font-size: clamp(2.8rem, 13vw, 4.25rem); }
+  .home-hero-visual { padding: var(--landing-gap-4) 0 var(--landing-gap-4); }
+  .home-window-stage { max-height: none; }
+  .home-practice,
+  .home-system,
+  .home-profile { padding-block: clamp(3rem, 8vh, 4.5rem); }
 }

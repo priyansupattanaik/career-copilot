@@ -43,17 +43,6 @@ class ProfileAutofillApplyRequest(BaseModel):
     resume_id: UUID
     changes: dict[str, Any] = Field(default_factory=dict)
 
-class ProfileFromResumeApplyRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    fill_empty_only: bool = True
-    profile: dict[str, Any] = Field(default_factory=dict)
-    skills: list[dict[str, Any]] = Field(default_factory=list, max_length=80)
-    experiences: list[dict[str, Any]] = Field(default_factory=list, max_length=40)
-    education: list[dict[str, Any]] = Field(default_factory=list, max_length=20)
-    projects: list[dict[str, Any]] = Field(default_factory=list, max_length=30)
-    certifications: list[dict[str, Any]] = Field(default_factory=list, max_length=30)
-    languages: list[dict[str, Any]] = Field(default_factory=list, max_length=20)
-    links: list[dict[str, Any]] = Field(default_factory=list, max_length=20)
 class LlmProfileCore(BaseModel):
     model_config = ConfigDict(extra="ignore")
     full_name: str | None = Field(default=None, max_length=120)
@@ -283,11 +272,6 @@ class AccountDeleteRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     confirmation: str = Field(min_length=1, max_length=80)
     email: str = Field(min_length=3, max_length=320)
-class LinkInput(BaseModel):
-    link_type: Literal["linkedin", "github", "portfolio", "website", "other"]
-    label: str | None = None
-    url: HttpUrl
-    display_order: int = Field(default=0, ge=0)
 ResumeSection = Literal[
     "summary", "skills", "experience", "projects", "education", "certifications", "languages"
 ]

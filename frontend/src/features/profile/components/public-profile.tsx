@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { CopilotIcon } from "@/components/ui/copilot-icons";
 import { copyTextToClipboard } from "@/shared/utils/clipboard";
 import { isProfileOwner } from "@/features/profile/model/public-profile-username";
+import { publicProfileUrl } from "@/features/auth/public-origin";
 import { motion, useReducedMotion } from "motion/react";
 import {
   staggerContainerVariants,
@@ -130,7 +131,7 @@ export function PublicProfile({ username }: { username: string }) {
 
   function handleShare() {
     if (typeof window === "undefined") return;
-    const url = window.location.href;
+    const url = publicProfileUrl(username);
     void copyTextToClipboard(url).then((success) => {
       if (success) {
         setCopied(true);

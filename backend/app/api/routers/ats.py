@@ -536,21 +536,3 @@ def list_ats_evidence(
     )
 
 
-@router.get("/ats-analyses/{analysis_id}/suggestions")
-def list_suggestions(
-    analysis_id: UUID,
-    user: CurrentUser = Depends(get_current_user),
-    settings: Settings = Depends(get_settings),
-):
-    client = client_for(settings, user)
-    owned_row(client, "ats_analyses", analysis_id, user)
-    return (
-        client.table("resume_suggestions")
-        .select("*")
-        .eq("analysis_id", str(analysis_id))
-        .eq("user_id", str(user.id))
-        .execute()
-        .data
-        or []
-    )
-

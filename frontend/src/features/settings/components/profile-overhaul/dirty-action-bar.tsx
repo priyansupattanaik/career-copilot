@@ -21,20 +21,23 @@ export function DirtyActionBar({
   return (
     <>
       <div
-        className="fixed inset-x-0 mx-auto max-w-lg z-40 px-4"
-        style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
+        className="profile-dirty-action-bar fixed inset-x-0 mx-auto max-w-lg z-50 px-4"
+        style={{ bottom: "var(--dirty-bar-bottom, calc(1.5rem + env(safe-area-inset-bottom, 0px)))" }}
       >
         <div
+          className="profile-dirty-action-bar-inner"
           style={{
-            backgroundColor: "var(--surface-3)",
-            border: "1px solid var(--hairline-strong)",
-            borderRadius: "var(--radius-lg, 12px)",
-            padding: "12px 16px",
+            backgroundColor: "color-mix(in srgb, var(--ps-panel, var(--surface)) 94%, var(--ps-paper, var(--background)))",
+            border: "1px solid var(--ps-line, var(--border))",
+            borderRadius: "var(--ps-radius, 16px)",
+            padding: "12px 18px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             gap: 16,
-            backdropFilter: "blur(12px)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            boxShadow: "0 12px 32px rgb(0 0 0 / 22%), 0 4px 12px rgb(0 0 0 / 12%)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -43,15 +46,15 @@ export function DirtyActionBar({
                 width: 8,
                 height: 8,
                 borderRadius: "50%",
-                backgroundColor: "var(--accent)",
+                backgroundColor: "var(--ps-accent, var(--accent))",
               }}
             />
             <span
               style={{
                 fontFamily: "var(--font-sans)",
                 fontSize: 13,
-                fontWeight: 600,
-                color: "var(--ink)",
+                fontWeight: 650,
+                color: "var(--ps-text, var(--text))",
               }}
             >
               Unsaved changes
@@ -63,8 +66,8 @@ export function DirtyActionBar({
               type="button"
               disabled={saving}
               onClick={() => setShowDiscardConfirm(true)}
-              className="wb-button wb-button-ghost"
-              style={{ height: 36 }}
+              className="button button-secondary"
+              style={{ minHeight: 36, height: 36, padding: "0 14px", fontSize: 13 }}
             >
               Discard
             </button>
@@ -72,8 +75,8 @@ export function DirtyActionBar({
               type="button"
               disabled={saving}
               onClick={() => void onSave()}
-              className="wb-button wb-button-primary"
-              style={{ height: 36 }}
+              className="button button-primary"
+              style={{ minHeight: 36, height: 36, padding: "0 16px", fontSize: 13 }}
             >
               {saving ? "Saving…" : "Save changes"}
             </button>
@@ -87,13 +90,14 @@ export function DirtyActionBar({
           style={{
             position: "fixed",
             inset: 0,
-            zIndex: 50,
+            zIndex: 55,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             padding: 16,
             backgroundColor: "rgba(0, 0, 0, 0.75)",
             backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
           }}
           role="dialog"
           aria-modal="true"
@@ -103,13 +107,14 @@ export function DirtyActionBar({
             style={{
               width: "100%",
               maxWidth: 384,
-              borderRadius: "var(--radius-lg, 12px)",
-              backgroundColor: "var(--surface-3)",
-              border: "1px solid var(--hairline-strong)",
-              padding: 20,
+              borderRadius: "var(--ps-radius-lg, 20px)",
+              backgroundColor: "var(--ps-panel, var(--surface))",
+              border: "1px solid var(--ps-line, var(--border))",
+              padding: 24,
               display: "flex",
               flexDirection: "column",
               gap: 16,
+              boxShadow: "0 16px 40px rgb(0 0 0 / 28%)",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -133,9 +138,9 @@ export function DirtyActionBar({
                 id="discard-dialog-title"
                 style={{
                   fontFamily: "var(--font-sans)",
-                  fontSize: 15,
-                  fontWeight: 600,
-                  color: "var(--ink)",
+                  fontSize: 16,
+                  fontWeight: 650,
+                  color: "var(--ps-text, var(--text))",
                   margin: 0,
                 }}
               >
@@ -148,7 +153,7 @@ export function DirtyActionBar({
                 fontFamily: "var(--font-sans)",
                 fontSize: 13,
                 lineHeight: "20px",
-                color: "var(--ink-2)",
+                color: "var(--ps-muted, var(--muted))",
                 margin: 0,
               }}
             >
@@ -161,15 +166,15 @@ export function DirtyActionBar({
                 display: "flex",
                 justifyContent: "flex-end",
                 gap: 8,
-                paddingTop: 8,
-                borderTop: "1px solid var(--hairline)",
+                paddingTop: 12,
+                borderTop: "1px solid var(--ps-line, var(--border))",
               }}
             >
               <button
                 type="button"
                 onClick={() => setShowDiscardConfirm(false)}
-                className="wb-button wb-button-ghost"
-                style={{ height: 36 }}
+                className="button button-secondary"
+                style={{ minHeight: 36, height: 36, padding: "0 14px", fontSize: 13 }}
               >
                 Keep editing
               </button>
@@ -179,12 +184,12 @@ export function DirtyActionBar({
                   setShowDiscardConfirm(false);
                   onDiscard();
                 }}
-                className="wb-button"
+                className="button button-destructive"
                 style={{
+                  minHeight: 36,
                   height: 36,
-                  backgroundColor: "var(--danger)",
-                  color: "#000000",
-                  fontWeight: 600,
+                  padding: "0 16px",
+                  fontSize: 13,
                 }}
               >
                 Discard

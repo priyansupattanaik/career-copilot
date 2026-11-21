@@ -5,7 +5,7 @@ import { ScoreRing, Surface } from "@/shared/ui/workbench";
 import { copyTextToClipboard } from "@/shared/utils/clipboard";
 import { normalizePublicProfileUsername } from "@/features/profile/model/public-profile-username";
 import type { ProfileMissingItem } from "@/features/profile/model/profile-completion";
-import { vitePublicAppOrigin } from "@/shared/config";
+import { publicProfileUrl } from "@/features/auth/public-origin";
 
 interface IdentityStripProps {
   fullName: string;
@@ -24,7 +24,7 @@ interface IdentityStripProps {
   avatarBusy?: boolean;
 }
 
-export function formatYearsExperience(years: number | string | null | undefined): string {
+function formatYearsExperience(years: number | string | null | undefined): string {
   if (years === null || years === undefined || years === "") return "";
   const n = Number(years);
   if (Number.isNaN(n) || n < 0) return "";
@@ -71,8 +71,7 @@ export function IdentityStrip({
   const metaLine = metaParts.join(" · ");
 
   const cleanUsername = normalizePublicProfileUsername(username || "");
-  const baseOrigin = typeof window !== "undefined" ? (vitePublicAppOrigin() || window.location.origin) : "";
-  const publicUrl = cleanUsername && baseOrigin ? `${baseOrigin}/u/${cleanUsername}` : "";
+  const publicUrl = cleanUsername ? publicProfileUrl(cleanUsername) : "";
 
   // Close photo menu on outside click
   useEffect(() => {
@@ -109,13 +108,15 @@ export function IdentityStrip({
 
   return (
     <Surface
-      className="profile-identity-strip"
+      className="profile-identity-strip settings-card"
       style={{
-        padding: "var(--space-6, 24px)",
-        borderRadius: "var(--radius-lg, 12px)",
-        background: "var(--surface-1)",
-        border: "1px solid var(--hairline)",
+        padding: "24px var(--settings-pad, 28px)",
+        borderRadius: "var(--settings-radius, 20px)",
+        background: "var(--app-panel, var(--surface))",
+        border: "1px solid var(--app-line, var(--border))",
+        boxShadow: "var(--app-shadow-soft, var(--shadow-sm))",
         position: "relative",
+        boxSizing: "border-box",
       }}
     >
       <div className="identity-strip-grid">
@@ -530,7 +531,7 @@ export function IdentityStrip({
             {cleanUsername ? (
               <>
                 <Link
-                  href={publicUrl || `/u/${cleanUsername}`}
+                  href={publicUrl || `/${cleanUsername}`}
                   target="_blank"
                   rel="noreferrer"
                   className="wb-button wb-button-secondary"

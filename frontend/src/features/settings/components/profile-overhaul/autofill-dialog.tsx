@@ -22,7 +22,7 @@ interface ErrorInfo {
   canRetry: boolean;
 }
 
-export function mapAutofillError(err: any): ErrorInfo {
+function mapAutofillError(err: any): ErrorInfo {
   const code = String(err?.code || err?.error || "").toUpperCase();
   const status = Number(err?.status || err?.status_code || 0);
 
@@ -366,31 +366,34 @@ export function AutofillDialog({
       <div
         className="w-full max-w-2xl rounded-2xl flex flex-col max-h-[88vh] overflow-hidden"
         style={{
-          backgroundColor: "var(--surface-3)",
-          border: "1px solid var(--hairline-strong)",
+          backgroundColor: "var(--ps-panel, var(--surface))",
+          border: "1px solid var(--ps-line, var(--border))",
+          borderRadius: "var(--ps-radius-lg, 20px)",
+          color: "var(--ps-text, var(--text))",
+          boxShadow: "0 20px 50px rgb(0 0 0 / 30%)",
         }}
       >
         {/* Modal Header */}
         <div
           className="flex items-center justify-between p-5 shrink-0"
-          style={{ borderBottom: "1px solid var(--hairline)" }}
+          style={{ borderBottom: "1px solid var(--ps-line, var(--border))" }}
         >
           <div className="flex items-center gap-2.5">
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center"
               style={{
-                backgroundColor: "var(--accent-soft)",
-                border: "1px solid var(--accent)",
-                color: "var(--accent)",
+                backgroundColor: "var(--ps-accent-soft, var(--accent-soft))",
+                border: "1px solid var(--ps-accent, var(--accent))",
+                color: "var(--ps-accent, var(--accent))",
               }}
             >
               <CopilotIcon name="sparkles" className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-white">
+              <h3 className="text-base font-semibold" style={{ color: "var(--ps-text, var(--text))", margin: 0 }}>
                 {stage === "review" ? "Review what we found" : "AI Resume Autofill"}
               </h3>
-              <p className="text-xs text-neutral-400 font-sans">
+              <p className="text-xs font-sans" style={{ color: "var(--ps-muted, var(--muted))", margin: 0 }}>
                 {stage === "review"
                   ? "Nothing is saved until you apply."
                   : "Scanning and extracting structured candidate profile data."}
@@ -400,7 +403,8 @@ export function AutofillDialog({
           <button
             type="button"
             onClick={onClose}
-            className="text-neutral-500 hover:text-white p-1.5 text-base transition-colors"
+            className="p-1.5 text-base transition-colors"
+            style={{ color: "var(--ps-muted, var(--muted))", background: "none", border: "none", cursor: "pointer" }}
           >
             ×
           </button>
@@ -820,15 +824,22 @@ export function AutofillDialog({
 
         {/* Modal Footer */}
         {stage === "review" && (
-          <div className="p-4 border-t border-neutral-850 bg-neutral-950/50 flex items-center justify-between shrink-0">
-            <span className="text-xs text-neutral-400">
+          <div
+            className="p-4 flex items-center justify-between shrink-0"
+            style={{
+              borderTop: "1px solid var(--ps-line, var(--border))",
+              backgroundColor: "color-mix(in srgb, var(--ps-soft, var(--surface-muted)) 50%, var(--ps-panel, var(--surface)))",
+            }}
+          >
+            <span className="text-xs" style={{ color: "var(--ps-muted, var(--muted))" }}>
               {totalSelected} selected
             </span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl text-xs font-medium text-neutral-400 hover:text-white bg-neutral-900"
+                className="button button-secondary"
+                style={{ minHeight: 36, padding: "6px 14px", fontSize: 13 }}
               >
                 Cancel
               </button>
@@ -836,7 +847,8 @@ export function AutofillDialog({
                 type="button"
                 disabled={totalSelected === 0}
                 onClick={handleApply}
-                className="px-5 py-2 rounded-xl text-xs font-semibold text-black bg-white hover:bg-neutral-200 transition-colors disabled:opacity-40"
+                className="button button-primary"
+                style={{ minHeight: 36, padding: "6px 16px", fontSize: 13 }}
               >
                 Apply selected ({totalSelected})
               </button>

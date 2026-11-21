@@ -4,20 +4,18 @@ import uuid
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Body, Depends, File, UploadFile
 
 from app.api.schemas import (
     PreferencesUpdate,
     ProfileAutofillApplyRequest,
     ProfileAutofillParseRequest,
-    ProfileFromResumeApplyRequest,
     ProfileFromResumePreviewRequest,
     ProfilePatch,
 )
 from app.api.support import (
     _normalize_token,
     _prepare_candidate_payload,
-    _store_uploaded_resume,
     ensure_preference_row,
     ensure_profile_row,
 )
@@ -36,15 +34,8 @@ from app.features.auth.service import (
     get_current_user,
 )
 from app.features.auth.username import change_username
-from app.features.document_parsing.service import (
-    extract_sections_enriched,
-    extract_skill_candidates,
-    safe_filename,
-    skill_source_text,
-    validate_document,
-)
+from app.features.document_parsing.service import extract_sections_enriched
 from app.features.profile.agent import build_profile_draft_enriched, profile_draft_response_payload
-from app.features.profile.agent.normalize import normalize_date_value
 from app.features.profile.autofill import apply_autofill_changes, parse_resume_for_autofill
 from app.features.profile.avatars import (
     attach_avatar_url,
@@ -52,7 +43,6 @@ from app.features.profile.avatars import (
     signed_avatar_url,
     validate_avatar_upload,
 )
-from app.features.profile.importer import insert_validated_batch
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -226,77 +216,6 @@ def update_preferences(
     return result[0]
 
 
-@router.post("/profile/skills/from-resume")
-def import_skills_from_resume(
-    user: CurrentUser = Depends(get_current_user),
-    settings: Settings = Depends(get_settings),
-):
-    """Import deterministic skill candidates from the candidate's confirmed resume text."""
-    client = client_for(settings, user)
-    versions = (
-        client.table("resume_versions")
-        .select("id,plain_text,structured_content")
-        .eq("user_id", str(user.id))
-        .eq("extraction_status", "confirmed")
-        .order("created_at", desc=True)
-        .limit(1)
-        .execute()
-        .data
-        or []
-    )
-    if not versions:
-        raise ApiError(404, "confirmed_resume_required", "Confirm a resume before importing skills.")
-    version = versions[0]
-    plain_text = version.get("plain_text") or ""
-    sections = (version.get("structured_content") or {}).get("sections") or {}
-    if not isinstance(sections, dict):
-        sections = {}
-    skill_blob, from_skills_section = skill_source_text(plain_text=plain_text, sections=sections)
-    candidates = extract_skill_candidates(
-        skill_blob,
-        limit=40,
-        allow_bare_short_lines=from_skills_section,
-    )
-    existing = {
-        str(row.get("normalized_name") or "").lower()
-        for row in owned_rows(client, "candidate_skills", user)
-    }
-    created: list[dict[str, Any]] = []
-    for skill in candidates:
-        normalized = _normalize_token(skill)
-        if not normalized or normalized in existing:
-            continue
-        row = (
-            client.table("candidate_skills")
-            .insert(
-                {
-                    "user_id": str(user.id),
-                    "name": skill,
-                    "normalized_name": normalized,
-                    "source": "resume_import",
-                }
-            )
-            .execute()
-            .data[0]
-        )
-        created.append(row)
-        existing.add(normalized)
-    profile = recalculate_completion(client, user)
-    write_activity(
-        client,
-        user,
-        "skills_imported",
-        f"Imported {len(created)} skills from confirmed resume",
-        "profile",
-        str(user.id),
-    )
-    return {
-        "suggested": candidates,
-        "created": created,
-        "created_count": len(created),
-        "profile_completion": profile.get("profile_completion"),
-    }
-
 
 def _load_resume_version_for_profile_fill(
     client, user: CurrentUser, resume_version_id: UUID | str | None
@@ -443,350 +362,6 @@ async def preview_profile_from_resume(
         },
     )
 
-
-@router.post("/profile/from-resume/preview-upload")
-async def preview_profile_from_resume_upload(
-    file: UploadFile = File(...),
-    title: str | None = Form(default=None),
-    user: CurrentUser = Depends(get_current_user),
-    settings: Settings = Depends(get_settings),
-):
-    """
-    Store an uploaded PDF/DOCX in the resume library, then build a reviewable
-    profile draft from it. The stored resume can be reused for ATS analysis and
-    mock interview without uploading again.
-    """
-    raw = await file.read()
-    # Validate early so we fail before writing a resumes row.
-    validate_document(
-        file.filename or "resume.pdf", file.content_type, raw, settings.document_max_bytes
-    )
-    client = client_for(settings, user)
-    resume, version = await _store_uploaded_resume(client, settings, user, file, raw, title=title)
-    write_activity(client, user, "resume_uploaded", "Resume uploaded for profile fill", "resume", str(resume["id"]))
-    plain_text = version.get("plain_text") or ""
-    if not str(plain_text).strip():
-        raise ApiError(
-            422,
-            "resume_has_no_text",
-            "The resume was stored but has no extractable text. Use a text-based PDF or DOCX.",
-        )
-    structured = version.get("structured_content") or {}
-    if not isinstance(structured, dict):
-        structured = {}
-    draft = await build_profile_draft_enriched(plain_text, structured, settings)
-    return profile_draft_response_payload(
-        draft,
-        {
-            "id": version.get("id"),
-            "resume_id": resume.get("id"),
-            "original_filename": version.get("original_filename")
-            or safe_filename(file.filename or "resume"),
-            "extraction_status": version.get("extraction_status"),
-            "title": resume.get("title"),
-            "is_active": resume.get("is_active"),
-            "source": "upload_stored",
-        },
-    )
-
-
-@router.post("/profile/from-resume/apply")
-def apply_profile_from_resume(
-    payload: ProfileFromResumeApplyRequest,
-    user: CurrentUser = Depends(get_current_user),
-    settings: Settings = Depends(get_settings),
-):
-    """
-    Persist a reviewed resume-derived draft into profiles + candidate_* tables.
-    Default fill_empty_only=True avoids overwriting existing profile fields.
-    """
-    client = client_for(settings, user)
-    uid = str(user.id)
-    created: dict[str, int] = {
-        "skills": 0,
-        "experiences": 0,
-        "education": 0,
-        "projects": 0,
-        "certifications": 0,
-        "languages": 0,
-        "links": 0,
-    }
-    updated_profile_fields: list[str] = []
-
-    # --- profile core fields ---
-    _profile_rows = client.table("profiles").select("*").eq("id", uid).single().execute().data or []
-    current_profile = _profile_rows[0] if _profile_rows else {}
-    profile_patch: dict[str, Any] = {}
-    allowed = {
-        "full_name",
-        "headline",
-        "bio",
-        "phone",
-        "location",
-        "current_role",
-        "target_role",
-        "years_experience",
-        "career_level",
-        "career_goal",
-    }
-    incoming = payload.profile or {}
-    # Support draft shape { selected: true, full_name: ... }
-    if incoming.get("selected") is False:
-        incoming = {}
-    for key in allowed:
-        if key not in incoming:
-            continue
-        value = incoming.get(key)
-        if value is None:
-            continue
-        if isinstance(value, str):
-            value = value.strip()
-            if not value and key != "bio":
-                continue
-            if len(value) > 4000:
-                value = value[:4000]
-        if key == "years_experience":
-            try:
-                value = float(value)
-            except (TypeError, ValueError):
-                continue
-            if value < 0 or value > 80:
-                continue
-        existing = current_profile.get(key)
-        empty_existing = existing is None or (isinstance(existing, str) and not str(existing).strip())
-        if payload.fill_empty_only and not empty_existing:
-            continue
-        profile_patch[key] = value
-        updated_profile_fields.append(key)
-
-    if profile_patch:
-        client.table("profiles").update(profile_patch).eq("id", uid).execute()
-
-    def _selected(row: dict[str, Any]) -> bool:
-        return row.get("selected", True) is not False
-
-    # --- skills ---
-    existing_skills = {
-        str(row.get("normalized_name") or "").lower()
-        for row in owned_rows(client, "candidate_skills", user)
-    }
-    skill_rows: list[dict[str, Any]] = []
-    for row in payload.skills or []:
-        if not _selected(row):
-            continue
-        name = str(row.get("name") or "").strip()
-        if not name:
-            continue
-        normalized = _normalize_token(str(row.get("normalized_name") or name))
-        if not normalized or normalized in existing_skills:
-            continue
-        skill_rows.append(
-            {
-                "user_id": uid,
-                "name": name[:120],
-                "normalized_name": normalized,
-                "source": str(row.get("source") or "resume_import")[:40],
-            }
-        )
-        existing_skills.add(normalized)
-    created["skills"] = insert_validated_batch(client, "candidate_skills", skill_rows)
-
-    # --- experiences ---
-    existing_exp = {
-        (
-            _normalize_token(str(row.get("company_name") or "")),
-            _normalize_token(str(row.get("role_title") or "")),
-        )
-        for row in owned_rows(client, "candidate_experiences", user)
-    }
-    experience_rows: list[dict[str, Any]] = []
-    for index, row in enumerate(payload.experiences or []):
-        if not _selected(row):
-            continue
-        company = str(row.get("company_name") or "").strip()
-        role = str(row.get("role_title") or "").strip()
-        if not company or not role:
-            continue
-        key = (_normalize_token(company), _normalize_token(role))
-        if key in existing_exp:
-            continue
-        experience_rows.append(
-            {
-                "user_id": uid,
-                "company_name": company[:200],
-                "role_title": role[:200],
-                "location": (str(row["location"]).strip()[:160] if row.get("location") else None),
-                "employment_type": (
-                    str(row["employment_type"]).strip()[:80] if row.get("employment_type") else None
-                ),
-                "start_date": normalize_date_value(row.get("start_date")),
-                "end_date": None if row.get("is_current") else normalize_date_value(row.get("end_date")),
-                "summary": (str(row["summary"]).strip()[:4000] if row.get("summary") else None),
-                "is_current": bool(row.get("is_current")),
-                "display_order": int(row.get("display_order") or index),
-            }
-        )
-        existing_exp.add(key)
-    created["experiences"] = insert_validated_batch(client, "candidate_experiences", experience_rows)
-
-    # --- education ---
-    existing_edu = {
-        (
-            _normalize_token(str(row.get("institution") or "")),
-            _normalize_token(str(row.get("degree") or "")),
-        )
-        for row in owned_rows(client, "candidate_education", user)
-    }
-    education_rows: list[dict[str, Any]] = []
-    for index, row in enumerate(payload.education or []):
-        if not _selected(row):
-            continue
-        institution = str(row.get("institution") or "").strip()
-        if not institution:
-            continue
-        degree = str(row.get("degree") or "").strip() or None
-        key = (_normalize_token(institution), _normalize_token(degree or ""))
-        if key in existing_edu:
-            continue
-        education_rows.append(
-            {
-                "user_id": uid,
-                "institution": institution[:200],
-                "degree": degree[:160] if degree else None,
-                "field_of_study": (
-                    str(row["field_of_study"]).strip()[:160] if row.get("field_of_study") else None
-                ),
-                "grade": (str(row["grade"]).strip()[:80] if row.get("grade") else None),
-                "description": (str(row["description"]).strip()[:2000] if row.get("description") else None),
-                "display_order": int(row.get("display_order") or index),
-            }
-        )
-        existing_edu.add(key)
-    created["education"] = insert_validated_batch(client, "candidate_education", education_rows)
-
-    # --- projects ---
-    existing_projects = {
-        _normalize_token(str(row.get("title") or ""))
-        for row in owned_rows(client, "candidate_projects", user)
-    }
-    project_rows: list[dict[str, Any]] = []
-    for index, row in enumerate(payload.projects or []):
-        if not _selected(row):
-            continue
-        title = str(row.get("title") or "").strip()
-        if not title:
-            continue
-        key = _normalize_token(title)
-        if key in existing_projects:
-            continue
-        project_rows.append(
-            {
-                "user_id": uid,
-                "title": title[:200],
-                "role": (str(row["role"]).strip()[:160] if row.get("role") else None),
-                "description": (str(row["description"]).strip()[:4000] if row.get("description") else None),
-                "skills": row.get("skills") if isinstance(row.get("skills"), list) else [],
-                "display_order": int(row.get("display_order") or index),
-            }
-        )
-        existing_projects.add(key)
-    created["projects"] = insert_validated_batch(client, "candidate_projects", project_rows)
-
-    # --- certifications ---
-    existing_certs = {
-        _normalize_token(str(row.get("name") or ""))
-        for row in owned_rows(client, "candidate_certifications", user)
-    }
-    certification_rows: list[dict[str, Any]] = []
-    for row in payload.certifications or []:
-        if not _selected(row):
-            continue
-        name = str(row.get("name") or "").strip()
-        if not name:
-            continue
-        key = _normalize_token(name)
-        if key in existing_certs:
-            continue
-        certification_rows.append(
-            {
-                "user_id": uid,
-                "name": name[:200],
-                "issuer": (str(row["issuer"]).strip()[:160] if row.get("issuer") else None),
-            }
-        )
-        existing_certs.add(key)
-    created["certifications"] = insert_validated_batch(client, "candidate_certifications", certification_rows)
-
-    # --- languages ---
-    existing_langs = {
-        str(row.get("normalized_language") or "").lower()
-        for row in owned_rows(client, "candidate_languages", user)
-    }
-    language_rows: list[dict[str, Any]] = []
-    for index, row in enumerate(payload.languages or []):
-        if not _selected(row):
-            continue
-        language = str(row.get("language") or "").strip()
-        if not language:
-            continue
-        normalized = _normalize_token(language)
-        if not normalized or normalized in existing_langs:
-            continue
-        language_rows.append(
-            {
-                "user_id": uid,
-                "language": language[:80],
-                "normalized_language": normalized,
-                "proficiency": (str(row["proficiency"]).strip()[:80] if row.get("proficiency") else None),
-                "display_order": int(row.get("display_order") or index),
-            }
-        )
-        existing_langs.add(normalized)
-    created["languages"] = insert_validated_batch(client, "candidate_languages", language_rows)
-
-    # --- links ---
-    existing_links = {
-        str(row.get("url") or "").strip().lower() for row in owned_rows(client, "candidate_links", user)
-    }
-    allowed_link_types = {"linkedin", "github", "portfolio", "website", "other"}
-    link_rows: list[dict[str, Any]] = []
-    for index, row in enumerate(payload.links or []):
-        if not _selected(row):
-            continue
-        url = str(row.get("url") or "").strip()
-        link_type = str(row.get("link_type") or "other").strip().lower()
-        if not url or link_type not in allowed_link_types:
-            continue
-        if url.lower() in existing_links:
-            continue
-        link_rows.append(
-            {
-                "user_id": uid,
-                "link_type": link_type,
-                "url": url[:500],
-                "label": (str(row["label"]).strip()[:120] if row.get("label") else None),
-                "display_order": int(row.get("display_order") or index),
-            }
-        )
-        existing_links.add(url.lower())
-    created["links"] = insert_validated_batch(client, "candidate_links", link_rows)
-
-    profile = recalculate_completion(client, user)
-    write_activity(
-        client,
-        user,
-        "profile_filled_from_resume",
-        "Profile filled from resume draft",
-        "profile",
-        uid,
-    )
-    return {
-        "profile": profile,
-        "updated_profile_fields": updated_profile_fields,
-        "created": created,
-        "fill_empty_only": payload.fill_empty_only,
-        "profile_completion": profile.get("profile_completion"),
-    }
 
 
 @router.get("/profile/{resource}")

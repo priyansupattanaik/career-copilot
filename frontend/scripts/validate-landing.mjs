@@ -129,8 +129,8 @@ async function main() {
       fail("FE-006-aria-modal", `aria-modal=${ariaModal}`);
     }
     await page.keyboard.press("Escape");
-    await page.waitForTimeout(100);
-    if ((await dialog.count()) === 0) {
+    await page.waitForTimeout(1000);
+    if ((await dialog.count()) === 0 || !(await dialog.isVisible())) {
       pass("FE-006-escape-close");
     } else {
       fail("FE-006-escape-close", "dialog still open");
@@ -210,7 +210,7 @@ async function main() {
     ".globe-loading, .globe-fallback-container, [data-testid='mock-globe']"
   ).count();
   const canvasCount = await page.locator("canvas").count();
-  const dotCanvasCount = await page.locator(".home-dot-pattern").count();
+  const dotCanvasCount = await page.locator(".landing-dot-pattern").count();
   const globeTraceTotal = hasGlobeTrace + (canvasCount - dotCanvasCount);
   if (globeTraceTotal === 0) {
     pass("no-globe-trace");

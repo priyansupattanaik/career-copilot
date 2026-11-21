@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest } from "@/shared/api/client";
-import { Link } from "@/shared/ui/router-link";
-import { usePathname } from "@/shared/router";
 import LoadingState from "@/components/ui/loading-state";
-import { SETTINGS_TABS } from "@/features/settings/model/settings-tabs";
 import {
   computeProfileCompleteness8,
   notifyProfileUpdated,
@@ -44,7 +41,6 @@ interface ProfileFormData {
 }
 
 export function ProfileOverhaulView() {
-  const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<ProfileSectionId>(() => {
     if (typeof window !== "undefined" && window.location.hash) {
@@ -480,23 +476,6 @@ export function ProfileOverhaulView() {
 
   return (
     <div className="profile-overhaul-view">
-      {/* Settings tabs */}
-      <nav className="wb-tabs" aria-label="Settings navigation">
-        {SETTINGS_TABS.map((tab) => {
-          const active = pathname === tab.href;
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={`wb-tab-item ${active ? "is-active" : ""}`}
-              aria-current={active ? "page" : undefined}
-            >
-              {tab.label}
-            </Link>
-          );
-        })}
-      </nav>
-
       {/* Identity Strip */}
       <IdentityStrip
         fullName={form.full_name}
@@ -610,11 +589,25 @@ export function ProfileOverhaulView() {
       {/* Post-Upload Prompt Dialog */}
       {showPostUploadModal && postUploadResumeId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-sm rounded-2xl bg-[#111111] border border-neutral-800 p-6 shadow-2xl space-y-4">
-            <h4 className="text-sm font-semibold text-white">
+          <div
+            className="w-full max-w-sm rounded-2xl p-6 shadow-2xl space-y-4"
+            style={{
+              backgroundColor: "var(--ps-panel, var(--surface))",
+              border: "1px solid var(--ps-line, var(--border))",
+              borderRadius: "var(--ps-radius-lg, 20px)",
+              color: "var(--ps-text, var(--text))",
+            }}
+          >
+            <h4
+              className="text-base font-semibold"
+              style={{ color: "var(--ps-text, var(--text))", margin: 0 }}
+            >
               Fill your profile from this resume?
             </h4>
-            <p className="text-xs text-neutral-400 leading-relaxed">
+            <p
+              className="text-xs leading-relaxed"
+              style={{ color: "var(--ps-muted, var(--muted))", margin: 0 }}
+            >
               We'll extract your work history, education, skills, and links so you can
               review and apply them to your profile.
             </p>
@@ -622,7 +615,8 @@ export function ProfileOverhaulView() {
               <button
                 type="button"
                 onClick={() => setShowPostUploadModal(false)}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-white bg-neutral-900"
+                className="button button-secondary"
+                style={{ minHeight: 36, padding: "6px 14px", fontSize: 13 }}
               >
                 Not now
               </button>
@@ -632,7 +626,8 @@ export function ProfileOverhaulView() {
                   setShowPostUploadModal(false);
                   handleTriggerAutofill(postUploadResumeId, onlyFillEmpty);
                 }}
-                className="px-4 py-1.5 rounded-lg text-xs font-medium text-black bg-white hover:bg-neutral-200 transition-colors"
+                className="button button-primary"
+                style={{ minHeight: 36, padding: "6px 16px", fontSize: 13 }}
               >
                 Autofill
               </button>

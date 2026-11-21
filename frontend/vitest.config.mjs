@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const frontendDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  cacheDir: path.resolve(frontendDir, ".vitest-tmp"),
   resolve: {
     alias: {
       "@": path.resolve(frontendDir, "src"),

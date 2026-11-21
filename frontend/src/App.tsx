@@ -405,6 +405,11 @@ function NotFoundPage() {
   );
 }
 
+function LegacyPublicProfileRedirect() {
+  const { username } = useParams<{ username: string }>();
+  return <Navigate to={`/${username || ""}`} replace />;
+}
+
 function PublicProfileRoute() {
   const { username } = useParams<{ username: string }>();
   if (!isPublicProfileUsername(username)) return <NotFoundPage />;
@@ -525,6 +530,7 @@ export function App() {
             <Route path="/settings/privacy" element={<PrivacySettings />} />
           </Route>
         </Route>
+        <Route path="/u/:username" element={<LegacyPublicProfileRedirect />} />
         <Route path="/:username" element={<PublicProfileRoute />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

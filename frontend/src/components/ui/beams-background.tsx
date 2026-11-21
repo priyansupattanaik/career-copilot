@@ -8,6 +8,7 @@
 
 import { useEffect, useRef } from "react";
 import { motion } from "motion/react";
+import { cn } from "@/shared/utils";
 
 type BeamTheme = "light" | "dark";
 
@@ -33,10 +34,6 @@ interface Beam {
   pulse: number;
   pulseSpeed: number;
   gradient?: CanvasGradient;
-}
-
-function cn(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
 }
 
 function pickHue(index: number): { hue: number; saturation: number; lightness: number } {

@@ -12,6 +12,7 @@ dist/
 build/
 coverage/
 frontend/coverage/
+frontend/.vitest-tmp/
 *.tsbuildinfo
 frontend/tsconfig.tsbuildinfo
 
